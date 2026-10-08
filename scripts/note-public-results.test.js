@@ -5,7 +5,7 @@ const {settlePublished,observeResult,markResultsVerified,publishedOutcomeLine}=r
 const {LEGACY_READABLE}=require('./note-published-ticket-sections');
 const {fixture}=require('./note-independent-monitor-fixture');
 const {weight}=require('./note-marketing-social');
-const {renderCard}=require('./note-result-card.cjs');
+const {publicContent,altText}=require('./note-result-card.cjs');
 const marketing=require('../config/note-marketing.json');
 const sha=value=>createHash('sha256').update(value).digest('hex');
 function input(changeBundle=()=>{}) {
@@ -24,7 +24,7 @@ function input(changeBundle=()=>{}) {
   resultAvailable:true,status:'finished',resultUrl:row.resultUrl,trifecta:{combination,payout:2000},finishers:combination.split('-').map((boat,i)=>({rank:i+1,boat:Number(boat)}))};}
  return {b,bytes,row,now,official};
 }
-test('a published additional-section hit is new public hit while original center miss stays unchanged',async()=>{
+test('a published additional-section hit is new public hit while original center miss stays unchanged',()=>{
  const f=input(),o=f.official('4-1-2'),center=settlePublished(f.row,f.bytes,o,f.now);assert.equal(center.status,'miss');
  const before=JSON.stringify(center),publicResult=settlePublic(f.row,f.bytes,center,f.now);
  assert.equal(publicResult.settlement.status,'hit');assert.equal(publicResult.settlement.publishedTicketCount,6);
@@ -34,8 +34,9 @@ test('a published additional-section hit is new public hit while original center
  const marked=markResultsVerified([f.row],f.now+1000);
  const reports=raceReports(marked,new Map([[f.row.publicationKey,publicResult.tickets]]));
  assert.equal(reports[0].status,'hit');assert.equal(reports[0].evidenceId,raceEvidenceId(reports[0]));
- const card=await renderCard(reports[0],{now:f.now+2000});assert.equal(card.content.scope,'published-main');assert.equal(card.content.publishedTicketCount,6);
- assert(!JSON.stringify(card.content).includes('6-5-4'));assert(!JSON.stringify(card.content).includes(f.row.url));
+ // Content contracts run before note UI without Python/fonts; PNG rendering has its own suite.
+ const content=publicContent(reports[0],{now:f.now+2000});assert.equal(content.scope,'published-main');assert.equal(content.publishedTicketCount,6);
+ assert(!JSON.stringify(content).includes('6-5-4'));assert(!JSON.stringify(content).includes(f.row.url));
 });
 test('only excluded reference or internal candidate hit remains miss; unknown publication proof remains review',()=>{
  for(const result of ['5-1-2','6-5-4']){const f=input(),center=settlePublished(f.row,f.bytes,f.official(result),f.now);
@@ -43,7 +44,7 @@ test('only excluded reference or internal candidate hit remains miss; unknown pu
  const f=input(),center=settlePublished(f.row,f.bytes,f.official('4-1-2'),f.now);delete f.row.publicationEvidence;
  assert.equal(settlePublic(f.row,f.bytes,center,f.now).settlement.status,'review');
 });
-test('verified original category leads the hit while exact published heading and article family remain visible',async()=>{
+test('verified original category leads the hit while exact published heading and article family remain visible',()=>{
  const f=input(),center=settlePublished(f.row,f.bytes,f.official('4-1-2'),f.now),result=settlePublic(f.row,f.bytes,center,f.now);
  assert(result.provenance);assert.equal(center.status,'miss');assert.equal(result.settlement.status,'hit');
  assert.deepEqual(result.provenance.origins,[{categoryId:'manshu',sourceField:'record.prediction.manshuSheet.tickets'}]);
@@ -58,14 +59,14 @@ test('verified original category leads the hit while exact published heading and
  const index=require('./note-marketing-content').indexBody([proven],marketing,f.now);
  assert(index.includes(`🎯 万舟狙いで的中！｜${f.row.place}${f.row.raceNo}R\n📌 的中した予想：AI展開予想\n「高配当を狙うなら」`));
  assert(index.includes('中心のみの従来成績（記事別）'));assert(index.includes('❌ 不的中 1件'));
- const card=await renderCard({...report,winningCategories:[{articleSeries:'escape',categoryId:'independent-escape',label:'独立本命'}]}, {now:f.now});
- assert.deepEqual(card.content.winningCategories,[{articleSeries:'normal',categoryId:'manshu',label:'万舟狙い'}]);
- assert(card.altText.includes('的中欄：AI展開予想・高配当を狙うなら'));
- assert(card.altText.includes('元の予想区分：AI展開予想・万舟狙い'));assert(!card.altText.includes('独立本命'));
- const cloned=structuredClone(report),clonedCard=await renderCard(cloned,{now:f.now});
- assert.equal(cloned.status,'hit');assert.equal(clonedCard.content.status,'hit');assert.equal(cloned.evidenceId,report.evidenceId);
- assert(!Object.hasOwn(clonedCard.content,'winningCategories'));assert(!clonedCard.altText.includes('元の予想区分'));
- assert(clonedCard.altText.includes('的中欄：AI展開予想・高配当を狙うなら'));
+ const content=publicContent({...report,winningCategories:[{articleSeries:'escape',categoryId:'independent-escape',label:'独立本命'}]}, {now:f.now}),alt=altText(content);
+ assert.deepEqual(content.winningCategories,[{articleSeries:'normal',categoryId:'manshu',label:'万舟狙い'}]);
+ assert(alt.includes('的中欄：AI展開予想・高配当を狙うなら'));
+ assert(alt.includes('元の予想区分：AI展開予想・万舟狙い'));assert(!alt.includes('独立本命'));
+ const cloned=structuredClone(report),clonedContent=publicContent(cloned,{now:f.now}),clonedAlt=altText(clonedContent);
+ assert.equal(cloned.status,'hit');assert.equal(clonedContent.status,'hit');assert.equal(cloned.evidenceId,report.evidenceId);
+ assert(!Object.hasOwn(clonedContent,'winningCategories'));assert(!clonedAlt.includes('元の予想区分'));
+ assert(clonedAlt.includes('的中欄：AI展開予想・高配当を狙うなら'));
  for(const value of [text,note]) {
   assert(value.includes('✅ 的中買い目 4-1-2'));assert.equal((value.match(/2,000円/g)||[]).length,1);
   assert(!value.includes('万舟的中'));assert(!value.includes('万舟配当'));assert(!value.includes('利益'));

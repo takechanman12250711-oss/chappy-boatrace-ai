@@ -20,7 +20,7 @@ function sourceFixture() {
     record:async(p,r)=>{records.push(r);events.push('record');}};
   const delivery={preflight:async()=>events.push('preflight'),sendX:async()=>{events.push('x');return {status:'verified'};},
     sendLine:async()=>{events.push('line');return {status:'accepted'};}};
-  const store={load:async()=>({state}),settle:async()=>state};
+  const store={load:async()=>({state,head:'d'.repeat(40)}),settle:async state=>state};
   return {env,config:{...config},now,clock:()=>now,marketing,store,delivery,receipts,state,events,claims,records};
 }
 
@@ -35,6 +35,103 @@ test('Buffer acceptance is pending and permanent claim prevents duplicates even 
  const f=fixture();const r=await run(f);assert.equal(r.results[0].status,'accepted_pending');assert.deepEqual(f.events,['channel','claim','create','record']);
  await run(f);assert.equal(f.events.filter(x=>x==='create').length,1);
  const unknown=fixture();unknown.delivery.create=async()=>{unknown.events.push('create');throw Error('timeout');};assert.equal((await run(unknown)).status,'review_required');await run(unknown);assert.equal(unknown.events.filter(x=>x==='create').length,1);
+});
+test('concurrent note UI update defers before claiming without overwriting state; a later run reloads it',async()=>{
+ const {publishedIndexBody}=require('./note-marketing-content');
+ const f=fixture(),loadedHashes=[];let remoteState=structuredClone(f.state),head='d'.repeat(40),saves=0;
+ remoteState.articles.index.verifiedAt=new Date(now-60000).toISOString();
+ const oldHash=remoteState.articles.index.hash,newerState=structuredClone(remoteState);
+ newerState.korogashiIndex={version:'note-korogashi-index-v1',text:'登録したコースの最新経過\nモデル配分です。'};
+ newerState.articles.index.hash=hash(publishedIndexBody(newerState,marketing,now));
+ newerState.articles.index.verifiedAt=new Date(now).toISOString();
+ assert.notEqual(newerState.articles.index.hash,oldHash);
+ f.store={load:async()=>{loadedHashes.push(remoteState.articles.index.hash);return {state:structuredClone(remoteState),head};},
+  settle:async state=>state,save:async()=>{saves++;throw Error('Buffer must not save the marketing snapshot');}};
+ const channel=f.delivery.channel;
+ f.delivery.channel=async()=>{remoteState=structuredClone(newerState);head='e'.repeat(40);return channel();};
+ await assert.rejects(run(f),/buffer_marketing_snapshot_changed/);
+ assert.deepEqual(remoteState,newerState);assert.equal(saves,0);
+ assert(!f.events.includes('claim'));assert(!f.events.includes('create'));
+ assert.equal((await run(f)).results[0].status,'accepted_pending');
+ const accepted=[...f.saved.entries()].find(([key])=>key.startsWith('note-buffer-accepted/'))[1];
+ assert.equal(accepted.noteVerifiedAt,newerState.articles.index.verifiedAt);
+ assert.equal((await run(f)).started,0);
+ assert.equal(loadedHashes[0],oldHash);assert(loadedHashes.slice(1).every(value=>value===newerState.articles.index.hash));
+ assert.deepEqual(remoteState,newerState);assert.equal(saves,0);
+ assert.equal(f.events.filter(event=>event==='create').length,1);
+});
+test('newer hold, removed row, changed source/evidence/outcome or failed read consumes no hit claim and sends nothing',async()=>{
+ for(const mode of ['head','pending','review','miss','removed','source','evidence','hash','read','official','officialEvidence','settle']){
+  const f=fixture();let changed=false,remoteState=structuredClone(f.state);
+  f.store={load:async()=>{
+    if(changed&&mode==='read')throw Error('offline');
+    return {head:changed&&mode==='head'?'e'.repeat(40):'d'.repeat(40),state:structuredClone(remoteState)};
+  },settle:async state=>{
+    if(changed&&mode==='settle')throw Error('official lookup unavailable');
+    if(changed&&mode==='official')state.rows[0].settlement={status:'review'};
+    if(changed&&mode==='officialEvidence')state.rows[0].settlement.evidenceId='c'.repeat(64);
+    return state;
+  },save:async()=>{throw Error('must not save');}};
+  f.delivery.channel=async()=>{
+    changed=true;
+    if(mode==='pending')remoteState.pendingUpdates={index:{targetHash:'f'.repeat(64)}};
+    if(['review','miss'].includes(mode))remoteState.rows[0].settlement.status=mode;
+    if(mode==='removed')remoteState.rows=[];
+    if(mode==='source')remoteState.rows[0].sourceSha256='c'.repeat(64);
+    if(mode==='evidence')remoteState.rows[0].settlement.evidenceId='c'.repeat(64);
+    if(mode==='hash')remoteState.articles.index.hash='c'.repeat(64);
+    return 'channel';
+  };
+  await assert.rejects(run(f),/buffer_(marketing_|public_index_)/,mode);
+  assert(!f.events.includes('claim'),mode);assert(!f.events.includes('create'),mode);
+  assert.equal(f.records.length,0,mode);
+ }
+});
+test('a state change during fresh settlement is caught before reserving a claim',async()=>{
+ const f=fixture();let settlements=0,head='d'.repeat(40);
+ f.store={load:async()=>({head,state:structuredClone(f.state)}),settle:async state=>{if(++settlements===2)head='e'.repeat(40);return state;}};
+ await assert.rejects(run(f),/snapshot_changed/);assert(!f.events.includes('claim'));assert(!f.events.includes('create'));
+});
+test('invalidation after a hit claim creates no post, keeps its claim and records a known pre-send block',async()=>{
+ for(const mode of ['changed','read']){
+  const f=fixture();let reserved=false;
+  f.store={load:async()=>{
+    if(reserved&&mode==='read')throw Error('offline');
+    return {head:reserved?'e'.repeat(40):'d'.repeat(40),state:structuredClone(f.state)};
+  },settle:async state=>state};
+  const reserve=f.claims.reserve;f.claims.reserve=async pair=>{await reserve(pair);reserved=true;};
+  const result=await run(f);assert.equal(result.status,'review_required');
+  assert.equal(f.events.filter(event=>event==='claim').length,1);assert(!f.events.includes('create'));
+  assert.equal(f.records[0].reason,'buffer_pre_send_validation_failed_claim_retained');
+  assert(await f.claims.exists({publicationKey:f.state.rows[0].publicationKey}));
+  reserved=false;assert.equal((await run(f)).started,0);assert(!f.events.includes('create'));
+ }
+});
+test('missing immutable head and an already-pending index never consume a publication claim',async()=>{
+ for(const mode of ['head','pending']){
+  const f=fixture();if(mode==='pending')f.state.pendingUpdates={index:{targetHash:'a'.repeat(64)}};
+  if(mode==='head')f.store.load=async()=>({state:f.state,head:null});
+  await assert.rejects(run(f),/buffer_marketing_(snapshot_missing|update_pending)/);
+  assert(!f.events.includes('claim'));assert(!f.events.includes('create'));
+ }
+});
+test('canonical state comparison ignores object key order while retaining original verification time',async()=>{
+ const f=fixture();f.state.articles.index.verifiedAt=new Date(now-60000).toISOString();
+ const reverse=value=>Array.isArray(value)?value.map(reverse):value&&typeof value==='object'
+  ?Object.fromEntries(Object.entries(value).reverse().map(([key,item])=>[key,reverse(item)])):value;
+ let reads=0;f.store.load=async()=>({head:'d'.repeat(40),state:++reads===1?structuredClone(f.state):reverse(f.state)});
+ assert.equal((await run(f)).results[0].status,'accepted_pending');
+ const accepted=[...f.saved.entries()].find(([key])=>key.startsWith('note-buffer-accepted/'))[1];
+ assert.equal(accepted.noteVerifiedAt,f.state.articles.index.verifiedAt);
+});
+test('changed image delivery bytes after claiming cannot reach Buffer even when source state is unchanged',async()=>{
+ const f=fixture(),url='https://raw.githubusercontent.com/takechanman12250711-oss/chappy-boatrace-ai/'+ 'a'.repeat(40)+'/result-card.png';
+ const media={url,imageSha256:'a'.repeat(64),assetCommit:'a'.repeat(40),assets:[{image:{url}}]};
+ f.config.resultReports={images:true};f.renderCard=async()=>({});f.publishCard=async()=>media;
+ const reserve=f.claims.reserve;f.claims.reserve=async pair=>{await reserve(pair);media.assets[0].image.url=url.replace('a'.repeat(40),'b'.repeat(40));};
+ const result=await run(f);assert.equal(result.status,'review_required');
+ assert.equal(result.reason,'buffer_pre_send_validation_failed_claim_retained');
+ assert(f.events.includes('claim'));assert(!f.events.includes('create'));
 });
 test('fresh evidence, public index and activation remain required',async()=>{
  for(const mode of ['index','miss','activation','branch']){const f=fixture();if(mode==='index')f.state.articles.index.hash='old';if(mode==='miss')f.state.rows[0].settlement.status='miss';if(mode==='activation')f.config.activatedAt='2026-09-29T20:00:00+09:00';if(mode==='branch')f.env={...env,GITHUB_REF:'refs/heads/other'};if(mode==='activation')assert.equal((await run(f)).status,'no_new_hits');else await assert.rejects(run(f));assert(!f.events.includes('create'));}
@@ -77,6 +174,41 @@ function announcementFixture(){
  f.state.rows.push({...r,publicationKey:r.raceKey+':escape',articleSeries:'escape',url:r.url+'a'});
  return f;
 }
+test('announcements and recaps check remote validity before and after their permanent batch claim',async()=>{
+ for(const kind of ['announcement','recap'])for(const phase of ['before','after']){
+  const f=kind==='announcement'?announcementFixture():fixture();let head='d'.repeat(40);
+  if(kind==='recap'){
+   f.now=Date.parse('2026-09-29T22:45:00+09:00');f.clock=()=>f.now;
+   f.config.recap={enabled:true,activatedAt:'2026-09-29T00:00:00+09:00'};
+   f.state.rows[0].settlement.status='miss';
+  }
+  f.state.distribution=distributionDrafts(f.state.rows,marketing,'20260929');
+  f.state.articles.index.hash=hash(indexBody(f.state.rows,marketing,f.now));
+  f.store={load:async()=>({head,state:structuredClone(f.state)}),settle:async state=>state,
+   save:async()=>{throw Error('must not save');}};
+  f.delivery.channel=async()=>{if(phase==='before')head='e'.repeat(40);return 'channel';};
+  const prefix='note-buffer-'+kind+'/',put=f.log.put;
+  f.log.put=async(key,value)=>{await put(key,value);if(phase==='after'&&key.startsWith(prefix))head='e'.repeat(40);};
+  if(phase==='before')await assert.rejects(run(f),/snapshot_changed/);
+  else {
+   const result=await run(f);assert.equal(result.status,'review_required');
+   const review=[...f.saved.entries()].find(([key])=>key.startsWith('note-buffer-'+kind+'-review/'))[1];
+   assert.equal(review.reason,'buffer_pre_send_validation_failed_claim_retained');
+  }
+  assert.equal([...f.saved.keys()].filter(key=>key.startsWith(prefix)).length,phase==='after'?1:0);
+  assert(!f.events.includes('create'));assert(!f.events.includes('claim'));
+  if(phase==='after'){head='d'.repeat(40);await run(f);assert(!f.events.includes('create'));}
+ }
+});
+test('announcement freshness reads crossing the 120-second cutoff do not consume a slot',async()=>{
+ const f=announcementFixture();let clock=now,loads=0;
+ f.state.rows.forEach(row=>row.deadlineAt=new Date(now+180000).toISOString());
+ f.state.distribution=distributionDrafts(f.state.rows,marketing,'20260929');
+ f.state.articles.index.hash=hash(indexBody(f.state.rows,marketing,now));f.clock=()=>clock;
+ f.store={load:async()=>{if(++loads===3)clock=now+61000;return {head:'d'.repeat(40),state:structuredClone(f.state)};},settle:async state=>state};
+ await assert.rejects(run(f),/announcement_deadline_passed/);
+ assert.equal(f.saved.size,0);assert(!f.events.includes('create'));
+});
 test('run connects announcements only after verifying the current public index',async()=>{
  const f=announcementFixture();f.state.distribution=distributionDrafts(f.state.rows,marketing,'20260929');
  await assert.rejects(run(f),/public_index_not_verified/);assert.deepEqual(f.events,[]);
@@ -353,6 +485,54 @@ function publicFixture() {
  f.state.distribution=distributionDrafts(f.state.rows,marketing,'20260929');
  f.state.articles.index.hash=hash(indexBody(f.state.rows,marketing,now));return f;
 }
+test('real read-only settlement rebuilds source provenance consistently across advancing preflight clocks',async()=>{
+ const {client,REPO}=require('./note-marketing-store'),{initialState,publishedIndexBody}=require('./note-marketing-content');
+ const {LEGACY_READABLE}=require('./note-published-ticket-sections'),{markResultsVerified}=require('./note-marketing-reports');
+ const f=fixture(),bundle=require('./note-independent-monitor-fixture').fixture();
+ bundle.version='note-draft-bundle-v1';delete bundle.monitor;delete bundle.record.source;
+ bundle.record.prediction.mainSheet={tickets:['1-2-3','1-3-2'],coverTickets:['2-1-3'],flowTickets:['3-1-2']};
+ bundle.record.prediction.manshuSheet={tickets:['4-1-2']};
+ bundle.article.format='formation-v4';bundle.article.paidText='🔥 実戦厳選\n1-2-34\n計 2点';
+ const bytes=JSON.stringify(bundle),sourceSha256=createHash('sha256').update(bytes).digest('hex');
+ const deadline=Date.parse(bundle.record.deadlineAt),time=deadline+3600000;let clock=time;
+ const row={raceKey:bundle.record.raceKey,publicationKey:bundle.record.raceKey+':normal',articleSeries:'normal',
+  place:bundle.record.place,raceNo:bundle.record.raceNo,ticketCount:2,sourceSha256,deadlineAt:bundle.record.deadlineAt,
+  publishedAt:new Date(deadline-180000).toISOString(),url:'https://note.com/great_robin3243/n/nabcdef',
+  resultUrl:'https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20260928&jcd=15&rno=6',
+  publicationEvidence:{version:'note-publication-evidence-v1',receiptCommitSha:'a'.repeat(40),publisherCommitSha:'b'.repeat(40),sourceSha256,...LEGACY_READABLE}};
+ const official={ok:true,source:'boatrace-official',date:'20260928',jcd:'15',raceNo:6,checkedAt:new Date(deadline+1800000).toISOString(),
+  resultAvailable:true,status:'finished',resultUrl:row.resultUrl,trifecta:{combination:'4-1-2',payout:2000},finishers:[4,1,2].map((boat,i)=>({rank:i+1,boat}))};
+ const reader=client({GITHUB_REPOSITORY:REPO,NOTE_CLAIM_TOKEN:'test-only',NOTE_CLAIM_SHA:'d'.repeat(40)},async(url,options)=>{
+  assert.equal(options.method,'GET');assert(new URL(url).searchParams.get('ref')==='main');
+  const content=url.includes('/contents/data/results/')?JSON.stringify({source:'boatrace-official',date:'20260928',races:[official]}):url.includes('/contents/data/note-drafts/')?bytes:null;
+  assert.notEqual(content,null);return {ok:true,json:async()=>({encoding:'base64',content:Buffer.from(content).toString('base64')})};
+ });
+ f.now=time;f.clock=()=>++clock;f.config.activatedAt='2026-09-28T00:00:00+09:00';
+ f.config.resultReports={scope:'published-main-sections-v1',images:false};
+ const pending={...initialState(marketing),date:'20260928',verifiedDate:'20260928',
+  rows:[{...row,settlement:{status:'pending'},publishedSettlement:{status:'pending'}}]};
+ pending.articles.index={hash:hash(publishedIndexBody(pending,marketing,time)),verifiedAt:new Date(time-60000).toISOString()};
+ const pendingBefore=JSON.stringify(pending);
+ f.store={load:async()=>({head:'c'.repeat(40),state:pending}),settle:reader.settle,
+  save:async()=>{throw Error('must not save');}};
+ // Fresh official evidence can change the settled copy, but cannot turn the old
+ // pending public index into verified authority or mutate the loaded raw state.
+ await assert.rejects(run(f),/buffer_public_index_not_verified/);
+ assert.equal(JSON.stringify(pending),pendingBefore);assert.equal(pending.rows[0].settlement.status,'pending');
+ assert(!f.events.includes('claim'));assert(!f.events.includes('create'));
+ const settled=await reader.settle(pending,marketing,time);
+ assert.equal(settled.rows[0].settlement.status,'miss');assert.equal(settled.rows[0].publishedSettlement.status,'hit');
+ assert.equal(JSON.stringify(pending),pendingBefore);
+ settled.rows=markResultsVerified(settled.rows,time);settled.publishedRaceResults.forEach(report=>report.noteVerifiedAt=new Date(time).toISOString());
+ settled.verifiedDate=settled.date;settled.articles.index={hash:hash(publishedIndexBody(settled,marketing,time)),verifiedAt:new Date(time).toISOString()};
+ const persisted=JSON.parse(JSON.stringify(settled)),before=JSON.stringify(persisted);
+ f.store={load:async()=>({head:'d'.repeat(40),state:structuredClone(persisted)}),settle:reader.settle,
+  save:async()=>{throw Error('must not save');}};
+ const result=await run(f);assert.equal(result.started,1);assert.equal(result.results[0].status,'accepted_pending');
+ assert.equal(JSON.stringify(persisted),before);
+ const accepted=[...f.saved.entries()].find(([key])=>key.startsWith('note-buffer-accepted/'))[1];
+ assert.equal(accepted.noteVerifiedAt,new Date(time).toISOString());
+});
 test('new public-union scope sends an additional-section hit once without overwriting center miss',async()=>{
  const f=publicFixture();let text;
  f.delivery.create=async t=>{text=t;f.events.push('create');return {id:'union',text:t,channelId:'channel',status:'scheduled'};};

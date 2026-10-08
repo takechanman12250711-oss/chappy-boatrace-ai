@@ -44,11 +44,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: note-ui-transport
-  queue: max
-  cancel-in-progress: false
-
 jobs:
   update:
     if: >-
@@ -59,6 +54,14 @@ jobs:
         github.event.workflow_run.head_branch == 'main'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Hold the shared editor lock only through registration and public verification.
+    concurrency:
+      group: note-ui-transport
+      queue: max
+      cancel-in-progress: false
+    outputs:
+      revision: ${{ steps.revision.outputs.sha }}
+      index-verified: ${{ steps.index.outcome }}
     permissions:
       contents: write
       actions: read
@@ -77,15 +80,11 @@ jobs:
         with:
           node-version: '20'
       - name: Record checked-out revision
-        run: echo "NOTE_CLAIM_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Install deterministic result-card renderer
+        id: revision
         run: |
-          python -m pip install --disable-pip-version-check Pillow==12.3.0
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends fonts-noto-cjk
+          revision=$(git rev-parse HEAD)
+          echo "NOTE_CLAIM_SHA=$revision" >> "$GITHUB_ENV"
+          echo "sha=$revision" >> "$GITHUB_OUTPUT"
       - name: Verify marketing safeguards
         run: node --test scripts/note-public-results.test.js scripts/note-published-ticket-sections.test.js scripts/note-marketing-expiry.test.js scripts/note-marketing.test.js scripts/note-marketing-reports.test.js scripts/note-marketing-measurement.test.js scripts/send-note-social.test.cjs scripts/send-note-buffer.test.cjs scripts/note-korogashi*.test.cjs
       - name: Prepare requested korogashi courses and settle saved legs
@@ -117,6 +116,61 @@ jobs:
           KOROGASHI_ARTIFACT_ID: ${{ steps.korogashi-artifact.outputs.artifact-id }}
           KOROGASHI_ARTIFACT_DIGEST: ${{ steps.korogashi-artifact.outputs.artifact-digest }}
         run: node scripts/note-korogashi-run.cjs confirm /tmp/note-korogashi-stage.json
+      - run: npm install --no-save playwright@1.55.0
+      - name: Update and verify free guide and daily index
+        id: index
+        env:
+          BROWSER_USE_API_KEY: ${{ secrets.BROWSER_USE_API_KEY }}
+          BROWSER_USE_PROFILE_ID: ${{ secrets.BROWSER_USE_PROFILE_ID }}
+          NOTE_CLAIM_TOKEN: ${{ github.token }}
+        run: node scripts/update-note-marketing.js
+      - name: Surface course registration failures after normal updates
+        if: always() && (steps.korogashi-prepare.outcome == 'failure' || steps.korogashi-artifact.outcome == 'failure' || steps.korogashi-confirm.outcome == 'failure')
+        run: exit 1
+
+  buffer:
+    needs: update
+    # Registration failures remain visible, but must not suppress normal X updates
+    # when the guide/index step succeeded. Failed or skipped UI verification blocks X.
+    if: ${{ !cancelled() && needs.update.outputs.index-verified == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Serialize every Buffer API reservation and permanent posting claim across runs.
+    concurrency:
+      group: note-buffer-distribution
+      queue: max
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.update.outputs.revision }}
+          persist-credentials: false
+          sparse-checkout: |
+            scripts
+            config
+            js
+            api
+            .github/workflows
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify and record checked-out revision
+        env:
+          EXPECTED_REVISION: ${{ needs.update.outputs.revision }}
+        run: |
+          revision=$(git rev-parse HEAD)
+          test "$revision" = "$EXPECTED_REVISION"
+          echo "NOTE_CLAIM_SHA=$revision" >> "$GITHUB_ENV"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install deterministic result-card renderer
+        run: |
+          python -m pip install --disable-pip-version-check Pillow==12.3.0
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends fonts-noto-cjk
       - name: Verify Buffer connection without posting
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         env:
@@ -139,13 +193,6 @@ jobs:
             process.exitCode = 1;
           });
           NODE
-      - run: npm install --no-save playwright@1.55.0
-      - name: Update and verify free guide and daily index
-        env:
-          BROWSER_USE_API_KEY: ${{ secrets.BROWSER_USE_API_KEY }}
-          BROWSER_USE_PROFILE_ID: ${{ secrets.BROWSER_USE_PROFILE_ID }}
-          NOTE_CLAIM_TOKEN: ${{ github.token }}
-        run: node scripts/update-note-marketing.js
       - name: Verify result-card safeguards
         run: node --test scripts/note-result-card.test.cjs scripts/note-marketing-image.test.js
       - name: Dispatch verified hit reports through Buffer Free
@@ -153,6 +200,3 @@ jobs:
           NOTE_CLAIM_TOKEN: ${{ github.token }}
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
         run: node scripts/send-note-buffer.cjs
-      - name: Surface course registration failures after normal updates
-        if: always() && (steps.korogashi-prepare.outcome == 'failure' || steps.korogashi-artifact.outcome == 'failure' || steps.korogashi-confirm.outcome == 'failure')
-        run: exit 1
