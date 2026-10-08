@@ -46,19 +46,52 @@ if (process.argv[2] === "heap-child") {
   assert.ok(!calls.some(value => /ignored|must-not-fill/.test(value)));
   assert.equal(JSON.stringify(documents), before, "saved inputs must remain unchanged");
 
-  // PR validation has no remote writes and must not reserve the production
-  // writer queue. Every production event keeps the original shared writer lock.
+  // Migrated audits hold the production writer queue only while publishing a
+  // verified artifact. The other audits retain their existing workflow lock.
+  const splitAuditTopics = new Set([
+    "strong-condition-cohort", "main-head-selection-audit",
+    "outer-head-candidate-ranking-audit", "outer-head-stage-audit", "result-breakdown"
+  ]);
   for (const name of builders) {
     const topic = name.replace("build-local-water-", "");
     const workflow = fs.readFileSync(path.join(__dirname, "..", ".github", "workflows", `check-local-water-${topic}.yml`), "utf8");
-    assert.ok(workflow.includes("group: ${{ github.event_name == 'pull_request' && format('chappy-local-water-audit-{0}', github.ref) || 'chappy-main-data-writers' }}"));
     assert.match(workflow, /queue: max\n\s+cancel-in-progress: false/);
     assert.ok(workflow.includes("ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}"));
-    const steps = workflow.split(/\n(?=      - )/).slice(1);
-    const buildAndSave = steps.filter(step => step.includes(`node scripts/${name}.js`) || step.includes("git push origin main"));
-    assert.equal(buildAndSave.length, 2);
-    for (const step of buildAndSave) assert.match(step, /if: github.event_name != 'pull_request'/,
-      `${topic}: pull requests may not build or save production reports`);
+    if (splitAuditTopics.has(topic)) {
+      const [beforeJobs, jobs] = workflow.split("\njobs:\n");
+      const [compute, publisher] = jobs.split("\n  publish_reports:\n");
+      assert.ok(beforeJobs.includes(`group: chappy-local-water-${topic}-`), `${topic}: independent audit queue`);
+      assert.doesNotMatch(beforeJobs + compute, /chappy-main-data-writers|contents: write|git push/,
+        `${topic}: computation must not hold write credentials or the shared writer queue`);
+      assert.match(compute, /permissions:\n\s+contents: read/);
+      assert.match(compute, /fetch-depth: 1\n\s+persist-credentials: false/);
+      assert.ok(compute.includes('run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"'));
+      assert.ok(compute.includes("source_sha: ${{ steps.source.outputs.sha }}"));
+      assert.ok(compute.includes("artifact_id: ${{ steps.reports.outputs.artifact-id }}"));
+      const steps = compute.split(/\n(?=      - )/).slice(1);
+      const productionSteps = steps.filter(step => step.includes(`node scripts/${name}.js`) ||
+        step.includes("result-report-checkpoint.cjs pack") || step.includes("actions/upload-artifact@v4"));
+      assert.equal(productionSteps.length, 3);
+      for (const step of productionSteps) assert.match(step, /if: github.event_name != 'pull_request'/,
+        `${topic}: pull requests may not build or package production reports`);
+      assert.ok(compute.includes(`pack local-water-${topic} "$RUNNER_TEMP/audit-report/checkpoint.json"`));
+      assert.ok(compute.includes(`name: local-water-${topic}-` + "${{ github.run_id }}-${{ github.run_attempt }}"));
+      assert.match(publisher, /needs: diagnostics\n\s+if: github.event_name != 'pull_request' && needs.diagnostics.result == 'success'/);
+      assert.match(publisher, /permissions:\n\s+contents: write/);
+      assert.match(publisher, /group: chappy-main-data-writers\n\s+queue: max\n\s+cancel-in-progress: false/);
+      assert.ok(publisher.includes("artifact-ids: ${{ needs.diagnostics.outputs.artifact_id }}"));
+      assert.ok(publisher.includes("BASE_SHA: ${{ needs.diagnostics.outputs.source_sha }}"));
+      assert.ok(publisher.includes(`publish local-water-${topic} "$RUNNER_TEMP/audit-report/checkpoint.json" "$BASE_SHA"`));
+      assert.doesNotMatch(publisher, /node scripts\/build-|restore-daily-prediction-source|prepare-daily-prediction-git-save|git pull|git push/,
+        `${topic}: publishing may not rebuild or rebase saved source data`);
+    } else {
+      assert.ok(workflow.includes("group: ${{ github.event_name == 'pull_request' && format('chappy-local-water-audit-{0}', github.ref) || 'chappy-main-data-writers' }}"));
+      const steps = workflow.split(/\n(?=      - )/).slice(1);
+      const buildAndSave = steps.filter(step => step.includes(`node scripts/${name}.js`) || step.includes("git push origin main"));
+      assert.equal(buildAndSave.length, 2);
+      for (const step of buildAndSave) assert.match(step, /if: github.event_name != 'pull_request'/,
+        `${topic}: pull requests may not build or save production reports`);
+    }
     assert.ok(workflow.includes("node scripts/test-local-water-daily-input.cjs"));
   }
 

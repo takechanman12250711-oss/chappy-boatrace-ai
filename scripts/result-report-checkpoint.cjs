@@ -8,7 +8,17 @@ const os = require('node:os');
 const { createHash } = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 const VERSION = 'result-report-checkpoint-v1';
-const STAGES = new Set(['diagnostics', 'calibration']);
+// Fixed, single-output audit profiles. Artifact contents cannot select a receipt
+// path or borrow another audit's report/official-result checkpoint permissions.
+const AUDIT_PROFILES = new Map([
+  ['local-water-strong-condition-cohort', 'data/stats/local-water-strong-condition-cohort.json'],
+  ['local-water-outer-head-candidate-ranking-audit', 'data/stats/local-water-outer-head-candidate-ranking-audit.json'],
+  ['outer-head-drop-stage-audit', 'data/stats/outer-head-drop-stage-audit.json'],
+  ['local-water-outer-head-stage-audit', 'data/stats/local-water-outer-head-stage-audit.json'],
+  ['local-water-main-head-selection-audit', 'data/stats/local-water-main-head-selection-audit.json'],
+  ['local-water-result-breakdown', 'data/stats/local-water-result-breakdown.json'],
+]);
+const STAGES = new Set(['diagnostics', 'calibration', ...AUDIT_PROFILES.keys()]);
 // These existing builder outputs are derived reports, despite their directory.
 // Only the calibration stage may publish them; daily/source prediction data is
 // never permitted through this report checkpoint.
@@ -24,8 +34,13 @@ const KEEP_NEWER = new Set([
 const CODE_PATHS = ['scripts', 'js', 'api', 'config', '.github/workflows/collect-results.yml'];
 const sha256 = value => createHash('sha256').update(value).digest('hex');
 const git = (cwd, args) => execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 128 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] }).trimEnd();
-const receiptPath = stage => `data/stats/result-${stage}-checkpoint.json`;
+const receiptPath = stage => AUDIT_PROFILES.has(stage)
+  ? `data/stats/audit-checkpoints/${stage}.json` : `data/stats/result-${stage}-checkpoint.json`;
+const codePaths = stage => AUDIT_PROFILES.has(stage)
+  ? [...CODE_PATHS, `.github/workflows/check-${stage}.yml`] : CODE_PATHS;
+const validBlob = value => value === null || (typeof value === 'string' && /^[a-f0-9]{40}$/.test(value));
 function allowed(file, stage) {
+  if (AUDIT_PROFILES.has(stage)) return file === AUDIT_PROFILES.get(stage);
   return (/^data\/stats\/[a-z0-9][a-z0-9.-]*\.json$/.test(file) &&
     !/^data\/stats\/result-(diagnostics|calibration)-checkpoint\.json$/.test(file)) ||
     file === 'data/analysis/reference-tag-effectiveness.json' ||
@@ -38,23 +53,37 @@ function blob(cwd, ref, file) {
   if (!match) throw new Error(`Not a regular data file: ${file}`);
   return match[1];
 }
-function changed(cwd) {
+function changed(cwd, audit = false) {
   return [...new Set([
     ...git(cwd, ['diff', '--name-only', '-z', 'HEAD']).split('\0'),
+    // A staged change can be hidden by restoring only the working-tree bytes.
+    ...(audit ? git(cwd, ['diff', '--cached', '--name-only', '-z']).split('\0') : []),
+    ...(audit ? git(cwd, ['diff', '--name-only', '-z']).split('\0') : []),
     ...git(cwd, ['ls-files', '--others', '--exclude-standard', '-z']).split('\0'),
   ].filter(Boolean))].sort();
 }
 function pack({ root = process.cwd(), stage, output }) {
   if (!STAGES.has(stage)) throw new Error('Unknown checkpoint stage');
   const baseSha = git(root, ['rev-parse', 'HEAD']);
-  const paths = changed(root);
+  const audit = AUDIT_PROFILES.has(stage);
+  const paths = changed(root, audit);
+  // prepare --all normalizes restored archives but also stages predictions.
+  // Audit compute is disposable: refuse every remaining change except its one
+  // report, including index derivatives and staged/unstaged source archives.
+  if (audit) {
+    const unexpected = paths.filter(file => !allowed(file, stage));
+    if (unexpected.length) throw new Error(`Unsaved source or unexpected audit changes: ${unexpected.join(', ')}`);
+  }
   // Prediction/result originals must have been saved in the source checkpoint.
   // A report artifact must never smuggle old originals into a newer main.
   const originalChanges = paths.filter(file => /^data\/(results|predictions)\//.test(file) &&
     !/^data\/predictions\/(index(?:-manifest)?\.json|index-shards\/)/.test(file) &&
     !(stage === 'calibration' && CALIBRATION_REPORTS.has(file)));
   if (originalChanges.length) throw new Error(`Unsaved source changes: ${originalChanges.join(', ')}`);
-  const files = paths.filter(file => allowed(file, stage)).map(file => {
+  // Include the audit report even when bytes are unchanged: the receipt records
+  // this computation and prevents an older artifact replaying its provenance.
+  const reportPaths = audit ? [AUDIT_PROFILES.get(stage)] : paths.filter(file => allowed(file, stage));
+  const files = reportPaths.map(file => {
     const absolute = path.join(root, file);
     if (!fs.existsSync(absolute) || !fs.lstatSync(absolute).isFile()) throw new Error(`Deleted/nonregular report: ${file}`);
     const content = fs.readFileSync(absolute, 'utf8');
@@ -62,6 +91,7 @@ function pack({ root = process.cwd(), stage, output }) {
     return { path: file, baseBlob: blob(root, baseSha, file), sha256: sha256(content), content };
   });
   const bundle = { version: VERSION, stage, baseSha, createdAt: new Date().toISOString(), files };
+  if (audit) bundle.receiptBaseBlob = blob(root, baseSha, receiptPath(stage));
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, JSON.stringify(bundle) + '\n');
   return { stage, baseSha, files: files.length };
@@ -71,6 +101,9 @@ function validate(bundle, { stage, baseSha }) {
       !/^[a-f0-9]{40}$/.test(baseSha || '') || bundle.baseSha !== baseSha ||
       !Number.isFinite(Date.parse(bundle.createdAt)) || !Array.isArray(bundle.files) || bundle.files.length > 500)
     throw new Error('Invalid checkpoint identity');
+  if (AUDIT_PROFILES.has(stage) && (!validBlob(bundle.receiptBaseBlob) || bundle.files.length !== 1 ||
+      Object.keys(bundle).some(key => !['version', 'stage', 'baseSha', 'createdAt', 'files', 'receiptBaseBlob'].includes(key))))
+    throw new Error('Invalid audit checkpoint identity');
   const seen = new Set();
   for (const file of bundle.files) {
     if (!allowed(file.path, stage) || seen.has(file.path) || typeof file.content !== 'string' ||
@@ -83,8 +116,15 @@ function validate(bundle, { stage, baseSha }) {
 function apply({ root, bundle, stage, baseSha }) {
   validate(bundle, { stage, baseSha });
   if (git(root, ['status', '--porcelain'])) throw new Error('Publication checkout must be clean');
-  if (git(root, ['diff', '--name-only', baseSha, 'HEAD', '--', ...CODE_PATHS]))
+  if (git(root, ['diff', '--name-only', baseSha, 'HEAD', '--', ...codePaths(stage)]))
     throw new Error('Builder code changed after source checkpoint; rebuild from current main');
+  const receiptFile = receiptPath(stage);
+  if (AUDIT_PROFILES.has(stage)) {
+    if (blob(root, baseSha, receiptFile) !== bundle.receiptBaseBlob)
+      throw new Error(`Incorrect source receipt blob: ${receiptFile}`);
+    if (blob(root, 'HEAD', receiptFile) !== bundle.receiptBaseBlob)
+      throw new Error(`Audit receipt changed after source checkpoint: ${receiptFile}`);
+  }
   const preserved = [], publish = [];
   // Validate every base blob and every destination before changing any file.
   for (const file of bundle.files) {
@@ -104,7 +144,6 @@ function apply({ root, bundle, stage, baseSha }) {
     fs.mkdirSync(path.dirname(absolute), { recursive: true });
     fs.writeFileSync(absolute, file.content);
   }
-  const receiptFile = receiptPath(stage);
   fs.mkdirSync(path.dirname(path.join(root, receiptFile)), { recursive: true });
   fs.writeFileSync(path.join(root, receiptFile), JSON.stringify(receipt, null, 2) + '\n');
   const savePaths = [...publish.map(file => file.path), receiptFile];
