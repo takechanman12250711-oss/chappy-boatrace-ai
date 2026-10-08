@@ -21,20 +21,32 @@ on:
     types: [completed]
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
+
 concurrency:
-  group: ${{ github.event_name == 'pull_request' && format('chappy-local-water-audit-{0}', github.ref) || 'chappy-main-data-writers' }}
+  group: chappy-local-water-strong-condition-cohort-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
   queue: max
   cancel-in-progress: false
+
 jobs:
-  verify:
+  diagnostics:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: read
+    outputs:
+      source_sha: ${{ steps.source.outputs.sha }}
+      artifact_id: ${{ steps.reports.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
-          fetch-depth: 0
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Record source commit
+        id: source
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -48,13 +60,51 @@ jobs:
           node scripts/restore-daily-prediction-source.js --all
           node scripts/build-local-water-strong-condition-cohort.js
           node scripts/prepare-daily-prediction-git-save.js --all
-      - name: Save cohort
+      - name: Package verified diagnostic
         if: github.event_name != 'pull_request'
-        run: |
-          git add data/stats/local-water-strong-condition-cohort.json
-          if git diff --cached --quiet; then exit 0; fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Update local water strong condition cohort"
-          git pull --rebase origin main
-          git push origin main
+        run: node scripts/result-report-checkpoint.cjs pack local-water-strong-condition-cohort "$RUNNER_TEMP/audit-report/checkpoint.json"
+      - name: Upload verified diagnostic
+        if: github.event_name != 'pull_request'
+        id: reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-water-strong-condition-cohort-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/audit-report/checkpoint.json
+          retention-days: 3
+          if-no-files-found: error
+
+  publish_reports:
+    needs: diagnostics
+    if: github.event_name != 'pull_request' && needs.diagnostics.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    concurrency:
+      group: chappy-main-data-writers
+      queue: max
+      cancel-in-progress: false
+    outputs:
+      saved_sha: ${{ steps.save_reports.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          sparse-checkout: |
+            scripts
+            data/stats
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Download verified diagnostic
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ needs.diagnostics.outputs.artifact_id }}
+          path: ${{ runner.temp }}/audit-report
+          merge-multiple: true
+      - name: Publish verified diagnostic
+        id: save_reports
+        env:
+          BASE_SHA: ${{ needs.diagnostics.outputs.source_sha }}
+        run: node scripts/result-report-checkpoint.cjs publish local-water-strong-condition-cohort "$RUNNER_TEMP/audit-report/checkpoint.json" "$BASE_SHA"

@@ -21,8 +21,13 @@ if (process.argv[2] === "heap-child") {
   console.log(JSON.stringify({ maxRSS: process.resourceUsage().maxRSS }));
 } else {
   const workflow = fs.readFileSync(path.join(__dirname, "..", ".github/workflows/check-outer-head-drop-stage-audit.yml"), "utf8");
-  assert.ok(workflow.includes("group: ${{ github.event_name == 'pull_request' && format('chappy-outer-head-drop-stage-{0}', github.ref) || 'chappy-main-data-writers' }}"));
-  assert.match(workflow, /queue: max\n\s+cancel-in-progress: false/);
+  const [beforeJobs, jobs] = workflow.split("\njobs:\n");
+  const [compute, publisher] = jobs.split("\n  publish_reports:\n");
+  assert.ok(beforeJobs.includes("group: chappy-outer-head-drop-stage-audit-${{ github.event_name == 'pull_request' && github.ref || 'main' }}"));
+  assert.match(beforeJobs, /queue: max\n\s+cancel-in-progress: false/);
+  assert.doesNotMatch(beforeJobs + compute, /chappy-main-data-writers|contents: write|git push/);
+  assert.match(compute, /permissions:\n\s+contents: read/);
+  assert.match(compute, /fetch-depth: 1\n\s+persist-credentials: false/);
   assert.match(workflow, /workflow_run:\n\s+workflows: \["Collect official race results"\]\n\s+branches: \[main\]/);
   const expectedCondition = "github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.event != 'pull_request' && github.event.workflow_run.event != 'pull_request_target')";
   assert.equal(workflow.match(/^    if: (.+)$/m)?.[1], expectedCondition);
@@ -40,10 +45,18 @@ if (process.argv[2] === "heap-child") {
   for (const event_name of ["push", "workflow_dispatch", "pull_request"])
     assert.equal(allows({ event_name, repository: "owner/repo", event: {} }), true,
       "explicit event behavior stays unchanged; PR Build/Save remains separately blocked");
-  const guarded = workflow.split(/\n(?=      - )/).slice(1).filter(step =>
-    step.includes("node scripts/build-outer-head-drop-stage-audit.js") || step.includes("git push origin main"));
-  assert.equal(guarded.length, 2);
+  const guarded = compute.split(/\n(?=      - )/).slice(1).filter(step =>
+    step.includes("node scripts/build-outer-head-drop-stage-audit.js") ||
+    step.includes("result-report-checkpoint.cjs pack") || step.includes("actions/upload-artifact@v4"));
+  assert.equal(guarded.length, 3);
   for (const step of guarded) assert.match(step, /if: github.event_name != 'pull_request'/);
+  assert.match(publisher, /needs: diagnostics\n\s+if: github.event_name != 'pull_request' && needs.diagnostics.result == 'success'/);
+  assert.match(publisher, /permissions:\n\s+contents: write/);
+  assert.match(publisher, /group: chappy-main-data-writers\n\s+queue: max\n\s+cancel-in-progress: false/);
+  assert.ok(publisher.includes("artifact-ids: ${{ needs.diagnostics.outputs.artifact_id }}"));
+  assert.ok(publisher.includes("BASE_SHA: ${{ needs.diagnostics.outputs.source_sha }}"));
+  assert.ok(publisher.includes('publish outer-head-drop-stage-audit "$RUNNER_TEMP/audit-report/checkpoint.json" "$BASE_SHA"'));
+  assert.doesNotMatch(publisher, /node scripts\/build-|restore-daily-prediction-source|prepare-daily-prediction-git-save|git pull|git push/);
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "chappy-outer-head-drop-stage-"));
   try {
     const small = [];
