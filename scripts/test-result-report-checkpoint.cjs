@@ -37,6 +37,7 @@ const auditStages = [
   'local-water-outer-head-stage-audit',
   'local-water-main-head-selection-audit',
   'local-water-result-breakdown',
+  'local-water-outer-head-bottleneck-audit',
 ];
 function auditFixture(name, stage = auditStages[0], { unchanged = false, noReceipt = false } = {}) {
   const f = fixture(name);
@@ -429,5 +430,5 @@ try {
   assert.match(regression, /contents: read/);
   assert.match(regression, /Run noncritical regression checks/);
   assert.doesNotMatch(regression, /chappy-main-data-writers|git push/);
-  console.log('result checkpoint: diagnostics/calibration and six audit profiles, source preservation, receipt replay guards, artifact validation, racing pushes and queue boundaries passed');
+  console.log('result checkpoint: diagnostics/calibration and seven audit profiles, source preservation, receipt replay guards, artifact validation, racing pushes and queue boundaries passed');
 } finally { fs.rmSync(root, { recursive: true, force: true }); }

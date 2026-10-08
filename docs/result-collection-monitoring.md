@@ -41,6 +41,14 @@ PRは従来どおり検査だけを行い、本番データ生成・artifact公�
 
 この分離は6本の重い監査が共有writerキューを占有する時間を減らす変更であり、すべての収集遅延が解消したという意味ではない。保存jobの待機、対象外writer、計算失敗・競合は引き続き個別に確認する。新しいcronやWork監視は追加しない。検証は `node scripts/test-result-report-checkpoint.cjs` と `node scripts/test-local-water-daily-input.cjs`、既存の各監査テストで行う。
 
+## 外頭bottleneck監査の追加分離
+
+`check-local-water-outer-head-bottleneck-audit.yml` も上記と同じ計算・保存分離を使う。profileは `local-water-outer-head-bottleneck-audit`、保存対象はその単一レポートと対応する `audit-checkpoints` receiptだけとする。計算の既存検査・原本復元・builder・prepareはread-only jobに保持し、保存jobには元blob・入力SHA・内容hash・コード変更・receipt世代の検査を備えた既存checkpoint保存器を使う。PRは検査だけで、既存triggerと成功条件は維持する。
+
+変更前の2026-10-08実行 `37759931627` は共有writerを7分37秒占有し、保存stepは3秒だった。別の実行 `37747829008` のwriter終了08:30:14 UTCから4秒後に、08:13:05から待機していた公式結果collectが開始した。この修正の計算時間とwriter占有時間は区別し、本番反映後の実runでreport・receipt・source SHAと保存job時間を確認するまでは短縮実証済みとしない。
+
+priority-score監査、予想ロジック、原本、cron構成は変更しない。GitHubの定期起動そのものが欠ける問題をこの分離で解消したとは扱わない。検証は上記checkpoint・daily-input検査に加え、`node scripts/test-local-water-outer-head-bottleneck-audit.js` を維持する。
+
 ## 監視
 
 `result-collection-watchdog.yml` は結果収集の完了時と毎時47分に起動する。定時チェックも GitHub 内で完結する。

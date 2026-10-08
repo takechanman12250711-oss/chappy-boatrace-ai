@@ -50,7 +50,8 @@ if (process.argv[2] === "heap-child") {
   // verified artifact. The other audits retain their existing workflow lock.
   const splitAuditTopics = new Set([
     "strong-condition-cohort", "main-head-selection-audit",
-    "outer-head-candidate-ranking-audit", "outer-head-stage-audit", "result-breakdown"
+    "outer-head-candidate-ranking-audit", "outer-head-stage-audit", "result-breakdown",
+    "outer-head-bottleneck-audit"
   ]);
   for (const name of builders) {
     const topic = name.replace("build-local-water-", "");

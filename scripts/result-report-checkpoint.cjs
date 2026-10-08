@@ -17,6 +17,7 @@ const AUDIT_PROFILES = new Map([
   ['local-water-outer-head-stage-audit', 'data/stats/local-water-outer-head-stage-audit.json'],
   ['local-water-main-head-selection-audit', 'data/stats/local-water-main-head-selection-audit.json'],
   ['local-water-result-breakdown', 'data/stats/local-water-result-breakdown.json'],
+  ['local-water-outer-head-bottleneck-audit', 'data/stats/local-water-outer-head-bottleneck-audit.json'],
 ]);
 const STAGES = new Set(['diagnostics', 'calibration', ...AUDIT_PROFILES.keys()]);
 // These existing builder outputs are derived reports, despite their directory.
