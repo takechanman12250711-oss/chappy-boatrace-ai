@@ -56,11 +56,11 @@ function project(plan) {
       check(seal.snapshotHash === hash({ request: r, previous, leg }), 'snapshot_mismatch');
       const selection = leg.modelSelectionEvidence;
       check(selection?.version === 'note-korogashi-selection-evidence-v1' &&
-        ['readable-v1','readable-v3'].includes(selection.presentationVersion) &&
+        ['readable-v1','readable-v3','readable-v4'].includes(selection.presentationVersion) &&
         selection.sourceSha256 === leg.sourceSha256 && /^[a-f0-9]{64}$/.test(selection.paidTextSha256 || '') &&
         selection.ticketCount === leg.allocations.length &&
         selection.ticketsSha256 === hash(leg.allocations.map(a=>a.ticket).sort()) &&
-        selection.label === (selection.presentationVersion === 'readable-v3' ? '🔄 コロがし検証対象' : '中心の買い目'), 'registered_selection_unverified');
+        selection.label === (['readable-v3','readable-v4'].includes(selection.presentationVersion) ? '🔄 コロがし検証対象' : '中心の買い目'), 'registered_selection_unverified');
       const opening = state.balanceYen ?? leg.allocations.length * 1000;
       check(json(allocate(opening,leg.allocations.map(a=>a.ticket))) === json({ allocations:leg.allocations,stakeYen:leg.stakeYen,remainderYen:leg.remainderYen }), 'funding_mismatch');
       check(leg.openingYen === opening && (!state.lastAt || ms(leg.plannedAt) >= ms(state.lastAt)), 'registration_timing_invalid');
