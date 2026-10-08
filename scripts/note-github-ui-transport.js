@@ -399,7 +399,61 @@ async function createAuthenticatedPage(browser) {
 
 function requirePublicationGate(payload, rootDir = process.cwd(), now = Date.now()) {
   requireDraftGate(payload, now);
-  return require('./note-publication-source').verifyPublicationSource(payload, rootDir, now);
+  try {
+    const verified = require('./note-publication-source').verifyPublicationSource(payload, rootDir, now);
+    verifiedPublicationPayloads.set(payload, JSON.stringify(payload));
+    return verified;
+  } catch (error) {
+    // Only our source auditor can mint this in-memory proof. Website text,
+    // serialized errors and caller-provided issueCodes are never sufficient.
+    if (verifiedPublicationPayloads.get(payload) === JSON.stringify(payload) &&
+        error.message === 'publication_content_audit_blocked' &&
+        Array.isArray(error.issueCodes) && error.issueCodes.length === 1 &&
+        error.issueCodes[0] === 'DEADLINE_TOO_CLOSE') {
+      deadlineGuardErrors.set(error, Object.freeze({ identity: expiryIdentity(payload),
+        payloadJson: verifiedPublicationPayloads.get(payload), checkedAt: new Date(now).toISOString() }));
+    }
+    throw error;
+  }
+}
+
+const deadlineGuardErrors = new WeakMap();
+const verifiedPublicationPayloads = new WeakMap();
+const preClickDeadlineErrors = new WeakSet();
+const cleanedDeadlineErrors = new WeakSet();
+function expiryIdentity(payload) {
+  return JSON.stringify([payload.publicationKey, payload.sourcePath, payload.sourceSha256,
+    payload.deadlineAt, payload.presentationVersion]);
+}
+function preClickPublicationGate(payload, guard) {
+  try { return guard(payload); }
+  catch (error) {
+    if (deadlineGuardErrors.get(error)?.identity === expiryIdentity(payload)) {
+      preClickDeadlineErrors.add(error);
+    }
+    throw error;
+  }
+}
+async function confirmedExpiredPublication(error, payload, env = process.env, request = fetch) {
+  const proof = deadlineGuardErrors.get(error);
+  if (!proof || !preClickDeadlineErrors.has(error) || !cleanedDeadlineErrors.has(error) ||
+      proof.identity !== expiryIdentity(payload) || proof.payloadJson !== JSON.stringify(payload)) return null;
+  deadlineGuardErrors.delete(error); // Consume before any await; failed verification stays fail-closed.
+  const { repository, sha, token } = loadClaimConfig(env);
+  const ref = draftClaimRef(payload);
+  const options = { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
+    signal: AbortSignal.timeout(30000) };
+  const base = `https://api.github.com/repos/${repository}/git/ref/`;
+  const claim = await request(base + ref.slice(5), options);
+  if (claim.status !== 200) throw new Error('expired_publication_claim_unverified');
+  const saved = await claim.json();
+  if (saved.ref !== ref || saved.object?.sha !== sha) throw new Error('expired_publication_claim_mismatch');
+  const receipt = await request(base + ref.slice(5).replace('note-draft-claim/', 'note-published/'), options);
+  if (receipt.status !== 404) throw new Error('expired_publication_receipt_review_required');
+  // Keep the permanent claim; never reopen or automatically delete the draft.
+  return Object.freeze({ publicationKey: payload.publicationKey, sourceSha256: payload.sourceSha256,
+    claimRef: ref, reason: 'DEADLINE_TOO_CLOSE', checkedAt: proof.checkedAt,
+    publishClickAttempted: false, browserCleanupVerified: true, draftState: 'may_remain' });
 }
 
 async function preparePublication({ rootDir = process.cwd(), env = process.env, request = fetch, handoff } = {}) {
@@ -506,7 +560,7 @@ function publicArticleUrl(value, noteId) {
 }
 
 async function publishConfiguredArticle(page, payload, paid, guard = requirePublicationGate) {
-  guard(payload);
+  preClickPublicationGate(payload, guard);
   if (paid?.price !== EXPECTED_PRICE_YEN) throw new Error('publication_price_unverified');
   const publishedDisplayProof = require('./note-publication-source').parsePublishedDisplayProof(payload);
   const noteId = new URL(page.url()).pathname.match(/^\/notes\/(n[a-f0-9]+)\/publish\/?$/)?.[1];
@@ -529,7 +583,7 @@ async function publishConfiguredArticle(page, payload, paid, guard = requirePubl
   if (await submit.count() !== 1 || !await submit.isVisible() || !await submit.isEnabled()) {
     throw new Error('publication_submit_unavailable');
   }
-  guard(payload);
+  preClickPublicationGate(payload, guard);
   console.log('NOTE_UI_PUBLICATION_ATTEMPT=true');
   // Exactly one attempt. A lost response must never cause another click.
   await submit.click();
@@ -702,6 +756,7 @@ async function run({ env = process.env } = {}) {
   if (draft && !recoveryOnly) await claimDraft(draft.payload, env);
   const session = await createBrowserUseSession(browserUse);
   let browser;
+  let failure;
   try {
     browser = await chromium.connectOverCDP(session.cdpUrl);
     if (recoveryOnly) {
@@ -751,10 +806,18 @@ async function run({ env = process.env } = {}) {
     console.log(`NOTE_UI_PRICE_YEN=${paid.price}`);
     console.log(`NOTE_UI_PAID_START=${paid.paidStart}`);
     console.log('NOTE_UI_PUBLISH_CLICKED=false');
+  } catch (error) {
+    failure = error;
+    throw error;
   } finally {
-    if (browser) await browser.close().catch(() => {});
+    let closed = true;
+    if (browser) await browser.close().catch(() => { closed = false; });
     const stopped = await stopBrowserUseSession(browserUse, session.id).catch(() => ({ ok: false }));
     if (!stopped.ok) console.error('NOTE_UI_BROWSER_STOP_FAILED=true');
+    if (failure && preClickDeadlineErrors.has(failure)) {
+      if (!closed || !stopped.ok) throw new Error('expired_publication_cleanup_unverified');
+      cleanedDeadlineErrors.add(failure);
+    }
   }
 }
 
@@ -766,6 +829,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  confirmedExpiredPublication,
   DEFAULT_HANDOFF,
   EXPECTED_PRICE_YEN,
   NOTE_EDITOR_URL,

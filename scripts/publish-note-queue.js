@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { preparePublication, run } = require('./note-github-ui-transport');
+const { preparePublication, run, confirmedExpiredPublication } = require('./note-github-ui-transport');
 const { buildLatestHandoff } = require('./build-note-publish-handoff');
 const { publicationKey } = require('./note-article-series');
 const REPOSITORY = 'takechanman12250711-oss/chappy-boatrace-ai';
@@ -24,7 +24,16 @@ async function publishQueue({ env = process.env, request = fetch, prepare = prep
       fs.writeFileSync(file, JSON.stringify(gate.payload));
       // Each article still goes through the original fresh audit, atomic claim,
       // one final click and anonymous public receipt verification.
-      const receipt = await publish({ env: { ...env, NOTE_IPHONE_HANDOFF: file } });
+      let receipt;
+      try {
+        receipt = await publish({ env: { ...env, NOTE_IPHONE_HANDOFF: file } });
+      } catch (error) {
+        const expired = await confirmedExpiredPublication(error, gate.payload, env, request);
+        if (!expired) throw error;
+        console.log(`NOTE_QUEUE_EXPIRED=${JSON.stringify(expired)}`);
+        handoff.candidates = handoff.candidates.filter(c => publicationKey(c.raceKey, c.articleSeries) !== gate.payload.publicationKey);
+        continue; // Fresh source, date, deadline and permanent-claim checks on the next loop.
+      }
       if (!receipt?.url || receipt.raceKey !== gate.payload.raceKey ||
           publicationKey(receipt.raceKey, receipt.articleSeries) !== gate.payload.publicationKey) throw new Error('publication_receipt_missing');
       published++;
