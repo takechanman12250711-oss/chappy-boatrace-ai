@@ -6,7 +6,8 @@ const MAX_AGE_MS = 30 * 60 * 1000;
 function validSourceEvent(event, repo) {
   const source = event?.workflow_run;
   return event?.action === "completed" && event?.repository?.full_name === repo &&
-    source?.name === "Update note marketing" && source?.path === ".github/workflows/update-note-marketing.yml" &&
+    ((source?.name === "Update note marketing" && source?.path === ".github/workflows/update-note-marketing.yml") ||
+     (source?.name === "Note GitHub UI Transport" && source?.path === ".github/workflows/note-github-ui-transport.yml")) &&
     source?.status === "completed" && source?.conclusion === "success" &&
     source?.head_repository?.full_name === repo && source?.head_branch === "main" &&
     ["schedule", "workflow_dispatch", "push", "workflow_run"].includes(source?.event);
