@@ -212,3 +212,6 @@ test('explicit readable-v2 keeps its frozen free, paid and full bytes', () => {
   assert.ok(!a.fullText.includes(model.MODEL_LABEL));
   assert.throws(() => readableArticle(b.article, b, { presentationVersion: 'readable-v99' }), /version_unsupported/);
 });
+
+// Keep v4 safety regressions in this established CI entry point; no new workflow.
+require('./note-free-explanation.test.cjs');
