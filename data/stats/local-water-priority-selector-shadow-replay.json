@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "version": "local-water-priority-selector-shadow-replay-v1",
-  "generatedAt": "2026-10-08T10:42:00.834Z",
+  "generatedAt": "2026-10-08T23:26:01.364Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
   "methodology": "締切前保存済みの当地・水面正式証拠、現行最終頭、同一候補配列のpriorityScoreだけで反実仮想を作成。候補の最高点が現行頭より厳密に高い場合だけshadow頭へ切り替え、同点は現行頭を維持して公式結果と照合する。",
   "sourceVersion": "local-water-priority-selection-consistency-audit-v1",
-  "sourceGeneratedAt": "2026-10-08T10:33:07.481Z",
+  "sourceGeneratedAt": "2026-10-08T23:18:21.150Z",
   "sourceNextStep": "build-local-water-priority-selector-shadow-replay",
   "applicable": true,
   "shadowRule": {
@@ -32,20 +32,20 @@
     "maximumConditionBandAccuracyDeclinePt": 2
   },
   "metrics": {
-    "settledFormalEvidenceRaceCount": 1993,
-    "currentHeadAvailableCount": 1993,
-    "rankingArrayAvailableCount": 1993,
-    "currentCandidateScoreAvailableCount": 1993,
-    "comparableReplayCount": 1993,
-    "switchCount": 544,
-    "equalTopOtherBoatNoSwitchCount": 1418,
-    "currentCorrectCount": 666,
-    "shadowCorrectCount": 621,
-    "netCorrectChange": -45,
+    "settledFormalEvidenceRaceCount": 2004,
+    "currentHeadAvailableCount": 2004,
+    "rankingArrayAvailableCount": 2004,
+    "currentCandidateScoreAvailableCount": 2004,
+    "comparableReplayCount": 2004,
+    "switchCount": 547,
+    "equalTopOtherBoatNoSwitchCount": 1426,
+    "currentCorrectCount": 674,
+    "shadowCorrectCount": 627,
+    "netCorrectChange": -47,
     "wrongToCorrectCount": 136,
-    "correctToWrongCount": 181,
-    "wrongToWrongChangedCount": 227,
-    "actualOuterHeadCount": 177,
+    "correctToWrongCount": 183,
+    "wrongToWrongChangedCount": 228,
+    "actualOuterHeadCount": 178,
     "currentOuterWinnerCorrectCount": 0,
     "shadowOuterWinnerCorrectCount": 14,
     "rescuedOuterWinnerCount": 14,
@@ -56,30 +56,30 @@
     "rankingArrayCoverageRate": 100,
     "comparableReplayCoverageRate": 100,
     "switchRate": 27.3,
-    "currentAccuracy": 33.4,
-    "shadowAccuracy": 31.2,
-    "accuracyChangePt": -2.2,
+    "currentAccuracy": 33.6,
+    "shadowAccuracy": 31.3,
+    "accuracyChangePt": -2.3,
     "outerWinnerRescueRate": 7.9,
-    "outerPromotionRaceRate": 5,
+    "outerPromotionRaceRate": 4.9,
     "falseOuterPromotionsPerRescuedOuterWinner": 6.1
   },
   "conditionBands": [
     {
       "conditionBand": "calm",
-      "raceCount": 1170,
-      "comparableReplayCount": 1170,
-      "switchCount": 340,
-      "currentCorrectCount": 406,
-      "shadowCorrectCount": 369,
+      "raceCount": 1181,
+      "comparableReplayCount": 1181,
+      "switchCount": 343,
+      "currentCorrectCount": 414,
+      "shadowCorrectCount": 375,
       "wrongToCorrectCount": 85,
-      "correctToWrongCount": 122,
+      "correctToWrongCount": 124,
       "rescuedOuterWinnerCount": 10,
       "falseOuterPromotionCount": 57,
-      "currentAccuracy": 34.7,
-      "shadowAccuracy": 31.5,
-      "accuracyChangePt": -3.2,
+      "currentAccuracy": 35.1,
+      "shadowAccuracy": 31.8,
+      "accuracyChangePt": -3.3,
       "comparableReplayCoverageRate": 100,
-      "switchRate": 29.1
+      "switchRate": 29
     },
     {
       "conditionBand": "medium",
@@ -119,20 +119,20 @@
   "harmfulConditionBands": [
     {
       "conditionBand": "calm",
-      "raceCount": 1170,
-      "comparableReplayCount": 1170,
-      "switchCount": 340,
-      "currentCorrectCount": 406,
-      "shadowCorrectCount": 369,
+      "raceCount": 1181,
+      "comparableReplayCount": 1181,
+      "switchCount": 343,
+      "currentCorrectCount": 414,
+      "shadowCorrectCount": 375,
       "wrongToCorrectCount": 85,
-      "correctToWrongCount": 122,
+      "correctToWrongCount": 124,
       "rescuedOuterWinnerCount": 10,
       "falseOuterPromotionCount": 57,
-      "currentAccuracy": 34.7,
-      "shadowAccuracy": 31.5,
-      "accuracyChangePt": -3.2,
+      "currentAccuracy": 35.1,
+      "shadowAccuracy": 31.8,
+      "accuracyChangePt": -3.3,
       "comparableReplayCoverageRate": 100,
-      "switchRate": 29.1
+      "switchRate": 29
     },
     {
       "conditionBand": "strong",
@@ -153,31 +153,31 @@
     }
   ],
   "currentHeadDistribution": {
-    "1": 601,
-    "2": 501,
-    "3": 504,
-    "4": 387
+    "1": 608,
+    "2": 502,
+    "3": 505,
+    "4": 389
   },
   "shadowHeadDistribution": {
-    "1": 520,
-    "2": 456,
-    "3": 419,
-    "4": 499,
+    "1": 525,
+    "2": 458,
+    "3": 420,
+    "4": 502,
     "5": 59,
     "6": 40
   },
   "actualHeadDistribution": {
-    "1": 1100,
-    "2": 245,
+    "1": 1108,
+    "2": 246,
     "3": 269,
-    "4": 202,
+    "4": 203,
     "5": 124,
-    "6": 53
+    "6": 54
   },
   "switchTransitions": {
-    "3->4": 113,
-    "1->2": 54,
-    "1->3": 54,
+    "3->4": 114,
+    "1->2": 55,
+    "1->3": 55,
     "3->1": 47,
     "2->3": 42,
     "1->4": 35,
@@ -196,14 +196,14 @@
     "4->6": 1
   },
   "outcomeCounts": {
-    "unchanged-wrong": 964,
-    "unchanged-correct": 485,
-    "wrong-to-wrong": 227,
-    "correct-to-wrong": 181,
+    "unchanged-wrong": 966,
+    "unchanged-correct": 491,
+    "wrong-to-wrong": 228,
+    "correct-to-wrong": 183,
     "wrong-to-correct": 136
   },
   "nextStep": "reject-local-water-priority-selector-shadow-rule",
-  "decisionReason": "純増-45R・正解→不正解181Rで、全体精度の安全条件を満たさない。",
+  "decisionReason": "純増-47R・正解→不正解183Rで、全体精度の安全条件を満たさない。",
   "switchedRaces": [
     {
       "date": "20260818",
@@ -38257,6 +38257,149 @@
     },
     {
       "date": "20261008",
+      "jcd": "01",
+      "raceNo": 7,
+      "venue": "桐生",
+      "wind": 2,
+      "wave": 1,
+      "conditionBand": "calm",
+      "actualHead": 1,
+      "currentHead": 1,
+      "shadowHead": 2,
+      "currentCorrect": true,
+      "shadowCorrect": false,
+      "comparable": true,
+      "rankingArrayAvailable": true,
+      "rawCandidateRowCount": 174,
+      "candidateBoatCount": 6,
+      "currentScore": 89,
+      "bestCandidateBoat": 2,
+      "bestCandidateScore": 92,
+      "scoreImprovement": 3,
+      "equalTopOtherBoat": false,
+      "switched": true,
+      "switchReason": "strictly-higher-priority-score",
+      "outcome": "correct-to-wrong",
+      "actualOuter": false,
+      "shadowOuterPromotion": false,
+      "rescuedOuterWinner": false,
+      "lostOuterWinner": false,
+      "falseOuterPromotion": false,
+      "topCandidates": [
+        {
+          "boatNo": 2,
+          "score": 92,
+          "index": 24,
+          "role": "unclassified",
+          "ticket": "2-1-5"
+        },
+        {
+          "boatNo": 1,
+          "score": 89,
+          "index": 3,
+          "role": "unclassified",
+          "ticket": "1-2-3"
+        },
+        {
+          "boatNo": 5,
+          "score": 88,
+          "index": 89,
+          "role": "unclassified",
+          "ticket": "5-1-4"
+        },
+        {
+          "boatNo": 6,
+          "score": 88,
+          "index": 101,
+          "role": "unclassified",
+          "ticket": "6-1-4"
+        },
+        {
+          "boatNo": 3,
+          "score": 88,
+          "index": 111,
+          "role": "unclassified",
+          "ticket": "3-2-4"
+        },
+        {
+          "boatNo": 4,
+          "score": 72,
+          "index": 162,
+          "role": "head",
+          "ticket": "4-1-3"
+        }
+      ]
+    },
+    {
+      "date": "20261008",
+      "jcd": "01",
+      "raceNo": 11,
+      "venue": "桐生",
+      "wind": 0,
+      "wave": 0,
+      "conditionBand": "calm",
+      "actualHead": 1,
+      "currentHead": 3,
+      "shadowHead": 4,
+      "currentCorrect": false,
+      "shadowCorrect": false,
+      "comparable": true,
+      "rankingArrayAvailable": true,
+      "rawCandidateRowCount": 134,
+      "candidateBoatCount": 5,
+      "currentScore": 92,
+      "bestCandidateBoat": 4,
+      "bestCandidateScore": 97,
+      "scoreImprovement": 5,
+      "equalTopOtherBoat": true,
+      "switched": true,
+      "switchReason": "strictly-higher-priority-score",
+      "outcome": "wrong-to-wrong",
+      "actualOuter": false,
+      "shadowOuterPromotion": false,
+      "rescuedOuterWinner": false,
+      "lostOuterWinner": false,
+      "falseOuterPromotion": false,
+      "topCandidates": [
+        {
+          "boatNo": 4,
+          "score": 97,
+          "index": 128,
+          "role": "head",
+          "ticket": "4-1-5"
+        },
+        {
+          "boatNo": 3,
+          "score": 92,
+          "index": 3,
+          "role": "unclassified",
+          "ticket": "3-1-5"
+        },
+        {
+          "boatNo": 1,
+          "score": 92,
+          "index": 15,
+          "role": "unclassified",
+          "ticket": "1-2-5"
+        },
+        {
+          "boatNo": 6,
+          "score": 92,
+          "index": 97,
+          "role": "unclassified",
+          "ticket": "6-1-5"
+        },
+        {
+          "boatNo": 5,
+          "score": 89,
+          "index": 66,
+          "role": "unclassified",
+          "ticket": "5-1-2"
+        }
+      ]
+    },
+    {
+      "date": "20261008",
       "jcd": "05",
       "raceNo": 8,
       "venue": "多摩川",
@@ -39054,6 +39197,81 @@
           "boatNo": 4,
           "score": 72,
           "index": 206,
+          "role": "head",
+          "ticket": "4-1-3"
+        }
+      ]
+    },
+    {
+      "date": "20261008",
+      "jcd": "24",
+      "raceNo": 11,
+      "venue": "大村",
+      "wind": 1,
+      "wave": 1,
+      "conditionBand": "calm",
+      "actualHead": 1,
+      "currentHead": 1,
+      "shadowHead": 3,
+      "currentCorrect": true,
+      "shadowCorrect": false,
+      "comparable": true,
+      "rankingArrayAvailable": true,
+      "rawCandidateRowCount": 240,
+      "candidateBoatCount": 6,
+      "currentScore": 94,
+      "bestCandidateBoat": 3,
+      "bestCandidateScore": 96,
+      "scoreImprovement": 2,
+      "equalTopOtherBoat": true,
+      "switched": true,
+      "switchReason": "strictly-higher-priority-score",
+      "outcome": "correct-to-wrong",
+      "actualOuter": false,
+      "shadowOuterPromotion": false,
+      "rescuedOuterWinner": false,
+      "lostOuterWinner": false,
+      "falseOuterPromotion": false,
+      "topCandidates": [
+        {
+          "boatNo": 3,
+          "score": 96,
+          "index": 107,
+          "role": "unclassified",
+          "ticket": "3-1-2"
+        },
+        {
+          "boatNo": 1,
+          "score": 94,
+          "index": 1,
+          "role": "unclassified",
+          "ticket": "1-2-3"
+        },
+        {
+          "boatNo": 2,
+          "score": 94,
+          "index": 25,
+          "role": "unclassified",
+          "ticket": "2-1-3"
+        },
+        {
+          "boatNo": 5,
+          "score": 94,
+          "index": 135,
+          "role": "unclassified",
+          "ticket": "5-1-3"
+        },
+        {
+          "boatNo": 6,
+          "score": 85,
+          "index": 208,
+          "role": "head",
+          "ticket": "6-1-3"
+        },
+        {
+          "boatNo": 4,
+          "score": 77,
+          "index": 196,
           "role": "head",
           "ticket": "4-1-3"
         }
