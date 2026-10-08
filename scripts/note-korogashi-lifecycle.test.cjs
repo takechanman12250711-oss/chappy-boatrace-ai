@@ -164,6 +164,55 @@ test('existing scheduled note workflow captures and confirms before normal index
   const publish=workflow.indexOf('node scripts/update-note-marketing.js');
   assert(prepare<upload&&upload<confirm&&confirm<publish);
 });
+test('note UI and Buffer use independent shared locks with the same checked-out code',()=>{
+  const workflow=fs.readFileSync('.github/workflows/update-note-marketing.yml','utf8');
+  const jobs=workflow.indexOf('jobs:\n'),split=workflow.indexOf('\n  buffer:\n');
+  assert(jobs>=0&&split>jobs);
+  const header=workflow.slice(0,jobs),update=workflow.slice(jobs,split),buffer=workflow.slice(split);
+  // A workflow-wide editor lock would keep slow X dependency installs on the UI path.
+  assert.doesNotMatch(header,/^concurrency:/m);
+  assert.match(update,/    concurrency:\n      group: note-ui-transport\n      queue: max\n      cancel-in-progress: false/);
+  assert.match(buffer,/    concurrency:\n      group: note-buffer-distribution\n      queue: max\n      cancel-in-progress: false/);
+  assert.doesNotMatch(update,/setup-python|Pillow|apt-get|note-result-card\.test|note-marketing-image\.test|BUFFER_API_KEY|node scripts\/send-note-buffer\.cjs/);
+  for(const command of ['prepare','confirm'])assert(update.includes(`node scripts/note-korogashi-run.cjs ${command}`));
+  assert(update.includes('uses: actions/upload-artifact@v4'));
+  assert(update.includes('node scripts/update-note-marketing.js'));
+  assert.doesNotMatch(buffer,/BROWSER_USE_|node scripts\/update-note-marketing|node scripts\/note-korogashi-run/);
+  assert.match(buffer,/    needs: update\n/);
+  assert(update.includes('revision: ${{ steps.revision.outputs.sha }}'));
+  assert(update.includes('echo "sha=$revision" >> "$GITHUB_OUTPUT"'));
+  assert(buffer.includes('ref: ${{ needs.update.outputs.revision }}'));
+  assert(buffer.includes('EXPECTED_REVISION: ${{ needs.update.outputs.revision }}'));
+  assert(buffer.includes('test "$revision" = "$EXPECTED_REVISION"'));
+  for(const job of [update,buffer]){
+    assert(job.includes('echo "NOTE_CLAIM_SHA=$revision" >> "$GITHUB_ENV"'));
+    assert(job.includes('persist-credentials: false'));
+    assert(job.includes('NOTE_CLAIM_TOKEN: ${{ github.token }}'));
+    for(const directory of ['scripts','config','js','api'])assert(job.includes(`            ${directory}\n`));
+  }
+});
+test('Buffer waits for successful index verification and fails closed on dependency errors',()=>{
+  const workflow=fs.readFileSync('.github/workflows/update-note-marketing.yml','utf8');
+  const split=workflow.indexOf('\n  buffer:\n'),update=workflow.slice(0,split),buffer=workflow.slice(split);
+  assert(update.includes('index-verified: ${{ steps.index.outcome }}'));
+  assert.match(update,/- name: Update and verify free guide and daily index\n        id: index\n/);
+  // Explicit cancellation handling preserves X after a surfaced course error only
+  // if the independently verified normal index succeeded, never after UI failure.
+  assert(buffer.includes("if: ${{ !cancelled() && needs.update.outputs.index-verified == 'success' }}"));
+  assert(update.includes('Surface course registration failures after normal updates'));
+  const install=buffer.indexOf('name: Install deterministic result-card renderer');
+  const connection=buffer.indexOf('name: Verify Buffer connection without posting');
+  const safeguards=buffer.indexOf('name: Verify result-card safeguards');
+  const send=buffer.indexOf('run: node scripts/send-note-buffer.cjs');
+  assert(install>=0&&install<connection&&connection<safeguards&&safeguards<send);
+  assert(buffer.includes('Pillow==12.3.0'));
+  assert(buffer.includes('sudo apt-get install -y --no-install-recommends fonts-noto-cjk'));
+  assert(update.includes('scripts/note-public-results.test.js'));
+  for(const testFile of ['note-result-card.test.cjs','note-marketing-image.test.js'])assert(buffer.includes(`scripts/${testFile}`));
+  assert.doesNotMatch(buffer,/continue-on-error|always\(\)|\|\| true/);
+  assert.equal((buffer.match(/        if:/g)||[]).length,1);
+  assert(buffer.includes("if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'"));
+});
 test('registration alone cannot settle or continue; missing or late public verification never earns a payout',async()=>{
   const f=fixture(),out=await k.prepare(k.initialState(),config(),options([f]));
   const sealed=k.confirm(out.state,out.staged,seal(out.staged,f.now),f.now+1000);

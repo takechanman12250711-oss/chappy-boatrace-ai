@@ -10,6 +10,9 @@ const allPublished=config=>config.resultReports?.scope==='published-main-section
 const {announcementCopy,recapCopy,weight,timeOf}=require('./note-marketing-social');
 const digest=s=>createHash('sha256').update(s).digest('hex');
 const literal=JSON.stringify;
+const canonical=value=>JSON.stringify(value,(_key,item)=>item&&typeof item==='object'&&!Array.isArray(item)
+  ?Object.fromEntries(Object.keys(item).sort().map(key=>[key,item[key]])):item);
+const failedCreateReason=(error,fallback)=>error?.bufferSendBlocked===true?'buffer_pre_send_validation_failed_claim_retained':fallback;
 const fields='id text channelId status externalLink assets { id mimeType source type ... on ImageAsset { image { width height altText } } }';
 function blockers(c,env,now) {
   if(c.mode!=='buffer-free-line-menu'||c.xUsername!=='chappy_boat_ai'||c.xApiCostApproved!==false) throw Error('free_config_invalid');
@@ -160,12 +163,17 @@ async function announce(state,config,marketing,log,delivery,clock) {
   const suffix=date+'/'+digest(publicationKey);
   const receipt={date,publicationKey,publicationKeys,at:now,channelId,textSha256:digest(text),
     sources:rows.map(r=>({publicationKey:r.publicationKey,sourceSha256:r.sourceSha256,url:r.url})),provider:'buffer-free-announcement'};
+  // Revalidate before consuming a permanent slot, and again at the create boundary.
+  await delivery.beforeClaim?.(text,channelId,[],()=>{
+    if(rows.some(row=>Date.parse(row.deadlineAt)<=clock()+120000))throw Error('buffer_announcement_deadline_passed');
+  });
   // One atomic batch claim before HTTP; no per-row partial reservation problem.
   await log.put('note-buffer-announcement/'+suffix,receipt);
   let post;
-  try {post=await delivery.create(text,channelId);} catch {
-    await log.put('note-buffer-announcement-review/'+suffix,{...receipt,status:'review_required',reason:'create_failed_or_unknown_do_not_resend'});
-    return {status:'review_required',articles:rows.length};
+  try {post=await delivery.create(text,channelId);} catch(error) {
+    const reason=failedCreateReason(error,'create_failed_or_unknown_do_not_resend');
+    await log.put('note-buffer-announcement-review/'+suffix,{...receipt,status:'review_required',reason});
+    return {status:'review_required',reason,articles:rows.length};
   }
   const accepted={...receipt,postId:post.id,bufferAcceptedAt:new Date(clock()).toISOString()};
   await log.put('note-buffer-accepted/'+suffix,accepted);
@@ -196,10 +204,12 @@ async function recapDay(state,config,marketing,log,delivery,clock,date,{late=fal
   const receipt={date,deliveryDate:jstDate(now),publicationKey,at:now,channelId,textSha256:digest(text),provider:'buffer-free-recap',
     sources:rows.map(r=>({publicationKey:r.publicationKey,sourceSha256:r.sourceSha256,status:(allPublished(config)?r.publishedSettlement:r.settlement)?.status||'pending',evidenceId:(allPublished(config)?r.publishedSettlement:r.settlement)?.evidenceId||null})),
     noteVerifiedAt:state.articles.index.verifiedAt||null};
+  await delivery.beforeClaim?.(text,channelId);
   await log.put(name,receipt);
-  let post;try{post=await delivery.create(text,channelId);}catch{
-    await log.put(name.replace('recap/','recap-review/').replace('recap-late/','recap-late-review/'),{...receipt,status:'review_required',reason:'create_failed_or_unknown_do_not_resend'});
-    return {status:'review_required'};
+  let post;try{post=await delivery.create(text,channelId);}catch(error){
+    const reason=failedCreateReason(error,'create_failed_or_unknown_do_not_resend');
+    await log.put(name.replace('recap/','recap-review/').replace('recap-late/','recap-late-review/'),{...receipt,status:'review_required',reason});
+    return {status:'review_required',reason};
   }
   const accepted={...receipt,postId:post.id,bufferAcceptedAt:new Date(clock()).toISOString()};await log.put('note-buffer-accepted/'+suffix,accepted);
   const result=observed(post,accepted,clock());
@@ -251,6 +261,50 @@ function hitItems(state,config,marketing,now) {
   return [...current,...pairedItems(previous,config,previousNow)];
 }
 
+function verifiedDelivery(delivery,store,loaded,state,config,marketing,clock) {
+  // Bind the exact immutable state commit, source/evidence and generated hit text.
+  // Even harmless new entries defer this run; a later run can load the new index.
+  requireVerifiedIndex(state,marketing,clock());
+  const rawDigest=digest(canonical(loaded.state));
+  const evidenceDigest=digest(canonical(state));
+  const itemDigests=value=>digest(canonical(hitItems(value,config,marketing,clock())));
+  const expectedItems=itemDigests(state);
+  if(!/^[a-f0-9]{40}$/.test(loaded.head||''))throw Error('buffer_marketing_snapshot_missing');
+  async function current() {
+    let latest;try{latest=await store.load(marketing);}catch{throw Error('buffer_marketing_snapshot_unavailable');}
+    if(latest.head!==loaded.head)throw Error('buffer_marketing_snapshot_changed');
+    if(Object.keys(latest.state.pendingUpdates||{}).length)throw Error('buffer_marketing_update_pending');
+    if(digest(canonical(latest.state))!==rawDigest)throw Error('buffer_marketing_snapshot_changed');
+    return latest;
+  }
+  async function verify() {
+    const latest=await current();let fresh;
+    try{fresh=await store.settle(structuredClone(latest.state),marketing,clock());}
+    catch{throw Error('buffer_marketing_evidence_unavailable');}
+    requireVerifiedIndex(fresh,marketing,clock());
+    if(digest(canonical(fresh))!==evidenceDigest||itemDigests(fresh)!==expectedItems)throw Error('buffer_marketing_evidence_changed');
+    // Settlement reads can take time. Recheck the state head after those reads.
+    await current();
+    requireVerifiedIndex(state,marketing,clock());
+  }
+  const create=delivery.create.bind(delivery);let planned;
+  const itemDigest=(text,channelId,assets=[])=>digest(canonical({text,channelId,assets}));
+  return {...delivery,async beforeClaim(text,channelId,assets=[],checkTime=()=>{}) {
+    planned=null;
+    await verify();checkTime();
+    planned={digest:itemDigest(text,channelId,assets),checkTime};
+  },async create(text,channelId,assets=[]) {
+    const plan=planned;planned=null;
+    try {
+      if(!plan||plan.digest!==itemDigest(text,channelId,assets))throw Error('buffer_unverified_delivery_item');
+      await verify();plan.checkTime();
+    }catch(error){error.bufferSendBlocked=true;throw error;}
+    // A changed index after this last read is still a narrow TOCTOU boundary.
+    // Unpersisted manual holds cannot be inferred from marketing state.
+    return create(text,channelId,assets);
+  }};
+}
+
 async function collectMetrics(config,log,delivery,now) {
   if(config.metrics?.enabled!==true)return {status:'disabled'};
   if(timeOf(now)<'22:30')return {status:'before_metrics_window'};
@@ -289,10 +343,9 @@ async function run({env=process.env,now=Date.now(),clock=Date.now,config=JSON.pa
   const results=await reconcile(log,delivery,now);
   const loaded=await store.load(marketing),state=await store.settle(loaded.state,marketing,now);
   if(loaded.state.verifiedDate!==jstDate(now)||loaded.state.articles.index.hash!==hash(publishedIndexBody(state,marketing,now)))throw Error('buffer_public_index_not_verified');
-  // The static index can become stale at a deadline even on the same JST day.
-  // Recheck at the actual create boundary after every channel/media lookup.
-  const create=delivery.create.bind(delivery);
-  delivery={...delivery,create:(...args)=>{requireVerifiedIndex(state,marketing,clock());return create(...args);}};
+  // UI updates now run independently. A captured index is not current authority:
+  // reload immutable state/evidence before each claim and again before sending.
+  delivery=verifiedDelivery(delivery,store,loaded,state,config,marketing,clock);
   // Time-sensitive announcements use the existing shared API budget first.
   requireVerifiedIndex(state,marketing,clock());
   const announcement=await announce(state,config,marketing,log,delivery,clock);
@@ -331,11 +384,13 @@ async function run({env=process.env,now=Date.now(),clock=Date.now,config=JSON.pa
     // later with a newly verified index rather than publish a mislabeled card.
     if(jstDate(clock())!==state.date)throw Error('buffer_date_changed');
     requireVerifiedIndex(state,marketing,clock());
+    await delivery.beforeClaim(item.text,channelId,media?.assets||[]);
     await claims.reserve(pair);started++;
     let post;
-    try{post=await delivery.create(item.text,channelId,media?.assets||[]);}catch {
-      await claims.record(pair,{status:'review_required',reason:'buffer_create_failed_or_unknown_do_not_resend'});
-      return {status:'review_required',results,started};
+    try{post=await delivery.create(item.text,channelId,media?.assets||[]);}catch(error) {
+      const reason=failedCreateReason(error,'buffer_create_failed_or_unknown_do_not_resend');
+      await claims.record(pair,{status:'review_required',reason});
+      return {status:'review_required',reason,results,started};
     }
     const receipt={...pair,postId:post.id,channelId,bufferAcceptedAt:new Date(clock()).toISOString()};
     const suffix=pair.deliveryDate+'/'+digest(pair.publicationKey);
@@ -355,5 +410,5 @@ async function run({env=process.env,now=Date.now(),clock=Date.now,config=JSON.pa
   let metrics;try{metrics=await collectMetrics(config,log,delivery,clock());}catch{metrics={status:'unavailable'};}
   return {announcement,recap:review,recovery,metrics,status:results.some(x=>x.status==='review_required')?'review_required':results.length?'processed':'no_new_hits',started,results};
 }
-if(require.main===module)run().then(result=>{const text=JSON.stringify(result);console.log('NOTE_BUFFER='+text);if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'\nBuffer Free X reports\n```json\n'+text+'\n```\n');if(result.status==='review_required')process.exitCode=1;}).catch(()=>{console.error('NOTE_BUFFER_STOPPED=check_free_budget_and_permanent_receipts_no_auto_repost');process.exitCode=1;});
+if(require.main===module)run().then(result=>{const text=JSON.stringify(result);console.log('NOTE_BUFFER='+text);if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'\nBuffer Free X reports\n```json\n'+text+'\n```\n');if(result.status==='review_required')process.exitCode=1;}).catch(error=>{const reason=/^buffer_[a-z0-9_]+$/.test(error.message)?error.message:'verification_failed';console.error('NOTE_BUFFER_STOPPED='+reason+'; permanent_receipts_retained_no_auto_repost');process.exitCode=1;});
 module.exports={hitItems,recoverRecap,validateAssets,assetInput,blockers,ledger,transport,observed,reconcile,announcementRows,announcementText,announce,recap,collectMetrics,run};
