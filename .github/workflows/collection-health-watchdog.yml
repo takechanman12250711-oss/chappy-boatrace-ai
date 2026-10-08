@@ -5,6 +5,7 @@ on:
     workflows:
       - Collect automatic race predictions
       - Update note marketing
+      - Note GitHub UI Transport
     types:
       - completed
   schedule:
@@ -60,8 +61,10 @@ jobs:
   heartbeat:
     if: >-
       github.event_name != 'workflow_run' ||
-      (github.event.workflow_run.name == 'Update note marketing' &&
-       github.event.workflow_run.path == '.github/workflows/update-note-marketing.yml' &&
+      (((github.event.workflow_run.name == 'Update note marketing' &&
+         github.event.workflow_run.path == '.github/workflows/update-note-marketing.yml') ||
+        (github.event.workflow_run.name == 'Note GitHub UI Transport' &&
+         github.event.workflow_run.path == '.github/workflows/note-github-ui-transport.yml')) &&
        github.event.workflow_run.status == 'completed' &&
        github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.event != 'pull_request' &&
