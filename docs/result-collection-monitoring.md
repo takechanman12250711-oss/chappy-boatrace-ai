@@ -4,17 +4,17 @@
 
 ## 中央の保存順
 
-`collect-results.yml` 自体は `chappy-result-pipeline` で世代を直列化する。このworkflow内では、共有 `chappy-main-data-writers` は公式原本の収集保存と2つの成果物保存jobだけが保持する。重い診断・校正・事前検査は contents: read で実行し、予想収集の待機列を占有しない。既存scheduleを維持し、新しい定期writerやWork監視は追加しない。
+`collect-results.yml` 自体は `chappy-result-pipeline` で世代を直列化する。このworkflow内では、共有 `chappy-main-data-writers` は取得済み公式原本の照合保存と2つの成果物保存jobだけが保持する。重い診断・校正・事前検査は contents: read で実行し、予想収集の待機列を占有しない。既存scheduleを維持し、新しい定期writerやWork監視は追加しない。
 
 1. `verify` は既存の回帰検査を行う。
-2. `collect` は最新mainを取得し、`repair-recent-results.js --sources-only` で公式結果を収集・照合する。原本に付くreview・理論評価・外れ原因・展開AI v6照合を更新し、indexを再生成して、公式結果と圧縮予想原本を先行checkpointする。v6照合は同じ対象日から直近3日を扱い、夜間に日付が変わっても前日分を保存する。照合は結果後の検証情報だけを追加し、保存予想・買い目・自動採用は変更しない。診断側で照合後に古いarchiveを復元して情報を失う順序に戻さない。この短いjobは共有writerキューを保持する。
+2. `fetch_results` が公式結果だけをキュー外で取得し、固定日付と検査付きartifactを渡す。`collect` は最新mainに公式結果を検査・適用し、`repair-recent-results.js --sources-only --match-only` で最新の予想と照合する。原本に付くreview・理論評価・外れ原因・展開AI v6照合を更新し、indexを再生成して、公式結果と圧縮予想原本を先行checkpointする。v6照合は同じ対象日から直近3日を扱い、夜間に日付が変わっても前日分を保存する。照合は結果後の検証情報だけを追加し、保存予想・買い目・自動採用は変更しない。診断側で照合後に古いarchiveを復元して情報を失う順序に戻さない。この照合・保存jobは共有writerキューを保持する。取得後の実時間は本番runで別途確認する。
 3. `diagnostics` は `collect.saved_sha` を復元し、既存の重い分析・参考統計・整合性検査を行う。検査済みのstatsと参照タグ成果物だけを元blob・SHA256・入力SHA付きartifactへ渡す。予想/結果原本に未保存変更があれば停止する。
 4. `publish_reports` はそのartifact IDだけを取得し、共有writerキュー内で最新mainと照合する。許可したレポートの元blobが同じ場合だけ反映する。計算中に増えた予想・結果・note原稿は触らない。生成コードが変わった場合、または同じ診断成果物が変わった場合はbatch全体を失敗させ、古いJSONを自動mergeしない。独立したpractical-priority-shadow-reportだけは予想収集側の新しい版を保持して記録する。
 5. `calibrate` は `publish_reports.saved_sha` を復元し、既存の校正と整合性検査を行う。`publish_calibration` が同じ照合方法で短時間保存する。既存builderが作る `data/predictions/calibration.json` と `data/predictions/improvement-review.json` は派生レポートとして校正stageだけに明示登録する。diagnostics stageや他の予想ディレクトリ内ファイルには許可を広げない。元blob・入力SHA・内容hash・コード競合の検査は同じで、sparse checkout外でも検査済みの正確な2パスだけをstageできるようにする。日次予想・公式結果・source archiveは引き続き保存対象外であり、未保存変更があれば停止する。
 
 共有キュー外の計算は保存済みSHA時点の分析であり、計算中に追加された最新予想まで含むとは扱わない。`data/stats/result-diagnostics-checkpoint.json` と `result-calibration-checkpoint.json` に入力SHA、反映直前SHA、反映ファイルhash、新しい版を保持した対象を記録する。許可範囲外の原本や記事をartifact経由で保存しない。
 
-派生レポートのpushが他の変更に先を越された場合は最新mainとの照合だけを最大3回繰り返す。予想と公式原本の先行保存も、commit済みの差分を保ったまま `pull --rebase --autostash` とpushを最大3回行う。同じファイルのrebase競合は自動解決せず停止する。強制pushや共有キュー内での重い再計算は行わない。競合・生成失敗・artifact不足を成功に置き換えない。先行保存済みの公式結果は残り、GitHubの失敗job再実行、または次の既存定期実行で再開する。コードや同じレポートが変わった競合は現在のmainからの再生成が必要。
+派生レポートのpushが他の変更に先を越された場合は最新mainとの照合だけを最大3回繰り返す。予想の先行保存は `pull --rebase --autostash` とpushを最大3回行う。公式原本は下記の取得artifact再検査と検査済みrefへのrebase・pushを最大3回行う。同じファイルのrebase競合は自動解決せず停止する。強制pushや共有キュー内での重い再計算は行わない。競合・生成失敗・artifact不足を成功に置き換えない。先行保存済みの公式結果は残り、GitHubの失敗job再実行、または次の既存定期実行で再開する。コードや同じレポートが変わった競合は現在のmainからの再生成が必要。
 
 予想収集も `predict` の保存までだけ共有writerキューを保持し、その後の非必須回帰検査は保存済みSHAを読む `regression` jobへ分離する。予想基準・買い目・自動採用条件・noteの締切条件は変更しない。
 
@@ -62,3 +62,40 @@ priority-score監査、予想ロジック、原本、cron構成は変更しな�
 - 失敗ジョブだけの再実行では、前の試行で成功済みの結果保存jobも確認する。
 
 検証: `node scripts/test-result-collection-watchdog.js`。
+
+## 公式取得と原本保存の分離
+
+`verify` → `fetch_results` → `collect` の順に進める。`fetch_results` は
+共有 writer キューを保持せず、公式取得器の既存の 3 並列と待機間隔、直近 3 日の
+完成済み結果を含む訂正確認、既存の限定修復キューを維持する。対象日は取得開始時に
+一度だけ JST で確定し、日跨ぎ後の照合にも同じ日付を渡す。取得 job の上限は 60 分、
+照合・保存 job の上限は従来の 30 分であり、取得を保存待ち列の外へ移す。
+
+専用の `result-source-checkpoint.cjs` は、日付を限定した公式結果だけを artifact に
+格納する。予想、archive、note、原稿、派生レポートは含めない。GitHub の同じ run で
+upload が返した正確な artifact ID を download に渡し、repository、run ID、取得
+attempt、固定 source SHA、対象日、元 blob、内容 hash を検査する。失敗 job だけの
+再実行では、成功済み取得 job の attempt 出力を引き継ぐ。取得 job の再実行を伴う
+場合は新しい ID と attempt を使う。取得途中の失敗では artifact を公開せず、
+限定修復キューの未完成は従来どおり失敗する。直近日の未確定・取得失敗行は既存取得器の
+公式結果保持ルールのままであり、成功 run を全結果確定と読み替えない。
+
+`collect` は共有 writer 内で最新 main を checkout する。コード、公式結果、前回
+receipt が取得時から変わっていれば batch 全体を停止する。全検査に合格してから
+公式結果だけを適用し、最新 main の予想 archive を復元する。`repair-recent-results.js
+--sources-only --match-only` と既存の review・理論評価・外れ原因・v6 照合を実施する。
+ここでは公式ネットワーク取得を再実行しない。予想や買い目を古い artifact から
+戻さず、従来の結果照合情報だけを更新する。
+
+保存時も毎回 fetch → 元 blob／コード／receipt 再検査 → 検査済み remote ref への
+rebase → push の順に行う。検査後の `git pull` による再 fetch は行わず、push 競合は
+最大 3 回とする。同じ結果の非競合行への更新も、JSON テキスト merge で受け入れない。
+writer の checkout 時点の最新 main で照合する。push までの間に届いた予想や原稿の別ファイルへの追加は保持するが、その新着すべてを再照合したことは保証しない。同じ予想 archive の競合は停止する。
+`data/stats/result-source-checkpoint.json` に取得 source SHA、run／attempt／artifact ID、
+適用直前 SHA、日付と結果 hash を保存する。既存 report 専用 checkpoint の原本権限は
+広げない。後続診断は従来どおり `collect.saved_sha` を読む。
+
+回帰検査は `test-result-source-checkpoint.cjs`、`test-result-source-archive-order.js`、
+`test-source-checkpoint-push-retry.cjs` と既存の結果収集・修復・report checkpoint 検査。
+本番完了は自然 run の原本保存 commit、receipt と source、後続診断接続、writer
+占有時間を読み戻して判定する。cron の起動欠落は別課題のまま扱う。

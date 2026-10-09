@@ -17,8 +17,17 @@ function retryBlock(workflow, step) {
   const block = source.slice(start, end < 0 ? undefined : end);
   const match = block.match(/^(\s*)for attempt in 1 2 3; do\n[\s\S]*?^\1done$/m);
   assert.ok(match, `${workflow}: source save must retry at most three times`);
-  const loop = match[0];
-  assert.match(loop, /git pull --rebase --autostash origin main/);
+  let loop = match[0];
+  if (workflow === 'collect-results.yml') {
+    assert.match(loop, /git fetch --no-tags origin main/);
+    assert.match(loop, /result-source-checkpoint.cjs guard-push/);
+    assert.match(loop, /git rebase --autostash origin\/main/);
+    assert.ok(loop.indexOf('guard-push') < loop.indexOf('git rebase'));
+    assert.doesNotMatch(loop, /git pull/);
+    // This fixture exercises Git retry/unstaged-data behavior. The actual
+    // official-result guard is exercised with remote refs by its own test suite.
+    loop = loop.replace(/^.*node scripts\/result-source-checkpoint.cjs guard-push.*$/m, '              true');
+  } else assert.match(loop, /git pull --rebase --autostash origin main/);
   assert.match(loop, /if git push origin main; then\n\s+break/);
   assert.doesNotMatch(loop, /--force|checkout.*--ours|checkout.*--theirs|rebase.*--skip/);
   return loop;

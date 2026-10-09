@@ -38,6 +38,8 @@ on:
       - "config/chappy-charter.json"
       - "scripts/check-charter.js"
       - "scripts/collect-results.js"
+      - "scripts/result-source-checkpoint.cjs"
+      - "scripts/test-result-source-checkpoint.cjs"
       - "scripts/repair-recent-results.js"
       - "scripts/repair-queued-results.js"
       - "scripts/test-repair-queued-results.js"
@@ -338,6 +340,7 @@ jobs:
           node scripts/test-prediction-index-loader.js
           node --check scripts/compact-prediction-index.js
           node scripts/test-compact-prediction-index.js
+          node scripts/test-result-source-checkpoint.cjs
           node scripts/test-collect-results.js
           node scripts/test-repair-recent-results.js
           node scripts/test-repair-queued-results.js
@@ -347,8 +350,59 @@ jobs:
           node scripts/test-improvement-proposal-engine.js
           node scripts/test-theory-adoption-phase5.js
 
-  collect:
+  fetch_results:
     needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    outputs:
+      source_sha: ${{ steps.source.outputs.sha }}
+      anchor_date: ${{ steps.source.outputs.date }}
+      run_attempt: ${{ steps.source.outputs.attempt }}
+      artifact_id: ${{ steps.sources.outputs.artifact-id }}
+    steps:
+      - name: Checkout official acquisition source
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          persist-credentials: false
+          sparse-checkout: |
+            scripts
+            js
+            api
+            config
+            data/results
+            data/stats/result-source-checkpoint.json
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Pin official source and target date
+        id: source
+        env:
+          COLLECT_DATE: ${{ inputs.date }}
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "attempt=$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+          node -e 'const fs=require("node:fs"), {normalizeDateKey}=require("./scripts/repair-recent-results"); fs.appendFileSync(process.env.GITHUB_OUTPUT, `date=${normalizeDateKey(process.env.COLLECT_DATE)}\n`);'
+      - name: Fetch official results outside shared writer
+        env:
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          SOURCE_DATE: ${{ steps.source.outputs.date }}
+        run: node scripts/result-source-checkpoint.cjs acquire "$RUNNER_TEMP/official-results/checkpoint.json"
+      - name: Upload acquired official results
+        id: sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-result-sources-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/official-results/checkpoint.json
+          retention-days: 3
+          if-no-files-found: error
+
+  collect:
+    needs: fetch_results
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -371,13 +425,29 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Download acquired official results
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ needs.fetch_results.outputs.artifact_id }}
+          path: ${{ runner.temp }}/official-results
+          merge-multiple: true
+
+      - name: Verify and apply official source checkpoint
+        env:
+          SOURCE_SHA: ${{ needs.fetch_results.outputs.source_sha }}
+          SOURCE_DATE: ${{ needs.fetch_results.outputs.anchor_date }}
+          SOURCE_ARTIFACT_ID: ${{ needs.fetch_results.outputs.artifact_id }}
+          SOURCE_RUN_ATTEMPT: ${{ needs.fetch_results.outputs.run_attempt }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$SOURCE_SHA"
+          node scripts/result-source-checkpoint.cjs apply "$RUNNER_TEMP/official-results/checkpoint.json"
+
       - name: Collect official results
         env:
-          COLLECT_DATE: ${{ inputs.date }}
+          COLLECT_DATE: ${{ needs.fetch_results.outputs.anchor_date }}
         run: |
           node scripts/restore-daily-prediction-source.js --all
-          node scripts/repair-recent-results.js --sources-only
-          node scripts/repair-queued-results.js
+          node scripts/repair-recent-results.js --sources-only --match-only
           node scripts/build-result-review.js
           node scripts/build-theory-evaluations.js
           node scripts/build-miss-cause-analysis.js
@@ -386,9 +456,15 @@ jobs:
 
       - name: Save official results before calibration
         id: save_results
+        env:
+          SOURCE_SHA: ${{ needs.fetch_results.outputs.source_sha }}
+          SOURCE_DATE: ${{ needs.fetch_results.outputs.anchor_date }}
+          SOURCE_ARTIFACT_ID: ${{ needs.fetch_results.outputs.artifact_id }}
+          SOURCE_RUN_ATTEMPT: ${{ needs.fetch_results.outputs.run_attempt }}
         run: |
           node scripts/prepare-daily-prediction-git-save.js --all
           git add data/results
+          git add data/stats/result-source-checkpoint.json
 
           if git diff --cached --quiet; then
             echo "先行保存する公式結果はありません"
@@ -397,7 +473,12 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git commit -m "Collect official race results"
             for attempt in 1 2 3; do
-              git pull --rebase --autostash origin main
+              git fetch --no-tags origin main
+              if [ "$(git rev-parse origin/main)" = "$(git rev-parse HEAD)" ]; then
+                break # An accepted push may have lost its acknowledgement.
+              fi
+              node scripts/result-source-checkpoint.cjs guard-push "$RUNNER_TEMP/official-results/checkpoint.json"
+              git rebase --autostash origin/main
               if git push origin main; then
                 break
               fi

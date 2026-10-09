@@ -414,6 +414,7 @@ function main() {
   const dates = getRecentDateKeys(anchorDate);
   const resultsDirectory = path.join(process.cwd(), "data", "results");
   const predictionsDirectory = path.join(process.cwd(), "data", "predictions");
+  const matchOnly = process.argv.includes("--match-only");
   const repairedDates = [];
   const matchedDates = [];
 
@@ -423,34 +424,22 @@ function main() {
     const resultPath = path.join(resultsDirectory, `${date}.json`);
     const predictionPath = path.join(predictionsDirectory, `${date}.json`);
 
-    if (
-      isCompleteResultFile(
-        resultPath,
-        date
-      )
-    ) {
-      console.log(
-        `${date}：完成済み結果の公式訂正・明細補完を確認します`
-      );
+    if (!matchOnly) {
+      if (isCompleteResultFile(resultPath, date)) {
+        console.log(`${date}：完成済み結果の公式訂正・明細補完を確認します`);
+      } else {
+        console.log(`${date}：未完成のため公式結果を再取得します`);
+      }
+      const refresh = refreshOfficialResultFile(resultPath, date);
+      if (refresh.changed) repairedDates.push(date);
+      else if (refresh.wasComplete) console.log(`${date}：公式訂正はありません`);
     } else {
-      console.log(
-        `${date}：未完成のため公式結果を再取得します`
-      );
-    }
-
-    const refresh =
-      refreshOfficialResultFile(
-        resultPath,
-        date
-      );
-    if (refresh.changed) {
-      repairedDates.push(date);
-    } else if (
-      refresh.wasComplete
-    ) {
-      console.log(
-        `${date}：公式訂正はありません`
-      );
+      // The workflow first verifies and applies its exact acquisition artifact.
+      // Only match current-main predictions here; never fetch while holding the writer.
+      const result = JSON.parse(fs.readFileSync(resultPath, "utf8"));
+      if (result.source !== "boatrace-official" || result.date !== date || !Array.isArray(result.races)) {
+        throw new Error(`${date}：照合用の公式結果が不正です`);
+      }
     }
 
     if (
