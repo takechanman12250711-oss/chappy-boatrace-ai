@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "generatedAt": "2026-10-08T22:23:04.659Z",
+  "generatedAt": "2026-10-09T22:29:27.430Z",
   "source": "scenarioAiV6ShadowAb + scenarioAiV6Verification",
   "logicFingerprint": "scenario-ai-v6-ab-decision-v1",
   "sourceLogicFingerprint": "scenario-ai-v6-multi-candidate-v2-actual-course",
@@ -9,21 +9,21 @@
   "activeMetadataReady": true,
   "activeInputSourceKind": "live-verification-evidence",
   "activeCandidateTrainingFingerprint": "c27bfafb4912c5ff5efc85c4bdfd955b4d6da78cc9722bb562ab1d8b0923e62c",
-  "activeCandidateTrainingCutoff": "2026-10-08T09:38:20.328Z",
+  "activeCandidateTrainingCutoff": "2026-10-08T22:22:35.825Z",
   "observation": {
-    "rawResultMatchedCount": 1516,
-    "resultMatchedCount": 1516,
+    "rawResultMatchedCount": 1563,
+    "resultMatchedCount": 1563,
     "duplicateRaceKeyExcludedCount": 0,
-    "currentGenerationCount": 1204,
-    "currentSourceMatchedCount": 1204,
-    "currentMetadataMatchedCount": 1204,
-    "activeCohortObservedCount": 1121,
-    "distributionChangedCount": 1121,
-    "decisionChangedCount": 23,
-    "shadowComparisonReadyCount": 7,
-    "topFinishOrderDecisionDisagreementCount": 7,
-    "productionComparisonEligibleCount": 7,
-    "legacyTicketFallbackCount": 163,
+    "currentGenerationCount": 1251,
+    "currentSourceMatchedCount": 1251,
+    "currentMetadataMatchedCount": 1251,
+    "activeCohortObservedCount": 1168,
+    "distributionChangedCount": 1168,
+    "decisionChangedCount": 25,
+    "shadowComparisonReadyCount": 8,
+    "topFinishOrderDecisionDisagreementCount": 8,
+    "productionComparisonEligibleCount": 8,
+    "legacyTicketFallbackCount": 173,
     "candidateUnavailableCount": 0,
     "unchangedCount": 0,
     "excludedOldGenerationCount": 312,
@@ -35,18 +35,18 @@
     "excludedNonFinishOrderDecisionCount": 0
   },
   "overall": {
-    "comparableCount": 7,
-    "changedComparableCount": 7,
-    "aWins": 1,
+    "comparableCount": 8,
+    "changedComparableCount": 8,
+    "aWins": 2,
     "bWins": 5,
     "ties": 1,
     "aExactCount": 0,
     "bExactCount": 0,
-    "aFirstHitCount": 1,
+    "aFirstHitCount": 2,
     "bFirstHitCount": 5,
-    "bWinRate": 71.4,
+    "bWinRate": 62.5,
     "bExactLift": 0,
-    "bFirstHitLift": 4
+    "bFirstHitLift": 3
   },
   "firstHalf": {
     "comparableCount": 4,
@@ -63,18 +63,18 @@
     "bFirstHitLift": 1
   },
   "secondHalf": {
-    "comparableCount": 3,
-    "changedComparableCount": 3,
-    "aWins": 0,
+    "comparableCount": 4,
+    "changedComparableCount": 4,
+    "aWins": 1,
     "bWins": 3,
     "ties": 0,
     "aExactCount": 0,
     "bExactCount": 0,
-    "aFirstHitCount": 0,
+    "aFirstHitCount": 1,
     "bFirstHitCount": 3,
-    "bWinRate": 100,
+    "bWinRate": 75,
     "bExactLift": 0,
-    "bFirstHitLift": 3
+    "bFirstHitLift": 2
   },
   "byVenue": [
     {
@@ -188,6 +188,22 @@
       "bWinRate": 100,
       "bExactLift": 0,
       "bFirstHitLift": 1
+    },
+    {
+      "jcd": "01",
+      "place": "桐生",
+      "comparableCount": 1,
+      "changedComparableCount": 1,
+      "aWins": 1,
+      "bWins": 0,
+      "ties": 0,
+      "aExactCount": 0,
+      "bExactCount": 0,
+      "aFirstHitCount": 1,
+      "bFirstHitCount": 0,
+      "bWinRate": 0,
+      "bExactLift": 0,
+      "bFirstHitLift": -1
     }
   ],
   "majorVenueRegression": [],
@@ -690,6 +706,75 @@
         "scenarioType": "escape"
       },
       "winner": "B"
+    },
+    {
+      "raceKey": "20261009-01-2",
+      "date": "20261009",
+      "jcd": "01",
+      "place": "桐生",
+      "selectedAt": "2026-10-09T06:46:38.767Z",
+      "selectedTime": 1791528398767,
+      "capturedAt": "2026-10-09T06:46:38.767Z",
+      "changed": true,
+      "decisionChanged": true,
+      "distributionChanged": true,
+      "shadowComparisonReady": true,
+      "shadowInvariantReady": true,
+      "scoreableDecisionDisagreement": true,
+      "topFinishOrderDecisionDisagreement": true,
+      "productionComparisonEligible": true,
+      "currentGeneration": true,
+      "sourceLogicFingerprint": "scenario-ai-v6-multi-candidate-v2-actual-course",
+      "verificationLogicFingerprint": "scenario-ai-v6-multi-candidate-v2-actual-course",
+      "inputSourceKind": "live-verification-evidence",
+      "snapshotSourceKind": "live-verification-evidence",
+      "verificationSourceKind": "live-verification-evidence",
+      "candidateTrainingInputSourceKind": "live-verification-evidence",
+      "sourceKindMatches": true,
+      "candidateSetFingerprint": "scenario-type:fourAttack:-2|scenario-type:sashi:-2|scenario-type:threeAttack:-2",
+      "candidateTrainingFingerprint": "c27bfafb4912c5ff5efc85c4bdfd955b4d6da78cc9722bb562ab1d8b0923e62c",
+      "candidateTrainingCutoff": "2026-10-08T22:22:35.825Z",
+      "trainingMetadataReady": true,
+      "captureMatchesSelection": true,
+      "selectedAfterTrainingCutoff": true,
+      "temporalEligible": true,
+      "cohortKey": "scenario-ai-v6-multi-candidate-v2-actual-course|live-verification-evidence|scenario-type:fourAttack:-2|scenario-type:sashi:-2|scenario-type:threeAttack:-2|c27bfafb4912c5ff5efc85c4bdfd955b4d6da78cc9722bb562ab1d8b0923e62c",
+      "expectedCohortKey": "scenario-ai-v6-multi-candidate-v2-actual-course|live-verification-evidence|scenario-type:fourAttack:-2|scenario-type:sashi:-2|scenario-type:threeAttack:-2|c27bfafb4912c5ff5efc85c4bdfd955b4d6da78cc9722bb562ab1d8b0923e62c",
+      "cohortMetadataMatches": true,
+      "actualOrder": [
+        4,
+        2,
+        5
+      ],
+      "a": {
+        "ticket": "",
+        "predictedOrder": [
+          4,
+          1,
+          2
+        ],
+        "scoreSource": "finish-order",
+        "scoreable": true,
+        "exact": false,
+        "firstHit": true,
+        "top2Hit": false,
+        "scenarioType": "fourAttack"
+      },
+      "b": {
+        "ticket": "1-2-3",
+        "predictedOrder": [
+          1,
+          2,
+          4
+        ],
+        "scoreSource": "finish-order",
+        "scoreable": true,
+        "exact": false,
+        "firstHit": false,
+        "top2Hit": false,
+        "scenarioType": "escape"
+      },
+      "winner": "A"
     }
   ],
   "applicationMode": "shadow-only",

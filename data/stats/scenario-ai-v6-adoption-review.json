@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-08T22:23:04.743Z",
+  "generatedAt": "2026-10-09T22:29:27.546Z",
   "source": "scenario-ai-v6-ab-report + scenario-ai-v6-reproducibility-gate",
   "status": "collecting-evidence",
   "summary": {
-    "comparableCount": 7,
-    "aWins": 1,
+    "comparableCount": 8,
+    "aWins": 2,
     "bWins": 5,
     "ties": 1,
-    "bWinLead": 4,
+    "bWinLead": 3,
     "bExactLift": 0,
-    "bFirstHitLift": 4
+    "bFirstHitLift": 3
   },
   "firstHalf": {
     "comparableCount": 4,
@@ -27,18 +27,18 @@
     "bFirstHitLift": 1
   },
   "secondHalf": {
-    "comparableCount": 3,
-    "changedComparableCount": 3,
-    "aWins": 0,
+    "comparableCount": 4,
+    "changedComparableCount": 4,
+    "aWins": 1,
     "bWins": 3,
     "ties": 0,
     "aExactCount": 0,
     "bExactCount": 0,
-    "aFirstHitCount": 0,
+    "aFirstHitCount": 1,
     "bFirstHitCount": 3,
-    "bWinRate": 100,
+    "bWinRate": 75,
     "bExactLift": 0,
-    "bFirstHitLift": 3
+    "bFirstHitLift": 2
   },
   "majorVenueRegression": [],
   "approvedAdjustments": [
@@ -69,7 +69,7 @@
       "key": "minimum-comparisons",
       "label": "比較可能100R以上",
       "passed": false,
-      "actual": 7
+      "actual": 8
     },
     {
       "key": "minimum-b-wins",
@@ -81,7 +81,7 @@
       "key": "b-win-lead",
       "label": "B勝ちがA勝ちを5勝以上上回る",
       "passed": false,
-      "actual": 4
+      "actual": 3
     },
     {
       "key": "first-half",
@@ -93,7 +93,7 @@
       "key": "second-half",
       "label": "後半でB優勢",
       "passed": true,
-      "actual": "0-3"
+      "actual": "1-3"
     },
     {
       "key": "venue-regression",
