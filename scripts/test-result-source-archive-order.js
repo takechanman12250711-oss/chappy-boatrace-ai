@@ -59,20 +59,11 @@ assert.match(
   "先行checkpointは公式結果を保存対象に含める",
 );
 
-const centralRebases =
-  workflow.match(
-    /git pull --rebase --autostash origin main/g,
-  ) || [];
-assert.equal(
-  centralRebases.length,
-  1,
-  "公式原本の先行保存だけがautostash rebaseを使用する",
-);
-assert.doesNotMatch(
-  workflow,
-  /git pull --rebase origin main/,
-  "未保存差分を失う通常rebaseを残さない",
-);
+assert.equal((workflow.match(/git rebase --autostash origin\/main/g) || []).length, 1,
+  "公式原本は検査済みremote refへだけrebaseする");
+assert.ok(save.indexOf('result-source-checkpoint.cjs guard-push') < save.indexOf('git rebase --autostash origin/main'),
+  "push直前に公式原本・code・receiptの競合を確認する");
+assert.doesNotMatch(workflow, /git pull --rebase/, "検査後の再fetchで競合検査を迂回しない");
 
 assert.equal((workflow.match(/result-report-checkpoint.cjs publish /g) || []).length, 2,
   "診断と校正は元blobの比較を通して保存する");

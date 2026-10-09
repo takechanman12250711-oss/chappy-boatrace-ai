@@ -362,6 +362,37 @@ for (const sourcesOnly of [true, false]) {
   if (sourcesOnly) assert.equal(fs.existsSync(path.join(root, "derived.txt")), false);
   else assert.deepEqual(fs.readFileSync(path.join(root, "derived.txt"), "utf8").trim().split("\n"), derived);
 }
+// The locked entrypoint must not refresh results, and must match the current
+// prediction files using the acquisition date even after the wall clock moves.
+{
+  const root = path.join(tempDirectory, "match-only");
+  fs.mkdirSync(path.join(root, "scripts"), { recursive: true });
+  fs.mkdirSync(path.join(root, "data/results"), { recursive: true });
+  fs.mkdirSync(path.join(root, "data/predictions"), { recursive: true });
+  fs.writeFileSync(path.join(root, "scripts/collect-results.js"), "throw Error('network collector must not run');");
+  fs.writeFileSync(path.join(root, "scripts/match-predictions.js"), `
+    const fs=require('node:fs');
+    const date=process.argv.find(x=>x.startsWith('--date=')).slice(7);
+    const prediction=JSON.parse(fs.readFileSync('data/predictions/'+date+'.json'));
+    if(prediction.predictions[0].currentMain!==true)throw Error('stale prediction');
+    fs.appendFileSync('matched.txt', date+'\\n');
+  `);
+  const dates = ['20260227','20260228','20260301'];
+  for (const date of dates) {
+    fs.writeFileSync(path.join(root, `data/results/${date}.json`), JSON.stringify({
+      date, source:'boatrace-official', races:[{jcd:'01',raceNo:1,resultAvailable:true,trifecta:{combination:'1-2-3'}}]
+    }));
+    fs.writeFileSync(path.join(root, `data/predictions/${date}.json`), JSON.stringify({
+      predictions:[{raceKey:`${date}-01-1`,currentMain:true,result:null}]
+    }));
+  }
+  const args=[path.join(__dirname,'repair-recent-results.js'),'--sources-only','--match-only'];
+  execFileSync(process.execPath,args,{cwd:root,env:{...process.env,COLLECT_DATE:'20260301'},stdio:'pipe'});
+  assert.deepEqual(fs.readFileSync(path.join(root,'matched.txt'),'utf8').trim().split('\n'),dates);
+  fs.unlinkSync(path.join(root, 'data/results/20260228.json'));
+  assert.throws(()=>execFileSync(process.execPath,args,{cwd:root,env:{...process.env,COLLECT_DATE:'20260301'},stdio:'pipe'}),
+    'missing acquired result must not silently trigger a network repair');
+}
 fs.rmSync(tempDirectory, { recursive: true, force: true });
 
 console.log("直近3日間の結果自動復旧・予想照合テストに合格しました");
