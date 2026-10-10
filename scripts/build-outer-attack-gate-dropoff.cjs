@@ -1,10 +1,11 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path');
 const input=require('./analysis-input-contract');
+const {compactOuterAttackRecord:compactPredictionRecord}=require('./report-input-projection.cjs');
 const shadow=require('../js/outer-attack-ticket-shadow.js');
 const ROOT=path.resolve(__dirname,'..');
-function build(){
- const cohort=input.collectCanonicalPredictions(path.join(ROOT,'data','predictions'));
+function build(options={}){
+ const cohort=input.collectCanonicalPredictions(options.predictionsDir||path.join(options.root||ROOT,'data','predictions'),{compactPredictionRecord:options.compactPredictionRecord===undefined?compactPredictionRecord:options.compactPredictionRecord});
  const rows=[],counts={total:0,preDeadline:0,basisInvalid:0,topNot1:0,noChallengerPair:0,noStAttackAdvantage:0,noFlowSuppression:0,noExhibitionAdvantage:0,active:0,ambiguous:0,inactiveOther:0};
  for(const record of cohort){counts.total++;const reason=input.preDeadlineReason(record);if(reason)continue;counts.preDeadline++;
   const s=shadow.detectSignal(record);const pairs=Array.isArray(s.pairs)?s.pairs:[];let gate='';
@@ -22,4 +23,4 @@ function build(){
  return{schemaVersion:1,analysisId:'outer-attack-gate-dropoff-v1',generatedAt:new Date().toISOString(),productionChanged:false,automaticApplication:false,fixedSignal:shadow.FIXED_SIGNAL,counts,rows};
 }
 function main(){const r=build(),out=path.join(ROOT,'data/stats/outer-attack-gate-dropoff-v1.json');fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify(r,null,2)+'\n');console.log(JSON.stringify(r.counts));return r}
-if(require.main===module)main();module.exports={build,main};
+if(require.main===module)main();module.exports={compactPredictionRecord,build,main};
