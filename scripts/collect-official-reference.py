@@ -181,6 +181,7 @@ def atomic(path, value):
 
 
 def collect(root, now=None, fetcher=fetch, catalog=None):
+    live_clock = now is None
     now = now or dt.datetime.now(dt.timezone.utc)
     stamp, day = now.isoformat(), now.astimezone(JST).date().isoformat()
     path = Path(root)/'data/stats/official-reference-v1.json'
@@ -195,6 +196,7 @@ def collect(root, now=None, fetcher=fetch, catalog=None):
         state = dict(prior, sourceUrl=s['url'], lastAttemptAt=stamp, lastAttemptDateJst=day)
         try:
             raw, data = fetcher(s)
+            observed = dt.datetime.now(dt.timezone.utc).isoformat() if live_clock else stamp
             source_date = data.get('asOf',data.get('periodEnd'))
             if not source_date or source_date > day:
                 raise ValueError('missing_or_future_source_date')
@@ -204,8 +206,8 @@ def collect(root, now=None, fetcher=fetch, catalog=None):
             rel = 'data/official-reference/'+s['id']+'/'+content_hash+'.json'
             target = Path(root)/rel
             if not target.exists():
-                atomic(target,dict(record, capturedAt=stamp, sourceSha256=digest(raw), contentSha256=content_hash))
-            state.update(status='ok', lastSuccessAt=stamp, lastError=None, latestSnapshot=rel,
+                atomic(target,dict(record, capturedAt=observed, sourceSha256=digest(raw), contentSha256=content_hash))
+            state.update(status='ok', lastSuccessAt=observed, lastError=None, latestSnapshot=rel,
                          sourceDate=source_date, rowCount=len(data['rows']), contentSha256=content_hash,
                          sourceSha256=digest(raw), sourceAgeDays=(dt.date.fromisoformat(day)-dt.date.fromisoformat(source_date)).days)
         except Exception as exc:
@@ -224,7 +226,7 @@ def collect(root, now=None, fetcher=fetch, catalog=None):
             warnings.append(dict(code='use_start_date_conflict',venue='06',motorDate=motor['useStartedAt'],maintenanceDates=dates))
     git_head = subprocess.run(['git','-C',str(root),'rev-parse','HEAD'], capture_output=True, text=True)
     source_commit = git_head.stdout.strip() if git_head.returncode == 0 else None
-    report=dict(version=VERSION, generatedAt=stamp, sourceCommit=source_commit,
+    report=dict(version=VERSION, generatedAt=dt.datetime.now(dt.timezone.utc).isoformat() if live_clock else stamp, sourceCommit=source_commit,
                 runId=os.environ.get('GITHUB_RUN_ID'), expectedSources=len(items),
                 failedSources=[s['id'] for s in items if states[s['id']]['status']=='error'],
                 sources=states, warnings=warnings, **FLAGS)
