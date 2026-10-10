@@ -14,6 +14,7 @@ const metadata={id:456,digest:'sha256:'+env.AUTONOMOUS_ARTIFACT_DIGEST,name:'ind
 const response=(date='Sat, 14 Sep 2030 06:00:02 GMT',a=metadata)=>async()=>({ok:true,headers:{get:()=>date},json:async()=>a});
 function setup(t){const root=fs.mkdtempSync(path.join(os.tmpdir(),'independent-auto-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
   for(const file of ['config/independent-autonomous-forward.json','scripts/independent-autonomous-candidate.cjs',
+    'config/independent-pair-route-diagnostic-v1.json','scripts/independent-pair-route-diagnostic-v1.cjs','scripts/independent-pair-route-report.cjs',
     'config/independent-flow-study-v1.json','scripts/independent-flow-roles-v1.cjs',
     'config/independent-partner-study-v1.json','scripts/independent-partner-context-v1.cjs','scripts/independent-partner-selector-v1.cjs',
     'config/independent-route-water-study-v1.json','scripts/independent-route-water-v1.cjs','scripts/independent-partner-selector-v2.cjs',
@@ -89,12 +90,12 @@ test('new captures bind judgment facts into the seal while legacy snapshots rema
   const x=setup(t),raw=official();raw.entries[0].avgSt=.15;
   f.createRecorder(x.root,x.out,env,()=>clock)(raw,target);
   const file=path.join(x.out,fs.readdirSync(x.out)[0]),s=JSON.parse(fs.readFileSync(file));
-  assert.equal(s.version,'independent-autonomous-snapshot-v7');assert.equal(s.judgmentContext.officialEntries[0].avgSt,.15);
+  assert.equal(s.version,'independent-autonomous-snapshot-v8');assert.equal(s.judgmentContext.officialEntries[0].avgSt,.15);
   assert.equal(s.judgmentContext.inputHash,s.inputHash);assert.deepEqual(s.candidate,candidate.select(s.input));
   const p=f.protocol(x.root);assert.equal(f.validate(s,p),true);
   const missing=structuredClone(s);delete missing.judgmentContext;assert.throws(()=>f.validate(missing,p),/judgment_context/);
-  missing.version='independent-autonomous-snapshot-v1';delete missing.flowStudy;delete missing.partnerStudy;delete missing.routeWaterStudy;delete missing.weatherHistoryStudy;assert.equal(f.validate(missing,p),true);
-  const legacy=structuredClone(s);legacy.version='independent-autonomous-snapshot-v2';delete legacy.flowStudy;delete legacy.partnerStudy;delete legacy.routeWaterStudy;delete legacy.weatherHistoryStudy;assert.equal(f.validate(legacy,p),true);
+  missing.version='independent-autonomous-snapshot-v1';delete missing.flowStudy;delete missing.partnerStudy;delete missing.routeWaterStudy;delete missing.weatherHistoryStudy;delete missing.pairRouteDiagnosticStudy;assert.equal(f.validate(missing,p),true);
+  const legacy=structuredClone(s);legacy.version='independent-autonomous-snapshot-v2';delete legacy.flowStudy;delete legacy.partnerStudy;delete legacy.routeWaterStudy;delete legacy.weatherHistoryStudy;delete legacy.pairRouteDiagnosticStudy;assert.equal(f.validate(legacy,p),true);
   const altered=structuredClone(s);altered.flowStudy.judgment.decision.actor=6;assert.throws(()=>f.validate(altered,p),/flow_judgment/);
   await f.seal(x.root,x.out,env,response());const report=f.report(x.root);
   assert.equal(report.judgmentContext.captured,1);assert.equal(report.judgmentContext.legacyWithoutContext,0);
@@ -135,7 +136,7 @@ test('new studies start their first-seal cohort without replacing the earlier v2
   const x=await sealed(t,r=>{r.startExhibition[0].marker='F';});
   const dir=path.join(x.root,'data/independent-autonomous-forward/20300914'),first=path.join(dir,fs.readdirSync(dir)[0]);
   const legacy=JSON.parse(fs.readFileSync(first));legacy.snapshot.version='independent-autonomous-snapshot-v2';
-  delete legacy.snapshot.flowStudy;delete legacy.snapshot.partnerStudy;delete legacy.snapshot.routeWaterStudy;delete legacy.snapshot.weatherHistoryStudy;legacy.snapshotHash=candidate.hash(f.json(legacy.snapshot));
+  delete legacy.snapshot.flowStudy;delete legacy.snapshot.partnerStudy;delete legacy.snapshot.routeWaterStudy;delete legacy.snapshot.weatherHistoryStudy;delete legacy.snapshot.pairRouteDiagnosticStudy;legacy.snapshotHash=candidate.hash(f.json(legacy.snapshot));
   const bytes=f.json(legacy);fs.unlinkSync(first);fs.writeFileSync(path.join(dir,`20300914-23-1-${candidate.hash(bytes)}.json`),bytes);
   const out=path.join(x.root,'v3'),p=f.protocol(x.root);
   assert.equal(f.cohort(x.root,p,null,{studyOnly:true}).rows.length,0);
@@ -151,7 +152,7 @@ test('new studies start their first-seal cohort without replacing the earlier v2
 test('v5 preserves an earlier v3 flow judgment while starting a separate partner cohort',async t=>{
   const x=await sealed(t,r=>{r.startExhibition[0].marker='F';});
   const dir=path.join(x.root,'data/independent-autonomous-forward/20300914'),first=path.join(dir,fs.readdirSync(dir)[0]);
-  const legacy=JSON.parse(fs.readFileSync(first));legacy.snapshot.version='independent-autonomous-snapshot-v3';delete legacy.snapshot.partnerStudy;delete legacy.snapshot.routeWaterStudy;delete legacy.snapshot.weatherHistoryStudy;
+  const legacy=JSON.parse(fs.readFileSync(first));legacy.snapshot.version='independent-autonomous-snapshot-v3';delete legacy.snapshot.partnerStudy;delete legacy.snapshot.routeWaterStudy;delete legacy.snapshot.weatherHistoryStudy;delete legacy.snapshot.pairRouteDiagnosticStudy;
   legacy.snapshotHash=candidate.hash(f.json(legacy.snapshot));const bytes=f.json(legacy);
   fs.unlinkSync(first);fs.writeFileSync(path.join(dir,`20300914-23-1-${candidate.hash(bytes)}.json`),bytes);
   const out=path.join(x.root,'v4'),p=f.protocol(x.root);
@@ -159,7 +160,7 @@ test('v5 preserves an earlier v3 flow judgment while starting a separate partner
   f.createRecorder(x.root,out,env,()=>clock+10000)(official(),target);
   await f.seal(x.root,out,env,response('Sat, 14 Sep 2030 06:00:12 GMT',{...metadata,created_at:'2030-09-14T06:00:11Z'}));
   assert.equal(f.cohort(x.root,p,null,{studyOnly:true}).rows[0].snapshot.version,'independent-autonomous-snapshot-v3');
-  assert.equal(f.cohort(x.root,p,null,{partnerOnly:true}).rows[0].snapshot.version,'independent-autonomous-snapshot-v7');
+  assert.equal(f.cohort(x.root,p,null,{partnerOnly:true}).rows[0].snapshot.version,'independent-autonomous-snapshot-v8');
   const report=f.report(x.root);assert.equal(report.flowStudy.unresolved['exhibition-start-marker'],1);
   assert.equal(report.partnerStudy.sealed,1);assert.equal(report.partnerStudy.skipped['course-history-insufficient'],1);
   fs.appendFileSync(path.join(x.root,'scripts/independent-partner-selector-v1.cjs'),'\n');assert.throws(()=>f.protocol(x.root),/partner_protocol/);
@@ -202,7 +203,7 @@ test('collector captures official evidence before normal evaluation, even if tha
 test('v5 starts a new cohort without replacing an earlier v4 partner skip',async t=>{
   const x=await sealed(t,r=>{r.startExhibition[0].marker='F';});
   const dir=path.join(x.root,'data/independent-autonomous-forward/20300914'),first=path.join(dir,fs.readdirSync(dir)[0]);
-  const legacy=JSON.parse(fs.readFileSync(first));legacy.snapshot.version='independent-autonomous-snapshot-v4';delete legacy.snapshot.routeWaterStudy;delete legacy.snapshot.weatherHistoryStudy;
+  const legacy=JSON.parse(fs.readFileSync(first));legacy.snapshot.version='independent-autonomous-snapshot-v4';delete legacy.snapshot.routeWaterStudy;delete legacy.snapshot.weatherHistoryStudy;delete legacy.snapshot.pairRouteDiagnosticStudy;
   legacy.snapshotHash=candidate.hash(f.json(legacy.snapshot));const bytes=f.json(legacy);
   fs.unlinkSync(first);fs.writeFileSync(path.join(dir,`20300914-23-1-${candidate.hash(bytes)}.json`),bytes);
   const out=path.join(x.root,'v5'),p=f.protocol(x.root);
@@ -211,7 +212,7 @@ test('v5 starts a new cohort without replacing an earlier v4 partner skip',async
   await f.seal(x.root,out,env,response('Sat, 14 Sep 2030 06:00:12 GMT',{...metadata,created_at:'2030-09-14T06:00:11Z'}));
   assert.equal(f.cohort(x.root,p,null,{partnerOnly:true}).rows[0].snapshot.version,'independent-autonomous-snapshot-v4');
   const current=f.cohort(x.root,p,null,{waterOnly:true}).rows[0].snapshot;
-  assert.equal(current.version,'independent-autonomous-snapshot-v7');
+  assert.equal(current.version,'independent-autonomous-snapshot-v8');
   const tampered=structuredClone(current);tampered.routeWaterStudy.context.routes[0].actualTurnObserved=true;
   assert.throws(()=>f.validate(tampered,p),/route_water_replay/);
   assert.equal(f.createRecorder(x.root,path.join(x.root,'again-v5'),env,()=>clock+20000)(official(),target).status,'already-captured');
@@ -222,7 +223,7 @@ test('v5 starts a new cohort without replacing an earlier v4 partner skip',async
 test('v7 seals supplemental weather histories while keeping earlier v6 cohort and tickets unchanged',async t=>{
   const x=await sealed(t),p=f.protocol(x.root),h=require('./independent-weather-history-v2.cjs');
   const dir=path.join(x.root,'data/independent-autonomous-forward/20300914'),first=path.join(dir,fs.readdirSync(dir)[0]);
-  const legacy=JSON.parse(fs.readFileSync(first));legacy.snapshot.version='independent-autonomous-snapshot-v6';legacy.snapshot.weatherHistoryStudy={protocolHash:p.weather.hash,
+  const legacy=JSON.parse(fs.readFileSync(first));legacy.snapshot.version='independent-autonomous-snapshot-v6';delete legacy.snapshot.pairRouteDiagnosticStudy;legacy.snapshot.weatherHistoryStudy={protocolHash:p.weather.hash,
     context:require('./independent-weather-context-v1.cjs').capture(legacy.snapshot.input,legacy.snapshot.judgmentContext,null)};
   legacy.snapshotHash=candidate.hash(f.json(legacy.snapshot));const bytes=f.json(legacy);
   fs.unlinkSync(first);fs.writeFileSync(path.join(dir,`20300914-23-1-${candidate.hash(bytes)}.json`),bytes);
@@ -245,4 +246,69 @@ test('v7 seals supplemental weather histories while keeping earlier v6 cohort an
   const bad=structuredClone(current);bad.weatherHistoryStudy.context.rows[0].matchedWeather.starts=3;
   assert.throws(()=>f.validate(bad,p),/weather_context/);
   fs.appendFileSync(path.join(x.root,'scripts/independent-weather-context-v1.cjs'),'\n');assert.throws(()=>f.protocol(x.root),/weather_protocol/);
+});
+
+test('v8 diagnostic is required, rejects backfill in every legacy version and never changes old studies',async t=>{
+  const x=await sealed(t),p=f.protocol(x.root),s=f.cohort(x.root,p,null,{pairOnly:true}).rows[0].snapshot;
+  assert.equal(s.version,'independent-autonomous-snapshot-v8');assert.equal(f.validate(s,p),true);
+  const d=s.pairRouteDiagnosticStudy.diagnostic;
+  assert.equal(d.pairs.length,20);assert.equal(d.sourceSelectionReason,'course-history-insufficient');
+  assert.equal(d.pairs[0].selectionPoolMembership,'not-evaluated');
+  const missing=structuredClone(s);delete missing.pairRouteDiagnosticStudy;
+  assert.throws(()=>f.validate(missing,p),/pair_protocol_mismatch/);
+  for(let version=1;version<=7;version++){
+    const legacy=structuredClone(s);legacy.version=`independent-autonomous-snapshot-v${version}`;
+    if(version<2)delete legacy.judgmentContext;
+    if(version<3)delete legacy.flowStudy;
+    if(version<4)delete legacy.partnerStudy;
+    if(version<5)delete legacy.routeWaterStudy;
+    if(version<6)delete legacy.weatherHistoryStudy;
+    if(version===6)legacy.weatherHistoryStudy={protocolHash:p.weather.hash,
+      context:require('./independent-weather-context-v1.cjs').capture(legacy.input,legacy.judgmentContext,null)};
+    assert.throws(()=>f.validate(legacy,p),/legacy_pair_unexpected/);
+    delete legacy.pairRouteDiagnosticStudy;assert.equal(f.validate(legacy,p),true);
+  }
+  const q=f.report(x.root).pairRouteDiagnosticStudy;
+  assert.deepEqual(q.raceCounts,{sealed:1,available:1,unavailable:0});assert.equal(q.pairCounts.poolNotEvaluated,20);
+  assert.equal(q.source.complete,true);assert.equal(q.usableForPrediction,false);
+  const old=structuredClone(s);old.version='independent-autonomous-snapshot-v7';delete old.pairRouteDiagnosticStudy;
+  for(const k of ['candidate','flowStudy','partnerStudy','routeWaterStudy','weatherHistoryStudy'])assert.deepEqual(s[k],old[k]);
+  const altered=structuredClone(s);altered.pairRouteDiagnosticStudy.diagnostic.pairs[0].compatibility='compatible';
+  assert.throws(()=>f.validate(altered,p),/diagnostic_replay/);
+  altered.pairRouteDiagnosticStudy.protocolHash='a'.repeat(64);assert.throws(()=>f.validate(altered,p),/pair_protocol/);
+});
+test('v8 capture keeps first v7 seal and a later successful diagnostic cannot replace its own first skip',async t=>{
+  const x=await sealed(t,r=>r.startExhibition[0].marker='F'),p=f.protocol(x.root);
+  const dir=path.join(x.root,'data/independent-autonomous-forward/20300914'),file=path.join(dir,fs.readdirSync(dir)[0]);
+  const old=JSON.parse(fs.readFileSync(file));old.snapshot.version='independent-autonomous-snapshot-v7';delete old.snapshot.pairRouteDiagnosticStudy;
+  old.snapshotHash=candidate.hash(f.json(old.snapshot));const bytes=f.json(old),oldFile=path.join(dir,`20300914-23-1-${candidate.hash(bytes)}.json`);
+  fs.unlinkSync(file);fs.writeFileSync(oldFile,bytes);
+  assert.equal(f.cohort(x.root,p,null,{pairOnly:true}).rows.length,0);
+  const raw=official();raw.startExhibition[0].marker='F';const out=path.join(x.root,'v8');
+  f.createRecorder(x.root,out,env,()=>clock+10000)(raw,target);
+  await f.seal(x.root,out,env,response('Sat, 14 Sep 2030 06:00:12 GMT',{...metadata,created_at:'2030-09-14T06:00:11Z'}));
+  const first=f.cohort(x.root,p,null,{pairOnly:true}).rows[0];
+  assert.equal(first.snapshot.pairRouteDiagnosticStudy.diagnostic.status,'unavailable');
+  for(const options of [{},{studyOnly:true},{partnerOnly:true},{waterOnly:true},{weatherV2Only:true}])
+    assert.equal(f.cohort(x.root,p,null,options).rows[0].snapshotHash,old.snapshotHash);
+  assert.equal(fs.readFileSync(oldFile,'utf8'),bytes);
+  assert.equal(f.createRecorder(x.root,path.join(x.root,'again'),env,()=>clock+20000)(official(),target).status,'already-captured');
+  const r=f.report(x.root);assert.equal(r.pairRouteDiagnosticStudy.raceCounts.sealed,1);
+  assert.equal(r.pairRouteDiagnosticStudy.raceCounts.unavailable,1);assert.equal(r.pairRouteDiagnosticStudy.pairCounts.total,0);
+});
+test('diagnostic tampering blocks prepare and seal and remains visible as invalid in the report',async t=>{
+  const x=await sealed(t),p=f.protocol(x.root),dir=path.join(x.root,'data/independent-autonomous-forward/20300914');
+  const file=path.join(dir,fs.readdirSync(dir)[0]),r=JSON.parse(fs.readFileSync(file));
+  r.snapshot.pairRouteDiagnosticStudy.diagnostic.pairs[0].relations.sameZone.value=true;
+  // Change a definitely false relation in the first (2,3) pair and repair outer hashes: exact replay still rejects.
+  const {diagnosticHash,...body}=r.snapshot.pairRouteDiagnosticStudy.diagnostic;
+  r.snapshot.pairRouteDiagnosticStudy.diagnostic.diagnosticHash=candidate.hash(f.json(body));
+  r.snapshotHash=candidate.hash(f.json(r.snapshot));const bytes=f.json(r);
+  fs.unlinkSync(file);fs.writeFileSync(path.join(dir,`${r.snapshot.input.raceKey}-${candidate.hash(bytes)}.json`),bytes);
+  const c=f.cohort(x.root,p,null,{pairOnly:true});assert.equal(c.rows.length,0);assert.equal(Object.values(c.rejected).reduce((a,b)=>a+b,0),1);
+  const report=f.report(x.root).pairRouteDiagnosticStudy;assert.equal(report.status,'incomplete');assert.equal(report.source.complete,false);
+  const out=path.join(x.root,'tampered');fs.mkdirSync(out);const s=f.json(r.snapshot);fs.writeFileSync(path.join(out,candidate.hash(s)+'.json'),s);
+  assert.throws(()=>f.prepare(x.root,out,env),/diagnostic_replay/);await assert.rejects(f.seal(x.root,out,env,response()),/diagnostic_replay/);
+  fs.appendFileSync(path.join(x.root,'scripts/independent-pair-route-diagnostic-v1.cjs'),'\n');
+  assert.throws(()=>f.protocol(x.root),/pair_protocol_invalid/);
 });
