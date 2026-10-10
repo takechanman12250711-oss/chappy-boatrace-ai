@@ -46,6 +46,8 @@ on:
       - "scripts/test-all-race-notes.js"
       - "scripts/practical-selection-evidence.js"
       - "scripts/test-practical-selection-evidence.js"
+      - "scripts/test-candidate-validation-evidence.cjs"
+      - "js/practical-selection.js"
       - "scripts/outer-attack-live-source.js"
       - "scripts/test-note-source-concurrency.js"
       - ".github/workflows/live-note.yml"
@@ -107,6 +109,8 @@ on:
       - "scripts/test-all-race-notes.js"
       - "scripts/practical-selection-evidence.js"
       - "scripts/test-practical-selection-evidence.js"
+      - "scripts/test-candidate-validation-evidence.cjs"
+      - "js/practical-selection.js"
       - "scripts/outer-attack-live-source.js"
       - "scripts/test-note-source-concurrency.js"
       - ".github/workflows/live-note.yml"
@@ -141,6 +145,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+
+      - name: Compare candidate evidence with the pre-change selector
+        run: |
+          git fetch --depth=1 origin 429663f3a86cfc8cd345258f47412c6787806fe8
+          node scripts/test-candidate-validation-evidence.cjs
 
       - name: Check note generator and regression
         run: |

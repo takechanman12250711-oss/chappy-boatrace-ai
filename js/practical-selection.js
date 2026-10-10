@@ -2488,6 +2488,67 @@
     const decidedCandidates =
       new Set();
 
+    // A sidecar only: selection never reads these observations. Keep category
+    // scopes separate; purchase eligibility does not imply expansion eligibility.
+    const validationObservations = new Map();
+    const validationPick = (value, keys) => Object.fromEntries(
+      keys.filter(key => value?.[key] !== undefined).map(key => [key, value[key]])
+    );
+    function observeValidation(row, validation, stage = "selection") {
+      const observation = {
+        ticket: row.ticket,
+        sourceCategory: row.sourceCategory,
+        inputBranchIds: [...arrayify(row.branchIds)],
+        ...validationPick(validation, ["valid", "purchaseEligible", "expansionEligible",
+          "validBranchIds", "validPurchaseBranchIds", "validIndependentBranchIds",
+          "validScenarioIds", "requirementIds", "coverage", "coveredEvaluationIds",
+          "coveredBoatNos", "priorityScore", "invalidReasons", "reasonCode", "reason"]),
+        physicalCoverage: arrayify(row.physicalCoverage).map(claim =>
+          validationPick(claim, ["evaluationId", "boatNo", "position", "role", "score", "branchId"]))
+      };
+      const key = JSON.stringify(observation);
+      if (!validationObservations.has(key)) {
+        validationObservations.set(key, { ...JSON.parse(key), stage });
+      }
+      return validation;
+    }
+    function validationEvidence(tickets) {
+      try {
+        const poolTickets = new Set();
+        // Normal selection may stop after its slot limit. Audit the remaining
+        // source rows using the same context, without adopting or ranking them.
+        const groups = { main: "本線", cover: "押さえ", flow: "流し", longshot: "万舟・穴", possibility: "展開候補" };
+        for (const [group, category] of Object.entries(groups)) {
+          for (const item of lists[group]) {
+            const row = normalizeTicket(item, group === "possibility" ? item?.category || category : category);
+            if (!validTicket(row.ticket)) continue;
+            poolTickets.add(row.ticket);
+            observeValidation(row, validateCandidate(row, validationContext), "pool-audit");
+          }
+        }
+        const observations = [...validationObservations.values()].filter(row => poolTickets.has(row.ticket));
+        const branchIds = new Set(observations.flatMap(row => row.inputBranchIds));
+        const branches = [...branchIds].map(id => validationContext.branchesById.get(id)).filter(Boolean).map(branch => ({
+          ...validationPick(branch, ["id", "ticket", "scenarioId", "kind", "source", "qualified", "priorityScore"]),
+          roles: arrayify(branch.roles).map(role => validationPick(role,
+            ["evaluationId", "boatNo", "role", "eligiblePositions", "score"])),
+          evidenceChecks: arrayify(branch.evidenceChecks).map(check => validationPick(check,
+            ["key", "matched", "required", "source", "boatNo", "role", "score"]))
+        }));
+        return JSON.parse(JSON.stringify({
+          version: "candidate-validation-evidence-v1",
+          status: "captured",
+          resultUsedForGeneration: false,
+          poolTickets: [...poolTickets],
+          finalSelectedTickets: tickets.map(row => row.ticket),
+          observations, branches
+        }));
+      } catch (_) {
+        // Diagnostics must not turn an otherwise valid forecast into an error.
+        return { version: "candidate-validation-evidence-v1", status: "capture-error" };
+      }
+    }
+
     function resultForSkip(reason) {
       const candidates =
         lists.possibility.map((item) => {
@@ -2498,10 +2559,10 @@
               "展開候補"
             );
           const validation =
-            validateCandidate(
+            observeValidation(row, validateCandidate(
               row,
               validationContext
-            );
+            ));
           const enriched =
             applyValidation(
               row,
@@ -2700,6 +2761,7 @@
           MAXIMUM_COUNT,
         evidence,
         tickets: [],
+        candidateValidationEvidence: validationEvidence([]),
         excludedCandidates:
           candidates,
         candidateDecisions:
@@ -2742,10 +2804,10 @@
           category
         );
       const validation =
-        validateCandidate(
+        observeValidation(row, validateCandidate(
           row,
           validationContext
-        );
+        ));
 
       return applyValidation(
         row,
@@ -2763,10 +2825,10 @@
               "展開候補"
             );
           const validation =
-            validateCandidate(
+            observeValidation(row, validateCandidate(
               row,
               validationContext
-            );
+            ));
 
           return {
             row:
@@ -5630,6 +5692,7 @@
       evidence,
       tickets:
         finalizedTickets,
+      candidateValidationEvidence: validationEvidence(finalizedTickets),
       excludedCandidates,
       candidateDecisions,
       candidateOutcomes,
