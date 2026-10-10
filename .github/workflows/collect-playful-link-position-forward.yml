@@ -8,6 +8,8 @@ on:
     types: [completed]
   pull_request:
     paths:
+      - scripts/report-input-projection.cjs
+      - tests/helpers/report-input-fixture.cjs
       - scripts/build-playful-link-position-forward.cjs
       - tests/playful-link-position-forward.test.cjs
       - data/experiments/playful-link-position-v1.json

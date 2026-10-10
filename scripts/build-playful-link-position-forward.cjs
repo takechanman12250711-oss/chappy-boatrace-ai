@@ -1,6 +1,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path');
 const input=require('./analysis-input-contract');
+const {compactPlayfulRecord:compactPredictionRecord}=require('./report-input-projection.cjs');
 const evaluator=require('./final-ticket-candidate-evaluator.cjs');
 const replay=require('./build-playful-manshu-20260923.cjs');
 const CONFIG=require('../data/experiments/playful-link-position-v1.json');
@@ -9,8 +10,8 @@ const START=Date.parse(CONFIG.registeredAt);
 const uniq=a=>[...new Set(a)];
 function payout(r){return evaluator.payout(r)}
 function summary(rows,side){let stake=0,ret=0,hits=0;for(const r of rows){const t=r[side];stake+=t.length*100;if(t.includes(r.actual)){hits++;ret+=r.payout}}return{races:rows.length,tickets:rows.reduce((n,r)=>n+r[side].length,0),hits,hitRate:rows.length?Math.round(hits/rows.length*10000)/100:0,stakeYen:stake,returnYen:ret,profitYen:ret-stake,roi:stake?Math.round(ret/stake*10000)/100:0}}
-function build(){
- const cohort=input.buildDefaultCohort(),rows=[],excluded={beforeRegistration:0,missingBase:0,noAddedLinkCandidate:0};
+function build(options={}){
+ const cohort=input.buildDefaultCohort({...options,compactPredictionRecord:options.compactPredictionRecord===undefined?compactPredictionRecord:options.compactPredictionRecord}),rows=[],excluded={beforeRegistration:0,missingBase:0,noAddedLinkCandidate:0};
  for(const record of cohort.records){const at=Date.parse(record.selectedAt||record.capturedAt||'');if(!at||at<=START){excluded.beforeRegistration++;continue}
   const c=replay.candidates(record);if(!c.base.length){excluded.missingBase++;continue}
   const added=uniq(c.out.linkPlay||[]);if(!added.length){excluded.noAddedLinkCandidate++;continue}
@@ -22,4 +23,4 @@ function build(){
  return{schemaVersion:1,analysisId:'playful-link-position-forward-v1',generatedAt:new Date().toISOString(),productionChanged:false,automaticApplication:false,preregistration:{experimentId:CONFIG.experimentId,registeredAt:CONFIG.registeredAt,discoveryDateExcluded:true},rule:CONFIG.candidate,diagnostics:{...cohort.diagnostics,...excluded,eligibleForwardRows:rows.length},baseline,candidate,delta:{hits:candidate.hits-baseline.hits,hitRatePoint:Math.round((candidate.hitRate-baseline.hitRate)*100)/100,profitYen:candidate.profitYen-baseline.profitYen,roiPoint:Math.round((candidate.roi-baseline.roi)*100)/100,newHits:rows.filter(r=>!r.baseHit&&r.candidateHit).length},rows};
 }
 function main(){const report=build();fs.mkdirSync(path.dirname(OUT),{recursive:true});fs.writeFileSync(OUT,JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({diagnostics:report.diagnostics,baseline:report.baseline,candidate:report.candidate,delta:report.delta},null,2));return report}
-if(require.main===module)main();module.exports={build,main,summary};
+if(require.main===module)main();module.exports={compactPredictionRecord,build,main,summary};
