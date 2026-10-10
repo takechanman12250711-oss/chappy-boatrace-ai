@@ -1,0 +1,11 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict');
+const {select}=require('./partner-course-ablation.cjs');
+const {selectPartners}=require('./partner-calibration.cjs');
+const model=require('./partner-frozen-model.json');
+const input=()=>({head:1,scenarioType:'escape',courseByBoat:{1:1,2:2,3:3,4:4,5:5,6:6},outcomes:[1,2,3,4,5,6].map(boatNo=>({boatNo,secondScore:boatNo===6?100:50,thirdScore:boatNo===4?100:50})),base:['1-2-3','3-1-2','1-3-4']});
+test('strong outer upstream evidence can overtake inner course without extra slots',()=>{const r=input(),m=JSON.stringify(model),before=JSON.stringify(r);const c=select(r,model);assert.equal(c.tickets[0],'1-6-4');assert.equal(c.tickets.length,3);assert.equal(c.tickets[1],'3-1-2');assert.equal(c.rankedPairs.length,20);assert.equal(new Set(c.tickets).size,3);assert.equal(JSON.stringify(model),m);assert.equal(JSON.stringify(r),before);assert.notEqual(selectPartners(r,model).tickets[0],'1-6-4');});
+test('all non escape selections remain exactly equal to frozen selector',()=>{for(const scenarioType of ['sashi','threeAttack','fourAttack']){const r={...input(),scenarioType};assert.deepEqual(select(r,model).tickets,selectPartners(r,model).tickets);assert.deepEqual(select(r,model).rankedPairs,selectPartners(r,model).rankedPairs);}});
+test('finish and odds metadata cannot change selection',()=>{const r=input();assert.deepEqual(select({...r,actual:'1-2-3',payout:999999,odds:{'1-2-3':1000}},model),select(r,model));});
+test('invalid inputs remain rejected rather than fabricating evidence',()=>{assert.throws(()=>select({...input(),courseByBoat:{1:1}},model));assert.throws(()=>select({...input(),base:['1-2-3','1-2-3']},model));assert.throws(()=>select(input(),{...model,weights:model.weights.map((v,i)=>i===6?NaN:v)}));});
+test('actual course remapping is accepted with unchanged ticket count',()=>{const r=input();r.courseByBoat={1:1,2:6,3:3,4:4,5:5,6:2};assert.equal(select(r,model).tickets.length,r.base.length);});

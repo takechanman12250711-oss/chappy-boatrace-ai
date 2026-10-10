@@ -1,0 +1,29 @@
+{
+  "version": "escape-second-course-ablation-v1",
+  "status": "retrospective-discovery-only",
+  "sourceArtifact": 10950118145,
+  "sourceRun": 36374467050,
+  "modelSha256": "9db9289ad530666f4d0a11c822a4dfc0dd380cc2cca4528f6fa6c9a0c2ab6799",
+  "rowsSha256": "748e8c771e3c7c8be83c534a9d117d54875ee741df485ac043bf896c5e4f6855",
+  "rule": "Only escape: zero the six added second-course coefficients; retain all third-course coefficients, upstream scores, both score coefficients, all 20 pairs, tie ordering and per-head allocation. No refitting.",
+  "periods": [
+    [
+      "20260918",
+      "20260923"
+    ],
+    [
+      "20260924",
+      "20260927"
+    ]
+  ],
+  "expectedRows": [
+    222,
+    140
+  ],
+  "priorExposure": "Both periods and the joint second/third ablation results were inspected before this hypothesis. This is confound isolation, not untouched validation.",
+  "primary": "Same-race same-ticket-count gained/lost/net against saved baseline and frozen rank model, all races and escape subset separately.",
+  "productionChanged": false,
+  "automaticAdoption": false,
+  "usableForPrediction": false,
+  "adoptionGate": null
+}

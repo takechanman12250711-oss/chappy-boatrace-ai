@@ -1,0 +1,20 @@
+{
+  "version": "partner-frozen-day-validation-v1",
+  "researchOnly": true,
+  "productionChanged": false,
+  "automaticAdoption": false,
+  "cohortDate": "20260928",
+  "sourceRef": "c9ed6755b9de811a0bd5aa1ad00f5a7f6b42d4c2",
+  "modelFileSha256": "be7e3ab7ee30b06b722924f549c8e5481aa5f42c930009ba861110c1de9f2965",
+  "inferenceCodeSha256": "ef53fce965c911dcade9bde1cd782ef3a790ca8e43e5071097d8e8a4e889e6d8",
+  "trainingEnd": "20260917",
+  "previousEvaluationEnd": "20260927",
+  "retrain": false,
+  "selection": "Unchanged frozen model; all 20 ordered main-head partner pairs. Same total count, head quotas and all alternative-head ticket positions.",
+  "cohort": "All canonical records in the pinned September 28 source; no filtering by actual head or wins. Invalid inputs use the baseline and report the reason, never fabricated features.",
+  "timing": "Save candidate tickets before reading/joining result files. Source pre-deadline timestamp and new prediction timestamp are distinct. Retrospective and pre-deadline candidate captures are reported separately; only a remotely persisted artifact before deadline supplies immutable prospective evidence.",
+  "resultPolicy": "Use official saved results only after prediction save. Optional bounded live refresh: one official result request per expired-deadline cohort race; save returned raw HTML and parser output; no polling and no production file writes.",
+  "primary": "Exact trifecta net additional hits; all evaluable races, not only main-head wins. No thresholds tuned after evaluation.",
+  "secondary": "Equal 100-yen-per-ticket return reported separately. Refund-related/void races excluded and counted; unavailable results pending, not losses.",
+  "limitation": "New day relative to this model fitting/evaluation, not a guarantee that any historical race was never viewed. A post-race replay is not a pre-deadline forecast. No performance claim on small or unfinished cohorts."
+}
