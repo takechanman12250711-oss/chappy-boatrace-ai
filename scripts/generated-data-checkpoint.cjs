@@ -177,7 +177,9 @@ function publish({ root = process.cwd(), directory, expected, beforePush = () =>
           git(root, ['update-index', '--add', '--cacheinfo', `100644,${actual},${file.path}`], env);
         }
       }
-      const tree = git(root, ['write-tree'], env);
+      // Unchanged entries come from the fetched remote tree; new blobs were
+      // written and hash-checked above. Do not hydrate unrelated promised data.
+      const tree = git(root, ['write-tree', '--missing-ok'], env);
       const savedSha = git(root, ['commit-tree', tree, '-p', latest, '-m', `Save ${profile} generated checkpoint\n\nSource: ${baseSha}\nRun: ${manifest.runId}/${manifest.runAttempt}\nArtifact: ${expected.artifactId}\nManifest-SHA256: ${expected.manifestSha256}`], env);
       beforePush({ attempt, savedSha, latest });
       try {
