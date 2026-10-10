@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
     paths:
+      - "scripts/collect-official-reference.py"
+      - "scripts/test-official-reference.py"
       - "scripts/external-reference-three-source.cjs"
       - "scripts/external-reference-source-adapters.cjs"
       - "scripts/collect-external-reference-three-source.cjs"
@@ -11,6 +13,8 @@ on:
       - ".github/workflows/collect-external-three-source-reference.yml"
   pull_request:
     paths:
+      - "scripts/collect-official-reference.py"
+      - "scripts/test-official-reference.py"
       - "scripts/external-reference-three-source.cjs"
       - "scripts/external-reference-source-adapters.cjs"
       - "scripts/collect-external-reference-three-source.cjs"
@@ -69,3 +73,42 @@ jobs:
             if git push origin HEAD:main; then exit 0; fi
           done
           exit 1
+
+
+  official-reference:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          fetch-depth: 1
+      - name: Verify official reference contracts
+        run: python3 scripts/test-official-reference.py
+      - name: Ensure PDF text reader
+        if: github.event_name != 'pull_request'
+        run: command -v pdftotext || (sudo apt-get update -qq && sudo apt-get install -y poppler-utils)
+      - name: Collect dated official references once per JST day
+        if: github.event_name != 'pull_request'
+        id: official
+        continue-on-error: true
+        run: python3 scripts/collect-official-reference.py
+      - name: Persist official snapshots and failure status
+        if: github.event_name != 'pull_request' && steps.official.outcome != 'skipped'
+        run: |
+          test -f data/stats/official-reference-v1.json
+          git add data/stats/official-reference-v1.json
+          if [ -d data/official-reference ]; then git add data/official-reference; fi
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update dated official reference data"
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
+      - name: Expose collection failure after saving diagnostics
+        if: github.event_name != 'pull_request' && steps.official.outcome == 'failure'
+        run: exit 1
