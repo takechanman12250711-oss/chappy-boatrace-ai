@@ -5,6 +5,9 @@ on:
       - 'scripts/partner-third-coverage.cjs'
       - 'scripts/research-partner-third-coverage.cjs'
       - 'scripts/test-partner-third-coverage.cjs'
+      - 'scripts/partner-exchange-evidence.cjs'
+      - 'scripts/research-partner-exchange-evidence.cjs'
+      - 'scripts/test-partner-exchange-evidence.cjs'
       - 'docs/partner-third-coverage.md'
       - '.github/workflows/check-partner-third-coverage.yml'
 permissions:
@@ -19,14 +22,17 @@ jobs:
         with:
           node-version: 20
       - name: Test candidate and unchanged frozen contract
-        run: node --test scripts/test-partner-third-coverage.cjs scripts/test-partner-forward.cjs scripts/test-escape-partner-history.cjs
+        run: node --test scripts/test-partner-third-coverage.cjs scripts/test-partner-forward.cjs scripts/test-escape-partner-history.cjs scripts/test-partner-exchange-evidence.cjs
       - name: Replay the fixed discovery cohort, never regenerate original predictions
         run: |
           git fetch --depth=1 origin 068be22355b2a61f0000507662452cf2535e14cf
           node scripts/research-partner-third-coverage.cjs 068be22355b2a61f0000507662452cf2535e14cf research-output/partner-third-coverage.json
+          node scripts/research-partner-exchange-evidence.cjs 068be22355b2a61f0000507662452cf2535e14cf research-output/partner-third-coverage.json research-output/partner-exchange-evidence.json
       - uses: actions/upload-artifact@v4
         with:
           name: partner-third-coverage-discovery
-          path: research-output/partner-third-coverage.json
+          path: |
+            research-output/partner-third-coverage.json
+            research-output/partner-exchange-evidence.json
           if-no-files-found: error
           retention-days: 90
