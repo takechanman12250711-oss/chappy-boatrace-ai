@@ -213,7 +213,7 @@ try {
       const source = fs.readFileSync(path.join(__dirname, '../.github/workflows', file), 'utf8');
       const [compute, writer] = source.split(`\n  ${job}:`);
       assert.ok(writer); assert.doesNotMatch(compute, /group: chappy-main-data-writers|contents: write/);
-      assert.match(compute, /actions\/upload-artifact@v4/); assert.match(compute, /if-no-files-found: error/);
+      assert.match(compute, /actions\/upload-artifact@v4/); assert.match(compute, /if-no-files-found: error/); assert.match(compute, /retention-days: 3\s/);
       assert.match(writer, /group: chappy-main-data-writers\n\s+queue: max\n\s+cancel-in-progress: false/);
       assert.match(writer, /artifact-ids: \$\{\{ needs\./); assert.match(writer, /MANIFEST_SHA256:/);
       assert.ok(writer.indexOf('Require uploaded checkpoint identity') < writer.indexOf('actions/download-artifact@v4'));

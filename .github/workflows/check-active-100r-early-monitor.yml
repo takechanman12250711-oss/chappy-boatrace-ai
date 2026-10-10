@@ -89,7 +89,7 @@ jobs:
         with:
           name: active-100r-checkpoint-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/active-100r-checkpoint
-          retention-days: 30
+          retention-days: 3
           if-no-files-found: error
 
   publish_monitor:

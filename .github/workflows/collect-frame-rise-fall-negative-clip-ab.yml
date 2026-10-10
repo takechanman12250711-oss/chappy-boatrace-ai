@@ -93,7 +93,7 @@ jobs:
         with:
           name: negative-clip-checkpoint-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/negative-clip-checkpoint
-          retention-days: 30
+          retention-days: 3
           compression-level: 0
           if-no-files-found: error
 
