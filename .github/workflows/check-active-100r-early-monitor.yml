@@ -5,6 +5,8 @@ on:
       - 'scripts/build-active-100r-early-monitor.cjs'
       - 'tests/build-active-100r-early-monitor.test.cjs'
       - '.github/workflows/check-active-100r-early-monitor.yml'
+      - 'scripts/generated-data-checkpoint.cjs'
+      - 'tests/generated-data-checkpoint.test.cjs'
   workflow_run:
     workflows:
       - 'Collect automatic race predictions'
@@ -15,7 +17,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   issues: write
 
 concurrency:
@@ -26,14 +28,23 @@ jobs:
   verify:
     if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.actor.login != 'github-actions[bot]')
     runs-on: ubuntu-latest
+    outputs:
+      source_sha: ${{ steps.checkpoint.outputs.baseSha }}
+      capture_run_id: ${{ steps.checkpoint.outputs.runId }}
+      capture_attempt: ${{ steps.checkpoint.outputs.runAttempt }}
+      manifest_sha256: ${{ steps.checkpoint.outputs.manifestSha256 }}
+      artifact_id: ${{ steps.backup.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with: {node-version: 20}
       - run: node --check scripts/build-active-100r-early-monitor.cjs
       - run: node tests/build-active-100r-early-monitor.test.cjs
+      - run: node tests/generated-data-checkpoint.test.cjs
+      - run: node tests/main-data-writer-concurrency.test.cjs
       - name: Build current active 100R monitor
         run: |
           node - <<'NODE'
@@ -67,19 +78,60 @@ jobs:
           misses="$(node -e "const r=require('./data/stats/active-100r-early-monitor.json');process.stdout.write(String(r.misses||0))")"
           gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "✅ 100R検証が100件に到達しました。\n\n- 照合済み: ${matched}R\n- 的中: ${hits}\n- 不的中: ${misses}\n- 集計: data/stats/active-100r-early-monitor.json\n\n次の改善判断に進める状態です。"
 
-      - name: Save refreshed monitor
+      - name: Package refreshed monitor
         if: github.event_name != 'pull_request'
-        run: |
-          git add data/stats/active-100r-early-monitor.json
-          if git diff --cached --quiet; then
-            echo "100R monitor is already current"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Refresh active 100R early monitor"
-          for attempt in 1 2 3; do
-            git pull --rebase origin main
-            if git push origin HEAD:main; then exit 0; fi
-          done
-          exit 1
+        id: checkpoint
+        run: node scripts/generated-data-checkpoint.cjs pack active-100r "$RUNNER_TEMP/active-100r-checkpoint"
+      - name: Preserve refreshed monitor before publication
+        if: github.event_name != 'pull_request'
+        id: backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: active-100r-checkpoint-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/active-100r-checkpoint
+          retention-days: 30
+          if-no-files-found: error
+
+  publish_monitor:
+    needs: verify
+    if: github.event_name != 'pull_request' && needs.verify.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: none
+    concurrency:
+      group: chappy-main-data-writers
+      queue: max
+      cancel-in-progress: false
+    outputs:
+      saved_sha: ${{ steps.save.outputs.savedSha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          sparse-checkout: scripts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Require uploaded checkpoint identity
+        env:
+          ARTIFACT_ID: ${{ needs.verify.outputs.artifact_id }}
+          MANIFEST_SHA256: ${{ needs.verify.outputs.manifest_sha256 }}
+        run: test -n "$ARTIFACT_ID" && test -n "$MANIFEST_SHA256"
+      - name: Download exact refreshed monitor
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ needs.verify.outputs.artifact_id }}
+          path: ${{ runner.temp }}/active-100r-checkpoint
+          merge-multiple: true
+      - name: Publish preserved monitor without recomputation
+        id: save
+        env:
+          BASE_SHA: ${{ needs.verify.outputs.source_sha }}
+          CAPTURE_RUN_ID: ${{ needs.verify.outputs.capture_run_id }}
+          CAPTURE_RUN_ATTEMPT: ${{ needs.verify.outputs.capture_attempt }}
+          ARTIFACT_ID: ${{ needs.verify.outputs.artifact_id }}
+          MANIFEST_SHA256: ${{ needs.verify.outputs.manifest_sha256 }}
+        run: node scripts/generated-data-checkpoint.cjs publish active-100r "$RUNNER_TEMP/active-100r-checkpoint"
