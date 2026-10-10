@@ -1,0 +1,44 @@
+name: Check partner course ablation
+on:
+  pull_request:
+    paths:
+      - 'scripts/partner-course-ablation*'
+      - 'scripts/compare-partner-course-ablation.cjs'
+      - 'scripts/test-partner-course-ablation.cjs'
+      - '.github/workflows/check-partner-course-ablation.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node --test scripts/test-partner-course-ablation.cjs scripts/test-partner-calibration.cjs
+      - name: Reuse frozen evidence without retraining or collection
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: '10950118145'
+          run-id: '36374467050'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: /tmp/partner-course-source
+          merge-multiple: true
+      - name: Compare pinned stored rows at the same budget
+        run: node scripts/compare-partner-course-ablation.cjs /tmp/partner-course-source /tmp/partner-course-report
+      - name: Verify no production or source data edits
+        run: git diff --exit-code -- js config data
+      - name: Save new research evidence separately
+        uses: actions/upload-artifact@v4
+        with:
+          name: partner-course-ablation
+          path: |
+            /tmp/partner-course-report/comparison.json
+            scripts/partner-course-ablation.cjs
+            scripts/partner-course-ablation-protocol.json
+            scripts/compare-partner-course-ablation.cjs
+          retention-days: 90
+          if-no-files-found: error
