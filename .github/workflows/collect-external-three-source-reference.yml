@@ -84,6 +84,12 @@ jobs:
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
           fetch-depth: 1
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /scripts/collect-official-reference.py
+            /scripts/test-official-reference.py
+            /data/official-reference/
+            /data/stats/official-reference-v1.json
       - name: Verify official reference contracts
         run: python3 scripts/test-official-reference.py
       - name: Ensure PDF text reader
