@@ -11,6 +11,8 @@ on:
       - "scripts/test-frame-rise-fall-negative-clip-snapshots.js"
       - "scripts/test-frame-rise-fall-negative-clip-result-report.js"
       - ".github/workflows/collect-frame-rise-fall-negative-clip-ab.yml"
+      - "scripts/generated-data-checkpoint.cjs"
+      - "tests/generated-data-checkpoint.test.cjs"
   workflow_run:
     workflows:
       - "Collect automatic race predictions"
@@ -23,10 +25,10 @@ on:
         type: string
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: chappy-main-data-writers
+  group: negative-clip-compute-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
   queue: max
   cancel-in-progress: false
 
@@ -35,11 +37,19 @@ jobs:
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    outputs:
+      source_sha: ${{ steps.checkpoint.outputs.baseSha }}
+      capture_run_id: ${{ steps.checkpoint.outputs.runId }}
+      capture_attempt: ${{ steps.checkpoint.outputs.runAttempt }}
+      checkpoint_date: ${{ steps.checkpoint.outputs.date }}
+      manifest_sha256: ${{ steps.checkpoint.outputs.manifestSha256 }}
+      artifact_id: ${{ steps.backup.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
-          fetch-depth: 0
+          fetch-depth: 1
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -52,11 +62,21 @@ jobs:
           node scripts/test-frame-rise-fall-negative-clip-shadow.js
           node scripts/test-frame-rise-fall-negative-clip-snapshots.js
           node scripts/test-frame-rise-fall-negative-clip-result-report.js
+          node tests/generated-data-checkpoint.test.cjs
+          node tests/main-data-writer-concurrency.test.cjs
 
-      - name: Capture prospective comparison
+      - name: Freeze target date
         if: github.event_name != 'pull_request'
+        id: target
         env:
           PREDICT_DATE: ${{ inputs.date }}
+        run: node -e 'const fs=require("node:fs"), api=require("./scripts/daily-prediction-source-archive"); fs.appendFileSync(process.env.GITHUB_OUTPUT, `date=${api.resolveTargetDate()}\n`);'
+
+      - name: Capture prospective comparison
+        id: checkpoint
+        if: github.event_name != 'pull_request'
+        env:
+          PREDICT_DATE: ${{ steps.target.outputs.date }}
         run: |
           node scripts/restore-daily-prediction-source.js
           node scripts/build-frame-rise-fall-negative-clip-snapshots.js
@@ -64,20 +84,59 @@ jobs:
             node scripts/build-frame-rise-fall-negative-clip-result-report.js
           fi
           node scripts/prepare-daily-prediction-git-save.js
+          node scripts/generated-data-checkpoint.cjs pack negative-clip "$RUNNER_TEMP/negative-clip-checkpoint"
 
-      - name: Save prospective comparison
+      - name: Preserve generated comparison before publication
         if: github.event_name != 'pull_request'
-        run: |
-          git add data/predictions
-          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
-            git add data/stats/frame-rise-fall-negative-clip-result-report.json
-          fi
-          if git diff --cached --quiet; then
-            echo "保存するnegative clip比較データはありません"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Collect frame rise fall negative clip A/B"
-          git pull --rebase origin main
-          git push origin main
+        id: backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: negative-clip-checkpoint-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/negative-clip-checkpoint
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: error
+
+  publish_comparison:
+    needs: verify-and-collect
+    if: github.event_name != 'pull_request' && needs.verify-and-collect.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    concurrency:
+      group: chappy-main-data-writers
+      queue: max
+      cancel-in-progress: false
+    outputs:
+      saved_sha: ${{ steps.save.outputs.savedSha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          sparse-checkout: scripts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Require uploaded checkpoint identity
+        env:
+          ARTIFACT_ID: ${{ needs.verify-and-collect.outputs.artifact_id }}
+          MANIFEST_SHA256: ${{ needs.verify-and-collect.outputs.manifest_sha256 }}
+        run: test -n "$ARTIFACT_ID" && test -n "$MANIFEST_SHA256"
+      - name: Download exact generated comparison
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ needs.verify-and-collect.outputs.artifact_id }}
+          path: ${{ runner.temp }}/negative-clip-checkpoint
+          merge-multiple: true
+      - name: Publish preserved comparison without recomputation
+        id: save
+        env:
+          BASE_SHA: ${{ needs.verify-and-collect.outputs.source_sha }}
+          CAPTURE_RUN_ID: ${{ needs.verify-and-collect.outputs.capture_run_id }}
+          CAPTURE_RUN_ATTEMPT: ${{ needs.verify-and-collect.outputs.capture_attempt }}
+          CHECKPOINT_DATE: ${{ needs.verify-and-collect.outputs.checkpoint_date }}
+          ARTIFACT_ID: ${{ needs.verify-and-collect.outputs.artifact_id }}
+          MANIFEST_SHA256: ${{ needs.verify-and-collect.outputs.manifest_sha256 }}
+        run: node scripts/generated-data-checkpoint.cjs publish negative-clip "$RUNNER_TEMP/negative-clip-checkpoint"
