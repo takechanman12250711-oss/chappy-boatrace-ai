@@ -43,7 +43,7 @@ const negativeClip = fs.readFileSync(
   "utf8",
 );
 assert.ok(!negativeClip.includes("\n  push:"));
-assert.ok(negativeClip.includes('workflows:\n      - "Collect automatic race predictions"'));
+assert.ok(negativeClip.includes('workflows:\n      - "Collect frame rise fall shadow A/B"'));
 assert.ok(!negativeClip.includes('      - "Collect official race results"'));
 assert.ok(negativeClip.includes('if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]'));
 

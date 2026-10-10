@@ -3,6 +3,10 @@ name: Collect frame rise fall negative clip A/B
 on:
   pull_request:
     paths:
+      - "scripts/frame-shadow-save-handoff.cjs"
+      - "tests/frame-shadow-save-handoff.test.cjs"
+      - "scripts/test-phase3-refresh-contract.js"
+      - ".github/workflows/collect-frame-rise-fall-shadow-ab.yml"
       - "config/frame-rise-fall-negative-clip-trial.json"
       - "js/frame-rise-fall-negative-clip-shadow.js"
       - "scripts/build-frame-rise-fall-negative-clip-snapshots.js"
@@ -15,7 +19,8 @@ on:
       - "tests/generated-data-checkpoint.test.cjs"
   workflow_run:
     workflows:
-      - "Collect automatic race predictions"
+      - "Collect frame rise fall shadow A/B"
+    branches: [main]
     types: [completed]
   workflow_dispatch:
     inputs:
@@ -26,6 +31,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: negative-clip-compute-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
@@ -34,10 +40,10 @@ concurrency:
 
 jobs:
   verify-and-collect:
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     outputs:
+      capture_allowed: ${{ steps.ready.outputs.allowed }}
       source_sha: ${{ steps.checkpoint.outputs.baseSha }}
       capture_run_id: ${{ steps.checkpoint.outputs.runId }}
       capture_attempt: ${{ steps.checkpoint.outputs.runAttempt }}
@@ -54,8 +60,15 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Validate upstream invocation
+        id: trigger
+        run: node scripts/frame-shadow-save-handoff.cjs admit
+
       - name: Verify negative clip prospective A/B
+        if: steps.trigger.outputs.allowed == 'true'
         run: |
+          node tests/frame-shadow-save-handoff.test.cjs
+          node scripts/test-phase3-refresh-contract.js
           node --check js/frame-rise-fall-negative-clip-shadow.js
           node --check scripts/build-frame-rise-fall-negative-clip-snapshots.js
           node --check scripts/build-frame-rise-fall-negative-clip-result-report.js
@@ -66,15 +79,52 @@ jobs:
           node tests/main-data-writer-concurrency.test.cjs
 
       - name: Freeze target date
-        if: github.event_name != 'pull_request'
+        if: steps.trigger.outputs.allowed == 'true' && github.event_name != 'pull_request'
         id: target
         env:
           PREDICT_DATE: ${{ inputs.date }}
         run: node -e 'const fs=require("node:fs"), api=require("./scripts/daily-prediction-source-archive"); fs.appendFileSync(process.env.GITHUB_OUTPUT, `date=${api.resolveTargetDate()}\n`);'
 
+      - name: Read exact successful frame save receipt
+        if: steps.trigger.outputs.mode == 'automatic'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            const path = require('node:path');
+            const { execFileSync } = require('node:child_process');
+            const handoff = require('./scripts/frame-shadow-save-handoff.cjs');
+            try {
+              const run = context.payload.workflow_run;
+              const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {
+                ...context.repo, run_id: run.id, per_page: 100
+              });
+              const artifact = handoff.selectArtifact(artifacts, run);
+              const download = await github.rest.actions.downloadArtifact({
+                ...context.repo, artifact_id: artifact.id, archive_format: 'zip'
+              });
+              const bytes = Buffer.from(download.data);
+              handoff.verifyArtifact(bytes, artifact);
+              const zip = path.join(process.env.RUNNER_TEMP, 'frame-shadow-save.zip');
+              fs.writeFileSync(zip, bytes);
+              const receipt = execFileSync('unzip', ['-p', zip, handoff.RECEIPT_FILE], { maxBuffer: 1024 * 1024 });
+              fs.writeFileSync(path.join(process.env.RUNNER_TEMP, handoff.RECEIPT_FILE), receipt);
+              await core.summary.addRaw(`Verified frame save artifact ${artifact.id}, run ${run.id}/${run.run_attempt}.\n`).write();
+            } catch (error) {
+              await core.summary.addRaw(`Frame save receipt FAILED: ${error.message}\n`).write();
+              throw error;
+            }
+
+      - name: Verify current source matches completed frame save
+        id: ready
+        if: steps.trigger.outputs.allowed == 'true' && github.event_name != 'pull_request'
+        env:
+          PREDICT_DATE: ${{ steps.target.outputs.date }}
+        run: node scripts/frame-shadow-save-handoff.cjs ready "$RUNNER_TEMP/frame-shadow-save.json"
+
       - name: Capture prospective comparison
         id: checkpoint
-        if: github.event_name != 'pull_request'
+        if: steps.ready.outputs.allowed == 'true'
         env:
           PREDICT_DATE: ${{ steps.target.outputs.date }}
         run: |
@@ -87,7 +137,7 @@ jobs:
           node scripts/generated-data-checkpoint.cjs pack negative-clip "$RUNNER_TEMP/negative-clip-checkpoint"
 
       - name: Preserve generated comparison before publication
-        if: github.event_name != 'pull_request'
+        if: steps.ready.outputs.allowed == 'true'
         id: backup
         uses: actions/upload-artifact@v4
         with:
@@ -99,7 +149,7 @@ jobs:
 
   publish_comparison:
     needs: verify-and-collect
-    if: github.event_name != 'pull_request' && needs.verify-and-collect.result == 'success'
+    if: github.event_name != 'pull_request' && needs.verify-and-collect.result == 'success' && needs.verify-and-collect.outputs.capture_allowed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

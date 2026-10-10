@@ -3,6 +3,8 @@ name: Collect frame rise fall shadow A/B
 on:
   pull_request:
     paths:
+      - "scripts/frame-shadow-save-handoff.cjs"
+      - "tests/frame-shadow-save-handoff.test.cjs"
       - "js/frame-rise-fall-shadow-storage.js"
       - "js/frame-rise-fall-shadow-replay.js"
       - "js/frame-rise-fall-replay-preload.js"
@@ -57,6 +59,7 @@ jobs:
           node-version: "20"
       - name: Verify shadow storage
         run: |
+          node tests/frame-shadow-save-handoff.test.cjs
           node --check js/frame-rise-fall-shadow-storage.js
           node --check js/frame-rise-fall-shadow-replay.js
           node --check js/frame-rise-fall-replay-preload.js
@@ -80,10 +83,16 @@ jobs:
         run: |
           node scripts/test-theory-ab-phase10-approval.js
           node scripts/build-theory-ab-phase10.js
+      - name: Freeze frame source date
+        if: github.event_name != 'pull_request'
+        id: target
+        env:
+          PREDICT_DATE: ${{ inputs.date }}
+        run: node scripts/frame-shadow-save-handoff.cjs freeze
       - name: Capture prospective shadow snapshots
         if: github.event_name != 'pull_request'
         env:
-          PREDICT_DATE: ${{ inputs.date }}
+          PREDICT_DATE: ${{ steps.target.outputs.date }}
         run: |
           node scripts/restore-daily-prediction-source.js
           node scripts/build-frame-rise-fall-shadow-snapshots.js
@@ -92,7 +101,7 @@ jobs:
       - name: Save shadow snapshots
         if: github.event_name != 'pull_request'
         env:
-          PREDICT_DATE: ${{ inputs.date }}
+          PREDICT_DATE: ${{ steps.target.outputs.date }}
         run: |
           node scripts/prepare-daily-prediction-git-save.js
           git add data/stats/frame-rise-fall-shadow-snapshot-archive.json data/stats/theory-ab-phase10.json
@@ -105,3 +114,19 @@ jobs:
           git commit -m "Collect frame rise fall shadow A/B snapshot"
           git pull --rebase origin main
           git push origin main
+
+      - name: Attest saved frame source
+        if: github.event_name == 'workflow_run'
+        env:
+          PREDICT_DATE: ${{ steps.target.outputs.date }}
+          FROZEN_AT: ${{ steps.target.outputs.frozen_at }}
+          CAPTURE_SHA: ${{ steps.target.outputs.capture_sha }}
+        run: node scripts/frame-shadow-save-handoff.cjs receipt "$RUNNER_TEMP/frame-shadow-save/frame-shadow-save.json"
+      - name: Preserve exact frame save receipt
+        if: github.event_name == 'workflow_run'
+        uses: actions/upload-artifact@v4
+        with:
+          name: frame-shadow-save-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/frame-shadow-save/frame-shadow-save.json
+          retention-days: 3
+          if-no-files-found: error
