@@ -13,6 +13,8 @@ on:
       - 'scripts/independent-autonomous-candidate.cjs'
       - 'scripts/independent-judgment-context.cjs'
       - 'scripts/independent-autonomous-forward.cjs'
+      - 'scripts/independent-pair-route-*.cjs'
+      - 'config/independent-pair-route-diagnostic-v1.json'
       - 'config/independent-flow-study-v1.json'
       - 'scripts/independent-flow-roles-v1.cjs'
       - 'scripts/independent-flow-study-report.cjs'
@@ -59,6 +61,8 @@ on:
       - 'scripts/independent-autonomous-candidate.cjs'
       - 'scripts/independent-judgment-context.cjs'
       - 'scripts/independent-autonomous-forward.cjs'
+      - 'scripts/independent-pair-route-*.cjs'
+      - 'config/independent-pair-route-diagnostic-v1.json'
       - 'config/independent-flow-study-v1.json'
       - 'scripts/independent-flow-roles-v1.cjs'
       - 'scripts/independent-flow-study-report.cjs'
@@ -115,7 +119,7 @@ jobs:
           node scripts/test-escape-main-audit.cjs
           node --test scripts/test-escape-partner-history.cjs
           node --test scripts/test-partner-forward.cjs scripts/independent-role-selector.test.cjs scripts/independent-rule-forward.test.cjs scripts/independent-autonomous.test.cjs
-          node --test scripts/independent-flow-roles.test.cjs scripts/independent-partner-selector.test.cjs scripts/independent-route-water.test.cjs scripts/independent-weather.test.cjs scripts/independent-weather-v2.test.cjs
+          node --test scripts/independent-flow-roles.test.cjs scripts/independent-partner-selector.test.cjs scripts/independent-route-water.test.cjs scripts/independent-pair-route.test.cjs scripts/independent-weather.test.cjs scripts/independent-weather-v2.test.cjs
           node scripts/test-note-draft-bundle.js
           node scripts/test-escape-skill-role.cjs
           node scripts/test-racer-skill-theory.js

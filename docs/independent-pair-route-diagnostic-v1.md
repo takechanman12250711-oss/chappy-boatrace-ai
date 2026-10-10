@@ -1,9 +1,9 @@
 # 独立研究の2・3着ペア進路診断 v1 — 設計
 
-設計日: 2026-10-11 JST。状態: **設計完了、実装・収集接続は未着手**。
+設計日: 2026-10-11 JST。状態: **診断関数・snapshot-v8・既存日次集計への接続を実装。新規実レースの締切前保存は未確認**。
 確認基準: main `5371ac9edaac469ebbf1403ef87127f139090b7c`。
 引き継ぎ: [Issue #1214 の接続監査](https://github.com/takechanman12250711-oss/chappy-boatrace-ai/issues/1214#issuecomment-6098700177)。
-本書のフィールドとファイル名は新規実装の契約案であり、既に保存されている項目とは区別する。
+本書は実装契約。PRのCIとmain反映、新規実レースの保存・日次集計は分けて確認する。旧原本には診断を追加しない。
 
 ## 目的と完了範囲
 
@@ -12,7 +12,7 @@
 
 2/3着コース補正同時除去、2着だけの除去、通常3Rの同一枝監査は完了済み。本書のために再比較しない。
 通常AI、旧順位モデルの既視362R、独立研究を混ぜない。同じzoneによる一律除外、外艇の強制追加、点数埋め、係数調整を導入しない。
-今回は入力・出力・未知値・不変条件・保存接続・実装受入条件を固定する。予想改善の実証や本番採用の完了ではない。
+入力・出力・未知値・不変条件・保存接続・実装受入条件を固定し、診断関数と新規保存経路へ実装した。予想改善の実証や本番採用の完了ではない。
 
 ## 再利用する実装と未接続部分
 
@@ -30,7 +30,7 @@ selector-v2はroutesを含む入力全体を検証するが、艇比較では主
 
 ## 入力契約と信頼境界
 
-新規純粋関数の予定名は `scripts/independent-pair-route-diagnostic-v1.cjs` の
+新規純粋関数は `scripts/independent-pair-route-diagnostic-v1.cjs` の
 `judge(input, context, flow, support, routeWater, selection)`。
 入力は**同じ新規snapshot内**の以下だけを明示的に渡す。
 
@@ -120,11 +120,11 @@ eligible、blocked、推奨券、実旋回順、距離・確率を新設しな�
 
 ## 将来の保存接続と過去データ保護
 
-**本設計PRでは収集コード・config・snapshotの版を変更しない。** 実装時は次を一つの検証可能な接続として行う。
+PR #1282で設計を固定した後、次の接続を実装した。既存の研究方式・候補券・公開順序を保持する。
 
 1. 診断モジュールと専用configを追加し、版・codeHashes・依存hash・安全フラグを固定する。
    既存water/partnerのcodeHashes・protocolHashは診断追加のために変更しない。
-2. 現在のsnapshot-v7に対する次版としてv8を予約する。実装時に最新mainで未使用を再確認する。
+2. snapshot-v7に対する次版v8が未使用であることを確認し、新規captureをv8へ移した。
    新規snapshotにのみ `pairRouteDiagnosticStudy={protocolHash,diagnostic}` を追加する。
    既存candidate、flowStudy、partnerStudy、routeWaterStudy、weatherHistoryStudyは同じ入力で従来どおり保持する。
 3. createRecorderは既存の公式取得で作ったwaterContextとselectionを再利用する。
@@ -150,7 +150,7 @@ eligible、blocked、推奨券、実旋回順、距離・確率を新設しな�
 ## 日次診断の契約
 
 既存 `escape-main-audit.yml` のreport経路に
-`independent-autonomous-report.json.pairRouteDiagnosticStudy` を追加する予定。
+`independent-autonomous-report.json.pairRouteDiagnosticStudy` を追加した。
 新cronやWork定期監視は不要。収集・writer・公開安定化はdot担当で、今回の研究設計と切り分ける。
 
 - generatedAt、sourceCommit、diagnostic版/コードhash/protocolHash、入力seal範囲を明示。
@@ -186,6 +186,8 @@ eligible、blocked、推奨券、実旋回順、距離・確率を新設しな�
 
 ## 完了判定と次の一手
 
-この文書で診断仕様の設計を完了する。次は純粋診断関数と上表の契約テストを実装し、
-既存のcapture/seal/reportへ接続する。実装PRではコードhashを固定し、CIと新規実レース保存を確認する。
+診断関数・契約テスト・既存capture/seal/reportへの接続を実装した。新規configに診断・レポート・既存route/selectorのコードhashと上流3研究protocolHashを固定する。
+ローカルは関連契約テスト103件成功（通常モデルを読み込むcollectorテスト1件は完全checkoutのCIで実行）。CIのheadと結果は実装PRを正本とする。
+次はmain反映後、既存live-noteによる新規実レースv8のartifact ID/digest/run/head/締切前確認と、日次report保存の確認。
+深夜の合成入力を実レースとして封印せず、過去レースへ後付けしない。保存待ちを実証完了としない。
 診断だけでは券も精度も変わらない。ペアの選定方式、未使用期間での効果比較、本番採用はその後の別工程として残す。
