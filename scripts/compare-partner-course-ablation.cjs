@@ -11,7 +11,8 @@ function metrics(rows,key,reference) {
  for(const r of rows){const hit=r[key].includes(r.actual),before=r[reference].includes(r.actual);hits+=Number(hit);cost+=100*r[key].length;returned+=hit?r.payout:0;if(hit!==before)(hit?gained:lost).push({raceKey:r.raceKey,actual:r.actual,removed:r[reference].filter(t=>!r[key].includes(t)),added:r[key].filter(t=>!r[reference].includes(t))});}
  return {races:rows.length,hits,hitRate:rows.length?100*hits/rows.length:null,cost,returned,recoveryRate:cost?100*returned/cost:null,gainedHits:gained.length,lostHits:lost.length,netHits:gained.length-lost.length,gained,lost};
 }
-function compare(root,out) {
+function compare(root,out,experiment={select,VERSION,protocol}) {
+ const {select,VERSION,protocol}=experiment;
  const model=read(path.join(root,'calibration/model.json'),protocol.modelSha256);
  const source=read(path.join(root,'calibration/scored-rows.json'),protocol.rowsSha256);
  assert.equal(new Set(source.map(r=>r.raceKey)).size,source.length);
