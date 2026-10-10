@@ -17,7 +17,7 @@ let checks = 0;
 const git = (cwd, args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: 'pipe' }).trimEnd();
 const write = (cwd, file, value) => { fs.mkdirSync(path.dirname(path.join(cwd, file)), { recursive: true }); fs.writeFileSync(path.join(cwd, file), value); };
 function commit(cwd) { git(cwd, ['add', '.']); git(cwd, ['commit', '-m', 'fixture']); }
-function fixture(name, profile = 'negative-clip', changed = true, archived = true) {
+function fixture(name, profile = 'negative-clip', changed = true, archived = true, originalBlobCount = 0) {
   const dir = path.join(root, name), work = path.join(dir, 'work'), remote = path.join(dir, 'remote.git'), other = path.join(dir, 'other');
   fs.mkdirSync(work, { recursive: true });
   git(work, ['init', '-b', 'main']);
@@ -27,6 +27,8 @@ function fixture(name, profile = 'negative-clip', changed = true, archived = tru
   write(work, 'scripts/fixture.cjs', '// immutable generator\n');
   write(work, 'data/results/20261010.json', '{"originalResult":true}\n');
   write(work, 'data/notes/fixture.md', 'original note\n');
+  const originalPaths = Array.from({ length: originalBlobCount }, (_, i) => `data/originals/${i}.bin`);
+  originalPaths.forEach((file, i) => write(work, file, Buffer.alloc(128 * 1024, i + 1)));
   commit(work);
   const baseSha = git(work, ['rev-parse', 'HEAD']);
   git(dir, ['clone', '--bare', work, remote]); git(work, ['remote', 'add', 'origin', 'file://' + remote]);
@@ -41,7 +43,7 @@ function fixture(name, profile = 'negative-clip', changed = true, archived = tru
   const directory = path.join(dir, 'checkpoint');
   const packed = checkpoint.pack({ root: work, profile, date: profile === 'negative-clip' ? '20261010' : '', output: directory, runId: '101', runAttempt: '1' });
   const expected = { profile, date: packed.date, baseSha, runId: '101', runAttempt: '1', artifactId: '202', manifestSha256: packed.manifestSha256 };
-  return { dir, work, remote, other, directory, expected, original, next, packed };
+  return { dir, work, remote, other, directory, expected, original, next, packed, originalPaths };
 }
 function publish(f, beforePush) { return checkpoint.publish({ root: f.work, directory: f.directory, expected: f.expected, beforePush }); }
 function advance(f, file, value) {
@@ -75,6 +77,51 @@ try {
     assert.equal(publish(f).status, 'already-persisted', 'replay of exact bytes creates no extra commit');
   });
   for (const profile of ['negative-clip', 'active-100r']) {
+    test(`${profile}: true partial clone preserves 13 missing remote originals through an exact push`, () => {
+      const f = fixture('promisor-' + profile, profile, true, true, 13);
+      const partial = path.join(f.dir, 'partial');
+      git(f.remote, ['config', 'uploadpack.allowFilter', 'true']);
+      git(f.dir, ['clone', '--filter=blob:none', '--no-checkout', '--depth=1', '--branch=main', 'file://' + f.remote, partial]);
+      git(partial, ['sparse-checkout', 'set', 'scripts']);
+      git(partial, ['checkout', 'main']);
+      assert.equal(git(partial, ['config', '--get', 'remote.origin.promisor']), 'true');
+      assert.equal(git(partial, ['config', '--get', 'remote.origin.partialclonefilter']), 'blob:none');
+      assert.equal(git(partial, ['rev-parse', '--is-shallow-repository']), 'true');
+      // Enumerate only local objects: unlike cat-file -e, this cannot lazy-fetch.
+      const localObjects = () => new Set(git(partial, ['cat-file', '--batch-all-objects', '--batch-check=%(objectname)']).split('\n'));
+      const originals = f.originalPaths.map(file => git(f.remote, ['rev-parse', `main:${file}`]));
+      const assertOriginalsMissing = () => {
+        const present = localObjects();
+        assert.equal(originals.filter(oid => !present.has(oid)).length, 13);
+        assert.equal(fs.existsSync(path.join(partial, 'data')), false);
+      };
+      originals.forEach(oid => assert.equal(git(f.remote, ['cat-file', '-t', oid]), 'blob'));
+      assertOriginalsMissing();
+      const manifest = JSON.parse(fs.readFileSync(path.join(f.directory, 'manifest.json')));
+      const first = manifest.files.find(file => file.operation === 'write');
+      const payload = path.join(f.directory, 'files', first.sha256), bytes = fs.readFileSync(payload);
+      fs.unlinkSync(payload);
+      let pushes = 0;
+      assert.throws(() => checkpoint.publish({ root: partial, directory: f.directory, expected: f.expected, beforePush: () => pushes++ }));
+      assert.equal(pushes, 0); assert.equal(git(f.remote, ['rev-parse', 'main']), f.expected.baseSha);
+      assertOriginalsMissing(); fs.writeFileSync(payload, bytes);
+      const before = git(partial, ['status', '--porcelain']);
+      const result = checkpoint.publish({ root: partial, directory: f.directory, expected: f.expected, beforePush: () => {
+        assertOriginalsMissing();
+        const present = localObjects();
+        for (const file of manifest.files.filter(file => file.operation === 'write'))
+          assert.ok(present.has(file.newBlob), 'every generated blob must already exist locally');
+      } });
+      assert.equal(result.status, 'saved'); assertOriginalsMissing();
+      assert.equal(git(partial, ['status', '--porcelain']), before);
+      assert.deepEqual(git(f.remote, ['diff-tree', '--no-commit-id', '--name-only', '-r', result.savedSha]).split('\n').sort(), manifest.files.map(file => file.path).sort());
+      for (const file of manifest.files.filter(file => file.operation === 'write')) {
+        assert.equal(git(f.remote, ['rev-parse', `main:${file.path}`]), file.newBlob);
+        assert.deepEqual(remoteFile(f, file.path), fs.readFileSync(path.join(f.directory, 'files', file.sha256)));
+      }
+      assert.deepEqual(f.originalPaths.map(file => git(f.remote, ['rev-parse', `main:${file}`])), originals);
+      assert.deepEqual(JSON.parse(remoteFile(f, raw)), f.original);
+    });
     test(`${profile}: non-conflicting push race retries exact frozen payload and preserves competing data`, () => {
       const f = fixture('retry-' + profile, profile);
       const result = publish(f, ({ attempt }) => { if (attempt === 1) advance(f, 'data/stats/other.json', '{"competitor":1}\n'); });
