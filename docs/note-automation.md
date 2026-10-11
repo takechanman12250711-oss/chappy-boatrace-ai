@@ -367,3 +367,15 @@ node scripts/check-charter.js
 - `readable-v1` の既存「中心の買い目」は、実際の公開proofまたは検証済み旧publisherコードの証拠から一致を確認できた場合だけ対応する。`readable-v2` には対象欄がなく、同じ点数の本命欄を読み替えない。既公開v1/v2の本文・proof・復元コードは保持し、過去原稿へ後付けしない。
 - コロがし対象の再掲は公開4区分の和集合・的中判定・区分別成績へ加算せず、別会計の参考予想にも分類しない。既存の事前artifact登録、無料一覧の匿名確認、双方の締切120秒超、状態の追記専用記録は維持する。
 - 10月7日桐生6Rは保存中心6券と公開本命6券が異なるv2の確認例として登録を見送った。修正のテスト成功・main反映と、次の適格記事による実コースの事前登録・掲載・公式照合は別に確認する。実購入・入金・決済処理は含まない。
+
+
+## 2026-10-11 編集画面readinessの失敗診断
+
+`ensureEditorReady` の最終フィールド検査が `note_editor_fields_not_ready` で停止する場合だけ、既存Actionsログへ `NOTE_UI_EDITOR_READINESS=` の小さいJSONを1行残す。`note-editor-readiness-v1` は固定のlocation分類、タイトル/本文の検出boolean、編集検査の結果、main frameを含むframe件数だけを記録する。
+
+- locationは `editor_https` / `note_https` / `other_https` / `non_https` / `invalid`。URL本体・path・query・fragment・記事IDは出さない。
+- `titleEditable` / `bodyEditable` は `not_checked` / `editable` / `not_editable` / `check_failed`。従来の短絡評価で未検査になった状態はfalse扱いしない。検査例外の本文・stackも出さない。
+- frame取得に失敗した場合は `frameCountKnown=false` / `frameCount=0`。実測0件と区別する。診断失敗で元の停止理由を変更せず、DOM/本文/属性/画像/Cookie/profile/secretを収集・保存しない。別artifactや保存ファイルを増やさない。
+- navigation・1秒待機・タイトルと本文それぞれの既存15秒探索・500ms間隔・selector・検査順・公開gate・期限・価格・永久claimは変更しない。診断のための再navigation・自動retry・本文入力・再公開は行わない。
+
+これは観測不足を補う実装であり、編集画面の障害原因や復旧を証明しない。2026-10-11のrun38128826982はこの診断を持たない旧コードのため、後付けで原因を確定できない。期限切れの桐生8R（20261011-01-8、normal）のclaimは保持し、再実行しない。次に自然発生した同エラーのログで、欠損・編集不可・検査エラー・host遷移を切り分ける。
