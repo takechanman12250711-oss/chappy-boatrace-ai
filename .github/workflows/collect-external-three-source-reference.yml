@@ -95,7 +95,7 @@ jobs:
       - name: Ensure PDF text reader
         if: github.event_name != 'pull_request'
         run: command -v pdftotext || (sudo apt-get update -qq && sudo apt-get install -y poppler-utils)
-      - name: Collect dated official references once per JST day
+      - name: Collect daily official references with bounded failed-source retries
         if: github.event_name != 'pull_request'
         id: official
         continue-on-error: true
@@ -118,3 +118,4 @@ jobs:
       - name: Expose collection failure after saving diagnostics
         if: github.event_name != 'pull_request' && steps.official.outcome == 'failure'
         run: exit 1
+

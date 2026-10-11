@@ -4,7 +4,7 @@
 
 ## 更新範囲
 
-既存 `collect-external-three-source-reference.yml` の `official-reference` jobが動く。新しいcron、ChatGPT/Work監視、有料APIは追加しない。既存の毎時・上流完了起動を使い、ソースごとにJSTの1日1回だけ取得する。失敗も当日の試行として残し、次のJST日で再試行する。定刻保証ではなく、既存workflowが実行された時点で更新する。
+既存 `collect-external-three-source-reference.yml` の `official-reference` jobが動く。新しいcron、ChatGPT/Work監視、有料APIは追加しない。既存の毎時・上流完了起動を使い、成功したソースはJSTの当日中に再取得しない。失敗ソースだけ前回試行から1時間以上空け、初回を含め最大3回/日まで再取得する。定刻保証ではなく、既存workflowが実行された時点で更新する。翌JST日は回数をリセットする。
 
 - BOAT RACE公式24場の直近3か月コース別1〜6着率・決まり手率。6コース完全性、集計期間、0〜100を検査。母数は公開表にないのでnull。
 - 多摩川公式のモーター全基：使用開始日・集計日・各着回数・出走数・2連対率・勝率。
@@ -21,6 +21,8 @@
 
 失敗reportをGitHubへ保存後にjobをfailureにする。親workflow successだけで確認せず、当該jobとmainに保存されたreportのrunId/sourceCommitを照合する。日次上限内のskipは新しい取得成功ではない。
 
+`attemptsToday` と `attemptHistoryToday` に当日の試行回数・時刻・成功/失敗・エラーを残す。復旧時も当日の先行失敗は履歴に残り、成功済みsnapshotは不変。旧形式reportの当日試行は1回として移行する。試行時刻不明・不正な回数は当日再試行を止める。上限到達後もstatus=errorを維持し、翌日まで待つ。全ソースが対象外ならreportを更新せず、取得があったような時刻更新をしない。
+
 ## 使用境界と未接続
 
 全snapshot/reportは productionChanged=false / automaticApplication=false / usableForPrediction=false。取得時点より前の予想へ後付けしない。場率は個人確率でも因果効果でもなく、モーター成績も使用選手・コースの影響を含む。場ごとの行数やモーター基数を検証レース数に足さない。
@@ -29,4 +31,5 @@
 
 ## 検証
 
-`python3 scripts/test-official-reference.py`。欠損・重複・異常値の拒否、PDF複数行、日次制限、同内容の不変保存、失敗時保持と翌日復旧、未来日付拒否を確認する。実サイトの取得結果、CI、main保存は別々に報告する。
+`python3 scripts/test-official-reference.py`。欠損・重複・異常値の拒否、PDF複数行、日次制限、失敗ソース限定・1時間境界・3回上限・JST日跨ぎ・旧report移行、同内容の不変保存、失敗時保持と復旧、未来日付拒否を確認する。実サイトの取得結果、CI、main保存は別々に報告する。
+
