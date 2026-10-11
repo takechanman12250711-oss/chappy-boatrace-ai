@@ -2,6 +2,7 @@
 
 const path=require('node:path');
 const input=require('./analysis-input-contract');
+const { compactForwardResearchRecord } = require('./report-input-projection.cjs');
 const ROOT=path.resolve(__dirname,'..');
 const ACTIVATED_AT=Date.parse('2026-09-01T10:19:20Z');
 
@@ -16,8 +17,8 @@ function add(s,boat,order){if(!boat)return;s.samples++;const p=order.indexOf(boa
 function fin(s){s.winRate=pct(s.wins,s.samples);s.top2Rate=pct(s.top2,s.samples);s.top3Rate=pct(s.top3,s.samples);return s;}
 function bucket(obj,key){obj[key] ||= stat(); return obj[key];}
 function waterClass(c){const w=c?.weather||{};const wind=Number(w.windSpeed??w.wind??c?.windSpeed);const wave=Number(w.waveHeight??w.wave??c?.waveHeight);if((Number.isFinite(wind)&&wind>=6)||(Number.isFinite(wave)&&wave>=8))return'strong';if((Number.isFinite(wind)&&wind>=3)||(Number.isFinite(wave)&&wave>=3))return'medium';if(Number.isFinite(wind)||Number.isFinite(wave))return'calm';return'missing';}
-function build(){
- const cohort=input.buildDefaultCohort({root:ROOT});
+function build(options = {}){
+ const cohort=input.buildDefaultCohort({ ...options, root: options.root || ROOT, compactPredictionRecord: Object.hasOwn(options, 'compactPredictionRecord') ? options.compactPredictionRecord : compactForwardResearchRecord });
  const byAttackFrame={},byFlowFrame={},byWater={},attackOuter={},attackInner={inner:stat(),outer:stat()},flowInner={inner:stat(),outer:stat()};
  let eligible=0;
  for(const r of cohort.records){const t=timeOf(r);if(!Number.isFinite(t)||t<ACTIVATED_AT)continue;const c=cOf(r);if(c?.sourceTiming!=='pre_deadline'||c?.officialResultUsed!==false)continue;const boats=Array.isArray(c.boats)?c.boats:[];if(boats.length!==6)continue;const order=input.finishOrder(r.__officialResult);if(order.length!==3)continue;eligible++;

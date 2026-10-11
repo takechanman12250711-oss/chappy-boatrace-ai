@@ -1,11 +1,24 @@
 name: Run pre-race theory context v1
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/report-input-projection.cjs'
+      - 'scripts/analysis-input-contract.js'
+      - 'scripts/analyze-ticket-expansion-7-12-18-24.cjs'
+      - 'scripts/analyze-ticket-expansion-payout-v2.cjs'
+      - 'scripts/analyze-prerace-theory-context-v1.cjs'
+      - '.github/workflows/run-prerace-theory-context-v1.yml'
   workflow_dispatch:
   schedule:
     - cron: '40 15 * * *'
   pull_request:
     paths:
+      - 'scripts/report-input-projection.cjs'
+      - 'scripts/analysis-input-contract.js'
+      - 'scripts/analyze-ticket-expansion-7-12-18-24.cjs'
+      - 'scripts/analyze-ticket-expansion-payout-v2.cjs'
       - 'scripts/analyze-prerace-theory-context-v1.cjs'
       - '.github/workflows/run-prerace-theory-context-v1.yml'
       - 'data/predictions/**'

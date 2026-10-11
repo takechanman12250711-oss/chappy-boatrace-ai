@@ -1,13 +1,26 @@
 name: Run new-head prospective shadow
 
 on:
+  pull_request:
+    paths:
+      - 'scripts/report-input-projection.cjs'
+      - 'scripts/analysis-input-contract.js'
+      - 'scripts/analyze-ticket-expansion-7-12-18-24.cjs'
+      - 'scripts/analyze-ticket-expansion-payout-v2.cjs'
+      - 'scripts/run-new-head-prospective-shadow.cjs'
+      - '.github/workflows/run-new-head-prospective-shadow.yml'
   workflow_dispatch:
   schedule:
     - cron: '20 15 * * *'
   push:
     branches:
+      - main
       - analysis/new-head-prospective-shadow
     paths:
+      - 'scripts/report-input-projection.cjs'
+      - 'scripts/analysis-input-contract.js'
+      - 'scripts/analyze-ticket-expansion-7-12-18-24.cjs'
+      - 'scripts/analyze-ticket-expansion-payout-v2.cjs'
       - 'scripts/run-new-head-prospective-shadow.cjs'
       - '.github/workflows/run-new-head-prospective-shadow.yml'
 

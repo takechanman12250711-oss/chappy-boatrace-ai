@@ -1,10 +1,29 @@
 name: Run combined three rescue forward v1
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'tests/forward-research-memory.test.cjs'
+      - 'tests/forward-research-source-parity.cjs'
+      - 'tests/helpers/report-input-fixture.cjs'
+      - 'scripts/report-input-projection.cjs'
+      - 'scripts/analysis-input-contract.js'
+      - 'scripts/analyze-ticket-expansion-7-12-18-24.cjs'
+      - 'scripts/analyze-ticket-expansion-payout-v2.cjs'
+      - 'scripts/audit-combined-three-rescue-forward-v1.cjs'
+      - '.github/workflows/run-combined-three-rescue-forward-v1.yml'
   workflow_dispatch:
   schedule:
     - cron: '15 16 * * *'
   pull_request:
     paths:
+      - 'tests/forward-research-memory.test.cjs'
+      - 'tests/forward-research-source-parity.cjs'
+      - 'tests/helpers/report-input-fixture.cjs'
+      - 'scripts/report-input-projection.cjs'
+      - 'scripts/analysis-input-contract.js'
+      - 'scripts/analyze-ticket-expansion-7-12-18-24.cjs'
+      - 'scripts/analyze-ticket-expansion-payout-v2.cjs'
       - 'scripts/audit-combined-three-rescue-forward-v1.cjs'
       - '.github/workflows/run-combined-three-rescue-forward-v1.yml'
       - 'data/predictions/**'
@@ -19,6 +38,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Verify report parity and bounded memory
+        run: node tests/forward-research-memory.test.cjs
+      - name: Verify projection against every saved input
+        run: node tests/forward-research-source-parity.cjs > forward-research-source-parity.json
       - name: Run combined forward audit
         run: node scripts/audit-combined-three-rescue-forward-v1.cjs > combined-three-rescue-forward-v1.json
       - name: Validate frozen research boundary
@@ -33,5 +56,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: combined-three-rescue-forward-v1
-          path: combined-three-rescue-forward-v1.json
+          path: |
+            combined-three-rescue-forward-v1.json
+            forward-research-source-parity.json
           retention-days: 90

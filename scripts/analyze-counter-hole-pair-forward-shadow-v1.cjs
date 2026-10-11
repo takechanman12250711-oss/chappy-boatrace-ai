@@ -2,6 +2,7 @@
 
 const path = require('node:path');
 const input = require('./analysis-input-contract');
+const { compactForwardResearchRecord } = require('./report-input-projection.cjs');
 const expansion = require('./analyze-ticket-expansion-7-12-18-24.cjs');
 const payoutAudit = require('./analyze-ticket-expansion-payout-v2.cjs');
 const structured = require('./analyze-structured-formation-backtest-v1.cjs');
@@ -83,9 +84,9 @@ function gateSummary(metric) {
   }));
 }
 
-function build() {
-  const cohort = input.buildDefaultCohort({ root: ROOT });
-  const payouts = payoutAudit.payoutMap();
+function build(options = {}) {
+  const cohort = input.buildDefaultCohort({ ...options, root: options.root || ROOT, compactPredictionRecord: Object.hasOwn(options, 'compactPredictionRecord') ? options.compactPredictionRecord : compactForwardResearchRecord });
+  const payouts = payoutAudit.payoutMap(options.resultsDir || path.join(options.root || ROOT, 'data', 'results'));
   const eligible = cohort.records.filter(record => captureTime(record) >= FREEZE_MS);
   const baseline = metricTemplate();
   const shadow = metricTemplate();
