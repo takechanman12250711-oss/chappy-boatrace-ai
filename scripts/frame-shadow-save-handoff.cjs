@@ -137,6 +137,14 @@ function validateReceipt({ receipt, root = process.cwd(), run, repository, date,
   if (changed) return skip(`frame-source-or-generation-changed:${changed.path}`);
   return { allowed: true, reason: 'exact-frame-save-verified', savedSha: receipt.savedSha };
 }
+function validateSameRunReceipt({ receipt, root = process.cwd(), env = process.env, date, now = new Date() }) {
+  if (env.GITHUB_EVENT_NAME !== 'workflow_run' || !id(env.GITHUB_RUN_ID) ||
+      !id(env.GITHUB_RUN_ATTEMPT) || !sha(env.GITHUB_SHA) || !env.GITHUB_REPOSITORY)
+    throw new Error('Invalid same-run receipt context');
+  ensureSavedCommit(root, receipt?.savedSha);
+  return validateReceipt({ receipt, root, repository: env.GITHUB_REPOSITORY, date, now,
+    run: { id: env.GITHUB_RUN_ID, run_attempt: env.GITHUB_RUN_ATTEMPT, head_sha: env.GITHUB_SHA } });
+}
 function report(result, env = process.env) {
   const message = `Negative clip handoff: ${result.allowed ? 'ready' : 'SKIPPED'} (${result.reason || result.mode}).`;
   console.log(message);
@@ -170,6 +178,10 @@ function main() {
     return report(validateReceipt({ receipt, run: event().workflow_run,
       repository: env.GITHUB_REPOSITORY, date: env.PREDICT_DATE }));
   }
+  if (command === 'ready-same-run') {
+    const receipt = JSON.parse(fs.readFileSync(file, 'utf8'));
+    return report(validateSameRunReceipt({ receipt, date: env.PREDICT_DATE }));
+  }
   throw new Error('Unknown handoff command');
 }
 if (require.main === module) {
@@ -179,4 +191,5 @@ if (require.main === module) {
   }
 }
 module.exports = { VERSION, WORKFLOW, WORKFLOW_PATH, RECEIPT_FILE, admission, artifactName, selectArtifact,
-  verifyArtifact, guardedPaths, identities, ensureSavedCommit, createReceipt, validateReceipt, report };
+  verifyArtifact, guardedPaths, identities, ensureSavedCommit, createReceipt, validateReceipt,
+  validateSameRunReceipt, report };

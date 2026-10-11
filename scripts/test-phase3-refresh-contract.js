@@ -43,9 +43,19 @@ const negativeClip = fs.readFileSync(
   "utf8",
 );
 assert.ok(!negativeClip.includes("\n  push:"));
-assert.ok(negativeClip.includes('workflows:\n      - "Collect frame rise fall shadow A/B"'));
+assert.ok(!negativeClip.includes("\n  workflow_run:"));
 assert.ok(!negativeClip.includes('      - "Collect official race results"'));
 assert.ok(negativeClip.includes('if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]'));
+const frameShadow = fs.readFileSync(
+  ".github/workflows/collect-frame-rise-fall-shadow-ab.yml",
+  "utf8",
+);
+assert.ok(frameShadow.includes("Capture negative clip checkpoint under frame writer lock"));
+assert.ok(frameShadow.includes("Publish negative clip checkpoint under the same writer lock"));
+assert.ok(
+  frameShadow.indexOf("Capture negative clip checkpoint under frame writer lock") <
+    frameShadow.indexOf("Publish negative clip checkpoint under the same writer lock"),
+);
 
 const central = fs.readFileSync(".github/workflows/collect-results.yml", "utf8");
 const negativeReport = central.lastIndexOf(

@@ -43,6 +43,11 @@ function fixture(name, { archived = false, missing = false } = {}) {
   return { dir, receipt, captureSha };
 }
 const validate = (f, overrides = {}) => handoff.validateReceipt({ root: f.dir, receipt: f.receipt, run, repository, date, now, ...overrides });
+const sameRunEnv = { GITHUB_RUN_ID: '101', GITHUB_RUN_ATTEMPT: '2', GITHUB_REPOSITORY: repository,
+  GITHUB_EVENT_NAME: 'workflow_run', GITHUB_SHA: run.head_sha };
+const validateSameRun = (f, overrides = {}) => handoff.validateSameRunReceipt({
+  root: f.dir, receipt: f.receipt, env: sameRunEnv, date, now, ...overrides,
+});
 try {
   test('successful automatic main/same-repo run accepts legitimate bot actor', () => assert.equal(admit().allowed, true));
   for (const badEvent of ['pull_request', 'workflow_dispatch', 'push', 'schedule']) {
@@ -128,6 +133,14 @@ try {
     assert.equal(git(f.dir, ['status', '--porcelain']), before);
     assert.deepEqual(fs.readFileSync(path.join(f.dir, `data/predictions/${date}.json`)), bytes);
   });
+  test('the frame workflow can verify its own receipt without a second workflow-run handoff', () => {
+    const f = fixture('same-run');
+    assert.equal(validateSameRun(f).allowed, true);
+    assert.throws(() => validateSameRun(f, { env: { ...sameRunEnv, GITHUB_RUN_ID: '999' } }), /identity mismatch/);
+    assert.throws(() => validateSameRun(f, { env: { ...sameRunEnv, GITHUB_EVENT_NAME: 'workflow_dispatch' } }), /same-run receipt context/);
+    write(f.dir, `data/predictions/${date}.json`, '{"newer":true}\n'); commit(f.dir);
+    assert.match(validateSameRun(f).reason, /^frame-source-or-generation-changed:/);
+  });
   test('missing frame source is explicit skip even if frame job returned success', () => {
     const f = fixture('missing', { missing: true }); assert.equal(validate(f).reason, 'frame-source-missing');
   });
@@ -165,22 +178,26 @@ try {
     assert.deepEqual(once.verificationPredictions[0], row); assert.deepEqual(once.predictions, source.predictions);
     assert.deepEqual(once.metadata, source.metadata);
   });
-  test('workflow wiring: sole predecessor, exact receipt, freeze once, preserve PR/manual and publisher guards', () => {
+  test('workflow wiring: automatic negative capture stays in the frame writer lease; PR/manual remain standalone', () => {
     const negativeWorkflow = fs.readFileSync('.github/workflows/collect-frame-rise-fall-negative-clip-ab.yml', 'utf8');
     const frameWorkflow = fs.readFileSync('.github/workflows/collect-frame-rise-fall-shadow-ab.yml', 'utf8');
-    const trigger = negativeWorkflow.split('  workflow_run:')[1].split('  workflow_dispatch:')[0];
-    assert.match(trigger, /Collect frame rise fall shadow A\/B/);
-    assert.doesNotMatch(trigger, /Collect automatic race predictions/);
-    assert.match(trigger, /branches: \[main\]/); assert.match(trigger, /types: \[completed\]/);
-    assert.match(negativeWorkflow, /actions: read/); assert.match(negativeWorkflow, /handoff.selectArtifact/);
-    assert.match(negativeWorkflow, /handoff.verifyArtifact/); assert.match(negativeWorkflow, /artifact_id: artifact.id/);
+    assert.doesNotMatch(negativeWorkflow, /^\s+workflow_run:/m);
+    assert.match(negativeWorkflow, /^\s+pull_request:/m); assert.match(negativeWorkflow, /^\s+workflow_dispatch:/m);
     assert.match(negativeWorkflow, /steps.ready.outputs.allowed == 'true'/);
     assert.match(negativeWorkflow, /needs.verify-and-collect.outputs.capture_allowed == 'true'/);
     assert.match(negativeWorkflow, /if \[ "\$GITHUB_EVENT_NAME" = "workflow_dispatch" \]/);
     assert.match(frameWorkflow, /frame-shadow-save-\$\{\{ github.run_id \}\}-\$\{\{ github.run_attempt \}\}/);
     assert.equal((frameWorkflow.match(/PREDICT_DATE: \$\{\{ inputs.date \}\}/g) || []).length, 1);
-    assert.equal((frameWorkflow.match(/PREDICT_DATE: \$\{\{ steps.target.outputs.date \}\}/g) || []).length, 3);
-    assert.ok(frameWorkflow.indexOf('git push origin main') < frameWorkflow.indexOf('Attest saved frame source'));
+    assert.equal((frameWorkflow.match(/PREDICT_DATE: \$\{\{ steps.target.outputs.date \}\}/g) || []).length, 5);
+    const pushed = frameWorkflow.indexOf('git push origin main');
+    const receipt = frameWorkflow.indexOf('Attest saved frame source');
+    const ready = frameWorkflow.indexOf('ready-same-run');
+    const capture = frameWorkflow.indexOf('Capture negative clip checkpoint under frame writer lock');
+    const publish = frameWorkflow.indexOf('Publish negative clip checkpoint under the same writer lock');
+    assert.ok(pushed < receipt && receipt < ready && ready < capture && capture < publish);
+    assert.match(frameWorkflow, /group: chappy-main-data-writers\n\s+queue: max\n\s+cancel-in-progress: false/);
+    assert.match(frameWorkflow, /generated-data-checkpoint.cjs pack negative-clip/);
+    assert.match(frameWorkflow, /generated-data-checkpoint.cjs publish negative-clip/);
     assert.ok(negativeWorkflow.indexOf('frame-shadow-save-handoff.cjs ready') < negativeWorkflow.indexOf('node scripts/restore-daily-prediction-source.js'));
     assert.ok(negativeWorkflow.indexOf('publish_comparison:') < negativeWorkflow.indexOf('group: chappy-main-data-writers'));
     assert.match(negativeWorkflow, /generated-data-checkpoint.cjs publish negative-clip/);

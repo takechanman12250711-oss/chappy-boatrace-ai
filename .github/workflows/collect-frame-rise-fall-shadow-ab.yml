@@ -22,7 +22,18 @@ on:
       - "scripts/test-frame-rise-fall-shadow-storage.js"
       - "scripts/test-frame-rise-fall-shadow-replay.js"
       - "scripts/test-frame-rise-fall-shadow-replay-preload.js"
+      - "config/frame-rise-fall-negative-clip-trial.json"
+      - "js/frame-rise-fall-negative-clip-shadow.js"
+      - "scripts/build-frame-rise-fall-negative-clip-snapshots.js"
+      - "scripts/build-frame-rise-fall-negative-clip-result-report.js"
+      - "scripts/test-frame-rise-fall-negative-clip-shadow.js"
+      - "scripts/test-frame-rise-fall-negative-clip-snapshots.js"
+      - "scripts/test-frame-rise-fall-negative-clip-result-report.js"
+      - "scripts/generated-data-checkpoint.cjs"
+      - "tests/generated-data-checkpoint.test.cjs"
+      - "tests/main-data-writer-concurrency.test.cjs"
       - ".github/workflows/collect-frame-rise-fall-shadow-ab.yml"
+      - ".github/workflows/collect-frame-rise-fall-negative-clip-ab.yml"
       - ".github/workflows/collect-predictions.yml"
       - ".github/workflows/collect-results.yml"
       - ".github/workflows/build-learning-analysis-pipeline.yml"
@@ -48,7 +59,7 @@ jobs:
   collect:
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -78,6 +89,15 @@ jobs:
           node scripts/test-frame-rise-fall-replay-preload.js
           node scripts/test-frame-rise-fall-shadow-replay.js
           node scripts/test-frame-rise-fall-shadow-storage.js
+          node scripts/test-phase3-refresh-contract.js
+          node --check js/frame-rise-fall-negative-clip-shadow.js
+          node --check scripts/build-frame-rise-fall-negative-clip-snapshots.js
+          node --check scripts/build-frame-rise-fall-negative-clip-result-report.js
+          node scripts/test-frame-rise-fall-negative-clip-shadow.js
+          node scripts/test-frame-rise-fall-negative-clip-snapshots.js
+          node scripts/test-frame-rise-fall-negative-clip-result-report.js
+          node tests/generated-data-checkpoint.test.cjs
+          node tests/main-data-writer-concurrency.test.cjs
       - name: Verify frozen Phase10 state
         if: github.event_name != 'pull_request'
         run: |
@@ -130,3 +150,43 @@ jobs:
           path: ${{ runner.temp }}/frame-shadow-save/frame-shadow-save.json
           retention-days: 3
           if-no-files-found: error
+
+      - name: Verify saved frame source before negative clip capture
+        id: negative-ready
+        if: github.event_name == 'workflow_run'
+        env:
+          PREDICT_DATE: ${{ steps.target.outputs.date }}
+        run: node scripts/frame-shadow-save-handoff.cjs ready-same-run "$RUNNER_TEMP/frame-shadow-save/frame-shadow-save.json"
+
+      - name: Capture negative clip checkpoint under frame writer lock
+        id: negative-checkpoint
+        if: steps.negative-ready.outputs.allowed == 'true'
+        env:
+          PREDICT_DATE: ${{ steps.target.outputs.date }}
+        run: |
+          node scripts/restore-daily-prediction-source.js
+          node scripts/build-frame-rise-fall-negative-clip-snapshots.js
+          node scripts/prepare-daily-prediction-git-save.js
+          node scripts/generated-data-checkpoint.cjs pack negative-clip "$RUNNER_TEMP/negative-clip-checkpoint"
+
+      - name: Preserve negative clip checkpoint before publication
+        if: steps.negative-ready.outputs.allowed == 'true'
+        id: negative-backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: negative-clip-checkpoint-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/negative-clip-checkpoint
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: error
+
+      - name: Publish negative clip checkpoint under the same writer lock
+        if: steps.negative-ready.outputs.allowed == 'true'
+        env:
+          BASE_SHA: ${{ steps.negative-checkpoint.outputs.baseSha }}
+          CAPTURE_RUN_ID: ${{ steps.negative-checkpoint.outputs.runId }}
+          CAPTURE_RUN_ATTEMPT: ${{ steps.negative-checkpoint.outputs.runAttempt }}
+          CHECKPOINT_DATE: ${{ steps.negative-checkpoint.outputs.date }}
+          ARTIFACT_ID: ${{ steps.negative-backup.outputs.artifact-id }}
+          MANIFEST_SHA256: ${{ steps.negative-checkpoint.outputs.manifestSha256 }}
+        run: node scripts/generated-data-checkpoint.cjs publish negative-clip "$RUNNER_TEMP/negative-clip-checkpoint"

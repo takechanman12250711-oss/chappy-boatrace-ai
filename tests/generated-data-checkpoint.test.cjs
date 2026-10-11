@@ -269,5 +269,21 @@ try {
       assert.match(writer, /if: github.event_name != 'pull_request'/);
     }
   });
+  test('automatic frame handoff captures and publishes negative clip before releasing the shared writer lock', () => {
+    const frame = fs.readFileSync(path.join(__dirname, '../.github/workflows/collect-frame-rise-fall-shadow-ab.yml'), 'utf8');
+    const negative = fs.readFileSync(path.join(__dirname, '../.github/workflows/collect-frame-rise-fall-negative-clip-ab.yml'), 'utf8');
+    assert.match(frame, /concurrency:\n\s+group: chappy-main-data-writers\n\s+queue: max\n\s+cancel-in-progress: false/);
+    const receipt = frame.indexOf('Preserve exact frame save receipt');
+    const ready = frame.indexOf('Verify saved frame source before negative clip capture');
+    const capture = frame.indexOf('Capture negative clip checkpoint under frame writer lock');
+    const backup = frame.indexOf('Preserve negative clip checkpoint before publication');
+    const publish = frame.indexOf('Publish negative clip checkpoint under the same writer lock');
+    assert.ok(receipt >= 0 && receipt < ready && ready < capture && capture < backup && backup < publish);
+    assert.match(frame.slice(capture, publish), /generated-data-checkpoint\.cjs pack negative-clip/);
+    assert.match(frame.slice(backup, publish), /actions\/upload-artifact@v4/);
+    assert.match(frame.slice(publish), /generated-data-checkpoint\.cjs publish negative-clip/);
+    assert.doesNotMatch(negative, /^\s+workflow_run:/m,
+      'standalone workflow must not duplicate the automatic frame handoff');
+  });
   console.log(`generated checkpoint: ${checks} checks passed`);
 } finally { fs.rmSync(root, { recursive: true, force: true }); }

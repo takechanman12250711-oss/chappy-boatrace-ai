@@ -17,11 +17,6 @@ on:
       - ".github/workflows/collect-frame-rise-fall-negative-clip-ab.yml"
       - "scripts/generated-data-checkpoint.cjs"
       - "tests/generated-data-checkpoint.test.cjs"
-  workflow_run:
-    workflows:
-      - "Collect frame rise fall shadow A/B"
-    branches: [main]
-    types: [completed]
   workflow_dispatch:
     inputs:
       date:
@@ -84,36 +79,6 @@ jobs:
         env:
           PREDICT_DATE: ${{ inputs.date }}
         run: node -e 'const fs=require("node:fs"), api=require("./scripts/daily-prediction-source-archive"); fs.appendFileSync(process.env.GITHUB_OUTPUT, `date=${api.resolveTargetDate()}\n`);'
-
-      - name: Read exact successful frame save receipt
-        if: steps.trigger.outputs.mode == 'automatic'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('node:fs');
-            const path = require('node:path');
-            const { execFileSync } = require('node:child_process');
-            const handoff = require('./scripts/frame-shadow-save-handoff.cjs');
-            try {
-              const run = context.payload.workflow_run;
-              const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {
-                ...context.repo, run_id: run.id, per_page: 100
-              });
-              const artifact = handoff.selectArtifact(artifacts, run);
-              const download = await github.rest.actions.downloadArtifact({
-                ...context.repo, artifact_id: artifact.id, archive_format: 'zip'
-              });
-              const bytes = Buffer.from(download.data);
-              handoff.verifyArtifact(bytes, artifact);
-              const zip = path.join(process.env.RUNNER_TEMP, 'frame-shadow-save.zip');
-              fs.writeFileSync(zip, bytes);
-              const receipt = execFileSync('unzip', ['-p', zip, handoff.RECEIPT_FILE], { maxBuffer: 1024 * 1024 });
-              fs.writeFileSync(path.join(process.env.RUNNER_TEMP, handoff.RECEIPT_FILE), receipt);
-              await core.summary.addRaw(`Verified frame save artifact ${artifact.id}, run ${run.id}/${run.run_attempt}.\n`).write();
-            } catch (error) {
-              await core.summary.addRaw(`Frame save receipt FAILED: ${error.message}\n`).write();
-              throw error;
-            }
 
       - name: Verify current source matches completed frame save
         id: ready
