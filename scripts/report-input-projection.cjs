@@ -107,4 +107,42 @@ function compactPlayfulRecord(record = {}) {
   };
   return out;
 }
-module.exports = { compactLedgerRecord, compactOuterAttackRecord, compactPlayfulRecord };
+// Four-stage uses collectTicketPool's saved ordering, including both root and
+// prediction practicalTickets. Keep each source and its score/fallback shape;
+// never select or truncate candidates while projecting the input.
+function expansionTicket(value) {
+  if (Array.isArray(value)) return value.slice(0, 3);
+  return project(value, row => ({
+    ...playfulTicket(row),
+    ...pick(row, ['priorityScore', 'score', 'effectiveScore', 'selectionScore', 'candidateScore',
+      'scenarioSummary', 'scenario', 'reason'])
+  }));
+}
+function expansionSelection(value) {
+  return project(value, selection => ({
+    targetDecisions: map(selection.targetDecisions, decision => project(decision, row => ({
+      scenarioSummary: row.scenarioSummary,
+      candidateDecisions: map(row.candidateDecisions, expansionTicket),
+      bestCandidateTicket: expansionTicket(row.bestCandidateTicket)
+    }))),
+    expansionSummary: project(selection.expansionSummary, summary => ({
+      addedTickets: map(summary.addedTickets, expansionTicket)
+    }))
+  }));
+}
+function expansionFields(value) {
+  return {
+    practicalTickets: map(value?.practicalTickets, expansionTicket),
+    tickets: map(value?.tickets, expansionTicket),
+    formations: project(value?.formations, formations => Object.fromEntries(
+      ['main', 'mainline', 'cover', 'flow', 'hole'].map(key => [key, map(formations[key], expansionTicket)]))),
+    practicalSelection: expansionSelection(value?.practicalSelection)
+  };
+}
+function compactFourStageRecord(record = {}) {
+  if (!record || typeof record !== 'object') return null;
+  const out = { ...envelope(record), ...expansionFields(record) };
+  if (record.prediction) out.prediction = { ...out.prediction, ...expansionFields(record.prediction) };
+  return out;
+}
+module.exports = { compactLedgerRecord, compactOuterAttackRecord, compactPlayfulRecord, compactFourStageRecord };

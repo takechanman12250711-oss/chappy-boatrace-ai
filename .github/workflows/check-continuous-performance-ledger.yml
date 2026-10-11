@@ -4,6 +4,10 @@ on:
   pull_request:
     paths:
       - 'scripts/build-continuous-performance-ledger.cjs'
+      - 'scripts/build-four-stage-miss-diagnosis.cjs'
+      - 'scripts/analyze-ticket-expansion-7-12-18-24.cjs'
+      - 'scripts/analysis-input-contract.js'
+      - 'tests/four-stage-miss-diagnosis.test.cjs'
       - 'scripts/build-outer-attack-gate-dropoff.cjs'
       - 'scripts/build-playful-link-position-forward.cjs'
       - 'scripts/report-input-projection.cjs'
@@ -35,5 +39,6 @@ jobs:
           node tests/outer-attack-gate-dropoff.test.cjs
           node tests/playful-link-position-forward.test.cjs
           node tests/report-input-compaction.test.cjs
+          node tests/four-stage-miss-diagnosis.test.cjs
           node scripts/build-continuous-performance-ledger.cjs
           node -e "const x=require('./data/stats/continuous-performance-ledger.json'); console.log(JSON.stringify({diagnostics:x.diagnostics,cumulative:x.cumulative,rolling100:x.rolling100,generationBreakdown:x.generationBreakdown},null,2))"
