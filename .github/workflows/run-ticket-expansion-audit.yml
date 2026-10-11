@@ -7,11 +7,24 @@ on:
       - '.github/workflows/run-ticket-expansion-audit.yml'
       - 'scripts/analyze-ticket-expansion-7-12-18-24.cjs'
       - 'scripts/analyze-ticket-expansion-payout-v2.cjs'
+      - 'scripts/report-input-projection.cjs'
+      - 'scripts/analysis-input-contract.js'
+      - 'tests/ticket-expansion-memory.test.cjs'
+      - 'tests/helpers/report-input-fixture.cjs'
       - 'data/predictions/**'
       - 'data/results/**'
       - 'data/analysis/**'
       - 'data/stats/**'
   workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/run-ticket-expansion-audit.yml'
+      - 'scripts/analyze-ticket-expansion-7-12-18-24.cjs'
+      - 'scripts/analyze-ticket-expansion-payout-v2.cjs'
+      - 'scripts/report-input-projection.cjs'
+      - 'scripts/analysis-input-contract.js'
+      - 'tests/ticket-expansion-memory.test.cjs'
+      - 'tests/helpers/report-input-fixture.cjs'
 
 permissions:
   contents: read
@@ -24,6 +37,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Verify report parity and bounded memory
+        run: node tests/ticket-expansion-memory.test.cjs
       - name: Run 7/12/18/24 audit
         run: |
           set -o pipefail

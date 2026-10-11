@@ -34,9 +34,9 @@ function payoutMap(resultsDir = RESULTS_DIR) {
   return map;
 }
 
-function build() {
-  const report = base.build();
-  const payouts = payoutMap();
+function build(options = {}) {
+  const report = base.build(options);
+  const payouts = payoutMap(options.resultsDir || path.join(options.root || ROOT, 'data', 'results'));
   let missingPayoutHitCount = 0;
 
   for (const limit of TIERS) {
