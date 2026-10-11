@@ -1,19 +1,19 @@
 {
-  "generatedAt": "2026-10-10T20:41:25.586Z",
+  "generatedAt": "2026-10-11T00:52:53.561Z",
   "source": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json",
   "analysisInputContract": "official-pre-deadline-cohort-v1",
   "deduplication": "predictions-preferred-over-verificationPredictions",
   "analysisInputDiagnostics": {
-    "canonicalPredictionCount": 3601,
-    "preDeadlinePredictionCount": 3586,
+    "canonicalPredictionCount": 3603,
+    "preDeadlinePredictionCount": 3588,
     "excludedPredictionCount": 15,
     "excludedReasons": {
       "captured-at-or-after-deadline": 6,
       "source-fetched-at-or-after-deadline": 2,
       "timestamp-missing": 7
     },
-    "officialResultCount": 3548,
-    "settledJoinCount": 3548,
+    "officialResultCount": 3549,
+    "settledJoinCount": 3549,
     "deduplication": "predictions-preferred-over-verificationPredictions",
     "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json"
   },
@@ -21,7 +21,7 @@
   "engineVersion": "improvement-proposal-phase3-20260818-root-cause-priority",
   "status": "proposal-candidates-ready",
   "minimumRaceCount": 100,
-  "settledRaceCount": 3548,
+  "settledRaceCount": 3549,
   "remainingRaceCount": 0,
   "proposals": [
     {
@@ -43,14 +43,14 @@
       "code": "flow-reading-miss",
       "label": "展開読み違い",
       "theory": "展開理論",
-      "sampleCount": 1950,
+      "sampleCount": 1951,
       "occurrenceRate": 55,
       "priority": "high",
       "improvementCandidate": "展開成立条件と崩れ条件の再検証",
       "expectedEffect": "展開一致率の改善余地を検証",
       "confidenceBreakdown": {
         "high": 87,
-        "medium": 1863,
+        "medium": 1864,
         "low": 0
       }
     },
@@ -59,7 +59,7 @@
       "label": "壁艇理論不足",
       "theory": "壁艇理論",
       "sampleCount": 1602,
-      "occurrenceRate": 45.2,
+      "occurrenceRate": 45.1,
       "priority": "high",
       "improvementCandidate": "壁成立・不成立条件を再検証",
       "expectedEffect": "壁艇関与時の展開一致率の改善余地を検証",
@@ -106,14 +106,14 @@
       "code": "ticket-coverage-insufficient",
       "label": "買い目不足",
       "theory": "買い目構成",
-      "sampleCount": 2673,
+      "sampleCount": 2674,
       "occurrenceRate": 75.3,
       "priority": "high",
       "improvementCandidate": "展開内の残し・拾い不足を再検証",
       "expectedEffect": "実戦厳選的中率の改善余地を検証",
       "confidenceBreakdown": {
         "high": 78,
-        "medium": 2595,
+        "medium": 2596,
         "low": 0
       },
       "diagnosticOnly": true,
