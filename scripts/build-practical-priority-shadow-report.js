@@ -264,19 +264,22 @@ function withoutGeneratedAt(report = {}) {
   return rest;
 }
 
-function reportForWrite(
-  generatedAt = new Date().toISOString()
-) {
-  const report = buildReport(generatedAt);
-  if (!fs.existsSync(OUTPUT)) return report;
-
-  const current = JSON.parse(
-    fs.readFileSync(OUTPUT, "utf8")
-  );
+function preserveGeneratedAt(report, current) {
+  if (current === undefined) return report;
   return JSON.stringify(withoutGeneratedAt(current)) ===
     JSON.stringify(withoutGeneratedAt(report))
     ? { ...report, generatedAt: current.generatedAt }
     : report;
+}
+
+function reportForWrite(
+  generatedAt = new Date().toISOString()
+) {
+  const report = buildReport(generatedAt);
+  const current = fs.existsSync(OUTPUT)
+    ? JSON.parse(fs.readFileSync(OUTPUT, "utf8"))
+    : undefined;
+  return preserveGeneratedAt(report, current);
 }
 
 function main() {
@@ -311,6 +314,7 @@ module.exports = {
   predictionRows,
   buildReport,
   withoutGeneratedAt,
+  preserveGeneratedAt,
   reportForWrite,
   main
 };

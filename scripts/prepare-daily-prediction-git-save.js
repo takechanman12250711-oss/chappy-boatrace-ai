@@ -181,6 +181,17 @@ function preparePredictionGitSave({
         rawSaveLimitBytes
       })
   );
+  const archivedResults = archiveResults.filter(
+    result => result.status === "archived"
+  );
+  // Only validated archives replace their expanded raw JSON. Do not create
+  // temporary raw Git blobs that the reset below would immediately unstage.
+  const archivedRawPaths = archivedResults.map(
+    result => relativeGitPath(
+      rootDirectory,
+      result.sourcePath
+    )
+  );
 
   git(
     rootDirectory,
@@ -189,14 +200,14 @@ function preparePredictionGitSave({
       "--",
       "data/predictions",
       ":(exclude)data/predictions/index.json",
-      ":(exclude)data/predictions/.*"
+      ":(exclude)data/predictions/.*",
+      ...archivedRawPaths.map(rawPath =>
+        `:(exclude)${rawPath}`
+      )
     ]
   );
 
-  archiveResults
-    .filter(result =>
-      result.status === "archived"
-    )
+  archivedResults
     .forEach(result => {
       const rawPath = relativeGitPath(
         rootDirectory,
@@ -204,7 +215,7 @@ function preparePredictionGitSave({
       );
       git(
         rootDirectory,
-        ["reset", "--", rawPath]
+        ["reset", "--no-refresh", "--", rawPath]
       );
 
       if (

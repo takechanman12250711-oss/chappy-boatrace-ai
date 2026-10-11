@@ -408,6 +408,110 @@ try {
   );
 }
 
+// Exercise staged/unstaged/absent raw sources together. Excluding expanded
+// raws from add must keep the old reset/restore and archive-repair behavior.
+const stagingRoot = fs.mkdtempSync(
+  path.join(os.tmpdir(), "chappy-archive-staging-")
+);
+try {
+  const sourcePath = date => archiveApi.sourcePathFor(stagingRoot, date);
+  const small = date => `${JSON.stringify({ date, predictions: [] })}\n`;
+  const large = date => `${JSON.stringify({
+    date,
+    predictions: [{ evidence: "preserve".repeat(2000) }]
+  })}\n`;
+  const write = (date, raw) => fs.writeFileSync(sourcePath(date), raw);
+  fs.mkdirSync(path.dirname(sourcePath("20261001")), { recursive: true });
+  git(stagingRoot, ["init", "-b", "main"]);
+  const trackedDates = [
+    "20261001", "20261002", "20261003", "20261006", "20261007", "20261009"
+  ];
+  trackedDates.forEach(date => write(date, small(date)));
+  const indexPath = path.join(stagingRoot, "data/predictions/index.json");
+  const hiddenPath = path.join(stagingRoot, "data/predictions/.hidden");
+  fs.writeFileSync(indexPath, "frozen index\n");
+  fs.writeFileSync(hiddenPath, "hidden file\n");
+  git(stagingRoot, ["add", "."]);
+  git(stagingRoot, [
+    "-c", "user.name=archive-test", "-c", "user.email=archive@example.invalid",
+    "commit", "-qm", "base sources"
+  ]);
+  const largeDates = [
+    "20261001", "20261002", "20261003", "20261004", "20261005", "20261009"
+  ];
+  largeDates.forEach(date => write(date, large(date)));
+  git(stagingRoot, ["add", "data/predictions/20261002.json", "data/predictions/20261005.json"]);
+  git(stagingRoot, ["rm", "--cached", "-f", "data/predictions/20261003.json"]);
+  fs.unlinkSync(sourcePath("20261006"));
+  write("20261007", small("20261007").replace("[]", "[1]"));
+  write("20261008", small("20261008"));
+  archiveApi.archivePredictionSource({
+    rootDirectory: stagingRoot, date: "20261009", rawSaveLimitBytes: 1024
+  });
+  fs.writeFileSync(archiveApi.archivePathFor(stagingRoot, "20261009"), "corrupt archive");
+  fs.writeFileSync(indexPath, "must remain unstaged\n");
+  fs.writeFileSync(hiddenPath, "must remain unstaged\n");
+  const rawBlob = git(stagingRoot, [
+    "hash-object", "data/predictions/20261001.json"
+  ]).trim();
+
+  const prepared = preparePredictionGitSave({
+    rootDirectory: stagingRoot, all: true, rawSaveLimitBytes: 1024
+  });
+  assert.equal(prepared.archivedCount, 6);
+  assert.equal(prepared.rawGitSafeCount, 2);
+  assert.equal(prepared.missingCount, 1);
+  for (const date of largeDates) {
+    assert.equal(
+      zlib.gunzipSync(fs.readFileSync(archiveApi.archivePathFor(stagingRoot, date))).toString("utf8"),
+      large(date),
+      `archive preserves every raw byte: ${date}`
+    );
+    if (trackedDates.includes(date)) {
+      assert.equal(fs.readFileSync(sourcePath(date), "utf8"), small(date));
+    } else {
+      assert.equal(fs.existsSync(sourcePath(date)), false);
+    }
+  }
+  assert.equal(prepared.archiveResults.find(result => result.date === "20261009").reused, false);
+  const stagedPaths = git(stagingRoot, ["diff", "--cached", "--name-only"])
+    .trim().split("\n").sort();
+  assert.deepEqual(stagedPaths, [
+    "data/predictions/20261006.json",
+    "data/predictions/20261007.json",
+    "data/predictions/20261008.json",
+    ...largeDates.flatMap(date => [
+      `data/predictions/source-archives/${date}.json.gz`,
+      `data/predictions/source-archives/${date}.meta.json`
+    ])
+  ].sort());
+  assert.equal(git(stagingRoot, ["show", ":data/predictions/index.json"]), "frozen index\n");
+  assert.equal(git(stagingRoot, ["show", ":data/predictions/.hidden"]), "hidden file\n");
+  assert.throws(
+    () => execFileSync("git", ["cat-file", "-e", rawBlob], { cwd: stagingRoot, stdio: "pipe" }),
+    "validated expanded raw must never be written as a temporary Git blob"
+  );
+
+  // A one-date save excludes only that successfully archived date. Other raw
+  // paths retain the pre-existing broad-add behavior, even if they are large.
+  write("20261010", large("20261010"));
+  write("20261011", large("20261011"));
+  preparePredictionGitSave({
+    rootDirectory: stagingRoot, date: "20261010", rawSaveLimitBytes: 1024
+  });
+  assert.equal(fs.existsSync(sourcePath("20261010")), false);
+  assert.equal(git(stagingRoot, ["show", ":data/predictions/20261011.json"]), large("20261011"));
+
+  const indexBeforeInvalid = git(stagingRoot, ["ls-files", "-s"]);
+  write("20261012", "invalid JSON");
+  assert.throws(() => preparePredictionGitSave({
+    rootDirectory: stagingRoot, date: "20261012", rawSaveLimitBytes: 1024
+  }));
+  assert.equal(git(stagingRoot, ["ls-files", "-s"]), indexBeforeInvalid);
+} finally {
+  fs.rmSync(stagingRoot, { recursive: true, force: true });
+}
+
 const repositoryRoot = path.resolve(
   __dirname,
   ".."
