@@ -2,11 +2,13 @@
 const path=require('node:path');
 const input=require('./analysis-input-contract');
 const exp=require('./analyze-ticket-expansion-7-12-18-24.cjs');
+const {compactFourStageRecord}=require('./report-input-projection.cjs');
 const ROOT=path.resolve(__dirname,'..');
 function parts(t){return String(t||'').split('-').map(Number)}
 function pct(n,d){return d?Number((100*n/d).toFixed(2)):0}
-function build(){
- const cohort=input.buildDefaultCohort({root:ROOT});
+function build(options={}){
+ const cohort=input.buildDefaultCohort({root:options.root||ROOT,predictionsDir:options.predictionsDir,resultsDir:options.resultsDir,
+  compactPredictionRecord:options.compactPredictionRecord===undefined?compactFourStageRecord:options.compactPredictionRecord});
  const counts={races:0,hits:0,headMiss:0,secondMiss:0,thirdMiss:0,narrowingMiss:0,absentFrom24:0};
  const rows=[];
  for(const r of cohort.records){
@@ -32,4 +34,4 @@ function build(){
  summary:{...counts,misses,hitRatePercent:pct(counts.hits,counts.races),missShare:{head:pct(counts.headMiss,misses),second:pct(counts.secondMiss,misses),third:pct(counts.thirdMiss,misses),narrowing:pct(counts.narrowingMiss,misses),absentFrom24:pct(counts.absentFrom24,misses)}},rows};
 }
 if(require.main===module)process.stdout.write(JSON.stringify(build(),null,2)+'\n');
-module.exports={build};
+module.exports={build,compactPredictionRecord:compactFourStageRecord};
