@@ -3,6 +3,7 @@
 const path = require('node:path');
 const input = require('./analysis-input-contract');
 const expansion = require('./analyze-ticket-expansion-7-12-18-24.cjs');
+const { compactFourStageRecord } = require('./report-input-projection.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const BASE_LIMIT = 7;
@@ -56,8 +57,15 @@ function emptyBucket(name) {
   return { name, missCount:0, shareOfMissesPercent:0, exactCandidateWithin12:0, exactCandidateWithin18:0, exactCandidateWithin24:0, candidateGapCount:0, wrongOrderSameBoatsCount:0 };
 }
 
-function build() {
-  const cohort = input.buildDefaultCohort({ root: ROOT });
+function build(options = {}) {
+  // Keep the complete saved ticket pool and eligibility fields, without
+  // retaining unrelated prediction history from every daily file in memory.
+  const cohort = input.buildDefaultCohort({
+    root: options.root || ROOT,
+    predictionsDir: options.predictionsDir,
+    resultsDir: options.resultsDir,
+    compactPredictionRecord: options.compactPredictionRecord === undefined ? compactFourStageRecord : options.compactPredictionRecord
+  });
   const buckets = {
     'head-miss': emptyBucket('head-miss'),
     'second-miss': emptyBucket('second-miss'),
