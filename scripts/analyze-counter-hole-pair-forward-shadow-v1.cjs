@@ -2,7 +2,7 @@
 
 const path = require('node:path');
 const input = require('./analysis-input-contract');
-const { compactForwardResearchRecord } = require('./report-input-projection.cjs');
+const { compactForwardResearchRecord } = require('./forward-research-input-projection.cjs');
 const expansion = require('./analyze-ticket-expansion-7-12-18-24.cjs');
 const payoutAudit = require('./analyze-ticket-expansion-payout-v2.cjs');
 const structured = require('./analyze-structured-formation-backtest-v1.cjs');

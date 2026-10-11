@@ -3,6 +3,7 @@ name: Run new-head prospective shadow
 on:
   pull_request:
     paths:
+      - 'scripts/forward-research-input-projection.cjs'
       - 'scripts/report-input-projection.cjs'
       - 'scripts/analysis-input-contract.js'
       - 'scripts/analyze-ticket-expansion-7-12-18-24.cjs'
@@ -17,6 +18,7 @@ on:
       - main
       - analysis/new-head-prospective-shadow
     paths:
+      - 'scripts/forward-research-input-projection.cjs'
       - 'scripts/report-input-projection.cjs'
       - 'scripts/analysis-input-contract.js'
       - 'scripts/analyze-ticket-expansion-7-12-18-24.cjs'

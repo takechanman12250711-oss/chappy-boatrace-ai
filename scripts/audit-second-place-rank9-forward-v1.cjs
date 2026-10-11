@@ -1,7 +1,7 @@
 'use strict';
 const path=require('node:path');
 const input=require('./analysis-input-contract');
-const { compactForwardResearchRecord } = require('./report-input-projection.cjs');
+const { compactForwardResearchRecord } = require('./forward-research-input-projection.cjs');
 const exp=require('./analyze-ticket-expansion-7-12-18-24.cjs');
 const payoutFix=require('./analyze-ticket-expansion-payout-v2.cjs');
 const ROOT=path.resolve(__dirname,'..');

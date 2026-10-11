@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'scripts/forward-research-input-projection.cjs'
       - 'scripts/report-input-projection.cjs'
       - 'scripts/analysis-input-contract.js'
       - 'scripts/analyze-ticket-expansion-7-12-18-24.cjs'
@@ -15,6 +16,7 @@ on:
     - cron: '20 15 * * *'
   pull_request:
     paths:
+      - 'scripts/forward-research-input-projection.cjs'
       - 'scripts/report-input-projection.cjs'
       - 'scripts/analysis-input-contract.js'
       - 'scripts/analyze-ticket-expansion-7-12-18-24.cjs'

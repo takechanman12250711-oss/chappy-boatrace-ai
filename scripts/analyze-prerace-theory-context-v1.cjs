@@ -2,7 +2,7 @@
 
 const path=require('node:path');
 const input=require('./analysis-input-contract');
-const { compactForwardResearchRecord } = require('./report-input-projection.cjs');
+const { compactForwardResearchRecord } = require('./forward-research-input-projection.cjs');
 const ROOT=path.resolve(__dirname,'..');
 const ACTIVATED_AT=Date.parse('2026-09-01T10:19:20Z');
 

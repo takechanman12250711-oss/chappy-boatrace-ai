@@ -5,7 +5,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const input = require('../scripts/analysis-input-contract.js');
 const exp = require('../scripts/analyze-ticket-expansion-7-12-18-24.cjs');
-const { compactForwardResearchRecord: compact } = require('../scripts/report-input-projection.cjs');
+const { compactForwardResearchRecord: compact } = require('../scripts/forward-research-input-projection.cjs');
 const f = require('./helpers/report-input-fixture.cjs');
 const targets = [
   'audit-combined-three-rescue-forward-v1.cjs', 'audit-forward-data-completeness-v1.cjs',
