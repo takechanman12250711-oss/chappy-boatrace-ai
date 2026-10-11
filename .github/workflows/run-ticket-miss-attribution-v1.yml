@@ -2,12 +2,27 @@ name: Run ticket miss attribution v1
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/analyze-ticket-miss-attribution-v1.cjs'
+      - '.github/workflows/run-ticket-miss-attribution-v1.yml'
+      - 'scripts/analyze-ticket-expansion-7-12-18-24.cjs'
+      - 'scripts/analysis-input-contract.js'
+      - 'scripts/report-input-projection.cjs'
+      - 'tests/ticket-miss-attribution-memory.test.cjs'
+      - 'tests/ticket-miss-attribution-source-parity.cjs'
+      - 'tests/helpers/report-input-fixture.cjs'
   pull_request:
     paths:
       - 'scripts/analyze-ticket-miss-attribution-v1.cjs'
       - '.github/workflows/run-ticket-miss-attribution-v1.yml'
       - 'scripts/analyze-ticket-expansion-7-12-18-24.cjs'
       - 'scripts/analysis-input-contract.js'
+      - 'scripts/report-input-projection.cjs'
+      - 'tests/ticket-miss-attribution-memory.test.cjs'
+      - 'tests/ticket-miss-attribution-source-parity.cjs'
+      - 'tests/helpers/report-input-fixture.cjs'
 permissions:
   contents: read
 jobs:
@@ -18,6 +33,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Verify report parity and bounded memory
+        run: node tests/ticket-miss-attribution-memory.test.cjs
+      - name: Verify actual saved input projection and source hashes
+        run: node tests/ticket-miss-attribution-source-parity.cjs > ticket-miss-attribution-source-parity.json
       - name: Run ticket miss attribution
         run: node scripts/analyze-ticket-miss-attribution-v1.cjs > ticket-miss-attribution-v1.json
       - name: Validate research-only boundary
@@ -33,5 +52,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ticket-miss-attribution-v1
-          path: ticket-miss-attribution-v1.json
+          path: |
+            ticket-miss-attribution-v1.json
+            ticket-miss-attribution-source-parity.json
           retention-days: 90

@@ -1,10 +1,21 @@
 # チャッピーボートレースAI ACTIVE WORK PLAN
 
-更新日: 2026-10-11（JST、14研究復旧・新環境情報監査・新着ペア記録）
+更新日: 2026-10-12（JST、残る買い目外れ分類のメモリ修正）
 研究実装の確認基準: GitHub `main` / `731d4db4ae3034e7f5570912d51123bfc91cff86`
 集計値の基準は従来の `bd3aebd4454d6de436b0f0642a47d9b25df64340`。本変更では集計を更新していない。
 
-## 最新追補：2026-10-11夜の到達点
+## 最新追補：2026-10-12 残る外れ分類の集計復旧
+
+確認main `d22672ddf213cd0da8eecad5adbbd81e9f0b8c97`。ユーザーの「次にやった方がいいことを進めて」を受け、**BUG-TICKET-MISS-OOM** を次の修正対象とした。
+
+- #1295の買い目7/12/18/24集計はmain実行・artifactまで復旧済み。新環境情報監査 #1294、four-stage #1291、研究14本 #1293も再実装しない。
+- #1295で残件になった `Run ticket miss attribution v1` は、run38146223789 / job114490037929で全履歴を保持しheap OOM・exit134。expansionのbuildを呼ばず、独自に未縮約の `buildDefaultCohort` を呼ぶ経路が残っていた。
+- `analyze-ticket-miss-attribution-v1.cjs` を既存 `compactFourStageRecord` へ接続。対象期間・原本・候補の全順序・スコア・公式結果・排他的な頭/2着/3着分類を維持し、計算式や予想方式を変えない。96 MiB/168合成件の完走と縮約なしOOM負対照、全report同値・分類境界・正本優先の回帰を追加。
+- 既存workflowのPR検査とコード変更時のmain pushに、実保存全行のraceKey・締切前資格・候補全体の同値/原本SHA検査を接続。成果物は既存 `ticket-miss-attribution-v1` artifact内のreportとsource-parity。実データの大規模検証はGitHub側で行い、新cron・Work定期監視を作らない。このworkflowには日次scheduleがなく、main実行成功を日次更新と呼ばない。
+- 完了判定は対応PRの最新コメント/Issue #1214で、実際のhead・CI・merge・main実行・artifact digest/内容まで照合する。実装やfixture成功だけを本番集計復旧・精度改善と扱わない。
+- 独立ペア研究の主展開確定入力・日次保存、正式100Rの適格0件は別の残件。展示F等の見送り解除や旧receipt補完で母数を増やさず、note/writerはdot担当を維持する。
+
+## 先行追補：2026-10-11夜の到達点
 
 確認main `f5ebb6fddb624589d63cf725693f9b8883e9ae90`。以下を先行の着手時記録より優先する。
 
