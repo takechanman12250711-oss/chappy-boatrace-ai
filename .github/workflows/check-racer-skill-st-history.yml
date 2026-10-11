@@ -7,6 +7,7 @@ on:
       - "data/stats/racer-skill-patterns.json"
       - "scripts/build-race-stats.js"
       - "scripts/test-racer-skill-st-history.js"
+      - "scripts/test-racer-skill-cutoff.cjs"
       - "scripts/collect-predictions.js"
       - "scripts/venue-race-history.js"
       - ".github/workflows/check-racer-skill-st-history.yml"
@@ -16,6 +17,7 @@ on:
       - "data/stats/racer-skill-patterns.json"
       - "scripts/build-race-stats.js"
       - "scripts/test-racer-skill-st-history.js"
+      - "scripts/test-racer-skill-cutoff.cjs"
       - "scripts/collect-predictions.js"
       - "scripts/venue-race-history.js"
       - ".github/workflows/check-racer-skill-st-history.yml"
@@ -29,6 +31,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - run: node scripts/test-racer-skill-cutoff.cjs
       - run: node scripts/test-racer-skill-st-history.js
       - run: node --check scripts/collect-predictions.js
       - run: node --check scripts/venue-race-history.js
