@@ -111,3 +111,10 @@ wall/lifecycleを保存した [run38079153037](https://github.com/takechanman122
 | [data/stats/remain-pickup-same-stake-shadow-report.json](https://github.com/takechanman12250711-oss/chappy-boatrace-ai/blob/269d4783067e2d89f9d79fab047545f2d22c9d7e/data/stats/remain-pickup-same-stake-shadow-report.json) | `393f214909bcb5ad1916385ab4109feffe5b2573` |
 | [data/stats/st-role-attack-exhibition-holdout-report.json](https://github.com/takechanman12250711-oss/chappy-boatrace-ai/blob/269d4783067e2d89f9d79fab047545f2d22c9d7e/data/stats/st-role-attack-exhibition-holdout-report.json) | `cf4c61b5f6d98189ddc834b9a22d5ab529885342` |
 | [data/stats/independent-autonomous-report.json](https://github.com/takechanman12250711-oss/chappy-boatrace-ai/blob/269d4783067e2d89f9d79fab047545f2d22c9d7e/data/stats/independent-autonomous-report.json) | `83182c62352f84f341a2228b1e309cc75b654ed2` |
+
+
+## 2026-10-11夜の後続完了
+
+- 上記の「次の1工程」だった新環境の入力・出典監査は [監査結果](new-environment-source-audit-20261011.md) で完了。多摩川の未設定、大村の固定日付との差、現在の適用期間外、正式証拠の欠測理由を区別した。新型機種/現モーター使用開始/新燃料を混同せず、予想の日付・閾値・実効採点は変更していない。
+- pre-race context/outcomesを含む停止14本は#1293でmain集計・artifact保存まで復旧。上記の失敗runは過去時点の記録で、未修正扱いへ戻さない。
+- v8の締切前保存は後続で26件まで確認。日次reportの新着分取り込みと、主展開確定・比較可能な選出は別。最新状態はACTIVE_WORK_PLANとindependent-pair-readiness-20261011.mdの追補を参照する。
