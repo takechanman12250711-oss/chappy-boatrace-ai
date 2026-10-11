@@ -12,13 +12,13 @@ function pct(a, b) {
   return b ? Number((100 * a / b).toFixed(1)) : 0;
 }
 
-function payoutMap() {
+function payoutMap(resultsDir = RESULTS_DIR) {
   const map = new Map();
-  if (!fs.existsSync(RESULTS_DIR)) return map;
-  for (const file of fs.readdirSync(RESULTS_DIR)) {
+  if (!fs.existsSync(resultsDir)) return map;
+  for (const file of fs.readdirSync(resultsDir)) {
     if (!/^\d{8}\.json$/.test(file)) continue;
     let doc;
-    try { doc = JSON.parse(fs.readFileSync(path.join(RESULTS_DIR, file), 'utf8')); }
+    try { doc = JSON.parse(fs.readFileSync(path.join(resultsDir, file), 'utf8')); }
     catch { continue; }
     const races = Array.isArray(doc?.races) ? doc.races : [];
     for (const race of races) {

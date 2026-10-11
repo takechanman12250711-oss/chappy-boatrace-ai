@@ -2,6 +2,7 @@
 
 const path=require('node:path');
 const input=require('./analysis-input-contract');
+const { compactForwardResearchRecord } = require('./forward-research-input-projection.cjs');
 const expansion=require('./analyze-ticket-expansion-7-12-18-24.cjs');
 const payoutAudit=require('./analyze-ticket-expansion-payout-v2.cjs');
 
@@ -22,9 +23,9 @@ function roleSupport(ticket,attackBoat,flowBoat){const [h,s,t]=parts(ticket);ret
 function empty(){return {eligibleRaces:0,triggerRaces:0,addedTickets:0,rescueCount:0,manboatRescueCount:0,investmentYen:0,returnYen:0,profitYen:0,roiPercent:0};}
 function finalize(m){m.profitYen=m.returnYen-m.investmentYen;m.roiPercent=pct(m.returnYen,m.investmentYen);return m;}
 
-function build(){
- const cohort=input.buildDefaultCohort({root:ROOT});
- const payouts=payoutAudit.payoutMap();
+function build(options = {}){
+ const cohort=input.buildDefaultCohort({ ...options, root: options.root || ROOT, compactPredictionRecord: Object.hasOwn(options, 'compactPredictionRecord') ? options.compactPredictionRecord : compactForwardResearchRecord });
+ const payouts=payoutAudit.payoutMap(options.resultsDir || path.join(options.root || ROOT, 'data', 'results'));
  const triggers={
   attackMargin05:empty(), attackMargin10:empty(), flowMargin05:empty(), flowMargin10:empty(), attackAndBestST:empty(), strongEither:empty(), strongEitherCap9:empty(), strongEitherCap12:empty()
  };

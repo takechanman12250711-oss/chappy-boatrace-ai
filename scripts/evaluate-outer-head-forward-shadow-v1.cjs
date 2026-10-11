@@ -3,20 +3,19 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const overlay = require('./analyze-outer-head-signal-overlay.cjs');
+const { compactOuterAttackRecord } = require('./report-input-projection.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
-const CONFIG_PATH = path.join(ROOT, 'config', 'outer-head-forward-shadow-v1.json');
-const INPUT_PATH = path.join(ROOT, 'data', 'stats', 'local-water-priority-selector-shadow-replay.json');
 const PREDICTION_DIR = path.join(ROOT, 'data', 'predictions');
 
 function loadJson(file) { return JSON.parse(fs.readFileSync(file, 'utf8')); }
-function loadPredictions() {
-  if (!fs.existsSync(PREDICTION_DIR)) return [];
+function loadPredictions(predictionsDir = PREDICTION_DIR, projector = compactOuterAttackRecord) {
+  if (!fs.existsSync(predictionsDir)) return [];
   const rows = [];
-  for (const name of fs.readdirSync(PREDICTION_DIR).filter(n => /^\d{8}\.json$/.test(n)).sort()) {
-    const doc = loadJson(path.join(PREDICTION_DIR, name));
+  for (const name of fs.readdirSync(predictionsDir).filter(n => /^\d{8}\.json$/.test(n)).sort()) {
+    const doc = loadJson(path.join(predictionsDir, name));
     for (const source of ['predictions', 'verificationPredictions']) {
-      for (const row of Array.isArray(doc?.[source]) ? doc[source] : []) rows.push(row);
+      for (const row of Array.isArray(doc?.[source]) ? doc[source] : []) rows.push(typeof projector === 'function' ? projector(row) : row);
     }
   }
   return rows;
@@ -78,10 +77,12 @@ function gateFor(summary, cfg, observedDays) {
   }
   return result;
 }
-function main() {
-  const cfg = loadJson(CONFIG_PATH);
-  const replay = loadJson(INPUT_PATH);
-  const joined = overlay.build(replay, loadPredictions()).rows.filter(r => String(r.date || '') >= cfg.prospectiveStartDate);
+function build(options = {}) {
+  const root = options.root || ROOT;
+  const cfg = loadJson(path.join(root, 'config', 'outer-head-forward-shadow-v1.json'));
+  const replay = loadJson(path.join(root, 'data', 'stats', 'local-water-priority-selector-shadow-replay.json'));
+  const projector = Object.hasOwn(options, 'compactPredictionRecord') ? options.compactPredictionRecord : compactOuterAttackRecord;
+  const joined = overlay.build(replay, loadPredictions(options.predictionsDir || path.join(root, 'data', 'predictions'), projector)).rows.filter(r => String(r.date || '') >= cfg.prospectiveStartDate);
   const observedDays = new Set(joined.map(r => String(r.date || '')).filter(Boolean)).size;
   const rules = {};
   for (const rule of cfg.candidateRules) {
@@ -98,7 +99,7 @@ function main() {
       rows
     };
   }
-  process.stdout.write(JSON.stringify({
+  return {
     schemaVersion: 1,
     analysisId: cfg.id,
     generatedAt: new Date().toISOString(),
@@ -110,6 +111,7 @@ function main() {
     observedDays,
     rules,
     note: joined.length === 0 ? 'No post-start matched promotion rows are available yet; expected before completed prospective races exist.' : 'Forward-only evaluation using frozen rules; no retrospective retuning.'
-  }, null, 2) + '\n');
+  };
 }
-if (require.main === module) main();
+if (require.main === module) process.stdout.write(JSON.stringify(build(), null, 2) + '\n');
+module.exports = { build, loadPredictions };

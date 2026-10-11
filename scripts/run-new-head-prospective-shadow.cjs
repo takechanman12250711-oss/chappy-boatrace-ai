@@ -2,6 +2,7 @@
 
 const path = require('node:path');
 const input = require('./analysis-input-contract');
+const { compactForwardResearchRecord } = require('./forward-research-input-projection.cjs');
 const base = require('./analyze-ticket-expansion-7-12-18-24.cjs');
 const payout = require('./analyze-ticket-expansion-payout-v2.cjs');
 const newHead = require('./analyze-new-head-efficiency.cjs');
@@ -88,10 +89,10 @@ function addedEfficiency(rows, payouts) {
   };
 }
 
-function build() {
-  const cohort = input.buildDefaultCohort({ root: ROOT });
+function build(options = {}) {
+  const cohort = input.buildDefaultCohort({ ...options, root: options.root || ROOT, compactPredictionRecord: Object.hasOwn(options, 'compactPredictionRecord') ? options.compactPredictionRecord : compactForwardResearchRecord });
   const prospective = cohort.records.filter(record => raceDate(record) > FREEZE_DATE);
-  const payouts = payout.payoutMap();
+  const payouts = payout.payoutMap(options.resultsDir || path.join(options.root || ROOT, 'data', 'results'));
   const baseline = metric(prospective, baselineSelection, payouts);
   const shadow = metric(prospective, record => newHead.selectStrategy(record, SHADOW_RULE), payouts);
   const added = addedEfficiency(prospective, payouts);

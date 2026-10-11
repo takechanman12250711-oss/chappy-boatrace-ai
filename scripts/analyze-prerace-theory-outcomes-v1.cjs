@@ -2,6 +2,7 @@
 
 const path = require('node:path');
 const input = require('./analysis-input-contract');
+const { compactForwardResearchRecord } = require('./forward-research-input-projection.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const ACTIVATED_AT = Date.parse('2026-09-01T10:19:20Z');
@@ -33,8 +34,8 @@ function stat(){ return {samples:0,wins:0,top2:0,top3:0,winRate:0,top2Rate:0,top
 function add(s,boat,order){ if(!boat)return; s.samples++; const p=order.indexOf(boat)+1; if(p===1)s.wins++; if(p>0&&p<=2)s.top2++; if(p>0&&p<=3)s.top3++; }
 function finalize(s){ s.winRate=pct(s.wins,s.samples); s.top2Rate=pct(s.top2,s.samples); s.top3Rate=pct(s.top3,s.samples); return s; }
 function bucketName(v,cuts){ if(v===null||!finite(v))return 'missing'; for(const c of cuts)if(v<c.max)return c.name; return cuts[cuts.length-1].tail; }
-function build(){
-  const cohort=input.buildDefaultCohort({root:ROOT});
+function build(options = {}){
+  const cohort=input.buildDefaultCohort({ ...options, root: options.root || ROOT, compactPredictionRecord: Object.hasOwn(options, 'compactPredictionRecord') ? options.compactPredictionRecord : compactForwardResearchRecord });
   const metrics={attackLeader:stat(),flowLeader:stat(),totalLeader:stat(),bestExhibitionST:stat(),attackAndBestSTSame:stat()};
   const attackMarginBuckets={}; const flowMarginBuckets={};
   let eligible=0,completeSignals=0,attackBestStSameSamples=0;

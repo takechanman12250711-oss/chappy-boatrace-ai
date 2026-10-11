@@ -2,6 +2,7 @@
 
 const path = require('node:path');
 const input = require('./analysis-input-contract');
+const { compactForwardResearchRecord } = require('./forward-research-input-projection.cjs');
 const expansion = require('./analyze-ticket-expansion-7-12-18-24.cjs');
 const payoutAudit = require('./analyze-ticket-expansion-payout-v2.cjs');
 const subgroup = require('./analyze-rescue-subgroup-roi-v1.cjs');
@@ -53,9 +54,9 @@ function empty() {
   return { settledRaceCount: 0, triggeredRaceCount: 0, addedTicketCount: 0, rescueCount: 0, investmentYen: 0, returnYen: 0, profitYen: 0, roiPercent: 0, manboatRescueCount: 0, rescuesPer1000AddedTickets: 0 };
 }
 
-function build() {
-  const cohort = input.buildDefaultCohort({ root: ROOT });
-  const payouts = payoutAudit.payoutMap();
+function build(options = {}) {
+  const cohort = input.buildDefaultCohort({ ...options, root: options.root || ROOT, compactPredictionRecord: Object.hasOwn(options, 'compactPredictionRecord') ? options.compactPredictionRecord : compactForwardResearchRecord });
+  const payouts = payoutAudit.payoutMap(options.resultsDir || path.join(options.root || ROOT, 'data', 'results'));
   const metrics = Object.fromEntries(Object.keys(RULES).map(k => [k, empty()]));
   const union = empty();
   const eligible = cohort.records.filter(record => captureMs(record) >= FREEZE_MS);
