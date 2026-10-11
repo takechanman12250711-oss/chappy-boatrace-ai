@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "reportId": "outer-attack-ticket-central-report-v1",
   "monitorVersion": "outer-attack-ticket-central-monitor-v1",
-  "generatedAt": "2026-10-11T05:42:31.979Z",
+  "generatedAt": "2026-10-11T05:52:23.446Z",
   "productionChanged": false,
   "automaticApplication": false,
   "humanApprovalRequired": true,
@@ -11,16 +11,16 @@
   "pipeline": {
     "noteCollection": {
       "checked": 1129,
-      "saved": 1,
+      "saved": 0,
       "inactive": 876,
       "missing": 198,
       "invalid": 1,
       "missingBasis": 0,
-      "checkedAt": "2026-10-11T05:42:14.073Z"
+      "checkedAt": "2026-10-11T05:52:05.120Z"
     },
     "lastCapture": {
       "date": "20261011",
-      "capturedAt": "2026-10-11T05:42:14.073Z",
+      "capturedAt": "2026-10-11T05:52:05.120Z",
       "diagnostics": {
         "sourceRecordCount": 32,
         "preDeadlineRecordCount": 32,
@@ -38,9 +38,9 @@
     "immutableSnapshotCount": 76,
     "archivedRaceCount": 64,
     "archiveConflictCount": 0,
-    "settlementCount": 44,
-    "eligibleSettlementCount": 44,
-    "pendingOfficialResultCount": 2,
+    "settlementCount": 45,
+    "eligibleSettlementCount": 45,
+    "pendingOfficialResultCount": 1,
     "exclusionCount": 18,
     "exclusionCounts": {
       "not-comparable": 18
@@ -50,48 +50,48 @@
     "schemaVersion": 1,
     "reportId": "outer-attack-ticket-ab-report-v1",
     "settlementVersion": "outer-attack-ticket-settlement-v1",
-    "generatedAt": "2026-10-11T05:42:31.979Z",
+    "generatedAt": "2026-10-11T05:52:23.446Z",
     "productionChanged": false,
     "automaticApplication": false,
     "primaryCohort": "prediction-before-result",
-    "settlementCount": 44,
+    "settlementCount": 45,
     "captureOrderCounts": {
-      "predictionBeforeResult": 44,
+      "predictionBeforeResult": 45,
       "resultBeforePrediction": 0,
       "unknown": 0
     },
     "cohorts": {
       "forward": {
-        "sampleCount": 44,
+        "sampleCount": 45,
         "a": {
-          "sampleCount": 44,
+          "sampleCount": 45,
           "hitCount": 7,
-          "hitRatePercent": 15.9,
-          "investmentYen": 41400,
+          "hitRatePercent": 15.6,
+          "investmentYen": 42300,
           "returnYen": 22330,
-          "profitYen": -19070,
-          "roiPercent": 53.9
+          "profitYen": -19970,
+          "roiPercent": 52.8
         },
         "variants": {
           "cover": {
-            "eligibleCount": 43,
+            "eligibleCount": 44,
             "a": {
-              "sampleCount": 43,
+              "sampleCount": 44,
               "hitCount": 7,
-              "hitRatePercent": 16.3,
-              "investmentYen": 40800,
+              "hitRatePercent": 15.9,
+              "investmentYen": 41700,
               "returnYen": 22330,
-              "profitYen": -18470,
-              "roiPercent": 54.7
+              "profitYen": -19370,
+              "roiPercent": 53.5
             },
             "b": {
-              "sampleCount": 43,
+              "sampleCount": 44,
               "hitCount": 8,
-              "hitRatePercent": 18.6,
-              "investmentYen": 40800,
+              "hitRatePercent": 18.2,
+              "investmentYen": 41700,
               "returnYen": 23600,
-              "profitYen": -17200,
-              "roiPercent": 57.8
+              "profitYen": -18100,
+              "roiPercent": 56.6
             },
             "deltaVsA": {
               "hitCountDelta": 1,
@@ -104,7 +104,7 @@
               "bothHit": 6,
               "aOnlyHit": 1,
               "bOnlyHit": 2,
-              "neitherHit": 34
+              "neitherHit": 35
             },
             "byTargetBoatNo": {
               "3": {
@@ -144,58 +144,22 @@
               "4": {
                 "targetBoatNo": 4,
                 "a": {
-                  "sampleCount": 19,
-                  "hitCount": 1,
-                  "hitRatePercent": 5.3,
-                  "investmentYen": 17900,
-                  "returnYen": 6270,
-                  "profitYen": -11630,
-                  "roiPercent": 35
-                },
-                "b": {
-                  "sampleCount": 19,
-                  "hitCount": 1,
-                  "hitRatePercent": 5.3,
-                  "investmentYen": 17900,
-                  "returnYen": 6270,
-                  "profitYen": -11630,
-                  "roiPercent": 35
-                },
-                "deltaVsA": {
-                  "hitCountDelta": 0,
-                  "hitRatePointDelta": 0,
-                  "returnYenDelta": 0,
-                  "profitYenDelta": 0,
-                  "roiPointDelta": 0
-                },
-                "pairOutcomes": {
-                  "bothHit": 1,
-                  "aOnlyHit": 0,
-                  "bOnlyHit": 0,
-                  "neitherHit": 18
-                }
-              }
-            },
-            "byTargetPosition": {
-              "2": {
-                "targetPosition": 2,
-                "a": {
                   "sampleCount": 20,
                   "hitCount": 1,
                   "hitRatePercent": 5,
-                  "investmentYen": 18900,
+                  "investmentYen": 18800,
                   "returnYen": 6270,
-                  "profitYen": -12630,
-                  "roiPercent": 33.2
+                  "profitYen": -12530,
+                  "roiPercent": 33.4
                 },
                 "b": {
                   "sampleCount": 20,
                   "hitCount": 1,
                   "hitRatePercent": 5,
-                  "investmentYen": 18900,
+                  "investmentYen": 18800,
                   "returnYen": 6270,
-                  "profitYen": -12630,
-                  "roiPercent": 33.2
+                  "profitYen": -12530,
+                  "roiPercent": 33.4
                 },
                 "deltaVsA": {
                   "hitCountDelta": 0,
@@ -209,6 +173,42 @@
                   "aOnlyHit": 0,
                   "bOnlyHit": 0,
                   "neitherHit": 19
+                }
+              }
+            },
+            "byTargetPosition": {
+              "2": {
+                "targetPosition": 2,
+                "a": {
+                  "sampleCount": 21,
+                  "hitCount": 1,
+                  "hitRatePercent": 4.8,
+                  "investmentYen": 19800,
+                  "returnYen": 6270,
+                  "profitYen": -13530,
+                  "roiPercent": 31.7
+                },
+                "b": {
+                  "sampleCount": 21,
+                  "hitCount": 1,
+                  "hitRatePercent": 4.8,
+                  "investmentYen": 19800,
+                  "returnYen": 6270,
+                  "profitYen": -13530,
+                  "roiPercent": 31.7
+                },
+                "deltaVsA": {
+                  "hitCountDelta": 0,
+                  "hitRatePointDelta": 0,
+                  "returnYenDelta": 0,
+                  "profitYenDelta": 0,
+                  "roiPointDelta": 0
+                },
+                "pairOutcomes": {
+                  "bothHit": 1,
+                  "aOnlyHit": 0,
+                  "bOnlyHit": 0,
+                  "neitherHit": 20
                 }
               },
               "3": {
@@ -248,37 +248,37 @@
             }
           },
           "flow": {
-            "eligibleCount": 41,
+            "eligibleCount": 42,
             "a": {
-              "sampleCount": 41,
+              "sampleCount": 42,
               "hitCount": 5,
-              "hitRatePercent": 12.2,
-              "investmentYen": 38600,
+              "hitRatePercent": 11.9,
+              "investmentYen": 39500,
               "returnYen": 14870,
-              "profitYen": -23730,
-              "roiPercent": 38.5
+              "profitYen": -24630,
+              "roiPercent": 37.6
             },
             "b": {
-              "sampleCount": 41,
+              "sampleCount": 42,
               "hitCount": 7,
-              "hitRatePercent": 17.1,
-              "investmentYen": 38600,
+              "hitRatePercent": 16.7,
+              "investmentYen": 39500,
               "returnYen": 20940,
-              "profitYen": -17660,
-              "roiPercent": 54.2
+              "profitYen": -18560,
+              "roiPercent": 53
             },
             "deltaVsA": {
               "hitCountDelta": 2,
-              "hitRatePointDelta": 4.9,
+              "hitRatePointDelta": 4.8,
               "returnYenDelta": 6070,
               "profitYenDelta": 6070,
-              "roiPointDelta": 15.7
+              "roiPointDelta": 15.4
             },
             "pairOutcomes": {
               "bothHit": 5,
               "aOnlyHit": 0,
               "bOnlyHit": 2,
-              "neitherHit": 34
+              "neitherHit": 35
             },
             "byTargetBoatNo": {
               "3": {
@@ -318,35 +318,35 @@
               "4": {
                 "targetBoatNo": 4,
                 "a": {
-                  "sampleCount": 20,
+                  "sampleCount": 21,
                   "hitCount": 1,
-                  "hitRatePercent": 5,
-                  "investmentYen": 18500,
+                  "hitRatePercent": 4.8,
+                  "investmentYen": 19400,
                   "returnYen": 6270,
-                  "profitYen": -12230,
-                  "roiPercent": 33.9
+                  "profitYen": -13130,
+                  "roiPercent": 32.3
                 },
                 "b": {
-                  "sampleCount": 20,
+                  "sampleCount": 21,
                   "hitCount": 2,
-                  "hitRatePercent": 10,
-                  "investmentYen": 18500,
+                  "hitRatePercent": 9.5,
+                  "investmentYen": 19400,
                   "returnYen": 11620,
-                  "profitYen": -6880,
-                  "roiPercent": 62.8
+                  "profitYen": -7780,
+                  "roiPercent": 59.9
                 },
                 "deltaVsA": {
                   "hitCountDelta": 1,
-                  "hitRatePointDelta": 5,
+                  "hitRatePointDelta": 4.7,
                   "returnYenDelta": 5350,
                   "profitYenDelta": 5350,
-                  "roiPointDelta": 28.9
+                  "roiPointDelta": 27.6
                 },
                 "pairOutcomes": {
                   "bothHit": 1,
                   "aOnlyHit": 0,
                   "bOnlyHit": 1,
-                  "neitherHit": 18
+                  "neitherHit": 19
                 }
               }
             },
@@ -354,35 +354,35 @@
               "2": {
                 "targetPosition": 2,
                 "a": {
-                  "sampleCount": 35,
+                  "sampleCount": 36,
                   "hitCount": 5,
-                  "hitRatePercent": 14.3,
-                  "investmentYen": 32700,
+                  "hitRatePercent": 13.9,
+                  "investmentYen": 33600,
                   "returnYen": 14870,
-                  "profitYen": -17830,
-                  "roiPercent": 45.5
+                  "profitYen": -18730,
+                  "roiPercent": 44.3
                 },
                 "b": {
-                  "sampleCount": 35,
+                  "sampleCount": 36,
                   "hitCount": 7,
-                  "hitRatePercent": 20,
-                  "investmentYen": 32700,
+                  "hitRatePercent": 19.4,
+                  "investmentYen": 33600,
                   "returnYen": 20940,
-                  "profitYen": -11760,
-                  "roiPercent": 64
+                  "profitYen": -12660,
+                  "roiPercent": 62.3
                 },
                 "deltaVsA": {
                   "hitCountDelta": 2,
-                  "hitRatePointDelta": 5.7,
+                  "hitRatePointDelta": 5.5,
                   "returnYenDelta": 6070,
                   "profitYenDelta": 6070,
-                  "roiPointDelta": 18.5
+                  "roiPointDelta": 18
                 },
                 "pairOutcomes": {
                   "bothHit": 5,
                   "aOnlyHit": 0,
                   "bOnlyHit": 2,
-                  "neitherHit": 28
+                  "neitherHit": 29
                 }
               },
               "3": {
@@ -704,36 +704,36 @@
         }
       },
       "allSettled": {
-        "sampleCount": 44,
+        "sampleCount": 45,
         "a": {
-          "sampleCount": 44,
+          "sampleCount": 45,
           "hitCount": 7,
-          "hitRatePercent": 15.9,
-          "investmentYen": 41400,
+          "hitRatePercent": 15.6,
+          "investmentYen": 42300,
           "returnYen": 22330,
-          "profitYen": -19070,
-          "roiPercent": 53.9
+          "profitYen": -19970,
+          "roiPercent": 52.8
         },
         "variants": {
           "cover": {
-            "eligibleCount": 43,
+            "eligibleCount": 44,
             "a": {
-              "sampleCount": 43,
+              "sampleCount": 44,
               "hitCount": 7,
-              "hitRatePercent": 16.3,
-              "investmentYen": 40800,
+              "hitRatePercent": 15.9,
+              "investmentYen": 41700,
               "returnYen": 22330,
-              "profitYen": -18470,
-              "roiPercent": 54.7
+              "profitYen": -19370,
+              "roiPercent": 53.5
             },
             "b": {
-              "sampleCount": 43,
+              "sampleCount": 44,
               "hitCount": 8,
-              "hitRatePercent": 18.6,
-              "investmentYen": 40800,
+              "hitRatePercent": 18.2,
+              "investmentYen": 41700,
               "returnYen": 23600,
-              "profitYen": -17200,
-              "roiPercent": 57.8
+              "profitYen": -18100,
+              "roiPercent": 56.6
             },
             "deltaVsA": {
               "hitCountDelta": 1,
@@ -746,7 +746,7 @@
               "bothHit": 6,
               "aOnlyHit": 1,
               "bOnlyHit": 2,
-              "neitherHit": 34
+              "neitherHit": 35
             },
             "byTargetBoatNo": {
               "3": {
@@ -786,58 +786,22 @@
               "4": {
                 "targetBoatNo": 4,
                 "a": {
-                  "sampleCount": 19,
-                  "hitCount": 1,
-                  "hitRatePercent": 5.3,
-                  "investmentYen": 17900,
-                  "returnYen": 6270,
-                  "profitYen": -11630,
-                  "roiPercent": 35
-                },
-                "b": {
-                  "sampleCount": 19,
-                  "hitCount": 1,
-                  "hitRatePercent": 5.3,
-                  "investmentYen": 17900,
-                  "returnYen": 6270,
-                  "profitYen": -11630,
-                  "roiPercent": 35
-                },
-                "deltaVsA": {
-                  "hitCountDelta": 0,
-                  "hitRatePointDelta": 0,
-                  "returnYenDelta": 0,
-                  "profitYenDelta": 0,
-                  "roiPointDelta": 0
-                },
-                "pairOutcomes": {
-                  "bothHit": 1,
-                  "aOnlyHit": 0,
-                  "bOnlyHit": 0,
-                  "neitherHit": 18
-                }
-              }
-            },
-            "byTargetPosition": {
-              "2": {
-                "targetPosition": 2,
-                "a": {
                   "sampleCount": 20,
                   "hitCount": 1,
                   "hitRatePercent": 5,
-                  "investmentYen": 18900,
+                  "investmentYen": 18800,
                   "returnYen": 6270,
-                  "profitYen": -12630,
-                  "roiPercent": 33.2
+                  "profitYen": -12530,
+                  "roiPercent": 33.4
                 },
                 "b": {
                   "sampleCount": 20,
                   "hitCount": 1,
                   "hitRatePercent": 5,
-                  "investmentYen": 18900,
+                  "investmentYen": 18800,
                   "returnYen": 6270,
-                  "profitYen": -12630,
-                  "roiPercent": 33.2
+                  "profitYen": -12530,
+                  "roiPercent": 33.4
                 },
                 "deltaVsA": {
                   "hitCountDelta": 0,
@@ -851,6 +815,42 @@
                   "aOnlyHit": 0,
                   "bOnlyHit": 0,
                   "neitherHit": 19
+                }
+              }
+            },
+            "byTargetPosition": {
+              "2": {
+                "targetPosition": 2,
+                "a": {
+                  "sampleCount": 21,
+                  "hitCount": 1,
+                  "hitRatePercent": 4.8,
+                  "investmentYen": 19800,
+                  "returnYen": 6270,
+                  "profitYen": -13530,
+                  "roiPercent": 31.7
+                },
+                "b": {
+                  "sampleCount": 21,
+                  "hitCount": 1,
+                  "hitRatePercent": 4.8,
+                  "investmentYen": 19800,
+                  "returnYen": 6270,
+                  "profitYen": -13530,
+                  "roiPercent": 31.7
+                },
+                "deltaVsA": {
+                  "hitCountDelta": 0,
+                  "hitRatePointDelta": 0,
+                  "returnYenDelta": 0,
+                  "profitYenDelta": 0,
+                  "roiPointDelta": 0
+                },
+                "pairOutcomes": {
+                  "bothHit": 1,
+                  "aOnlyHit": 0,
+                  "bOnlyHit": 0,
+                  "neitherHit": 20
                 }
               },
               "3": {
@@ -890,37 +890,37 @@
             }
           },
           "flow": {
-            "eligibleCount": 41,
+            "eligibleCount": 42,
             "a": {
-              "sampleCount": 41,
+              "sampleCount": 42,
               "hitCount": 5,
-              "hitRatePercent": 12.2,
-              "investmentYen": 38600,
+              "hitRatePercent": 11.9,
+              "investmentYen": 39500,
               "returnYen": 14870,
-              "profitYen": -23730,
-              "roiPercent": 38.5
+              "profitYen": -24630,
+              "roiPercent": 37.6
             },
             "b": {
-              "sampleCount": 41,
+              "sampleCount": 42,
               "hitCount": 7,
-              "hitRatePercent": 17.1,
-              "investmentYen": 38600,
+              "hitRatePercent": 16.7,
+              "investmentYen": 39500,
               "returnYen": 20940,
-              "profitYen": -17660,
-              "roiPercent": 54.2
+              "profitYen": -18560,
+              "roiPercent": 53
             },
             "deltaVsA": {
               "hitCountDelta": 2,
-              "hitRatePointDelta": 4.9,
+              "hitRatePointDelta": 4.8,
               "returnYenDelta": 6070,
               "profitYenDelta": 6070,
-              "roiPointDelta": 15.7
+              "roiPointDelta": 15.4
             },
             "pairOutcomes": {
               "bothHit": 5,
               "aOnlyHit": 0,
               "bOnlyHit": 2,
-              "neitherHit": 34
+              "neitherHit": 35
             },
             "byTargetBoatNo": {
               "3": {
@@ -960,35 +960,35 @@
               "4": {
                 "targetBoatNo": 4,
                 "a": {
-                  "sampleCount": 20,
+                  "sampleCount": 21,
                   "hitCount": 1,
-                  "hitRatePercent": 5,
-                  "investmentYen": 18500,
+                  "hitRatePercent": 4.8,
+                  "investmentYen": 19400,
                   "returnYen": 6270,
-                  "profitYen": -12230,
-                  "roiPercent": 33.9
+                  "profitYen": -13130,
+                  "roiPercent": 32.3
                 },
                 "b": {
-                  "sampleCount": 20,
+                  "sampleCount": 21,
                   "hitCount": 2,
-                  "hitRatePercent": 10,
-                  "investmentYen": 18500,
+                  "hitRatePercent": 9.5,
+                  "investmentYen": 19400,
                   "returnYen": 11620,
-                  "profitYen": -6880,
-                  "roiPercent": 62.8
+                  "profitYen": -7780,
+                  "roiPercent": 59.9
                 },
                 "deltaVsA": {
                   "hitCountDelta": 1,
-                  "hitRatePointDelta": 5,
+                  "hitRatePointDelta": 4.7,
                   "returnYenDelta": 5350,
                   "profitYenDelta": 5350,
-                  "roiPointDelta": 28.9
+                  "roiPointDelta": 27.6
                 },
                 "pairOutcomes": {
                   "bothHit": 1,
                   "aOnlyHit": 0,
                   "bOnlyHit": 1,
-                  "neitherHit": 18
+                  "neitherHit": 19
                 }
               }
             },
@@ -996,35 +996,35 @@
               "2": {
                 "targetPosition": 2,
                 "a": {
-                  "sampleCount": 35,
+                  "sampleCount": 36,
                   "hitCount": 5,
-                  "hitRatePercent": 14.3,
-                  "investmentYen": 32700,
+                  "hitRatePercent": 13.9,
+                  "investmentYen": 33600,
                   "returnYen": 14870,
-                  "profitYen": -17830,
-                  "roiPercent": 45.5
+                  "profitYen": -18730,
+                  "roiPercent": 44.3
                 },
                 "b": {
-                  "sampleCount": 35,
+                  "sampleCount": 36,
                   "hitCount": 7,
-                  "hitRatePercent": 20,
-                  "investmentYen": 32700,
+                  "hitRatePercent": 19.4,
+                  "investmentYen": 33600,
                   "returnYen": 20940,
-                  "profitYen": -11760,
-                  "roiPercent": 64
+                  "profitYen": -12660,
+                  "roiPercent": 62.3
                 },
                 "deltaVsA": {
                   "hitCountDelta": 2,
-                  "hitRatePointDelta": 5.7,
+                  "hitRatePointDelta": 5.5,
                   "returnYenDelta": 6070,
                   "profitYenDelta": 6070,
-                  "roiPointDelta": 18.5
+                  "roiPointDelta": 18
                 },
                 "pairOutcomes": {
                   "bothHit": 5,
                   "aOnlyHit": 0,
                   "bOnlyHit": 2,
-                  "neitherHit": 28
+                  "neitherHit": 29
                 }
               },
               "3": {
@@ -1106,7 +1106,7 @@
   "decision": {
     "schemaVersion": 1,
     "gateId": "outer-attack-ticket-decision-gate-v1",
-    "generatedAt": "2026-10-11T05:42:31.979Z",
+    "generatedAt": "2026-10-11T05:52:23.446Z",
     "frozenAt": "2026-08-31T01:40:00.000Z",
     "prospectiveStartAt": "2026-08-31T02:00:00.000Z",
     "sourceMainCommit": "ee644d55b889c0ff38f198b9747c9c4d86c83425",
@@ -1117,8 +1117,8 @@
     "thresholdSearchPerformed": false,
     "primaryCohort": "prediction-before-result",
     "diagnostics": {
-      "sourceSettlementCount": 44,
-      "prospectiveForwardCount": 44,
+      "sourceSettlementCount": 45,
+      "prospectiveForwardCount": 45,
       "exclusionCounts": {}
     },
     "variants": {
@@ -1127,40 +1127,40 @@
         "status": "collecting-to-100",
         "automaticApplication": false,
         "humanApprovalRequired": true,
-        "sampleCount": 43,
-        "distinctDateCount": 19,
+        "sampleCount": 44,
+        "distinctDateCount": 20,
         "nextMilestone": 100,
-        "remainingToNextMilestone": 57,
+        "remainingToNextMilestone": 56,
         "metrics": {
-          "sampleCount": 43,
+          "sampleCount": 44,
           "a": {
             "hitCount": 7,
-            "hitRatePercent": 16.3,
-            "investmentYen": 40800,
+            "hitRatePercent": 15.9,
+            "investmentYen": 41700,
             "returnYen": 22330,
-            "profitYen": -18470,
-            "roiPercent": 54.7
+            "profitYen": -19370,
+            "roiPercent": 53.5
           },
           "b": {
             "hitCount": 8,
-            "hitRatePercent": 18.6,
-            "investmentYen": 40800,
+            "hitRatePercent": 18.2,
+            "investmentYen": 41700,
             "returnYen": 23600,
-            "profitYen": -17200,
-            "roiPercent": 57.8
+            "profitYen": -18100,
+            "roiPercent": 56.6
           },
           "pairOutcomes": {
             "bothHit": 6,
             "aOnlyHit": 1,
             "bOnlyHit": 2,
-            "neitherHit": 34
+            "neitherHit": 35
           },
           "hitCountDelta": 1,
           "hitRatePointDelta": 2.3,
           "returnDeltaYen": 1270,
           "profitDeltaYen": 1270,
           "roiPointDelta": 3.1,
-          "sameStakeCount": 43,
+          "sameStakeCount": 44,
           "sameStakeCoveragePercent": 100,
           "largestPositiveRaceProfitDeltaYen": 3390,
           "jackknifeProfitDeltaYen": -2120,
@@ -1168,35 +1168,35 @@
         },
         "halves": {
           "first": {
-            "sampleCount": 21,
+            "sampleCount": 22,
             "a": {
               "hitCount": 4,
-              "hitRatePercent": 19,
-              "investmentYen": 20100,
+              "hitRatePercent": 18.2,
+              "investmentYen": 21100,
               "returnYen": 11030,
-              "profitYen": -9070,
-              "roiPercent": 54.9
+              "profitYen": -10070,
+              "roiPercent": 52.3
             },
             "b": {
               "hitCount": 5,
-              "hitRatePercent": 23.8,
-              "investmentYen": 20100,
+              "hitRatePercent": 22.7,
+              "investmentYen": 21100,
               "returnYen": 14420,
-              "profitYen": -5680,
-              "roiPercent": 71.7
+              "profitYen": -6680,
+              "roiPercent": 68.3
             },
             "pairOutcomes": {
               "bothHit": 4,
               "aOnlyHit": 0,
               "bOnlyHit": 1,
-              "neitherHit": 16
+              "neitherHit": 17
             },
             "hitCountDelta": 1,
-            "hitRatePointDelta": 4.8,
+            "hitRatePointDelta": 4.5,
             "returnDeltaYen": 3390,
             "profitDeltaYen": 3390,
-            "roiPointDelta": 16.8,
-            "sameStakeCount": 21,
+            "roiPointDelta": 16,
+            "sameStakeCount": 22,
             "sameStakeCoveragePercent": 100,
             "largestPositiveRaceProfitDeltaYen": 3390,
             "jackknifeProfitDeltaYen": 0,
@@ -1207,18 +1207,18 @@
             "a": {
               "hitCount": 3,
               "hitRatePercent": 13.6,
-              "investmentYen": 20700,
+              "investmentYen": 20600,
               "returnYen": 11300,
-              "profitYen": -9400,
-              "roiPercent": 54.6
+              "profitYen": -9300,
+              "roiPercent": 54.9
             },
             "b": {
               "hitCount": 3,
               "hitRatePercent": 13.6,
-              "investmentYen": 20700,
+              "investmentYen": 20600,
               "returnYen": 9180,
-              "profitYen": -11520,
-              "roiPercent": 44.3
+              "profitYen": -11420,
+              "roiPercent": 44.6
             },
             "pairOutcomes": {
               "bothHit": 2,
@@ -1281,7 +1281,7 @@
           "passed": false,
           "checks": {
             "sampleCount": false,
-            "distinctDates": false,
+            "distinctDates": true,
             "sameStakeCoverage": true,
             "hitCountDelta": false,
             "hitRatePointDelta": true,
@@ -1313,40 +1313,40 @@
         "status": "collecting-to-100",
         "automaticApplication": false,
         "humanApprovalRequired": true,
-        "sampleCount": 41,
-        "distinctDateCount": 18,
+        "sampleCount": 42,
+        "distinctDateCount": 19,
         "nextMilestone": 100,
-        "remainingToNextMilestone": 59,
+        "remainingToNextMilestone": 58,
         "metrics": {
-          "sampleCount": 41,
+          "sampleCount": 42,
           "a": {
             "hitCount": 5,
-            "hitRatePercent": 12.2,
-            "investmentYen": 38600,
+            "hitRatePercent": 11.9,
+            "investmentYen": 39500,
             "returnYen": 14870,
-            "profitYen": -23730,
-            "roiPercent": 38.5
+            "profitYen": -24630,
+            "roiPercent": 37.6
           },
           "b": {
             "hitCount": 7,
-            "hitRatePercent": 17.1,
-            "investmentYen": 38600,
+            "hitRatePercent": 16.7,
+            "investmentYen": 39500,
             "returnYen": 20940,
-            "profitYen": -17660,
-            "roiPercent": 54.2
+            "profitYen": -18560,
+            "roiPercent": 53
           },
           "pairOutcomes": {
             "bothHit": 5,
             "aOnlyHit": 0,
             "bOnlyHit": 2,
-            "neitherHit": 34
+            "neitherHit": 35
           },
           "hitCountDelta": 2,
-          "hitRatePointDelta": 4.9,
+          "hitRatePointDelta": 4.8,
           "returnDeltaYen": 6070,
           "profitDeltaYen": 6070,
-          "roiPointDelta": 15.7,
-          "sameStakeCount": 41,
+          "roiPointDelta": 15.4,
+          "sameStakeCount": 42,
           "sameStakeCoveragePercent": 100,
           "largestPositiveRaceProfitDeltaYen": 5350,
           "jackknifeProfitDeltaYen": 720,
@@ -1354,35 +1354,35 @@
         },
         "halves": {
           "first": {
-            "sampleCount": 20,
+            "sampleCount": 21,
             "a": {
               "hitCount": 2,
-              "hitRatePercent": 10,
-              "investmentYen": 19200,
+              "hitRatePercent": 9.5,
+              "investmentYen": 20100,
               "returnYen": 3570,
-              "profitYen": -15630,
-              "roiPercent": 18.6
+              "profitYen": -16530,
+              "roiPercent": 17.8
             },
             "b": {
               "hitCount": 3,
-              "hitRatePercent": 15,
-              "investmentYen": 19200,
+              "hitRatePercent": 14.3,
+              "investmentYen": 20100,
               "returnYen": 4290,
-              "profitYen": -14910,
-              "roiPercent": 22.3
+              "profitYen": -15810,
+              "roiPercent": 21.3
             },
             "pairOutcomes": {
               "bothHit": 2,
               "aOnlyHit": 0,
               "bOnlyHit": 1,
-              "neitherHit": 17
+              "neitherHit": 18
             },
             "hitCountDelta": 1,
-            "hitRatePointDelta": 5,
+            "hitRatePointDelta": 4.8,
             "returnDeltaYen": 720,
             "profitDeltaYen": 720,
-            "roiPointDelta": 3.7,
-            "sameStakeCount": 20,
+            "roiPointDelta": 3.5,
+            "sameStakeCount": 21,
             "sameStakeCoveragePercent": 100,
             "largestPositiveRaceProfitDeltaYen": 720,
             "jackknifeProfitDeltaYen": 0,
@@ -1773,15 +1773,15 @@
   },
   "nextMilestones": {
     "cover": {
-      "sampleCount": 43,
+      "sampleCount": 44,
       "nextMilestone": 100,
-      "remaining": 57,
+      "remaining": 56,
       "status": "collecting-to-100"
     },
     "flow": {
-      "sampleCount": 41,
+      "sampleCount": 42,
       "nextMilestone": 100,
-      "remaining": 59,
+      "remaining": 58,
       "status": "collecting-to-100"
     },
     "hole": {
@@ -1805,8 +1805,8 @@
   "research": {
     "version": "outer-attack-all-scenarios-v1",
     "capturedRaces": 398,
-    "settledRaces": 366,
-    "pending": 8,
+    "settledRaces": 369,
+    "pending": 5,
     "groups": {
       "3ab05c5223d5906322d2fe76440bc387c86733fba89c229052c61a04e977695d:boat3-position1": {
         "races": 5,
@@ -4059,41 +4059,41 @@
         "profitDeltaYen": 0
       },
       "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc:boat3-position1": {
-        "races": 8,
-        "changedRaces": 8,
+        "races": 10,
+        "changedRaces": 10,
         "aHits": 2,
         "bHits": 2,
-        "stakeYen": 6400,
+        "stakeYen": 8200,
         "aReturnYen": 2020,
         "bReturnYen": 2020,
         "method": "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc",
         "variant": "boat3-position1",
         "changed": {
-          "races": 8,
-          "changedRaces": 8,
+          "races": 10,
+          "changedRaces": 10,
           "aHits": 2,
           "bHits": 2,
-          "stakeYen": 6400,
+          "stakeYen": 8200,
           "aReturnYen": 2020,
           "bReturnYen": 2020,
-          "aHitRate": 25,
-          "bHitRate": 25,
-          "aRoi": 31.5625,
-          "bRoi": 31.5625,
+          "aHitRate": 20,
+          "bHitRate": 20,
+          "aRoi": 24.634146341463413,
+          "bRoi": 24.634146341463413,
           "profitDeltaYen": 0
         },
-        "aHitRate": 25,
-        "bHitRate": 25,
-        "aRoi": 31.5625,
-        "bRoi": 31.5625,
+        "aHitRate": 20,
+        "bHitRate": 20,
+        "aRoi": 24.634146341463413,
+        "bRoi": 24.634146341463413,
         "profitDeltaYen": 0
       },
       "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc:boat3-position2": {
-        "races": 8,
+        "races": 10,
         "changedRaces": 0,
         "aHits": 2,
         "bHits": 2,
-        "stakeYen": 6400,
+        "stakeYen": 8200,
         "aReturnYen": 2020,
         "bReturnYen": 2020,
         "method": "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc",
@@ -4112,18 +4112,18 @@
           "bRoi": null,
           "profitDeltaYen": 0
         },
-        "aHitRate": 25,
-        "bHitRate": 25,
-        "aRoi": 31.5625,
-        "bRoi": 31.5625,
+        "aHitRate": 20,
+        "bHitRate": 20,
+        "aRoi": 24.634146341463413,
+        "bRoi": 24.634146341463413,
         "profitDeltaYen": 0
       },
       "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc:boat3-position3": {
-        "races": 8,
+        "races": 10,
         "changedRaces": 0,
         "aHits": 2,
         "bHits": 2,
-        "stakeYen": 6400,
+        "stakeYen": 8200,
         "aReturnYen": 2020,
         "bReturnYen": 2020,
         "method": "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc",
@@ -4142,50 +4142,50 @@
           "bRoi": null,
           "profitDeltaYen": 0
         },
-        "aHitRate": 25,
-        "bHitRate": 25,
-        "aRoi": 31.5625,
-        "bRoi": 31.5625,
+        "aHitRate": 20,
+        "bHitRate": 20,
+        "aRoi": 24.634146341463413,
+        "bRoi": 24.634146341463413,
         "profitDeltaYen": 0
       },
       "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc:boat4-position1": {
-        "races": 9,
-        "changedRaces": 9,
-        "aHits": 3,
-        "bHits": 3,
-        "stakeYen": 7200,
-        "aReturnYen": 5080,
-        "bReturnYen": 5080,
+        "races": 12,
+        "changedRaces": 12,
+        "aHits": 4,
+        "bHits": 4,
+        "stakeYen": 10000,
+        "aReturnYen": 7070,
+        "bReturnYen": 7070,
         "method": "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc",
         "variant": "boat4-position1",
         "changed": {
-          "races": 9,
-          "changedRaces": 9,
-          "aHits": 3,
-          "bHits": 3,
-          "stakeYen": 7200,
-          "aReturnYen": 5080,
-          "bReturnYen": 5080,
+          "races": 12,
+          "changedRaces": 12,
+          "aHits": 4,
+          "bHits": 4,
+          "stakeYen": 10000,
+          "aReturnYen": 7070,
+          "bReturnYen": 7070,
           "aHitRate": 33.333333333333336,
           "bHitRate": 33.333333333333336,
-          "aRoi": 70.55555555555556,
-          "bRoi": 70.55555555555556,
+          "aRoi": 70.7,
+          "bRoi": 70.7,
           "profitDeltaYen": 0
         },
         "aHitRate": 33.333333333333336,
         "bHitRate": 33.333333333333336,
-        "aRoi": 70.55555555555556,
-        "bRoi": 70.55555555555556,
+        "aRoi": 70.7,
+        "bRoi": 70.7,
         "profitDeltaYen": 0
       },
       "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc:boat4-position2": {
-        "races": 9,
+        "races": 12,
         "changedRaces": 1,
-        "aHits": 3,
-        "bHits": 3,
-        "stakeYen": 7200,
-        "aReturnYen": 5080,
-        "bReturnYen": 5080,
+        "aHits": 4,
+        "bHits": 4,
+        "stakeYen": 10000,
+        "aReturnYen": 7070,
+        "bReturnYen": 7070,
         "method": "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc",
         "variant": "boat4-position2",
         "changed": {
@@ -4204,26 +4204,26 @@
         },
         "aHitRate": 33.333333333333336,
         "bHitRate": 33.333333333333336,
-        "aRoi": 70.55555555555556,
-        "bRoi": 70.55555555555556,
+        "aRoi": 70.7,
+        "bRoi": 70.7,
         "profitDeltaYen": 0
       },
       "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc:boat4-position3": {
-        "races": 9,
-        "changedRaces": 1,
-        "aHits": 3,
-        "bHits": 3,
-        "stakeYen": 7200,
-        "aReturnYen": 5080,
-        "bReturnYen": 5080,
+        "races": 12,
+        "changedRaces": 2,
+        "aHits": 4,
+        "bHits": 4,
+        "stakeYen": 10000,
+        "aReturnYen": 7070,
+        "bReturnYen": 7070,
         "method": "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc",
         "variant": "boat4-position3",
         "changed": {
-          "races": 1,
-          "changedRaces": 1,
+          "races": 2,
+          "changedRaces": 2,
           "aHits": 0,
           "bHits": 0,
-          "stakeYen": 800,
+          "stakeYen": 1700,
           "aReturnYen": 0,
           "bReturnYen": 0,
           "aHitRate": 0,
@@ -4234,46 +4234,46 @@
         },
         "aHitRate": 33.333333333333336,
         "bHitRate": 33.333333333333336,
-        "aRoi": 70.55555555555556,
-        "bRoi": 70.55555555555556,
+        "aRoi": 70.7,
+        "bRoi": 70.7,
         "profitDeltaYen": 0
       },
       "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc:boat5-position1": {
-        "races": 7,
-        "changedRaces": 7,
+        "races": 8,
+        "changedRaces": 8,
         "aHits": 2,
         "bHits": 2,
-        "stakeYen": 5800,
+        "stakeYen": 6700,
         "aReturnYen": 4270,
         "bReturnYen": 4270,
         "method": "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc",
         "variant": "boat5-position1",
         "changed": {
-          "races": 7,
-          "changedRaces": 7,
+          "races": 8,
+          "changedRaces": 8,
           "aHits": 2,
           "bHits": 2,
-          "stakeYen": 5800,
+          "stakeYen": 6700,
           "aReturnYen": 4270,
           "bReturnYen": 4270,
-          "aHitRate": 28.571428571428573,
-          "bHitRate": 28.571428571428573,
-          "aRoi": 73.62068965517241,
-          "bRoi": 73.62068965517241,
+          "aHitRate": 25,
+          "bHitRate": 25,
+          "aRoi": 63.73134328358209,
+          "bRoi": 63.73134328358209,
           "profitDeltaYen": 0
         },
-        "aHitRate": 28.571428571428573,
-        "bHitRate": 28.571428571428573,
-        "aRoi": 73.62068965517241,
-        "bRoi": 73.62068965517241,
+        "aHitRate": 25,
+        "bHitRate": 25,
+        "aRoi": 63.73134328358209,
+        "bRoi": 63.73134328358209,
         "profitDeltaYen": 0
       },
       "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc:boat5-position2": {
-        "races": 7,
+        "races": 8,
         "changedRaces": 0,
         "aHits": 2,
         "bHits": 2,
-        "stakeYen": 5800,
+        "stakeYen": 6700,
         "aReturnYen": 4270,
         "bReturnYen": 4270,
         "method": "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc",
@@ -4292,18 +4292,18 @@
           "bRoi": null,
           "profitDeltaYen": 0
         },
-        "aHitRate": 28.571428571428573,
-        "bHitRate": 28.571428571428573,
-        "aRoi": 73.62068965517241,
-        "bRoi": 73.62068965517241,
+        "aHitRate": 25,
+        "bHitRate": 25,
+        "aRoi": 63.73134328358209,
+        "bRoi": 63.73134328358209,
         "profitDeltaYen": 0
       },
       "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc:boat5-position3": {
-        "races": 7,
+        "races": 8,
         "changedRaces": 0,
         "aHits": 2,
         "bHits": 2,
-        "stakeYen": 5800,
+        "stakeYen": 6700,
         "aReturnYen": 4270,
         "bReturnYen": 4270,
         "method": "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc",
@@ -4322,50 +4322,50 @@
           "bRoi": null,
           "profitDeltaYen": 0
         },
-        "aHitRate": 28.571428571428573,
-        "bHitRate": 28.571428571428573,
-        "aRoi": 73.62068965517241,
-        "bRoi": 73.62068965517241,
+        "aHitRate": 25,
+        "bHitRate": 25,
+        "aRoi": 63.73134328358209,
+        "bRoi": 63.73134328358209,
         "profitDeltaYen": 0
       },
       "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc:boat6-position1": {
-        "races": 8,
-        "changedRaces": 8,
-        "aHits": 3,
-        "bHits": 3,
-        "stakeYen": 6300,
-        "aReturnYen": 5910,
-        "bReturnYen": 5910,
+        "races": 11,
+        "changedRaces": 11,
+        "aHits": 4,
+        "bHits": 4,
+        "stakeYen": 9100,
+        "aReturnYen": 7900,
+        "bReturnYen": 7900,
         "method": "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc",
         "variant": "boat6-position1",
         "changed": {
-          "races": 8,
-          "changedRaces": 8,
-          "aHits": 3,
-          "bHits": 3,
-          "stakeYen": 6300,
-          "aReturnYen": 5910,
-          "bReturnYen": 5910,
-          "aHitRate": 37.5,
-          "bHitRate": 37.5,
-          "aRoi": 93.80952380952381,
-          "bRoi": 93.80952380952381,
+          "races": 11,
+          "changedRaces": 11,
+          "aHits": 4,
+          "bHits": 4,
+          "stakeYen": 9100,
+          "aReturnYen": 7900,
+          "bReturnYen": 7900,
+          "aHitRate": 36.36363636363637,
+          "bHitRate": 36.36363636363637,
+          "aRoi": 86.81318681318682,
+          "bRoi": 86.81318681318682,
           "profitDeltaYen": 0
         },
-        "aHitRate": 37.5,
-        "bHitRate": 37.5,
-        "aRoi": 93.80952380952381,
-        "bRoi": 93.80952380952381,
+        "aHitRate": 36.36363636363637,
+        "bHitRate": 36.36363636363637,
+        "aRoi": 86.81318681318682,
+        "bRoi": 86.81318681318682,
         "profitDeltaYen": 0
       },
       "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc:boat6-position2": {
-        "races": 8,
+        "races": 11,
         "changedRaces": 0,
-        "aHits": 3,
-        "bHits": 3,
-        "stakeYen": 6300,
-        "aReturnYen": 5910,
-        "bReturnYen": 5910,
+        "aHits": 4,
+        "bHits": 4,
+        "stakeYen": 9100,
+        "aReturnYen": 7900,
+        "bReturnYen": 7900,
         "method": "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc",
         "variant": "boat6-position2",
         "changed": {
@@ -4382,20 +4382,20 @@
           "bRoi": null,
           "profitDeltaYen": 0
         },
-        "aHitRate": 37.5,
-        "bHitRate": 37.5,
-        "aRoi": 93.80952380952381,
-        "bRoi": 93.80952380952381,
+        "aHitRate": 36.36363636363637,
+        "bHitRate": 36.36363636363637,
+        "aRoi": 86.81318681318682,
+        "bRoi": 86.81318681318682,
         "profitDeltaYen": 0
       },
       "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc:boat6-position3": {
-        "races": 8,
+        "races": 11,
         "changedRaces": 0,
-        "aHits": 3,
-        "bHits": 3,
-        "stakeYen": 6300,
-        "aReturnYen": 5910,
-        "bReturnYen": 5910,
+        "aHits": 4,
+        "bHits": 4,
+        "stakeYen": 9100,
+        "aReturnYen": 7900,
+        "bReturnYen": 7900,
         "method": "c1f7a6184a29f7d4139548fdc07d689c7c32a96e6203098ce67662d80801f4fc",
         "variant": "boat6-position3",
         "changed": {
@@ -4412,10 +4412,10 @@
           "bRoi": null,
           "profitDeltaYen": 0
         },
-        "aHitRate": 37.5,
-        "bHitRate": 37.5,
-        "aRoi": 93.80952380952381,
-        "bRoi": 93.80952380952381,
+        "aHitRate": 36.36363636363637,
+        "bHitRate": 36.36363636363637,
+        "aRoi": 86.81318681318682,
+        "bRoi": 86.81318681318682,
         "profitDeltaYen": 0
       }
     },
