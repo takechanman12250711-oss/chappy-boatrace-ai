@@ -422,6 +422,81 @@ assert.equal(attachedOfficial[0].result?.resultTicket, "1-3-6");
 assert.equal(attachedOfficial[0].result?.payoutPer100, 1230);
 assert.equal(attachedOfficial[0].result?.popularity, 8);
 
+// The writer and archive artifact assertion share this exact pure timestamp
+// decision. Verify serialized report bytes and keep both inputs untouched.
+const currentReport = {
+  generatedAt: "2026-10-11T00:00:00.000Z", status: "test", samples: [{ raceKey: "sample" }]
+};
+const nextReport = { ...currentReport, generatedAt: "2099-01-01T00:00:00.000Z" };
+const currentBytes = JSON.stringify(currentReport);
+const nextBytes = JSON.stringify(nextReport);
+assert.equal(JSON.stringify(reportBuilder.preserveGeneratedAt(nextReport, currentReport)), currentBytes);
+assert.equal(JSON.stringify(currentReport), currentBytes);
+assert.equal(JSON.stringify(nextReport), nextBytes);
+const changedReport = { ...nextReport, samples: [{ raceKey: "changed" }] };
+assert.strictEqual(reportBuilder.preserveGeneratedAt(changedReport, currentReport), changedReport);
+assert.strictEqual(reportBuilder.preserveGeneratedAt(nextReport, undefined), nextReport);
+const missingTimestamp = { status: "test", samples: [{ raceKey: "sample" }] };
+assert.equal(reportBuilder.preserveGeneratedAt(nextReport, missingTimestamp).generatedAt, undefined);
+const reorderedReport = { generatedAt: nextReport.generatedAt, samples: nextReport.samples, status: "test" };
+assert.strictEqual(
+  reportBuilder.preserveGeneratedAt(reorderedReport, currentReport), reorderedReport,
+  "preserve the existing order-sensitive JSON comparison"
+);
+
+// Exercise the actual reportForWrite wrapper without scanning production
+// history: its real buildReport reads an empty in-memory prediction directory.
+const fs = require("node:fs");
+const path = require("node:path");
+const vm = require("node:vm");
+const builderPath = path.join(__dirname, "build-practical-priority-shadow-report.js");
+const builderSource = fs.readFileSync(builderPath, "utf8");
+const emptyReport = reportApi.build([]);
+for (const variant of ["same", "changed", "missing", "invalid"]) {
+  const counts = { scans: 0, reads: 0 };
+  const stored = {
+    generatedAt: currentReport.generatedAt,
+    ...emptyReport,
+    ...(variant === "changed" ? { status: "changed" } : {})
+  };
+  const sandbox = {
+    module: { exports: {} }, __dirname,
+    Date: class extends Date {
+      constructor(...args) {
+        super(...(args.length ? args : [nextReport.generatedAt]));
+      }
+    },
+    require(id) {
+      if (id !== "node:fs") return require(id);
+      return {
+        readdirSync() { counts.scans += 1; return []; },
+        existsSync(file) { assert.equal(file, reportBuilder.OUTPUT); return variant !== "missing"; },
+        readFileSync(file) {
+          assert.equal(file, reportBuilder.OUTPUT);
+          counts.reads += 1;
+          return variant === "invalid" ? "invalid JSON" : JSON.stringify(stored);
+        }
+      };
+    }
+  };
+  vm.runInNewContext(builderSource, sandbox, { filename: builderPath });
+  const writer = sandbox.module.exports.reportForWrite;
+  if (variant === "invalid") {
+    assert.throws(() => writer(nextReport.generatedAt), /JSON/);
+  } else {
+    const expected = {
+      generatedAt: variant === "same" ? stored.generatedAt : nextReport.generatedAt,
+      ...emptyReport
+    };
+    const actual = variant === "missing"
+      ? writer()
+      : writer(nextReport.generatedAt);
+    assert.equal(JSON.stringify(actual), JSON.stringify(expected));
+  }
+  assert.equal(counts.scans, 1, "writer still performs one real reconstruction");
+  assert.equal(counts.reads, variant === "missing" ? 0 : 1);
+}
+
 console.log(
   "practical priority prospective shadow report: OK"
 );

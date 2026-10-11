@@ -129,8 +129,9 @@ try {
     "保存済み順位候補シャドーレポートは現在の正本入力と一致する"
   );
   assert.equal(
-    reportBuilder.reportForWrite(
-      "2099-01-01T00:00:00.000Z"
+    reportBuilder.preserveGeneratedAt(
+      { ...rebuilt, generatedAt: "2099-01-01T00:00:00.000Z" },
+      committed
     ).generatedAt,
     committed.generatedAt,
     "集計内容が同じなら生成時刻だけを更新しない"
