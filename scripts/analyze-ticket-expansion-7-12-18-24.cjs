@@ -2,6 +2,7 @@
 
 const path = require('node:path');
 const input = require('./analysis-input-contract');
+const { compactFourStageRecord } = require('./report-input-projection.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const TIERS = [7, 12, 18, 24];
@@ -137,8 +138,15 @@ function yen(value) {
   return Math.round(numeric(value));
 }
 
-function build() {
-  const cohort = input.buildDefaultCohort({ root: ROOT });
+function build(options = {}) {
+  // Both reports read the same complete saved pool. Project each daily input
+  // before retaining the cohort; leave official result/payout records intact.
+  const cohort = input.buildDefaultCohort({
+    root: options.root || ROOT,
+    predictionsDir: options.predictionsDir,
+    resultsDir: options.resultsDir,
+    compactPredictionRecord: options.compactPredictionRecord === undefined ? compactFourStageRecord : options.compactPredictionRecord
+  });
   const tiers = Object.fromEntries(TIERS.map(limit => [limit, emptyTier(limit)]));
   const rows = [];
   const sourceCounts = {};
