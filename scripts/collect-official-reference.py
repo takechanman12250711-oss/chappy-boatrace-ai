@@ -14,6 +14,8 @@ import urllib.request
 VERSION = 'official-reference-v1'
 FLAGS = dict(productionChanged=False, automaticApplication=False, usableForPrediction=False)
 JST = dt.timezone(dt.timedelta(hours=9))
+MAX_DAILY_ATTEMPTS = 3
+RETRY_INTERVAL = dt.timedelta(hours=1)
 DATE = r'(\d{4})年\s*(\d{1,2})月\s*(\d{1,2})日'
 
 
@@ -180,6 +182,28 @@ def atomic(path, value):
     os.replace(temp, path)
 
 
+def attempts_today(state, day):
+    if state.get('lastAttemptDateJst') != day:
+        return 0
+    # Reports created before bounded retries had exactly one attempt per day.
+    count = state.get('attemptsToday', 1)
+    return count if type(count) is int and count >= 1 else MAX_DAILY_ATTEMPTS
+
+
+def due_for_attempt(state, now):
+    day = now.astimezone(JST).date().isoformat()
+    if state.get('lastAttemptDateJst') != day:
+        return True
+    if state.get('status') != 'error' or attempts_today(state, day) >= MAX_DAILY_ATTEMPTS:
+        return False
+    try:
+        previous = dt.datetime.fromisoformat(state['lastAttemptAt'])
+        return now - previous >= RETRY_INTERVAL
+    except (KeyError, TypeError, ValueError):
+        # Unknown/naive attempt time is not permission to retry repeatedly.
+        return False
+
+
 def collect(root, now=None, fetcher=fetch, catalog=None):
     live_clock = now is None
     now = now or dt.datetime.now(dt.timezone.utc)
@@ -188,12 +212,18 @@ def collect(root, now=None, fetcher=fetch, catalog=None):
     old = json.loads(path.read_text()) if path.exists() else dict(sources={})
     items = sources() if catalog is None else catalog
     states = dict(old.get('sources',{}))
-    due = [s for s in items if states.get(s['id'],{}).get('lastAttemptDateJst') != day]
+    due = [s for s in items if due_for_attempt(states.get(s['id'],{}), now)]
     if not due:
         return old
     def attempt(s):
         prior = states.get(s['id'],{})
-        state = dict(prior, sourceUrl=s['url'], lastAttemptAt=stamp, lastAttemptDateJst=day)
+        count = attempts_today(prior, day)
+        history = list(prior.get('attemptHistoryToday', [])) if count else []
+        if count and not history:
+            history = [dict(at=prior.get('lastAttemptAt'), status=prior.get('status'),
+                            error=prior.get('lastError'))]
+        state = dict(prior, sourceUrl=s['url'], lastAttemptAt=stamp, lastAttemptDateJst=day,
+                     attemptsToday=count+1)
         try:
             raw, data = fetcher(s)
             observed = dt.datetime.now(dt.timezone.utc).isoformat() if live_clock else stamp
@@ -213,6 +243,8 @@ def collect(root, now=None, fetcher=fetch, catalog=None):
         except Exception as exc:
             # Keep the last good snapshot and its timestamp; failure is never an empty success.
             state.update(status='error', lastError=type(exc).__name__+': '+str(exc)[:160])
+        history.append(dict(at=stamp, status=state['status'], error=state['lastError']))
+        state['attemptHistoryToday'] = history[-MAX_DAILY_ATTEMPTS:]
         return s['id'],state
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
         states.update(pool.map(attempt,due))
@@ -243,3 +275,4 @@ if __name__=='__main__':
     print(json.dumps({k:report[k] for k in ('expectedSources','failedSources','warnings')},ensure_ascii=False))
     # Nonzero after writing the failure report so Actions can persist it first.
     raise SystemExit(1 if report['failedSources'] else 0)
+
