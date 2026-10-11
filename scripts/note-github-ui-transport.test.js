@@ -277,4 +277,5 @@ checkAsyncGuards()
   .then(() => console.log('note-github-ui-transport tests passed'))
   // Existing CI entrypoint must execute the queue's fail-closed expiry cases.
   .then(() => require('./note-queue-expiry.test.cjs'))
+  .then(() => require('./note-editor-readiness.test.cjs'))
   .catch((error) => { console.error(error); process.exitCode = 1; });

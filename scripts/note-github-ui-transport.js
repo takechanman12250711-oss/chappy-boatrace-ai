@@ -238,6 +238,41 @@ function isEditorUrl(value) {
   }
 }
 
+// Only fixed categories and scalar observations may leave the readiness gate.
+// Do not reuse collectEditorDiagnostics: its URLs/attributes can contain private data.
+function logEditorReadinessFailure(page, finalUrl, title, body, editability) {
+  try {
+    let location = 'invalid';
+    try {
+      const url = new URL(finalUrl);
+      location = url.protocol !== 'https:' ? 'non_https'
+        : url.hostname === 'editor.note.com' ? 'editor_https'
+          : url.hostname === 'note.com' ? 'note_https' : 'other_https';
+    } catch {}
+    let frameCountKnown = false;
+    let frameCount = 0;
+    try {
+      const frames = page.frames();
+      const count = Array.isArray(frames) ? frames.length : -1;
+      if (Number.isSafeInteger(count) && count >= 0) {
+        frameCountKnown = true;
+        frameCount = count; // Includes the main frame; never read frame URLs.
+      }
+    } catch {} // A closed page must not replace the original readiness failure.
+    console.error(`NOTE_UI_EDITOR_READINESS=${JSON.stringify({
+      version: 'note-editor-readiness-v1',
+      stage: 'fields',
+      location,
+      titleFound: Boolean(title),
+      bodyFound: Boolean(body),
+      titleEditable: editability.title,
+      bodyEditable: editability.body,
+      frameCountKnown,
+      frameCount
+    })}`);
+  } catch {} // Logging is best-effort; never log diagnostic exception messages.
+}
+
 async function ensureEditorReady(page, findVisible) {
   await page.goto(NOTE_EDITOR_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.waitForTimeout(1000);
@@ -249,8 +284,19 @@ async function ensureEditorReady(page, findVisible) {
   const locate = findVisible || require('./note-browserbase-draft-save').waitForVisibleAcrossFrames;
   const title = await locate(page, ['textarea[placeholder*="タイトル"]', 'input[placeholder*="タイトル"]', '[aria-label*="タイトル"]']);
   const body = await locate(page, ['textarea[placeholder*="本文"]', '[data-placeholder*="本文"][contenteditable="true"]', '.ProseMirror[contenteditable="true"]', '[contenteditable="true"][role="textbox"]']);
-  if (!isEditorUrl(page.url()) || !title || !body ||
-      !(await title.isEditable().catch(() => false)) || !(await body.isEditable().catch(() => false))) {
+  const finalUrl = page.url();
+  const editability = { title: 'not_checked', body: 'not_checked' };
+  const checkEditable = async (field, locator) => {
+    let status = 'not_editable';
+    const editable = await locator.isEditable().catch(() => { status = 'check_failed'; return false; });
+    editability[field] = editable ? 'editable' : status;
+    return editable;
+  };
+  // Preserve the original short-circuit order. Missing fields or a changed host
+  // must not trigger extra locator calls, waits, retries, or any article writes.
+  if (!isEditorUrl(finalUrl) || !title || !body ||
+      !(await checkEditable('title', title)) || !(await checkEditable('body', body))) {
+    logEditorReadinessFailure(page, finalUrl, title, body, editability);
     throw new Error('note_editor_fields_not_ready');
   }
   return page.url();
