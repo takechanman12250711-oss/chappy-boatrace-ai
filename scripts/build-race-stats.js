@@ -2110,7 +2110,9 @@ function main() {
     firstDate:
       files[0]?.date || null,
     lastDate:
-      files.at(-1)?.date || null,
+      // Files for an open day may exist but are excluded from races above.
+      // Advertise the effective cutoff, not the newest input filename.
+      latestRaceDate ? formatRaceDate(latestRaceDate) : null,
     raceCount:
       races.length,
     analysisWindow: {
