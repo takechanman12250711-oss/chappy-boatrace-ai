@@ -1167,7 +1167,7 @@ function assertProposalOnly(
   return value;
 }
 
-function buildFromDirectory(
+function buildSharedReview(
   options = {}
 ) {
   const inputDirectory =
@@ -1177,14 +1177,6 @@ function buildFromDirectory(
         process.cwd(),
         "data",
         "predictions"
-      )
-    );
-  const outputPath =
-    path.resolve(
-      options.outputPath ||
-      path.join(
-        inputDirectory,
-        DEFAULT_OUTPUT_NAME
       )
     );
   const collected =
@@ -1256,6 +1248,21 @@ function buildFromDirectory(
       _archiveReports,
     ...built
   } = builtWithArchives;
+  return {
+    inputDirectory,
+    files: collected.files,
+    built,
+    archiveReports
+  };
+}
+
+// Only input collection and review calculation are shared. Each destination
+// retains its own history, timestamp, archives, limits, and proposal-only checks.
+function writeReviewOutput(
+  shared,
+  outputPath
+) {
+  const { inputDirectory, files, built, archiveReports } = shared;
   let previous = null;
   if (
     fs.existsSync(
@@ -1343,7 +1350,7 @@ function buildFromDirectory(
           source: {
             ...(built.source || {}),
             fileCount:
-              collected.files.length
+              files.length
           }
         }
       )
@@ -1430,11 +1437,36 @@ function buildFromDirectory(
   return {
     inputDirectory,
     outputPath,
-    files:
-      collected.files,
+    files,
     archivePaths,
     result
   };
+}
+
+function buildFromDirectory(
+  options = {}
+) {
+  const shared = buildSharedReview(options);
+  return writeReviewOutput(
+    shared,
+    path.resolve(options.outputPath || path.join(
+      shared.inputDirectory,
+      DEFAULT_OUTPUT_NAME
+    ))
+  );
+}
+
+function buildOutputsFromDirectory(
+  options = {}
+) {
+  if (!Array.isArray(options.outputPaths) || !options.outputPaths.length) {
+    throw new Error("At least one review output path is required");
+  }
+  const shared = buildSharedReview(options);
+  return options.outputPaths.map(outputPath => writeReviewOutput(
+    shared,
+    path.resolve(outputPath)
+  ));
 }
 
 function main() {
@@ -1445,36 +1477,39 @@ function main() {
       "data",
       "predictions"
     );
-  const outputPath =
-    getArgument("output") ||
-    path.join(
+  // Repeating --output shares the scan while keeping each output independent.
+  // No --output and a single --output retain their existing CLI behavior.
+  const outputPaths = process.argv
+    .filter(value => value.startsWith("--output="))
+    .map(value => value.slice("--output=".length).trim() || path.join(
       inputDirectory,
       DEFAULT_OUTPUT_NAME
-    );
+    ));
+  if (!outputPaths.length) {
+    outputPaths.push(path.join(inputDirectory, DEFAULT_OUTPUT_NAME));
+  }
   const generatedAt =
     getArgument(
       "generated-at"
     ) ||
     new Date().toISOString();
-  const built =
-    buildFromDirectory({
-      inputDirectory,
-      outputPath,
-      generatedAt
-    });
-  const source =
-    built.result.source;
+  const shared = buildSharedReview({ inputDirectory, generatedAt });
+  outputPaths.forEach(outputPath => {
+    const built = writeReviewOutput(shared, path.resolve(outputPath));
+    const source =
+      built.result.source;
 
-  console.log(
-    "100R改善レビューJSONを更新：" +
-    `${source.eligibleCount}/` +
-    `${source.recordCount}件、` +
-    `${built.result.reports.length}報告、` +
-    path.relative(
-      process.cwd(),
-      built.outputPath
-    )
-  );
+    console.log(
+      "100R改善レビューJSONを更新：" +
+      `${source.eligibleCount}/` +
+      `${source.recordCount}件、` +
+      `${built.result.reports.length}報告、` +
+      path.relative(
+        process.cwd(),
+        built.outputPath
+      )
+    );
+  });
 }
 
 if (
@@ -1506,5 +1541,6 @@ module.exports = {
   historicalReportsOf,
   mergeReportHistory,
   assertProposalOnly,
+  buildOutputsFromDirectory,
   buildFromDirectory
 };
