@@ -97,4 +97,3 @@ try{
   console.log('all six statistics share cutoff; aggregates and 30-day boundaries: ok');
   console.log('racer skill effective cutoff + independent history integration: ok');
 }finally{fs.rmSync(root,{recursive:true,force:true});}
-

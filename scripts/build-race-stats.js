@@ -2432,4 +2432,3 @@ module.exports = {
   finalizeCourseStructureWindows,
   stStandardDeviation
 };
-
