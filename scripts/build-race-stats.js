@@ -2045,7 +2045,9 @@ function main() {
       files[0]?.date || null,
 
     lastDate:
-      files.at(-1)?.date || null,
+      // All six outputs describe the same effective closed-day cutoff.
+      // An open-day input file must not advance the advertised history date.
+      latestRaceDate ? formatRaceDate(latestRaceDate) : null,
 
     raceCount:
       races.length,
