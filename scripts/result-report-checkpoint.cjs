@@ -23,6 +23,7 @@ const AUDIT_PROFILES = new Map([
 // The wall collector publishes one interdependent batch. It may not borrow the
 // diagnostics stage's broad permissions or its receipt. Keep every output fixed.
 const WALL_STAGE = 'wall-prospective-lifecycle';
+const PHASE8_REPORT = 'data/stats/theory-validation-phase8-cycle.json';
 const WALL_REPORTS = [
   'data/stats/wall-established-attacker2-skip-ab-report.json',
   'data/stats/theory-validation-phase6-prospective.json',
@@ -57,7 +58,7 @@ const validBlob = value => value === null || (typeof value === 'string' && /^[a-
 function allowed(file, stage) {
   // Saved phase8 has one owner: persist-theory-validation-cycle.cjs. Never
   // accept a precomputed phase8 artifact from diagnostics or the wall collector.
-  if (file === 'data/stats/theory-validation-phase8-cycle.json') return false;
+  if (file === PHASE8_REPORT) return false;
   if (FIXED_STAGES.has(stage)) return fixedPaths(stage).includes(file);
   return (/^data\/stats\/[a-z0-9][a-z0-9.-]*\.json$/.test(file) &&
     !/^data\/stats\/result-(diagnostics|calibration)-checkpoint\.json$/.test(file)) ||
@@ -85,6 +86,8 @@ function pack({ root = process.cwd(), stage, output }) {
   const baseSha = git(root, ['rev-parse', 'HEAD']);
   const audit = FIXED_STAGES.has(stage);
   const paths = changed(root, audit);
+  if (paths.includes(PHASE8_REPORT) || git(root, ['diff', '--cached', '--name-only', '--', PHASE8_REPORT]))
+    throw new Error('Phase8 output belongs to the fresh-main publisher; do not package it');
   // prepare --all normalizes restored archives but also stages predictions.
   // Audit compute is disposable: refuse every remaining change except its fixed
   // reports, including index derivatives and staged/unstaged source archives.

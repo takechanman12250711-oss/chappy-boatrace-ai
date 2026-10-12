@@ -41,11 +41,15 @@ function assertPhase11(f, expected) {
 let base;
 function fixture(name) {
   const work = path.join(tmp, name), remote = `${work}.git`;
-  git(tmp, ['clone', '--no-hardlinks', base, work]);
+  git(tmp, ['clone', '--depth=1', `file://${base}`, work]);
+  git(work, ['sparse-checkout', 'set', 'scripts', 'js', 'api', 'config', 'data/stats', 'data/experiments', '.github/workflows']);
   git(work, ['config', 'user.name', 'test']); git(work, ['config', 'user.email', 'test@example.invalid']);
   git(work, ['remote', 'remove', 'origin']);
   git(tmp, ['clone', '--bare', work, remote]); git(work, ['remote', 'add', 'origin', `file://${remote}`]);
-  return { root: work, work, remote, baseSha: git(work, ['rev-parse', 'HEAD']) };
+  return { root: work, work, remote, baseSha: git(work, ['rev-parse', 'HEAD']), build(checkout) {
+    for (const file of originals) assert.equal(fs.existsSync(path.join(checkout, file)), false, 'raw originals stay outside sparse publisher worktree');
+    publisher.buildCycle(checkout);
+  } };
 }
 function pack(f, stage, change) {
   change(); const output = path.join(tmp, `${path.basename(f.work)}-${stage}.json`);
@@ -169,6 +173,13 @@ try {
   for (const stage of ['diagnostics', 'calibration', WALL]) {
     assert.equal(checkpoint.allowed(P8, stage), false);
     const f = fixture(`reject-stale-phase8-${stage}`), b = bundles(f), batch = stage === WALL ? b.wall : b.central;
+    const originalPhase8 = fs.readFileSync(path.join(f.work, P8));
+    put(f.work, P8, { staleGeneration: true });
+    assert.throws(() => checkpoint.pack({ root: f.work, stage, output: path.join(tmp, 'forbidden.json') }), /Phase8 output belongs to the fresh-main publisher/);
+    git(f.work, ['add', '--', P8]); fs.writeFileSync(path.join(f.work, P8), originalPhase8);
+    assert.equal(git(f.work, ['diff', 'HEAD', '--', P8]), '', 'working bytes can conceal staged generation');
+    assert.throws(() => checkpoint.pack({ root: f.work, stage, output: path.join(tmp, 'forbidden-staged.json') }), /Phase8 output belongs to the fresh-main publisher/);
+    git(f.work, ['reset', '--hard', f.baseSha]);
     const file = { path: P8, baseBlob: git(f.work, ['rev-parse', `HEAD:${P8}`]), content: JSON.stringify({ stale: true }) }; file.sha256 = checkpoint.sha256(file.content);
     const bundle = { ...batch.bundle, stage, files: [...batch.bundle.files, file] };
     assert.throws(() => checkpoint.validate(bundle, { stage, baseSha: f.baseSha }), /Invalid/); clean(f);

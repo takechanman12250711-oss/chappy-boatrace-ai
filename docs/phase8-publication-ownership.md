@@ -38,11 +38,14 @@ succeeds and Phase 8 refresh fails, rerun the failed refresh job. This starts
 from current main without replaying the consumed artifact. Replaying an older
 wall receipt or stale diagnostic output still fails the unchanged strict guard.
 No checkpoint profile accepts precomputed Phase 8 bytes, including calibration.
+Packaging fails explicitly if a producer accidentally changes Phase 8; the
+forbidden update is never silently dropped.
 
 ## Verification
 
 `node scripts/test-phase8-single-writer.cjs` uses the real builder and saved
-report inputs in temporary Git remotes. It changes wall and coverage counts and
+report inputs in temporary Git remotes with shallow clones and the exact
+refresh-job sparse paths (raw prediction/result files stay outside worktrees). It changes wall and coverage counts and
 checks both publication orders, Phase 11 counts, Phase 9's exact in-memory
 handoff, failure recovery, code/input push races, no-op races, lost acknowledgments,
 bounded contention, unchanged raw-data hashes and rejected raw/config writes.
@@ -53,3 +56,13 @@ builder time only. Runner checkout, Git fetch/push and queue wait are separate.
 The GitHub Node 20 run and main saved output must be verified before calling the
 production issue resolved. No prediction formula, approval gate or raw original
 is changed by this publication fix.
+
+## Existing monitor compatibility
+
+The result watchdog reads the final workflow conclusion and the unchanged
+`Save official results before calibration`, `Build prediction calibration`, and
+`Save calibration and derived data` step names. It does not require the Phase 8
+commit to equal a diagnostics receipt commit. Successful jobs from earlier
+attempts remain visible during failed-job reruns. Diagnostic receipts retain
+their original source/published-from provenance; calibration starts at the newer
+Phase 8 commit through its unchanged `publish_reports.saved_sha` interface.
