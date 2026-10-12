@@ -18,8 +18,20 @@ const AUDIT_PROFILES = new Map([
   ['local-water-main-head-selection-audit', 'data/stats/local-water-main-head-selection-audit.json'],
   ['local-water-result-breakdown', 'data/stats/local-water-result-breakdown.json'],
   ['local-water-outer-head-bottleneck-audit', 'data/stats/local-water-outer-head-bottleneck-audit.json'],
+  ['local-water-outside-head-miss-structure', 'data/stats/local-water-outside-head-miss-structure.json'],
 ]);
-const STAGES = new Set(['diagnostics', 'calibration', ...AUDIT_PROFILES.keys()]);
+// The wall collector publishes one interdependent batch. It may not borrow the
+// diagnostics stage's broad permissions or its receipt. Keep every output fixed.
+const WALL_STAGE = 'wall-prospective-lifecycle';
+const WALL_REPORTS = [
+  'data/stats/wall-established-attacker2-skip-ab-report.json',
+  'data/stats/theory-validation-phase6-prospective.json',
+  'data/stats/theory-validation-phase7-lifecycle.json',
+  'data/stats/theory-validation-phase8-cycle.json',
+];
+const FIXED_STAGES = new Set([...AUDIT_PROFILES.keys(), WALL_STAGE]);
+const STAGES = new Set(['diagnostics', 'calibration', ...FIXED_STAGES]);
+const fixedPaths = stage => stage === WALL_STAGE ? WALL_REPORTS : [AUDIT_PROFILES.get(stage)];
 // These existing builder outputs are derived reports, despite their directory.
 // Only the calibration stage may publish them; daily/source prediction data is
 // never permitted through this report checkpoint.
@@ -35,13 +47,16 @@ const KEEP_NEWER = new Set([
 const CODE_PATHS = ['scripts', 'js', 'api', 'config', '.github/workflows/collect-results.yml'];
 const sha256 = value => createHash('sha256').update(value).digest('hex');
 const git = (cwd, args) => execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 128 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] }).trimEnd();
-const receiptPath = stage => AUDIT_PROFILES.has(stage)
+const receiptPath = stage => FIXED_STAGES.has(stage)
   ? `data/stats/audit-checkpoints/${stage}.json` : `data/stats/result-${stage}-checkpoint.json`;
-const codePaths = stage => AUDIT_PROFILES.has(stage)
-  ? [...CODE_PATHS, `.github/workflows/check-${stage}.yml`] : CODE_PATHS;
+// Phase7 also reads the workflow inventory to detect duplicate wall collectors.
+const codePaths = stage => stage === WALL_STAGE
+  ? [...CODE_PATHS, '.github/workflows',
+    'data/experiments/wall-established-attacker2-skip-preregistration.json']
+  : AUDIT_PROFILES.has(stage) ? [...CODE_PATHS, `.github/workflows/check-${stage}.yml`] : CODE_PATHS;
 const validBlob = value => value === null || (typeof value === 'string' && /^[a-f0-9]{40}$/.test(value));
 function allowed(file, stage) {
-  if (AUDIT_PROFILES.has(stage)) return file === AUDIT_PROFILES.get(stage);
+  if (FIXED_STAGES.has(stage)) return fixedPaths(stage).includes(file);
   return (/^data\/stats\/[a-z0-9][a-z0-9.-]*\.json$/.test(file) &&
     !/^data\/stats\/result-(diagnostics|calibration)-checkpoint\.json$/.test(file)) ||
     file === 'data/analysis/reference-tag-effectiveness.json' ||
@@ -66,11 +81,11 @@ function changed(cwd, audit = false) {
 function pack({ root = process.cwd(), stage, output }) {
   if (!STAGES.has(stage)) throw new Error('Unknown checkpoint stage');
   const baseSha = git(root, ['rev-parse', 'HEAD']);
-  const audit = AUDIT_PROFILES.has(stage);
+  const audit = FIXED_STAGES.has(stage);
   const paths = changed(root, audit);
   // prepare --all normalizes restored archives but also stages predictions.
-  // Audit compute is disposable: refuse every remaining change except its one
-  // report, including index derivatives and staged/unstaged source archives.
+  // Audit compute is disposable: refuse every remaining change except its fixed
+  // reports, including index derivatives and staged/unstaged source archives.
   if (audit) {
     const unexpected = paths.filter(file => !allowed(file, stage));
     if (unexpected.length) throw new Error(`Unsaved source or unexpected audit changes: ${unexpected.join(', ')}`);
@@ -83,7 +98,7 @@ function pack({ root = process.cwd(), stage, output }) {
   if (originalChanges.length) throw new Error(`Unsaved source changes: ${originalChanges.join(', ')}`);
   // Include the audit report even when bytes are unchanged: the receipt records
   // this computation and prevents an older artifact replaying its provenance.
-  const reportPaths = audit ? [AUDIT_PROFILES.get(stage)] : paths.filter(file => allowed(file, stage));
+  const reportPaths = audit ? fixedPaths(stage) : paths.filter(file => allowed(file, stage));
   const files = reportPaths.map(file => {
     const absolute = path.join(root, file);
     if (!fs.existsSync(absolute) || !fs.lstatSync(absolute).isFile()) throw new Error(`Deleted/nonregular report: ${file}`);
@@ -102,7 +117,7 @@ function validate(bundle, { stage, baseSha }) {
       !/^[a-f0-9]{40}$/.test(baseSha || '') || bundle.baseSha !== baseSha ||
       !Number.isFinite(Date.parse(bundle.createdAt)) || !Array.isArray(bundle.files) || bundle.files.length > 500)
     throw new Error('Invalid checkpoint identity');
-  if (AUDIT_PROFILES.has(stage) && (!validBlob(bundle.receiptBaseBlob) || bundle.files.length !== 1 ||
+  if (FIXED_STAGES.has(stage) && (!validBlob(bundle.receiptBaseBlob) || bundle.files.length !== fixedPaths(stage).length ||
       Object.keys(bundle).some(key => !['version', 'stage', 'baseSha', 'createdAt', 'files', 'receiptBaseBlob'].includes(key))))
     throw new Error('Invalid audit checkpoint identity');
   const seen = new Set();
@@ -120,7 +135,7 @@ function apply({ root, bundle, stage, baseSha }) {
   if (git(root, ['diff', '--name-only', baseSha, 'HEAD', '--', ...codePaths(stage)]))
     throw new Error('Builder code changed after source checkpoint; rebuild from current main');
   const receiptFile = receiptPath(stage);
-  if (AUDIT_PROFILES.has(stage)) {
+  if (FIXED_STAGES.has(stage)) {
     if (blob(root, baseSha, receiptFile) !== bundle.receiptBaseBlob)
       throw new Error(`Incorrect source receipt blob: ${receiptFile}`);
     if (blob(root, 'HEAD', receiptFile) !== bundle.receiptBaseBlob)

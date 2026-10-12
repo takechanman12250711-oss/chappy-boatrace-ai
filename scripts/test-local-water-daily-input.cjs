@@ -51,7 +51,7 @@ if (process.argv[2] === "heap-child") {
   const splitAuditTopics = new Set([
     "strong-condition-cohort", "main-head-selection-audit",
     "outer-head-candidate-ranking-audit", "outer-head-stage-audit", "result-breakdown",
-    "outer-head-bottleneck-audit"
+    "outer-head-bottleneck-audit", "outside-head-miss-structure"
   ]);
   for (const name of builders) {
     const topic = name.replace("build-local-water-", "");

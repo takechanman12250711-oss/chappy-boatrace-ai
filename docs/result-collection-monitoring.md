@@ -49,6 +49,47 @@ PRは従来どおり検査だけを行い、本番データ生成・artifact公�
 
 priority-score監査、予想ロジック、原本、cron構成は変更しない。GitHubの定期起動そのものが欠ける問題をこの分離で解消したとは扱わない。検証は上記checkpoint・daily-input検査に加え、`node scripts/test-local-water-outer-head-bottleneck-audit.js` を維持する。
 
+## 外頭miss-structureと壁艇レポートの保存競合対策
+
+`check-local-water-outside-head-miss-structure.yml` は既存の単一監査profileに
+`local-water-outside-head-miss-structure` を追加し、上記と同じread-only計算と
+短い共有writer保存へ分ける。計算時の実checkout SHA、正確なartifact ID、元blob、
+内容hash、生成コード、receipt世代の検査を維持する。計算成功とmain保存成功は別に扱う。
+
+`collect-wall-established-attacker2-skip-ab.yml` は既存の専用workflow concurrencyと
+全起点（日次cron、公式結果workflow成功、results更新、手動、PR）を維持する。
+重い復元・A/B集計・phase6/7/8計算は共有writerキューへ戻さず、read-onlyの
+`verify-and-collect` が完成した4レポートをartifactへ渡す。`publish_reports` だけが
+`chappy-main-data-writers` の `queue: max` / `cancel-in-progress: false` を使う。
+
+wall専用の `wall-prospective-lifecycle` profileは次の4件を、未変更のものも含めて
+一括検査・保存する。他のstatsや原本を運ぶ汎用権限にはしない。
+
+- `data/stats/wall-established-attacker2-skip-ab-report.json`
+- `data/stats/theory-validation-phase6-prospective.json`
+- `data/stats/theory-validation-phase7-lifecycle.json`
+- `data/stats/theory-validation-phase8-cycle.json`
+
+専用receiptは `data/stats/audit-checkpoints/wall-prospective-lifecycle.json`。
+4件のどれか、receipt、生成コード、workflow定義、壁艇の事前登録定義が入力SHAから
+変わっていれば全件を保存前に拒否する。phase7はworkflow全体を調べてcollector重複を
+確認するため、wallではworkflowディレクトリ全体の変更も検査する。原本・archive・
+indexに未保存変更がある計算はpackで拒否する。一方、計算後の新着原本は保持し、
+その新着まで集計済みとは説明しない。reportの計算方式・購入方針・採用gateは変えない。
+
+両経路ともartifactを3日保持し、共有キュー外の更新とのpush競合は既存保存器が
+最新mainを再検査して最大3回だけ再試行する。対象report・receipt・コードの競合を
+rebaseやforce pushで解決しない。成功応答が失われた場合はremoteのcommitを確認する。
+保存済みartifactの再適用はreceipt世代検査で拒否し、同じreport bytesでも古い出典に
+戻さない。失敗した保存の再実行は元artifactが残っている間だけ可能で、関連入力が
+進んだ場合は最新mainから再生成が必要。失敗を成功扱いせず、次の自然起動や本人が
+許可した再実行へ引き継ぐ。新cron、Work監視、過去原本の復元保存は追加しない。
+
+回帰検査: `test-result-report-checkpoint.cjs`、`test-local-water-daily-input.cjs`、
+`test-water-wall-report-save.cjs` と既存のoutside/wall/phase6/7/8検査。
+main反映後の完了条件は、自然runのartifact・source SHA・receipt・保存commitの一致、
+outsideの許可2パスとwallの許可5パス内だけの更新、原本保持、両保存jobの共有writer境界を確認すること。
+
 ## 監視
 
 `result-collection-watchdog.yml` は結果収集の完了時と毎時47分に起動する。定時チェックも GitHub 内で完結する。
