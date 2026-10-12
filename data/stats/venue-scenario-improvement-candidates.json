@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "analysisId": "venue-scenario-improvement-candidates-v1",
-  "generatedAt": "2026-10-11T11:11:59.847Z",
-  "sourceGeneratedAt": "2026-10-11T11:11:59.844Z",
+  "generatedAt": "2026-10-12T00:01:20.688Z",
+  "sourceGeneratedAt": "2026-10-12T00:01:20.686Z",
   "source": "data/stats/venue-theory-profile.json",
   "analysisInputContract": "official-pre-deadline-cohort-v1",
   "productionChanged": false,
@@ -23,17 +23,17 @@
       "role": "loss-focus",
       "present": true,
       "eligibleTheoryCount": 9,
-      "strongTheoryCount": 1,
-      "watchTheoryCount": 1,
+      "strongTheoryCount": 0,
+      "watchTheoryCount": 2,
       "weakTheoryCount": 7,
       "strongestTheory": {
         "theoryKey": "course",
         "label": "コース理論",
-        "evaluatedCount": 90,
-        "practicalHitRate": 26.7,
-        "recoveryRate": 100.8,
-        "profit": 270,
-        "classification": "STRONG"
+        "evaluatedCount": 91,
+        "practicalHitRate": 26.4,
+        "recoveryRate": 99.9,
+        "profit": -30,
+        "classification": "WATCH"
       },
       "weakestTheory": {
         "theoryKey": "wall-boat",
@@ -162,11 +162,11 @@
     "twoCourseSashiSkip": {
       "source": "data/stats/race-flow-2course-sashi-skip-ab-report.json",
       "version": "race-flow-2course-sashi-skip-ab-v1-prospective",
-      "generatedAt": "2026-10-11T10:33:16.362Z",
+      "generatedAt": "2026-10-11T23:54:58.891Z",
       "targetLabel": "2コース差し",
-      "targetSettledCount": 539,
-      "deltaRecoveryRate": 6,
-      "deltaHitRate": 1,
+      "targetSettledCount": 540,
+      "deltaRecoveryRate": 6.1,
+      "deltaHitRate": 0.9,
       "adoptionDecisionReady": true,
       "usableForPrediction": false
     }
@@ -1584,37 +1584,37 @@
       "direction": "PROFIT",
       "theoryCount": 3,
       "evaluatedCountRange": {
-        "minimum": 24,
-        "maximum": 24
+        "minimum": 25,
+        "maximum": 25
       },
-      "medianRecoveryRate": 130,
-      "medianPracticalHitRate": 62.5,
+      "medianRecoveryRate": 125.8,
+      "medianPracticalHitRate": 60,
       "theoryRows": [
         {
           "theoryKey": "remain-pickup",
           "label": "残し・拾い理論",
-          "evaluatedCount": 24,
-          "practicalHitRate": 62.5,
-          "recoveryRate": 130.7,
-          "profit": 5470,
+          "evaluatedCount": 25,
+          "practicalHitRate": 60,
+          "recoveryRate": 126.5,
+          "profit": 4870,
           "classification": "STRONG"
         },
         {
           "theoryKey": "local-water",
           "label": "当地・水面理論",
-          "evaluatedCount": 24,
-          "practicalHitRate": 62.5,
-          "recoveryRate": 130,
-          "profit": 5370,
+          "evaluatedCount": 25,
+          "practicalHitRate": 60,
+          "recoveryRate": 125.8,
+          "profit": 4770,
           "classification": "STRONG"
         },
         {
           "theoryKey": "race-flow",
           "label": "展開理論",
-          "evaluatedCount": 24,
-          "practicalHitRate": 62.5,
-          "recoveryRate": 130,
-          "profit": 5370,
+          "evaluatedCount": 25,
+          "practicalHitRate": 60,
+          "recoveryRate": 125.8,
+          "profit": 4770,
           "classification": "STRONG"
         }
       ]
@@ -2168,11 +2168,11 @@
       "existingFixedCounterfactual": {
         "source": "data/stats/race-flow-2course-sashi-skip-ab-report.json",
         "version": "race-flow-2course-sashi-skip-ab-v1-prospective",
-        "generatedAt": "2026-10-11T10:33:16.362Z",
+        "generatedAt": "2026-10-11T23:54:58.891Z",
         "targetLabel": "2コース差し",
-        "targetSettledCount": 539,
-        "deltaRecoveryRate": 6,
-        "deltaHitRate": 1,
+        "targetSettledCount": 540,
+        "deltaRecoveryRate": 6.1,
+        "deltaHitRate": 0.9,
         "adoptionDecisionReady": true,
         "usableForPrediction": false
       },
@@ -2958,11 +2958,11 @@
       "existingFixedCounterfactual": {
         "source": "data/stats/race-flow-2course-sashi-skip-ab-report.json",
         "version": "race-flow-2course-sashi-skip-ab-v1-prospective",
-        "generatedAt": "2026-10-11T10:33:16.362Z",
+        "generatedAt": "2026-10-11T23:54:58.891Z",
         "targetLabel": "2コース差し",
-        "targetSettledCount": 539,
-        "deltaRecoveryRate": 6,
-        "deltaHitRate": 1,
+        "targetSettledCount": 540,
+        "deltaRecoveryRate": 6.1,
+        "deltaHitRate": 0.9,
         "adoptionDecisionReady": true,
         "usableForPrediction": false
       },
@@ -3104,11 +3104,11 @@
       "existingFixedCounterfactual": {
         "source": "data/stats/race-flow-2course-sashi-skip-ab-report.json",
         "version": "race-flow-2course-sashi-skip-ab-v1-prospective",
-        "generatedAt": "2026-10-11T10:33:16.362Z",
+        "generatedAt": "2026-10-11T23:54:58.891Z",
         "targetLabel": "2コース差し",
-        "targetSettledCount": 539,
-        "deltaRecoveryRate": 6,
-        "deltaHitRate": 1,
+        "targetSettledCount": 540,
+        "deltaRecoveryRate": 6.1,
+        "deltaHitRate": 0.9,
         "adoptionDecisionReady": true,
         "usableForPrediction": false
       },
@@ -3182,11 +3182,11 @@
       "existingFixedCounterfactual": {
         "source": "data/stats/race-flow-2course-sashi-skip-ab-report.json",
         "version": "race-flow-2course-sashi-skip-ab-v1-prospective",
-        "generatedAt": "2026-10-11T10:33:16.362Z",
+        "generatedAt": "2026-10-11T23:54:58.891Z",
         "targetLabel": "2コース差し",
-        "targetSettledCount": 539,
-        "deltaRecoveryRate": 6,
-        "deltaHitRate": 1,
+        "targetSettledCount": 540,
+        "deltaRecoveryRate": 6.1,
+        "deltaHitRate": 0.9,
         "adoptionDecisionReady": true,
         "usableForPrediction": false
       },
@@ -3251,11 +3251,11 @@
       "existingFixedCounterfactual": {
         "source": "data/stats/race-flow-2course-sashi-skip-ab-report.json",
         "version": "race-flow-2course-sashi-skip-ab-v1-prospective",
-        "generatedAt": "2026-10-11T10:33:16.362Z",
+        "generatedAt": "2026-10-11T23:54:58.891Z",
         "targetLabel": "2コース差し",
-        "targetSettledCount": 539,
-        "deltaRecoveryRate": 6,
-        "deltaHitRate": 1,
+        "targetSettledCount": 540,
+        "deltaRecoveryRate": 6.1,
+        "deltaHitRate": 0.9,
         "adoptionDecisionReady": true,
         "usableForPrediction": false
       },
