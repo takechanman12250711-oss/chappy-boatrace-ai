@@ -19,6 +19,7 @@ const charter = require(
 const {
   assertProposalOnly,
   buildFromDirectory,
+  buildOutputsFromDirectory,
   compactPredictionRecord,
   compactShadowV2Snapshot,
   collectPredictionRecords,
@@ -1643,6 +1644,204 @@ try {
       .retainedGenerationCount,
     1
   );
+
+  // Compare independent single-output runs with one shared scan. Preserve bytes,
+  // not just the latest report: destinations can have different old generations,
+  // full proposal archives, and timestamps, and can fail independently.
+  const crypto = require("node:crypto");
+  const clone = value => JSON.parse(JSON.stringify(value));
+  const inputHash = () => crypto.createHash("sha256")
+    .update(fs.readFileSync(dailyPath)).digest("hex");
+  const beforeInputHash = inputHash();
+  const options = {
+    inputDirectory: temporaryDirectory,
+    activeGeneration: GENERATION_A,
+    generatedAt: "2026-07-30T00:00:00.000Z"
+  };
+  const stable = clone(third.result);
+  const historical = {
+    ...clone(first.result.reports[0]),
+    batchId: "prior-milestone",
+    generationKey: "prior-generation"
+  };
+  const withHistory = (label, full = true) => ({
+    ...clone(stable),
+    generatedAt: `2026-07-29T0${label === "left" ? 1 : 2}:00:00.000Z`,
+    reportHistory: [{
+      ...clone(historical),
+      batchId: `${label}-milestone`,
+      generationKey: `${label}-generation`,
+      ...(full ? {} : { proposals: undefined })
+    }]
+  });
+  const variants = [
+    ["both-missing", null, null],
+    ["left-missing", null, withHistory("right")],
+    ["right-missing", withHistory("left"), null],
+    ["left-corrupt", "invalid JSON", withHistory("right")],
+    ["right-corrupt", withHistory("left"), "invalid JSON"],
+    ["independent-full-history", withHistory("left"), withHistory("right")],
+    ["independent-metadata-history", withHistory("left", false), withHistory("right", false)],
+    ["unchanged-timestamps", { ...clone(stable), generatedAt: GENERATED_AT }, stable],
+    ["changed-left", { ...clone(stable), status: "changed" }, stable],
+    ["changed-right", stable, { ...clone(stable), status: "changed" }],
+    ["legacy-reports-only", { ...clone(stable), reportHistory: [], reports: [historical] }, stable]
+  ];
+  const oversize = withHistory("right");
+  oversize.reportHistory[0].proposalTargets = [{ target: "x".repeat(20000) }];
+  variants.push(["right-oversize", stable, oversize, /20000/]);
+  variants.push(["left-oversize", oversize, stable, /20000/]);
+  const unsafeHistory = withHistory("right");
+  unsafeHistory.reportHistory[0].applicationLock = false;
+  variants.push(["right-unsafe-history", stable, unsafeHistory, /履歴の承認ロック/]);
+  variants.push(["left-unsafe-history", unsafeHistory, stable, /履歴の承認ロック/]);
+  const unsafeArchive = withHistory("right", false);
+  unsafeArchive.reports = [{ ...clone(historical), applicationLock: false }];
+  variants.push(["right-unsafe-archive", stable, unsafeArchive, /報告の承認ロック/]);
+  const unsafeProposal = withHistory("right", false);
+  unsafeProposal.reports = [clone(historical)];
+  unsafeProposal.reports[0].proposals[0].autoApply = true;
+  variants.push(["right-unsafe-proposal", stable, unsafeProposal, /自動適用ロック/]);
+
+  const snapshot = root => {
+    const files = {};
+    const visit = directory => fs.readdirSync(directory, { withFileTypes: true })
+      .sort((a, b) => a.name.localeCompare(b.name)).forEach(entry => {
+        const file = path.join(directory, entry.name);
+        if (entry.isDirectory()) visit(file);
+        else files[path.relative(root, file)] = fs.readFileSync(file, "utf8");
+      });
+    visit(root);
+    return files;
+  };
+  const seed = (root, values) => values.map((value, index) => {
+    const directory = path.join(root, String(index));
+    const archive = path.join(directory, "improvement-reviews");
+    fs.mkdirSync(archive, { recursive: true });
+    fs.writeFileSync(path.join(archive, "preserved.json"), "existing archive bytes\n");
+    const outputPath = path.join(directory, "improvement-review.json");
+    if (value !== null) fs.writeFileSync(outputPath,
+      typeof value === "string" ? value : JSON.stringify(value) + "\n");
+    return outputPath;
+  });
+  const measure = action => {
+    const read = fs.readFileSync;
+    const build = improvementReview.buildImprovementReview;
+    let dailyReads = 0;
+    let calculations = 0;
+    fs.readFileSync = function(file, ...args) {
+      if (path.resolve(String(file)) === dailyPath) dailyReads += 1;
+      return read.call(this, file, ...args);
+    };
+    improvementReview.buildImprovementReview = function(...args) {
+      calculations += 1;
+      return build.apply(this, args);
+    };
+    let error;
+    let value;
+    try { value = action(); } catch (caught) { error = caught; }
+    finally {
+      fs.readFileSync = read;
+      improvementReview.buildImprovementReview = build;
+    }
+    return { value, error, dailyReads, calculations };
+  };
+  for (const [name, left, right, expectedError] of variants) {
+    const singleRoot = path.join(temporaryDirectory, name, "single");
+    const sharedRoot = path.join(temporaryDirectory, name, "shared");
+    const singlePaths = seed(singleRoot, [left, right]);
+    const sharedPaths = seed(sharedRoot, [left, right]);
+    const singles = measure(() => singlePaths.map(outputPath =>
+      buildFromDirectory({ ...options, outputPath })));
+    const shared = measure(() => buildOutputsFromDirectory({ ...options, outputPaths: sharedPaths }));
+    assert.equal(shared.error?.message, singles.error?.message, name);
+    if (expectedError) assert.match(shared.error?.message || "", expectedError, name);
+    else assert.equal(shared.error, undefined, name);
+    assert.deepEqual(snapshot(sharedRoot), snapshot(singleRoot), `${name}: all output/archive bytes`);
+    assert.equal(shared.dailyReads, 1, `${name}: one input read`);
+    assert.equal(shared.calculations, 1, `${name}: one common calculation`);
+    const expectedSingleReads = name.startsWith("left-oversize") || name.startsWith("left-unsafe") ? 1 : 2;
+    assert.equal(singles.dailyReads, expectedSingleReads, name);
+    assert.equal(singles.calculations, expectedSingleReads, name);
+    if (!expectedError) {
+      shared.value.forEach((value, index) => assert.deepEqual(value.result, singles.value[index].result, name));
+      if (name === "unchanged-timestamps") {
+        assert.equal(shared.value[0].result.generatedAt, GENERATED_AT);
+        assert.equal(shared.value[1].result.generatedAt, stable.generatedAt);
+      }
+      if (name === "independent-full-history") {
+        assert.ok(shared.value[0].result.reportHistory.some(row => row.generationKey === "left-generation"));
+        assert.ok(!shared.value[1].result.reportHistory.some(row => row.generationKey === "left-generation"));
+        assert.ok(shared.value[1].archivePaths.some(file => file.endsWith("right-milestone.json")));
+      }
+    }
+  }
+  const thirdRoot = path.join(temporaryDirectory, "skip-after-failure");
+  const thirdPaths = seed(thirdRoot, [stable, oversize, withHistory("left")]);
+  const thirdBytes = fs.readFileSync(thirdPaths[2], "utf8");
+  assert.throws(() => buildOutputsFromDirectory({ ...options, outputPaths: thirdPaths }), /20000/);
+  assert.equal(fs.readFileSync(thirdPaths[2], "utf8"), thirdBytes, "later output is not touched after failure");
+
+  const frozenRoot = path.join(temporaryDirectory, "frozen-common");
+  const frozenPaths = seed(frozenRoot, [withHistory("left"), withHistory("right")]);
+  const buildOriginal = improvementReview.buildImprovementReview;
+  const freeze = value => {
+    if (value && typeof value === "object") {
+      Object.values(value).forEach(freeze);
+      Object.freeze(value);
+    }
+    return value;
+  };
+  try {
+    improvementReview.buildImprovementReview = (...args) => freeze(buildOriginal(...args));
+    assert.doesNotThrow(() => buildOutputsFromDirectory({ ...options, outputPaths: frozenPaths }),
+      "per-output writing never mutates shared calculation");
+    for (const kind of ["root", "safety", "report", "proposal"]) {
+      improvementReview.buildImprovementReview = (...args) => {
+        const result = buildOriginal(...args);
+        const target = kind === "root" ? result : kind === "safety" ? result.safety :
+          kind === "report" ? result.reports[0] : result.reports[0].proposals[0];
+        target.applicationLock = false;
+        return freeze(result);
+      };
+      const before = snapshot(frozenRoot);
+      assert.throws(() => buildOutputsFromDirectory({ ...options, outputPaths: frozenPaths }), /ロック/);
+      assert.deepEqual(snapshot(frozenRoot), before, `${kind} lock stops all writes`);
+    }
+  } finally {
+    improvementReview.buildImprovementReview = buildOriginal;
+  }
+  const dailyBytes = fs.readFileSync(dailyPath);
+  const beforeCorruptInput = snapshot(frozenRoot);
+  try {
+    fs.writeFileSync(dailyPath, "invalid daily JSON");
+    assert.throws(() => buildOutputsFromDirectory({ ...options, outputPaths: frozenPaths }), /JSON/);
+    assert.deepEqual(snapshot(frozenRoot), beforeCorruptInput, "invalid input stops all outputs and archives");
+  } finally {
+    fs.writeFileSync(dailyPath, dailyBytes);
+  }
+  assert.equal(inputHash(), beforeInputHash, "all input bytes stay unchanged");
+  assert.throws(() => buildOutputsFromDirectory({ ...options, outputPaths: [] }), /At least one/);
+
+  // Actual CLI, including default and the legacy single --output. A repeated
+  // flag selects both destinations and does not silently copy one report.
+  const { execFileSync } = require("node:child_process");
+  const cli = path.join(__dirname, "build-improvement-review.js");
+  const runCli = args => execFileSync(process.execPath, [cli,
+    `--input-dir=${temporaryDirectory}`, `--generated-at=${GENERATED_AT}`, ...args], { encoding: "utf8" });
+  const cliRoot = path.join(temporaryDirectory, "cli");
+  const cliOutputs = seed(cliRoot, [withHistory("left"), withHistory("right")]);
+  const cliSingles = seed(path.join(temporaryDirectory, "cli-singles"), [withHistory("left"), withHistory("right")]);
+  cliSingles.forEach(output => runCli([`--output=${output}`]));
+  const log = runCli(cliOutputs.map(output => `--output=${output}`));
+  assert.equal(log.trim().split("\n").length, 2);
+  assert.deepEqual(snapshot(cliRoot), snapshot(path.join(temporaryDirectory, "cli-singles")));
+  runCli([]);
+  const defaultBytes = fs.readFileSync(outputPath, "utf8");
+  runCli(["--output="]);
+  assert.equal(fs.readFileSync(outputPath, "utf8"), defaultBytes);
+  assert.equal(inputHash(), beforeInputHash, "CLI never changes input");
+  console.log(`improvement review multi-output: ${variants.length} equivalence cases and CLI passed`);
 } finally {
   fs.rmSync(
     temporaryDirectory,
