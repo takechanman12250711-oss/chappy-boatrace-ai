@@ -7,6 +7,8 @@ on:
       - 'tests/theory-validation-phase8-cycle.test.cjs'
       - 'tests/phase8-stable-save.test.cjs'
       - 'scripts/run-live-improvement-cycle.cjs'
+      - 'scripts/persist-theory-validation-cycle.cjs'
+      - 'scripts/test-phase8-single-writer.cjs'
       - 'scripts/result-report-checkpoint.cjs'
       - 'data/stats/theory-validation-phase8-cycle.json'
       - '.github/workflows/check-theory-validation-phase8-cycle.yml'
@@ -33,13 +35,14 @@ jobs:
           node --check scripts/theory-validation-phase8-cycle.cjs
           node tests/theory-validation-phase8-cycle.test.cjs
           node tests/phase8-stable-save.test.cjs
+          node scripts/test-phase8-single-writer.cjs
           node scripts/theory-validation-phase8-cycle.cjs
       - name: Verify existing result handoff and no duplicate collector
         shell: bash
         run: |
           node -e "const {countWallCollectors}=require('./scripts/theory-validation-phase7-lifecycle.cjs');const rows=countWallCollectors();console.log(rows);if(rows.length!==1)process.exit(1)"
           grep -q 'theory-validation-phase8-cycle.cjs' .github/workflows/collect-wall-established-attacker2-skip-ab.yml
-          grep -q 'theory-validation-phase8-cycle.json' .github/workflows/collect-wall-established-attacker2-skip-ab.yml
+          grep -q 'persist-theory-validation-cycle.cjs' .github/workflows/collect-wall-established-attacker2-skip-ab.yml
       - name: Guard production prediction files
         shell: bash
         run: |

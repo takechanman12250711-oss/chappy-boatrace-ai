@@ -27,7 +27,6 @@ const WALL_REPORTS = [
   'data/stats/wall-established-attacker2-skip-ab-report.json',
   'data/stats/theory-validation-phase6-prospective.json',
   'data/stats/theory-validation-phase7-lifecycle.json',
-  'data/stats/theory-validation-phase8-cycle.json',
 ];
 const FIXED_STAGES = new Set([...AUDIT_PROFILES.keys(), WALL_STAGE]);
 const STAGES = new Set(['diagnostics', 'calibration', ...FIXED_STAGES]);
@@ -56,6 +55,9 @@ const codePaths = stage => stage === WALL_STAGE
   : AUDIT_PROFILES.has(stage) ? [...CODE_PATHS, `.github/workflows/check-${stage}.yml`] : CODE_PATHS;
 const validBlob = value => value === null || (typeof value === 'string' && /^[a-f0-9]{40}$/.test(value));
 function allowed(file, stage) {
+  // Saved phase8 has one owner: persist-theory-validation-cycle.cjs. Never
+  // accept a precomputed phase8 artifact from diagnostics or the wall collector.
+  if (file === 'data/stats/theory-validation-phase8-cycle.json') return false;
   if (FIXED_STAGES.has(stage)) return fixedPaths(stage).includes(file);
   return (/^data\/stats\/[a-z0-9][a-z0-9.-]*\.json$/.test(file) &&
     !/^data\/stats\/result-(diagnostics|calibration)-checkpoint\.json$/.test(file)) ||
