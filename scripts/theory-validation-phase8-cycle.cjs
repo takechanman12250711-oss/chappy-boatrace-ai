@@ -78,6 +78,18 @@ function build(){
   const phaseComplete=rows.length===13&&uniqueIds.size===13&&fingerprints.length===uniqueFingerprints.size&&rejectedRetest.length===0&&ambiguous.length===0&&brokenHandoff.length===0&&illegalProduction.length===0&&lifecycleContradictions.length===0&&noCandidateForced.length===0&&wallHandoffValid&&lifecycle.phaseComplete===true;
   return{schemaVersion:1,analysisId:'theory-validation-phase8-cycle-v1',generatedAt:new Date().toISOString(),sourceCoverageGeneratedAt:coverage.generatedAt||null,coreVersion:lifecycle.coreVersion||null,productionChanged:false,phaseComplete,policy:{automaticProductionAdoption:false,newThresholdInvention:false,retestRejectedFingerprint:false,reopenPermanentBlockerOnlyOnMaterialEvidenceBasisChange:true},candidateDiscoveryContract:{requiredFields:['theoryId','candidateId','sourceEvidence','fixedDefinition','cohortFingerprint','discoveryPeriod','dataCount','antiPosthoc','standaloneCounterfactual','candidateFingerprint'],eligibilityStates:[...ELIGIBILITY_STATES],handoffOnlyWhen:'ELIGIBLE_FOR_VALIDATION',approvalStop:'CANDIDATE_FOR_USER_APPROVAL'},summary:{theories:rows.length,activeEvidenceRoutes:rows.filter(r=>r.evidenceAccumulation.routeStatus!=='NO_VERIFIED_ACCUMULATION_ROUTE').length,candidates:rows.filter(r=>r.candidateDiscovery.candidatePresent).length,eligibleForValidation:rows.filter(r=>r.eligibility.state==='ELIGIBLE_FOR_VALIDATION').length,duplicateRejected:rows.filter(r=>r.eligibility.state==='DUPLICATE_REJECTED').length,noCandidate:rows.filter(r=>r.eligibility.state==='NO_CANDIDATE').length,confounded:rows.filter(r=>r.eligibility.state==='CONFOUNDED').length,insufficientEvidence:rows.filter(r=>r.eligibility.state==='INSUFFICIENT_EVIDENCE').length,userApproval:rows.filter(r=>r.decisionStatus==='CANDIDATE_FOR_USER_APPROVAL').length},audit:{uniqueTheories:uniqueIds.size===13,uniqueCandidateFingerprints:fingerprints.length===uniqueFingerprints.size,rejectedCandidateRetest:rejectedRetest.length,ambiguousState:ambiguous.length,brokenValidationHandoff:brokenHandoff.length,illegalProductionChange:illegalProduction.length,lifecycleContradictions:lifecycleContradictions.length,forcedCandidateWithoutContract:noCandidateForced.length,wallExistingProspectiveHandoff:wallHandoffValid,duplicateCollectorAdded:false,historicalLifecycleComplete:lifecycle.phaseComplete===true,details:{rejectedRetest,ambiguous,brokenHandoff,illegalProduction,lifecycleContradictions,noCandidateForced}},rows};
 }
-function main(){const out=build();const arg=process.argv.find(x=>x.startsWith('--output='));if(arg){const dest=path.resolve(ROOT,arg.slice(9));fs.mkdirSync(path.dirname(dest),{recursive:true});fs.writeFileSync(dest,JSON.stringify(out,null,2)+'\n');}process.stdout.write(JSON.stringify(out,null,2)+'\n');if(!out.phaseComplete)process.exitCode=1;}
+// Match the central runner's stable-save semantics. Only the generation clock
+// is ignored; source coverage, evidence counts and decisions remain significant.
+function writeStable(filePath,report){
+ let previous=null;
+ if(fs.existsSync(filePath)){try{previous=JSON.parse(fs.readFileSync(filePath,'utf8'));}catch{previous=null;}}
+ const comparable=value=>value&&typeof value==='object'?{...value,generatedAt:''}:value;
+ if(previous&&JSON.stringify(comparable(previous))===JSON.stringify(comparable(report)))return{changed:false,report:previous};
+ fs.mkdirSync(path.dirname(filePath),{recursive:true});
+ fs.writeFileSync(filePath,JSON.stringify(report,null,2)+'\n');
+ return{changed:true,report};
+}
+function main(){const out=build();const arg=process.argv.find(x=>x.startsWith('--output='));if(arg)writeStable(path.resolve(ROOT,arg.slice(9)),out);process.stdout.write(JSON.stringify(out,null,2)+'\n');if(!out.phaseComplete)process.exitCode=1;}
 if(require.main===module)main();
-module.exports={ELIGIBILITY_STATES,COVERAGE_KEYS,FIXED_CANDIDATES,stableFingerprint,evidenceFor,classifyEligibility,validationHandoff,build};
+module.exports={ELIGIBILITY_STATES,COVERAGE_KEYS,FIXED_CANDIDATES,stableFingerprint,evidenceFor,classifyEligibility,validationHandoff,build,writeStable};
+
