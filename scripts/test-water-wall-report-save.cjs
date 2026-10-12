@@ -9,7 +9,7 @@ const { pack, validate, apply, publish, allowed, sha256 } = require('./result-re
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'water-wall-save-'));
 const WALL = 'wall-prospective-lifecycle', OUTSIDE = 'local-water-outside-head-miss-structure';
 const reports = ['wall-established-attacker2-skip-ab-report', 'theory-validation-phase6-prospective',
-  'theory-validation-phase7-lifecycle', 'theory-validation-phase8-cycle'].map(name => `data/stats/${name}.json`);
+  'theory-validation-phase7-lifecycle'].map(name => `data/stats/${name}.json`);
 const outside = `data/stats/${OUTSIDE}.json`;
 const receipt = stage => `data/stats/audit-checkpoints/${stage}.json`;
 const workflowFile = '.github/workflows/collect-wall-established-attacker2-skip-ab.yml';
@@ -66,7 +66,7 @@ try {
   assert.equal(saved.receipt.publishedFromSha, fresh);
   assert.deepEqual(saved.receipt.files, f.bundle.files.map(({ path, sha256 }) => ({ path, sha256 })));
   assert.deepEqual(git(f.remote, ['diff-tree', '--no-commit-id', '--name-only', '-r', saved.savedSha]).split('\n').sort(),
-    [...reports, receipt(WALL)].sort(), 'exactly four reports and their receipt are published');
+    [...reports, receipt(WALL)].sort(), 'exactly three reports and their receipt are published');
   assert.deepEqual(hashes(f.remote, 'main', preserved), freshHashes, 'fresh source bytes survive publication');
   assert.deepEqual(hashes(f.remote, 'main', reports), f.bundle.files.map(file => file.sha256));
   assert.equal(git(f.remote, ['rev-parse', 'main']), saved.savedSha);
@@ -180,12 +180,12 @@ try {
       'restore-daily-prediction-source.js --all', 'build-wall-established-attacker2-skip-ab-report.js',
       'theory-validation-phase6-prospective-integration.cjs --output=data/stats/theory-validation-phase6-prospective.json',
       'theory-validation-phase7-lifecycle.cjs --output=data/stats/theory-validation-phase7-lifecycle.json',
-      'theory-validation-phase8-cycle.cjs --output=data/stats/theory-validation-phase8-cycle.json', 'prepare-daily-prediction-git-save.js --all']],
+      'prepare-daily-prediction-git-save.js --all']],
     [`.github/workflows/check-${OUTSIDE}.yml`, OUTSIDE, 'diagnostics', 'audit-report', 'Build real diagnostic', [
       'restore-daily-prediction-source.js --all', `build-${OUTSIDE}.js`, 'prepare-daily-prediction-git-save.js --all']],
   ]) {
     const workflow = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
-    const [top, jobs] = workflow.split('\njobs:\n'), [compute, publisher] = jobs.split('\n  publish_reports:\n');
+    const [top, jobs] = workflow.split('\njobs:\n'), [compute, tail] = jobs.split('\n  publish_reports:\n'), [publisher] = tail.split('\n  refresh_cycle:\n');
     for (const trigger of ['pull_request', 'push', 'workflow_run', 'workflow_dispatch']) assert.match(top, new RegExp(`^  ${trigger}:`, 'm'));
     const events = Object.fromEntries([...top.matchAll(/^  (pull_request|push|workflow_run|schedule|workflow_dispatch):\n([\s\S]*?)(?=^  [a-z_]+:|^permissions:|$(?![\s\S]))/gm)]
       .map(([, name, value]) => [name, value]));
@@ -222,8 +222,8 @@ try {
     assert.ok(publisher.includes(`BASE_SHA: \${{ needs.${job}.outputs.source_sha }}`));
     assert.ok(publisher.includes(`publish ${stage} "$RUNNER_TEMP/${directory}/checkpoint.json" "$BASE_SHA"`));
     assert.doesNotMatch(publisher, /node scripts\/(?:build-|theory-validation|restore-daily|prepare-daily)|git (push|pull|commit)/);
-    assert.equal((workflow.match(/contents: write/g) || []).length, 1);
-    assert.equal((workflow.match(/group: chappy-main-data-writers/g) || []).length, 1);
+    assert.equal((workflow.match(/contents: write/g) || []).length, stage === WALL ? 2 : 1);
+    assert.equal((workflow.match(/group: chappy-main-data-writers/g) || []).length, stage === WALL ? 2 : 1);
     if (stage === WALL) {
       assert.match(top, /cron: "17 15 \* \* \*"/);
       assert.equal(top.match(/^  group: (.+)$/m)[1], "${{ github.event_name == 'pull_request' && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('{0}-main', github.workflow) }}");

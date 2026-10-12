@@ -72,6 +72,8 @@ on:
       - "scripts/build-learning-analysis-pipeline.js"
       - "scripts/phase9-live-improvement-cycle.cjs"
       - "scripts/run-live-improvement-cycle.cjs"
+      - "scripts/persist-theory-validation-cycle.cjs"
+      - "scripts/test-phase8-single-writer.cjs"
       - "tests/phase9-input-compaction.test.cjs"
       - "scripts/build-theory-ab-phase10.js"
       - "scripts/test-theory-ab-phase10-approval.js"
@@ -269,6 +271,7 @@ jobs:
           node scripts/test-phase3-refresh-contract.js
           node --check scripts/build-learning-analysis-pipeline.js
           node tests/phase9-input-compaction.test.cjs
+          node scripts/test-phase8-single-writer.cjs
           node scripts/test-theory-ab-phase10-approval.js
           node --check scripts/build-phase4-daily-cycle-gate.js
           node --check scripts/build-phase4-historical-cycle-proof.js
@@ -575,7 +578,7 @@ jobs:
           retention-days: 3
           if-no-files-found: error
 
-  publish_reports:
+  publish_diagnostics:
     needs: [diagnostics, collect]
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -619,6 +622,38 @@ jobs:
         env:
           BASE_SHA: ${{ needs.collect.outputs.saved_sha }}
         run: node scripts/result-report-checkpoint.cjs publish diagnostics "$RUNNER_TEMP/result-reports/checkpoint.json" "$BASE_SHA"
+
+  publish_reports:
+    needs: publish_diagnostics
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    concurrency:
+      group: chappy-main-data-writers
+      queue: max
+      cancel-in-progress: false
+    outputs:
+      saved_sha: ${{ steps.refresh.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          sparse-checkout: |
+            scripts
+            js
+            api
+            config
+            data/stats
+            data/experiments
+            .github/workflows
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Refresh saved phase8 from current main
+        id: refresh
+        run: node scripts/persist-theory-validation-cycle.cjs
 
   calibrate:
     needs: publish_reports

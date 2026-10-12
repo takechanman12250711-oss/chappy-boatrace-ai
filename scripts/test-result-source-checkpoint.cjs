@@ -548,8 +548,11 @@ try {
   assert.ok(retry.indexOf('git rebase') < retry.indexOf('git push'));
   assert.doesNotMatch(retry, /git pull|--force|--ours|--theirs/);
   assert.match(jobs.diagnostics, /ref: \$\{\{ needs.collect.outputs.saved_sha \}\}/);
-  assert.equal((workflow.match(/group: chappy-main-data-writers/g) || []).length, 3);
-  assert.equal((workflow.match(/contents: write/g) || []).length, 3);
+  assert.equal((workflow.match(/group: chappy-main-data-writers/g) || []).length, 4);
+  assert.equal((workflow.match(/contents: write/g) || []).length, 4);
+  assert.match(jobs.publish_reports, /needs: publish_diagnostics/);
+  assert.match(jobs.publish_reports, /run: node scripts\/persist-theory-validation-cycle.cjs/);
+  assert.doesNotMatch(jobs.publish_reports, /result-source-checkpoint|restore-daily-prediction/);
   assert.match(jobs.verify, /node scripts\/test-result-source-checkpoint\.cjs/);
   console.log('official result source checkpoint: identity, dates, queue, semantics, concurrent data preservation, conflicts and writer/artifact boundaries passed');
 } finally {

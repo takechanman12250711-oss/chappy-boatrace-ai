@@ -400,17 +400,17 @@ try {
   // uses read-only jobs, and saved commits/artifact IDs connect the stages.
   const workflow = fs.readFileSync('.github/workflows/collect-results.yml', 'utf8');
   const jobs = Object.fromEntries([...workflow.matchAll(/^  ([a-z_]+):\n([\s\S]*?)(?=^  [a-z_]+:\n|$(?![\s\S]))/gm)]
-    .filter(([, name]) => ['verify', 'collect', 'diagnostics', 'publish_reports', 'calibrate', 'publish_calibration'].includes(name))
+    .filter(([, name]) => ['verify', 'collect', 'diagnostics', 'publish_diagnostics', 'publish_reports', 'calibrate', 'publish_calibration'].includes(name))
     .map(([, name, content]) => [name, content]));
-  assert.equal(Object.keys(jobs).length, 6);
-  for (const name of ['collect', 'publish_reports', 'publish_calibration']) {
+  assert.equal(Object.keys(jobs).length, 7);
+  for (const name of ['collect', 'publish_diagnostics', 'publish_reports', 'publish_calibration']) {
     assert.match(jobs[name], /group: chappy-main-data-writers\n\s+queue: max\n\s+cancel-in-progress: false/);
     assert.match(jobs[name], /contents: write/);
   }
   for (const name of ['verify', 'diagnostics', 'calibrate']) {
     assert.doesNotMatch(jobs[name], /chappy-main-data-writers|contents: write|git push/);
   }
-  for (const name of ['publish_reports', 'publish_calibration']) {
+  for (const name of ['publish_diagnostics', 'publish_calibration']) {
     assert.match(jobs[name], /artifact-ids: \$\{\{ needs\./);
     assert.match(jobs[name], /result-report-checkpoint.cjs publish/);
     assert.doesNotMatch(jobs[name], /node scripts\/build-/);

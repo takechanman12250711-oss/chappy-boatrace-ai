@@ -24,9 +24,10 @@ function build(){
 }
 function run(){
  const {phase8Report,phase9Report}=build();
- const saved8=writeStable(PHASE8_OUT,phase8Report);
+ // The shared fresh-main publisher owns the saved phase8 report. Phase9 still
+ // receives this cycle's freshly built phase8 object in build().
  const saved9=writeStable(PHASE9_OUT,phase9Report);
- const summary={productionChanged:false,phase8:{...phase8Report.summary,artifactChanged:saved8.changed},phase9:{...phase9Report.summary,artifactChanged:saved9.changed},audit:{duplicateRaceRecords:phase9Report.audit.duplicateRaceRecords,ambiguousMissReasons:phase9Report.audit.ambiguousMissReasons,rejectedCandidateRetest:phase9Report.audit.rejectedCandidateRetest,brokenHandoff:phase9Report.audit.brokenHandoff}};
+ const summary={productionChanged:false,phase8:{...phase8Report.summary,persistence:'fresh-main-publisher'},phase9:{...phase9Report.summary,artifactChanged:saved9.changed},audit:{duplicateRaceRecords:phase9Report.audit.duplicateRaceRecords,ambiguousMissReasons:phase9Report.audit.ambiguousMissReasons,rejectedCandidateRetest:phase9Report.audit.rejectedCandidateRetest,brokenHandoff:phase9Report.audit.brokenHandoff}};
  process.stdout.write(JSON.stringify(summary,null,2)+'\n');
  return summary;
 }

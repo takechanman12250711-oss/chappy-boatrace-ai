@@ -17,6 +17,8 @@ on:
       - ".github/workflows/collect-wall-established-attacker2-skip-ab.yml"
       - "scripts/result-report-checkpoint.cjs"
       - "scripts/test-water-wall-report-save.cjs"
+      - "scripts/persist-theory-validation-cycle.cjs"
+      - "scripts/test-phase8-single-writer.cjs"
   push:
     branches:
       - main
@@ -28,6 +30,8 @@ on:
       - ".github/workflows/collect-wall-established-attacker2-skip-ab.yml"
       - "scripts/result-report-checkpoint.cjs"
       - "scripts/test-water-wall-report-save.cjs"
+      - "scripts/persist-theory-validation-cycle.cjs"
+      - "scripts/test-phase8-single-writer.cjs"
   workflow_run:
     workflows:
       - "Collect official race results"
@@ -76,6 +80,7 @@ jobs:
           node --check scripts/build-wall-established-attacker2-skip-ab-report.js
           node scripts/test-wall-established-attacker2-skip-ab-report.js
           node scripts/test-water-wall-report-save.cjs
+          node scripts/test-phase8-single-writer.cjs
           node scripts/test-wall-purchase-policy.js
           node tests/theory-validation-phase6-prospective-integration.test.cjs
           node scripts/theory-validation-phase6-prospective-integration.cjs
@@ -91,7 +96,6 @@ jobs:
           node scripts/build-wall-established-attacker2-skip-ab-report.js
           node scripts/theory-validation-phase6-prospective-integration.cjs --output=data/stats/theory-validation-phase6-prospective.json
           node scripts/theory-validation-phase7-lifecycle.cjs --output=data/stats/theory-validation-phase7-lifecycle.json
-          node scripts/theory-validation-phase8-cycle.cjs --output=data/stats/theory-validation-phase8-cycle.json
           node scripts/prepare-daily-prediction-git-save.js --all
 
       - name: Package verified wall and lifecycle reports
@@ -143,3 +147,35 @@ jobs:
         env:
           BASE_SHA: ${{ needs.verify-and-collect.outputs.source_sha }}
         run: node scripts/result-report-checkpoint.cjs publish wall-prospective-lifecycle "$RUNNER_TEMP/wall-report/checkpoint.json" "$BASE_SHA"
+
+  refresh_cycle:
+    needs: publish_reports
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    concurrency:
+      group: chappy-main-data-writers
+      queue: max
+      cancel-in-progress: false
+    outputs:
+      saved_sha: ${{ steps.refresh.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          sparse-checkout: |
+            scripts
+            js
+            api
+            config
+            data/stats
+            data/experiments
+            .github/workflows
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Refresh saved phase8 from current main
+        id: refresh
+        run: node scripts/persist-theory-validation-cycle.cjs
