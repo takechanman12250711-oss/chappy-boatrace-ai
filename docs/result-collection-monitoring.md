@@ -140,3 +140,12 @@ writer の checkout 時点の最新 main で照合する。push までの間に�
 `test-source-checkpoint-push-retry.cjs` と既存の結果収集・修復・report checkpoint 検査。
 本番完了は自然 run の原本保存 commit、receipt と source、後続診断接続、writer
 占有時間を読み戻して判定する。cron の起動欠落は別課題のまま扱う。
+
+### Phase8 の時刻だけの更新を抑制
+
+`theory-validation-phase8-cycle.cjs --output=...` は中央の `run-live-improvement-cycle.cjs` と同じ保存規則を使う。トップレベルの `generatedAt` だけが変わり、その他の JSON 内容が一致する場合は、既存のバイト列をそのまま残す。計算・検査は毎回実行し、元入力・母数・判断・`sourceCoverageGeneratedAt` などに差があれば保存する。壊れた既存 JSON は新しい計算結果で置き換える。
+
+2026-10-12 の公式結果 run `38207442927` では、wall の時刻だけの保存後に中央 diagnostics の厳格な blob guard が停止した。今回の変更はその不要な競合を防ぐ範囲であり、wall の4レポート保存、receipt、原本保護、コード・blob guard、起動頻度を変更しない。失敗済み artifact の再利用時に source SHA を付け替えたり、guard を緩めたりしてはならない。
+
+実値が変わる中央・wall 間の二重 writer 競合は引き続き拒否される。正式保存の所有者と wall 更新後の中央 phase8 / phase11 への更新順序の整理は別の残課題であり、この修正だけで中央パイプライン全体の安定化完了とは扱わない。
+
