@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "local-water-outer-head-priority-score-audit-v1",
-  "generatedAt": "2026-10-11T11:25:24.525Z",
+  "generatedAt": "2026-10-12T00:46:32.182Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
@@ -17,28 +17,28 @@
     "largeMedianGapThreshold": 15
   },
   "metrics": {
-    "unselectedScenarioHeadCount": 125,
-    "scoreComparableCount": 125,
+    "unselectedScenarioHeadCount": 126,
+    "scoreComparableCount": 126,
     "winnerOutscoredCount": 90,
     "winnerAheadCount": 6,
-    "tiedCount": 29,
-    "winnerAheadOrTiedCount": 35,
+    "tiedCount": 30,
+    "winnerAheadOrTiedCount": 36,
     "nearTieWithin5Count": 25,
     "gap5To10Count": 31,
     "gap10To20Count": 28,
     "gapOver20Count": 6,
-    "duplicateReasonCount": 95,
+    "duplicateReasonCount": 96,
     "averagePositiveGap": 10,
     "medianPositiveGap": 9,
     "comparableCoverageRate": 100,
-    "winnerOutscoredRate": 72,
-    "winnerAheadOrTiedRate": 28,
-    "nearTieWithin5Rate": 20,
-    "duplicateReasonShare": 76
+    "winnerOutscoredRate": 71.4,
+    "winnerAheadOrTiedRate": 28.6,
+    "nearTieWithin5Rate": 19.8,
+    "duplicateReasonShare": 76.2
   },
   "gapBands": {
     "winnerAhead": 6,
-    "tied": 29,
+    "tied": 30,
     "within5": 25,
     "from5To10": 31,
     "from10To20": 28,
@@ -78,7 +78,7 @@
   "topComparisonPaths": [
     {
       "value": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
-      "count": 95
+      "count": 96
     },
     {
       "value": "practicalSelection.targetDecisions[0].candidateDecisions",
@@ -139,6 +139,10 @@
       "count": 3
     },
     {
+      "value": "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhold・89点・実1コースからの内残り / 既存フォーメーションに同一買い目あり",
+      "count": 2
+    },
+    {
       "value": "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 6号艇のpickup・82点・最有力展開連動40/40 / 差し場・空き水面15/25 / 実進入・位置関係17/15 / バック・2マーク到達10/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり",
       "count": 2
     },
@@ -148,10 +152,6 @@
     },
     {
       "value": "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhold・88点・実1コースからの内残り / 既存フォーメーションに同一買い目あり",
-      "count": 1
-    },
-    {
-      "value": "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhold・89点・実1コースからの内残り / 既存フォーメーションに同一買い目あり",
       "count": 1
     },
     {
@@ -17279,6 +17279,105 @@
           "winnerScore": 88,
           "finalScore": 97,
           "gap": 9,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        }
+      ]
+    },
+    {
+      "date": "20261011",
+      "jcd": "19",
+      "raceNo": 9,
+      "actualHead": 6,
+      "finalHead": 1,
+      "scenario": true,
+      "selected": false,
+      "finalCorrect": false,
+      "comparable": true,
+      "primaryComparison": {
+        "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+        "pathPriority": 1,
+        "winnerScore": 89,
+        "finalScore": 89,
+        "gap": 0,
+        "winnerAhead": false,
+        "tied": true,
+        "winnerOutscored": false,
+        "duplicateReason": true,
+        "winnerReasons": [
+          "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhold・89点・実1コースからの内残り / 既存フォーメーションに同一買い目あり"
+        ],
+        "finalReasons": [
+          "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhead・89点・最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 既存フォーメーションに同一買い目あり"
+        ],
+        "componentDiffs": []
+      },
+      "allComparisons": [
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+          "pathPriority": 1,
+          "winnerScore": 89,
+          "finalScore": 89,
+          "gap": 0,
+          "winnerAhead": false,
+          "tied": true,
+          "winnerOutscored": false,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhold・89点・実1コースからの内残り / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhead・89点・最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.branches",
+          "pathPriority": 2,
+          "winnerScore": 89,
+          "finalScore": 89,
+          "gap": 0,
+          "winnerAhead": false,
+          "tied": true,
+          "winnerOutscored": false,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhold・89点・実1コースからの内残り / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhead・89点・最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches",
+          "pathPriority": 2,
+          "winnerScore": 89,
+          "finalScore": 89,
+          "gap": 0,
+          "winnerAhead": false,
+          "tied": true,
+          "winnerOutscored": false,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhold・89点・実1コースからの内残り / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhead・89点・最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "pathPriority": 3,
+          "winnerScore": 74,
+          "finalScore": 89,
+          "gap": 15,
           "winnerAhead": false,
           "tied": false,
           "winnerOutscored": true,
