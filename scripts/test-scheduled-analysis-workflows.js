@@ -277,21 +277,47 @@ const calibrationLines = stepRunLines(
   collectResultsPredictionGapWorkflow,
   "Build prediction calibration"
 );
-const centralImprovementReviewIndex = calibrationLines.indexOf(
-  "node scripts/build-improvement-review.js"
-);
-const centralStatsImprovementReviewIndex = calibrationLines.indexOf(
-  "node scripts/build-improvement-review.js --output=data/stats/improvement-review.json"
-);
-const centralPredictionGapIndex = calibrationLines.indexOf(
-  "node scripts/build-prediction-gap-report.js"
-);
-assert.ok(
-  centralImprovementReviewIndex >= 0 &&
-    centralImprovementReviewIndex < centralStatsImprovementReviewIndex &&
-    centralStatsImprovementReviewIndex < centralPredictionGapIndex,
-  "中央結果writerで既存reviewを維持し、stats版review直後にprediction gapを生成する"
-);
+function assertSharedReviewBeforeGap(lines) {
+  const script = "scripts/build-improvement-review.js";
+  const prefix = `node ${script}`;
+  assert.equal(
+    lines.filter(line => line === prefix || line.startsWith(`${prefix} `)).length,
+    1,
+    "中央結果writerのreviewは1回の入力走査で両出力を生成する"
+  );
+  const review = commandArguments(lines, script);
+  assert.deepEqual(
+    review.arguments,
+    [
+      "--output=data/predictions/improvement-review.json",
+      "--output=data/stats/improvement-review.json"
+    ],
+    "既存predictions版とstats版をそれぞれ独立保存する"
+  );
+  assert.equal(
+    lines.indexOf("node scripts/build-prediction-gap-report.js"),
+    lines.indexOf(review.command) + 1,
+    "両review保存の直後にprediction gapを生成する"
+  );
+}
+assertSharedReviewBeforeGap(calibrationLines);
+const centralReview = commandArguments(
+  calibrationLines,
+  "scripts/build-improvement-review.js"
+).command;
+for (const missing of ["data/predictions", "data/stats"]) {
+  assert.throws(() => assertSharedReviewBeforeGap(calibrationLines.map(line =>
+    line === centralReview ? line.replace(` --output=${missing}/improvement-review.json`, "") : line
+  )), /独立保存/, "片方の出力省略を検出する");
+}
+assert.throws(() => assertSharedReviewBeforeGap([
+  ...calibrationLines,
+  centralReview
+]), /1回の入力走査/, "二重走査の再導入を検出する");
+assert.throws(() => assertSharedReviewBeforeGap([
+  "node scripts/build-prediction-gap-report.js",
+  ...calibrationLines.filter(line => line !== "node scripts/build-prediction-gap-report.js")
+]), /直後/, "review保存前のprediction gap生成を検出する");
 [
   ".github/workflows/prediction-gap-report.yml",
   "js/improvement-review.js",
