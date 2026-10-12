@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "version": "local-water-priority-selection-consistency-audit-v1",
-  "generatedAt": "2026-10-12T05:30:31.590Z",
+  "generatedAt": "2026-10-12T13:37:21.494Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
   "methodology": "当地・水面の同一確定コホートで、実5・6号艇勝ちが同じ保存済み候補配列内で最終頭以上のpriorityScoreを持ちながら未選択だった例だけを対象に、締切前保存済みの選択フラグ・除外理由・配列順・役割・重複信号を監査する。",
   "sourceVersion": "local-water-outer-head-priority-score-audit-v1",
-  "sourceGeneratedAt": "2026-10-12T05:25:04.026Z",
+  "sourceGeneratedAt": "2026-10-12T13:20:04.021Z",
   "sourceNextStep": "audit-local-water-priority-selection-consistency",
   "applicable": true,
   "fixedDecisionRules": {
@@ -20,42 +20,42 @@
     "explicitRejectionCountForContractAudit": 5
   },
   "metrics": {
-    "sourceComparableCount": 126,
-    "targetCount": 36,
-    "predictionMatchedCount": 36,
-    "resolvedPairCount": 36,
+    "sourceComparableCount": 130,
+    "targetCount": 37,
+    "predictionMatchedCount": 37,
+    "resolvedPairCount": 37,
     "strictInversionCount": 6,
-    "tiedCount": 30,
+    "tiedCount": 31,
     "explicitWinnerRejectionCount": 0,
     "explicitWinnerSelectedCount": 0,
     "explicitFinalSelectedCount": 0,
     "duplicateSignalCount": 15,
-    "tieFinalEarlierCount": 30,
+    "tieFinalEarlierCount": 31,
     "tieWinnerEarlierCount": 0,
     "tieSameIndexCount": 0,
     "winnerRoleLowerPriorityCount": 0,
     "resolvedPairCoverageRate": 100,
-    "strictInversionRate": 16.7,
-    "tiedRate": 83.3,
-    "duplicateSignalShare": 41.7,
+    "strictInversionRate": 16.2,
+    "tiedRate": 83.8,
+    "duplicateSignalShare": 40.5,
     "tieFinalEarlierShare": 100,
     "winnerRoleLowerPriorityShare": 0
   },
   "classifications": {
-    "tie-final-earlier-order": 30,
+    "tie-final-earlier-order": 31,
     "winner-ahead-selector-inversion": 6
   },
   "signalCounts": {
-    "final-earlier": 36,
-    "same-role-class": 36,
-    "priority-score-tied": 30,
+    "final-earlier": 37,
+    "same-role-class": 37,
+    "priority-score-tied": 31,
     "duplicate-overlap": 15,
     "winner-score-ahead": 6
   },
   "comparisonPathCounts": {
     "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches": 15,
     "practicalSelection.targetDecisions[0].candidateDecisions": 8,
-    "practicalSelection.targetDecisions[1].candidateDecisions": 6,
+    "practicalSelection.targetDecisions[1].candidateDecisions": 7,
     "practicalSelection.targetDecisions[2].candidateDecisions": 3,
     "practicalSelection.targetDecisions[4].candidateDecisions": 2,
     "practicalSelection.targetDecisions[3].candidateDecisions": 1,
@@ -1647,6 +1647,48 @@
       "signals": [
         "priority-score-tied",
         "duplicate-overlap",
+        "final-earlier",
+        "same-role-class"
+      ]
+    },
+    {
+      "date": "20261012",
+      "jcd": "18",
+      "raceNo": 9,
+      "actualHead": 5,
+      "finalHead": 3,
+      "comparisonPath": "practicalSelection.targetDecisions[1].candidateDecisions",
+      "upstreamWinnerScore": 84,
+      "upstreamFinalScore": 84,
+      "upstreamGap": 0,
+      "upstreamWinnerAhead": false,
+      "upstreamTied": true,
+      "upstreamDuplicateReason": false,
+      "resolved": true,
+      "rankingArrayLength": 10,
+      "resolvedWinnerScore": 84,
+      "resolvedFinalScore": 84,
+      "resolvedGap": 0,
+      "winnerIndex": 9,
+      "finalIndex": 1,
+      "orderRelation": "final-earlier",
+      "winnerRole": "unclassified",
+      "finalRole": "unclassified",
+      "winnerSelectionState": {
+        "selected": false,
+        "rejected": false,
+        "duplicate": false
+      },
+      "finalSelectionState": {
+        "selected": false,
+        "rejected": false,
+        "duplicate": false
+      },
+      "winnerReasons": [],
+      "finalReasons": [],
+      "classification": "tie-final-earlier-order",
+      "signals": [
+        "priority-score-tied",
         "final-earlier",
         "same-role-class"
       ]
