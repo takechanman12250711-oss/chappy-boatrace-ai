@@ -20,6 +20,14 @@ on:
           - draft
           - publish
           - recover
+      recovery_source_path:
+        description: 'recover only: exact immutable data/note-drafts path including its SHA256'
+        required: false
+        type: string
+      recovery_url:
+        description: 'recover only: exact already-published great_robin3243 note URL'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -46,6 +54,8 @@ jobs:
     env:
       NOTE_UI_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'publish' }}
       NOTE_IPHONE_HANDOFF: data/note-publish/iphone.json
+      NOTE_RECOVERY_SOURCE_PATH: ${{ github.event_name == 'workflow_dispatch' && inputs.recovery_source_path || '' }}
+      NOTE_RECOVERY_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.recovery_url || '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -81,7 +91,7 @@ jobs:
           const { prepareTransport } = require('./scripts/note-github-ui-transport');
           (async () => {
             const mode = process.env.NOTE_UI_MODE;
-            const handoff = ['publish', 'recover'].includes(mode) ? require('./scripts/build-note-publish-handoff').buildLatestHandoff({ write: false }).payload : null;
+            const handoff = mode === 'publish' ? require('./scripts/build-note-publish-handoff').buildLatestHandoff({ write: false }).payload : null;
             const gate = await prepareTransport(mode, { handoff, env: process.env });
             if (['publish', 'recover'].includes(mode) && gate.ok) {
               const file = require('node:path').join(process.env.RUNNER_TEMP, 'note-publication.json');

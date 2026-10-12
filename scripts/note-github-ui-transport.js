@@ -565,27 +565,29 @@ function requireRecoveryPublicationGate(payload, recoveryEvidence, rootDir = pro
   return require('./note-publication-source').verifyPublicationSource(payload, rootDir, identity.sourceTime, { presentationVersion });
 }
 
-async function preparePublicationRecovery({ rootDir = process.cwd(), env = process.env, request = fetch, handoff } = {}) {
-  const latest = handoff || JSON.parse(fs.readFileSync(path.join(rootDir, 'data/note-publish/latest.json'), 'utf8'));
-  if (!Array.isArray(latest.candidates)) throw new Error('publication_candidates_invalid');
-  const skipped = [];
-  for (const candidate of latest.candidates) {
-    let payload;
-    try {
-      const identity = require('./note-recovery-presentation.cjs').recoveryIdentity(candidate.sourcePath, rootDir);
-      const gate = await recoveryClaimStatus(identity, env, request, rootDir);
-      if (gate.ok) {
-        payload = require('./note-publication-source').publicationPayload(identity.sourcePath, rootDir, identity.sourceTime,
-          { presentationVersion: gate.recoveryEvidence.presentationVersion });
-        requireRecoveryPublicationGate(payload, gate.recoveryEvidence, rootDir);
-        return { ok: true, payload, recoveryOnly: true, skipped };
-      }
-      skipped.push({ raceKey: identity.raceKey, articleSeries: identity.articleSeries, reason: gate.reason });
-    } catch (error) {
-      skipped.push({ raceKey: candidate.raceKey, articleSeries: candidate.articleSeries || 'normal', reason: error.message, issueCodes: error.issueCodes });
-    }
+function loadRecoveryTarget(env = process.env) {
+  const sourcePath = String(env.NOTE_RECOVERY_SOURCE_PATH || '').trim();
+  const url = String(env.NOTE_RECOVERY_URL || '').trim();
+  if (!sourcePath || !url) throw new Error('publication_recovery_target_required');
+  if (!/^data\/note-drafts\/(\d{8})\/\1-\d{2}-\d{1,2}-[a-f0-9]{64}\.json$/.test(sourcePath)) {
+    throw new Error('publication_recovery_source_invalid');
   }
-  return { ok: false, reason: 'no_claimed_publication_to_recover', skipped };
+  const match = /^https:\/\/note\.com\/great_robin3243\/n\/(n[a-f0-9]+)$/.exec(url);
+  if (!match) throw new Error('publication_recovery_url_invalid');
+  return Object.freeze({ sourcePath, url, noteId: match[1] });
+}
+
+async function preparePublicationRecovery({ rootDir = process.cwd(), env = process.env, request = fetch } = {}) {
+  // An explicit original and existing URL are required. Never scan the current
+  // day's candidates or fall through to an unrelated permanent claim.
+  const target = loadRecoveryTarget(env);
+  const identity = require('./note-recovery-presentation.cjs').recoveryIdentity(target.sourcePath, rootDir);
+  const gate = await recoveryClaimStatus(identity, env, request, rootDir);
+  if (!gate.ok) return gate;
+  const payload = require('./note-publication-source').publicationPayload(identity.sourcePath, rootDir, identity.sourceTime,
+    { presentationVersion: gate.recoveryEvidence.presentationVersion });
+  requireRecoveryPublicationGate(payload, gate.recoveryEvidence, rootDir);
+  return { ok: true, payload, recoveryOnly: true };
 }
 
 async function prepareTransport(mode, options = {}, handlers = {}) {
@@ -695,26 +697,32 @@ function recoveryBodyMatches(articleText, payload) {
   return require('./note-editor-content').compareEditorContent(articleText, articleBody(payload)).equal;
 }
 
-async function recoverClaimedPublication(page, payload, rootDir = process.cwd(), recoveryEvidence) {
+async function verifyRecoveredPublicPage(page, payload, target, publishedAt) {
+  const response = await page.goto(target.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  if (!response?.ok() || page.url() !== target.url) throw new Error('publication_public_page_unavailable');
+  await page.getByRole('heading', { name: payload.title, exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+  await page.getByRole('heading', { name: 'ここから先は', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+  await page.getByRole('button', { name: `¥${EXPECTED_PRICE_YEN}`, exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+  const body = page.locator('.note-common-styles__textnote-body');
+  if (await body.count() !== 1) throw new Error('publication_recovery_free_body_layout_unverified');
+  if (!require('./note-editor-content').compareEditorContent(await body.innerText(), payload.freeText).equal) {
+    throw new Error('publication_recovery_free_body_mismatch');
+  }
+  const dates = await page.locator('time[datetime]').evaluateAll(elements => elements.map(el => el.getAttribute('datetime')));
+  if (dates.length !== 1 || Date.parse(dates[0]) !== Date.parse(publishedAt)) {
+    throw new Error('publication_recovery_public_timestamp_mismatch');
+  }
+}
+
+async function recoverClaimedPublication(page, payload, rootDir = process.cwd(), recoveryEvidence, target) {
   const sourceTime = recoverySourceTime(payload.sourcePath, rootDir);
   requireRecoveryPublicationGate(payload, recoveryEvidence, rootDir);
+  const selected = loadRecoveryTarget({ NOTE_RECOVERY_SOURCE_PATH: target?.sourcePath, NOTE_RECOVERY_URL: target?.url });
+  if (selected.sourcePath !== payload.sourcePath) throw new Error('publication_recovery_target_mismatch');
   const publishedDisplayProof = require('./note-publication-source').parsePublishedDisplayProof(payload);
-  const response = await page.goto('https://note.com/great_robin3243', { waitUntil: 'domcontentloaded', timeout: 60000 });
-  if (!response?.ok()) throw new Error('publication_recovery_listing_unavailable');
-  const articles = page.getByRole('link', { name: payload.title, exact: true });
-  await articles.first().waitFor({ state: 'visible', timeout: 30000 });
-  const article = articles.filter({ visible: true });
-  const visibleCount = await article.count();
-  console.log(`NOTE_UI_RECOVERY_LINKS=${await articles.count()}/${visibleCount}`);
-  if (visibleCount !== 1) throw new Error('publication_recovery_title_not_unique');
-  const href = await article.getAttribute('href');
-  if (!href) throw new Error('publication_recovery_url_invalid');
-  const target = new URL(href, page.url()).href;
-  const noteId = target.match(/\/n\/(n[a-f0-9]+)\/?$/)?.[1];
-  const url = publicArticleUrl(target, noteId);
-  if (!url) throw new Error('publication_recovery_url_invalid');
+  const url = selected.url;
   const articleResponse = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-  if (!articleResponse?.ok() || !publicArticleUrl(page.url(), noteId)) throw new Error('publication_public_page_unavailable');
+  if (!articleResponse?.ok() || page.url() !== url) throw new Error('publication_public_page_unavailable');
   await page.getByRole('heading', { name: payload.title, exact: true }).waitFor({ state: 'visible', timeout: 15000 });
   const body = page.locator('.note-common-styles__textnote-body');
   if (await body.count() !== 1) throw Error('publication_recovery_body_layout_unverified');
@@ -728,9 +736,15 @@ async function recoverClaimedPublication(page, payload, rootDir = process.cwd(),
   }
   const dates = await page.locator('time[datetime]').evaluateAll(elements => elements.map(el => el.getAttribute('datetime')));
   const deadline = Date.parse(payload.deadlineAt);
-  const publishedAt = dates.find(value => Number.isFinite(Date.parse(value)) &&
-    Date.parse(value) >= sourceTime && Date.parse(value) < deadline);
+  const publishedAt = dates.length === 1 && dates.find(value => Number.isFinite(Date.parse(value)) &&
+    Date.parse(value) >= sourceTime && Date.parse(value) < deadline && Date.parse(value) <= Date.now());
   if (!publishedAt) throw new Error('publication_timestamp_unverified_review_required');
+  // Reading the owner's full body proves the saved paid text; a separate fresh
+  // context must also prove the anonymous free boundary, price and same date.
+  const verification = await page.context().browser().newContext();
+  try {
+    await verifyRecoveredPublicPage(await verification.newPage(), payload, selected, publishedAt);
+  } finally { await verification.close(); }
   const receipt = { version: 'note-publication-receipt-v1', raceKey: payload.raceKey, url,
     articleSeries: payload.articleSeries, publicationKey: payload.publicationKey,
     publishedAt, verifiedAt: new Date().toISOString(), price: EXPECTED_PRICE_YEN,
@@ -767,6 +781,7 @@ async function run({ env = process.env } = {}) {
   if (mode !== 'recover' && String(env.NOTE_UI_RECOVERY_ONLY || '').trim() === 'true') {
     throw new Error('explicit_recovery_mode_required');
   }
+  const recoveryTarget = recoveryOnly ? loadRecoveryTarget(env) : null;
 
   // Invalid/missing credentials and stale handoffs must stop before browser setup.
   const browserUse = loadBrowserUseConfig(env);
@@ -777,6 +792,7 @@ async function run({ env = process.env } = {}) {
   if (recoveryOnly) {
     // A serialized handoff cannot carry trust across processes. Re-read the
     // original claim and immutable code/source before opening any browser.
+    if (draft.payload.sourcePath !== recoveryTarget.sourcePath) throw new Error('publication_recovery_target_mismatch');
     const gate = await recoveryClaimStatus(draft.payload, env);
     if (!gate.ok) throw Error(gate.reason);
     recoveryEvidence = gate.recoveryEvidence;
@@ -809,7 +825,7 @@ async function run({ env = process.env } = {}) {
       const context = browser.contexts()[0];
       if (!context) throw new Error('browser_use_context_missing');
       const page = context.pages()[0] || await context.newPage();
-      const receipt = await recoverClaimedPublication(page, draft.payload, process.cwd(), recoveryEvidence);
+      const receipt = await recoverClaimedPublication(page, draft.payload, process.cwd(), recoveryEvidence, recoveryTarget);
       await savePublicationReceipt(draft.payload, receipt, env);
       console.log(`NOTE_UI_PUBLICATION=${JSON.stringify(receipt)}`);
       console.log('NOTE_UI_PUBLISH_CLICKED=false');
@@ -906,6 +922,8 @@ module.exports = {
   recoverySourceTime,
   recoveryClaimStatus,
   requireRecoveryPublicationGate,
+  loadRecoveryTarget,
+  verifyRecoveredPublicPage,
   preparePublicationRecovery,
   prepareTransport,
   findPublishedArticleInList,

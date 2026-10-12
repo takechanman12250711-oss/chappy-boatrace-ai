@@ -240,13 +240,24 @@ async function main() {
   };
   const recoveryMock = require('./note-recovery-test-fixture.cjs').requestFixture(payload, { rootDir: root });
   const recoveryGate = await require('./note-github-ui-transport').recoveryClaimStatus(payload, env, recoveryMock.request, root);
-  const claimedReceipt = await recoverClaimedPublication(recoveryPage, payload, root, recoveryGate.recoveryEvidence);
-  assert.equal(claimedReceipt.url, publicUrl);
+  const target = { sourcePath, url: 'https://note.com/great_robin3243/n/n123abc' };
+  const anonymousRecovery = {
+    goto: async url => { assert.equal(url, target.url); return { ok: () => true }; }, url: () => target.url,
+    getByRole: () => ({ waitFor: async () => {} }),
+    locator: selector => selector === '.note-common-styles__textnote-body'
+      ? { count: async () => 1, innerText: async () => payload.freeText }
+      : { evaluateAll: async () => [new Date(clock).toISOString()] }
+  };
+  recoveryPage.context = () => ({ browser: () => ({ newContext: async () => ({
+    newPage: async () => anonymousRecovery, close: async () => { closed++; }
+  }) }) });
+  const claimedReceipt = await recoverClaimedPublication(recoveryPage, payload, root, recoveryGate.recoveryEvidence, target);
+  assert.equal(claimedReceipt.url, target.url);
   assert.equal(claimedReceipt.sourceSha256, hash);
   assert.deepEqual(claimedReceipt.publishedDisplayProof, displayProof);
   assert.equal(JSON.stringify(claimedReceipt).includes('1-2-3'), false);
   recoveryBody = recoveryBody.replace('3 → 4 → 5', '3 → 4 → 6');
-  await assert.rejects(recoverClaimedPublication(recoveryPage, payload, root, recoveryGate.recoveryEvidence), /recovery_body_mismatch/);
+  await assert.rejects(recoverClaimedPublication(recoveryPage, payload, root, recoveryGate.recoveryEvidence, target), /recovery_body_mismatch/);
   assert.equal(fs.readFileSync(path.join(root, sourcePath), 'utf8'), bytes, 'source remains immutable');
   console.log('note publication source, claim and final-click tests passed');
 }
