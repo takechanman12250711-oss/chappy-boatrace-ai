@@ -371,6 +371,8 @@ test('targeted recovery rejects owner preview, late/future/ambiguous time and ch
 
 test('workflow keeps recovery inputs out of shell interpolation and never rebuilds current handoff for recover', () => {
   const yaml = fs.readFileSync(path.join(__dirname, '../.github/workflows/note-github-ui-transport.yml'), 'utf8');
+  const sparsePaths = yaml.match(/          sparse-checkout: \|\n((?: {12}[^\n]+\n)+)/)?.[1].trim().split('\n').map(line => line.trim());
+  assert.ok(sparsePaths?.includes('.github/workflows'), 'transport checkout must include its workflow contract test input');
   assert.match(yaml, /recovery_source_path:\n[\s\S]*recovery_url:/);
   assert.match(yaml, /NOTE_RECOVERY_SOURCE_PATH: \$\{\{ github.event_name == 'workflow_dispatch' && inputs.recovery_source_path \|\| '' \}\}/);
   assert.match(yaml, /NOTE_RECOVERY_URL: \$\{\{ github.event_name == 'workflow_dispatch' && inputs.recovery_url \|\| '' \}\}/);
