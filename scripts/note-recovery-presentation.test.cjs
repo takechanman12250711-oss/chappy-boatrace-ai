@@ -9,7 +9,7 @@ const { fixture } = require('./note-independent-monitor-fixture');
 const { publicationPayload, parsePublishedDisplayProof } = require('./note-publication-source');
 const { recoveryIdentity } = require('./note-recovery-presentation.cjs');
 const { recoveryClaimStatus, requireRecoveryPublicationGate, requirePublicationGate,
-  preparePublicationRecovery, recoverClaimedPublication } = require('./note-github-ui-transport');
+  preparePublicationRecovery, recoverClaimedPublication, loadRecoveryTarget, verifyRecoveredPublicPage } = require('./note-github-ui-transport');
 const { requestFixture, response, blobSha } = require('./note-recovery-test-fixture.cjs');
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const env = { GITHUB_REPOSITORY: 'takechanman12250711-oss/chappy-boatrace-ai', GITHUB_SHA: 'a'.repeat(40), NOTE_CLAIM_TOKEN: 'synthetic-test' };
@@ -37,6 +37,9 @@ function original(normal = false) {
   return { bundle, bytes, sourcePath, rootDir, identity: recoveryIdentity(sourcePath, rootDir),
     cleanup: () => fs.rmSync(rootDir, { recursive: true, force: true }) };
 }
+const recoveryUrl = 'https://note.com/great_robin3243/n/n123abc';
+const target = payload => ({ sourcePath: payload.sourcePath, url: recoveryUrl });
+const targetedEnv = sourcePath => ({ ...env, NOTE_RECOVERY_SOURCE_PATH: sourcePath, NOTE_RECOVERY_URL: recoveryUrl });
 function publicPage(payload, override) {
   const url = 'https://note.com/great_robin3243/n/n123abc', visited = [];
   const article = { first: () => ({ waitFor: async () => {} }), filter: () => article,
@@ -48,7 +51,20 @@ function publicPage(payload, override) {
       : selector === '.note-common-styles__textnote-body' ? { count: async () => 1,
         innerText: async () => (override ?? `${payload.freeText}\n\n${payload.paidText}`).replace(/\n¥200$/, '') }
       : { evaluateAll: async () => ['2026-09-28T16:02:00+09:00'] } };
-  return { page, visited };
+  const anonymousVisited = [], anonymousChecks = [];
+  let anonymousCurrent, closed = 0;
+  const anonymous = {
+    goto: async address => { anonymousCurrent = address; anonymousVisited.push(address); return { ok: () => true }; },
+    url: () => anonymousCurrent,
+    getByRole: (role, options) => ({ waitFor: async () => { anonymousChecks.push([role, options]); } }),
+    locator: selector => selector === '.note-common-styles__textnote-body'
+      ? { count: async () => 1, innerText: async () => payload.freeText }
+      : { evaluateAll: async () => ['2026-09-28T16:02:00+09:00'] }
+  };
+  page.context = () => ({ browser: () => ({ newContext: async () => ({
+    newPage: async () => anonymous, close: async () => { closed++; }
+  }) }) });
+  return { page, visited, anonymous, anonymousVisited, anonymousChecks, closed: () => closed };
 }
 async function pinned(f, version, options = {}) {
   const mock = requestFixture(f.identity, { version, rootDir: f.rootDir, ...options });
@@ -76,12 +92,14 @@ test('historical v1/v2 recovery pins exact old body and proof; new publication u
         assert.notEqual(p.payload.freeText, require('./note-readable-article').readableArticle(f.bundle.article, f.bundle,
           { presentationVersion: 'readable-v1' }).freeText, 'later v1 free introduction is not the published original');
       }
-      const ui = publicPage(p.payload), receipt = await recoverClaimedPublication(ui.page, p.payload, f.rootDir, p.recoveryEvidence);
+      const ui = publicPage(p.payload), receipt = await recoverClaimedPublication(ui.page, p.payload, f.rootDir, p.recoveryEvidence, target(p.payload));
       assert.deepEqual(receipt.publishedDisplayProof, parsePublishedDisplayProof(p.payload));
       assert.equal(receipt.sourceSha256, hash(f.bytes));
       assert.ok(!Object.hasOwn(receipt, 'paidText'));
       assert.ok(!/[1-6]-[1-6]-[1-6]/.test(JSON.stringify(receipt.publishedDisplayProof)));
-      assert.deepEqual(ui.visited, ['https://note.com/great_robin3243', receipt.url]);
+      assert.deepEqual(ui.visited, [receipt.url]);
+      assert.deepEqual(ui.anonymousVisited, [receipt.url]);
+      assert.equal(ui.closed(), 1);
       assert.equal(fs.readFileSync(path.join(f.rootDir, f.sourcePath), 'utf8'), before);
       if (version !== 'readable-v4') assert.throws(() => requirePublicationGate(p.payload, f.rootDir, f.identity.sourceTime), /handoff_mismatch/);
       else assert.deepEqual(requirePublicationGate(p.payload, f.rootDir, f.identity.sourceTime), p.payload);
@@ -94,7 +112,7 @@ test('prepare recovery ignores untrusted version fields and preserves original v
   const f = original();
   try {
     const mock = requestFixture(f.identity, { version: 'readable-v2', rootDir: f.rootDir });
-    const result = await preparePublicationRecovery({ rootDir: f.rootDir, env, request: mock.request,
+    const result = await preparePublicationRecovery({ rootDir: f.rootDir, env: targetedEnv(f.sourcePath), request: mock.request,
       handoff: { candidates: [{ ...f.identity, presentationVersion: 'readable-v3', sourceCommit: 'd'.repeat(40) }] } });
     assert.equal(result.ok, true); assert.equal(result.recoveryOnly, true);
     assert.equal(result.payload.presentationVersion, 'readable-v2');
@@ -178,7 +196,7 @@ test('recovery tokens cannot be forged, serialized, rebound or used to alter the
     assert.throws(() => requireRecoveryPublicationGate({ ...p.payload, presentationVersion: 'readable-v3' }, p.recoveryEvidence, f.rootDir), /handoff_mismatch/);
     assert.throws(() => requireRecoveryPublicationGate({ ...p.payload, freeText: p.payload.freeText + '\nchanged' }, p.recoveryEvidence, f.rootDir), /handoff_mismatch/);
     const wrong = publicPage(p.payload, `${p.payload.freeText}\n\n${p.payload.paidText.replace('1 → 2 → 3・4', '1 → 3 → 2・4')}\n¥200`);
-    await assert.rejects(recoverClaimedPublication(wrong.page, p.payload, f.rootDir, p.recoveryEvidence), /recovery_body_mismatch/);
+    await assert.rejects(recoverClaimedPublication(wrong.page, p.payload, f.rootDir, p.recoveryEvidence, target(p.payload)), /recovery_body_mismatch/);
     const unverified = publicPage(p.payload);
     await assert.rejects(recoverClaimedPublication(unverified.page, p.payload, f.rootDir), /evidence_unverified/);
     assert.deepEqual(unverified.visited, [], 'missing claim proof stops before browser navigation');
@@ -194,7 +212,7 @@ test('normal historical recovery preserves its verified navigation and old prese
       assert.ok(p.payload.freeText.includes('はじめての方へ\nhttps://note.com/great_robin3243/n/'));
       assert.ok(!p.payload.freeText.includes('コロがし検証'));
       assert.ok(!p.payload.paidText.includes('コロがし検証'));
-      const ui = publicPage(p.payload), receipt = await recoverClaimedPublication(ui.page, p.payload, f.rootDir, p.recoveryEvidence);
+      const ui = publicPage(p.payload), receipt = await recoverClaimedPublication(ui.page, p.payload, f.rootDir, p.recoveryEvidence, target(p.payload));
       assert.equal(receipt.publishedDisplayProof.presentationVersion, version);
     }
   } finally { f.cleanup(); }
@@ -213,7 +231,7 @@ test('historical body check rejects appended v3, extra ticket text, changed whit
       body.replace('1 → 2 → 3・4', '1→2→3・4') + '\n¥200',
       `${p.payload.freeText}\n未知の境界テキスト\n${p.payload.paidText}\n¥200`]) {
       assert.equal(recoveryBodyMatches(text.replace(/\n¥200$/, ''), p.payload), false);
-      await assert.rejects(recoverClaimedPublication(publicPage(p.payload, text).page, p.payload, f.rootDir, p.recoveryEvidence), /recovery_body_mismatch/);
+      await assert.rejects(recoverClaimedPublication(publicPage(p.payload, text).page, p.payload, f.rootDir, p.recoveryEvidence, target(p.payload)), /recovery_body_mismatch/);
     }
     assert.equal(recoveryBodyMatches(body.replaceAll('\n', '\r\n\r\n'), p.payload), true);
   } finally { f.cleanup(); }
@@ -229,7 +247,7 @@ test('serialized handoff must reacquire claim evidence before historical recover
     const gate = await recoveryClaimStatus(handoff, env, fetchedAgain.request, f.rootDir);
     assert.ok(fetchedAgain.calls.some(url => url.includes('/git/ref/tags/note-draft-claim/')));
     assert.deepEqual(requireRecoveryPublicationGate(handoff, gate.recoveryEvidence, f.rootDir), handoff);
-    const receipt = await recoverClaimedPublication(publicPage(handoff).page, handoff, f.rootDir, gate.recoveryEvidence);
+    const receipt = await recoverClaimedPublication(publicPage(handoff).page, handoff, f.rootDir, gate.recoveryEvidence, target(handoff));
     assert.equal(receipt.publishedDisplayProof.presentationVersion, 'readable-v2');
   } finally { f.cleanup(); }
 });
@@ -241,7 +259,124 @@ test('missing or ambiguous paid-body element blocks recovery instead of trusting
     for (const count of [0, 2]) {
       const ui = publicPage(p.payload), locator = ui.page.locator;
       ui.page.locator = selector => selector === '.note-common-styles__textnote-body' ? { count: async () => count } : locator(selector);
-      await assert.rejects(recoverClaimedPublication(ui.page, p.payload, f.rootDir, p.recoveryEvidence), /body_layout_unverified/);
+      await assert.rejects(recoverClaimedPublication(ui.page, p.payload, f.rootDir, p.recoveryEvidence, target(p.payload)), /body_layout_unverified/);
     }
   } finally { f.cleanup(); }
+});
+
+test('recovery requires a single strict original path and owner URL before any lookup', async () => {
+  let calls = 0;
+  const request = async () => { calls++; throw Error('must not request'); };
+  const sourcePath = `data/note-drafts/20261012/20261012-12-12-${'a'.repeat(64)}.json`;
+  for (const overrides of [{}, { NOTE_RECOVERY_SOURCE_PATH: sourcePath }, { NOTE_RECOVERY_URL: recoveryUrl },
+    { NOTE_RECOVERY_SOURCE_PATH: '../' + sourcePath, NOTE_RECOVERY_URL: recoveryUrl },
+    { NOTE_RECOVERY_SOURCE_PATH: sourcePath.replace('/20261012/', '/20261013/'), NOTE_RECOVERY_URL: recoveryUrl },
+    ...['https://note.com/other/n/n123abc', recoveryUrl + '?preview=true', recoveryUrl + '#fragment',
+      recoveryUrl + '/', recoveryUrl.replace('https:', 'http:'), recoveryUrl.replace('note.com', 'note.com.evil.test'),
+      recoveryUrl.replace('note.com', 'user@note.com')].map(NOTE_RECOVERY_URL => ({ NOTE_RECOVERY_SOURCE_PATH: sourcePath, NOTE_RECOVERY_URL }))]) {
+    await assert.rejects(preparePublicationRecovery({ env: { ...env, ...overrides }, request }), /publication_recovery_(target_required|source_invalid|url_invalid)/);
+  }
+  assert.equal(calls, 0);
+  assert.deepEqual(loadRecoveryTarget(targetedEnv(sourcePath)), { sourcePath, url: recoveryUrl, noteId: 'n123abc' });
+  const { run } = require('./note-github-ui-transport');
+  await assert.rejects(run({ env: { NOTE_UI_MODE: 'recover' } }), /publication_recovery_target_required/);
+});
+
+test('targeted recovery ignores a tempting other claim and works without latest handoff', async () => {
+  const f = original();
+  try {
+    const mock = requestFixture(f.identity, { version: 'readable-v4', rootDir: f.rootDir });
+    const result = await preparePublicationRecovery({ rootDir: f.rootDir, env: targetedEnv(f.sourcePath), request: mock.request,
+      handoff: { candidates: [{ sourcePath: 'unrelated-source', raceKey: '20261012-14-1' }] } });
+    assert.equal(result.ok, true);
+    assert.equal(result.payload.sourcePath, f.sourcePath);
+    assert.equal(result.payload.sourceSha256, hash(f.bytes));
+    assert.ok(!fs.existsSync(path.join(f.rootDir, 'data/note-publish/latest.json')));
+    const exists = await preparePublicationRecovery({ rootDir: f.rootDir, env: targetedEnv(f.sourcePath), request: async url =>
+      response({}, url.includes('/note-published/') ? 200 : 404) });
+    assert.deepEqual(exists, { ok: false, reason: 'publication_receipt_exists' });
+  } finally { f.cleanup(); }
+});
+
+test('target/source mismatch stops before navigation and never falls back to title search', async () => {
+  const f = original();
+  try {
+    const p = await pinned(f, 'readable-v4');
+    for (const selected of [undefined, { ...target(p.payload), sourcePath: f.sourcePath.replace(/-[a-f0-9]{64}\.json$/, '-' + '0'.repeat(64) + '.json') }]) {
+      const ui = publicPage(p.payload);
+      await assert.rejects(recoverClaimedPublication(ui.page, p.payload, f.rootDir, p.recoveryEvidence, selected), /publication_recovery_target_(required|mismatch)/);
+      assert.deepEqual(ui.visited, []);
+    }
+  } finally { f.cleanup(); }
+});
+
+test('anonymous confirmation must match original free body, exact price, boundary, identity and date', async () => {
+  const f = original();
+  try {
+    const p = await pinned(f, 'readable-v4');
+    const publishedAt = '2026-09-28T16:02:00+09:00';
+    const ok = publicPage(p.payload);
+    await verifyRecoveredPublicPage(ok.anonymous, p.payload, target(p.payload), publishedAt);
+    assert.deepEqual(ok.anonymousChecks, [
+      ['heading', { name: p.payload.title, exact: true }], ['heading', { name: 'ここから先は', exact: true }],
+      ['button', { name: '¥200', exact: true }]
+    ]);
+    for (const scenario of ['redirect', 'http-error', 'price-missing', 'boundary-missing', 'heading-missing',
+      'free-added', 'free-omitted', 'paid-leaked', 'body-missing', 'body-ambiguous', 'date-mismatch', 'date-duplicate']) {
+      const ui = publicPage(p.payload), anon = ui.anonymous, locator = anon.locator;
+      if (scenario === 'redirect') anon.url = () => recoveryUrl + '?preview=true';
+      if (scenario === 'http-error') anon.goto = async () => ({ ok: () => false });
+      anon.getByRole = (role, options) => ({ waitFor: async () => {
+        if ((scenario === 'price-missing' && role === 'button') ||
+          (scenario === 'boundary-missing' && options.name === 'ここから先は') ||
+          (scenario === 'heading-missing' && options.name === p.payload.title)) throw Error('visible_timeout');
+      } });
+      anon.locator = selector => {
+        if (selector === '.note-common-styles__textnote-body') return {
+          count: async () => scenario === 'body-missing' ? 0 : scenario === 'body-ambiguous' ? 2 : 1,
+          innerText: async () => scenario === 'free-added' ? p.payload.freeText + '\nunknown' :
+            scenario === 'free-omitted' ? p.payload.freeText.split('\n').slice(1).join('\n') :
+            scenario === 'paid-leaked' ? `${p.payload.freeText}\n${p.payload.paidText}` : p.payload.freeText
+        };
+        if (selector === 'time[datetime]') return { evaluateAll: async () => scenario === 'date-mismatch' ? ['2026-09-28T16:03:00+09:00'] :
+          scenario === 'date-duplicate' ? [publishedAt, publishedAt] : [publishedAt] };
+        return locator(selector);
+      };
+      await assert.rejects(recoverClaimedPublication(ui.page, p.payload, f.rootDir, p.recoveryEvidence, target(p.payload)),
+        /publication_public_page_unavailable|visible_timeout|publication_recovery_(free_body|public_timestamp)/, scenario);
+      assert.equal(ui.closed(), 1, scenario + ' closes anonymous context and produces no receipt');
+    }
+  } finally { f.cleanup(); }
+});
+
+test('targeted recovery rejects owner preview, late/future/ambiguous time and changed paid body', async () => {
+  const f = original();
+  try {
+    const p = await pinned(f, 'readable-v4');
+    for (const scenario of ['preview', 'late', 'future', 'duplicate', 'body-changed']) {
+      const ui = publicPage(p.payload), locator = ui.page.locator;
+      if (scenario === 'preview') ui.page.url = () => recoveryUrl + '?preview=true';
+      ui.page.locator = selector => {
+        if (selector === 'time[datetime]') return { evaluateAll: async () => scenario === 'late' ? [p.payload.deadlineAt] :
+          scenario === 'future' ? ['2099-01-01T00:00:00Z'] : scenario === 'duplicate' ? ['2026-09-28T16:02:00+09:00', '2026-09-28T16:02:00+09:00'] : ['2026-09-28T16:02:00+09:00'] };
+        if (selector === '.note-common-styles__textnote-body' && scenario === 'body-changed') return { count: async () => 1, innerText: async () => `${p.payload.freeText}\nchanged` };
+        return locator(selector);
+      };
+      await assert.rejects(recoverClaimedPublication(ui.page, p.payload, f.rootDir, p.recoveryEvidence, target(p.payload)),
+        /publication_public_page_unavailable|publication_timestamp_unverified|publication_recovery_body_mismatch/);
+      assert.deepEqual(ui.anonymousVisited, []);
+    }
+  } finally { f.cleanup(); }
+});
+
+test('workflow keeps recovery inputs out of shell interpolation and never rebuilds current handoff for recover', () => {
+  const yaml = fs.readFileSync(path.join(__dirname, '../.github/workflows/note-github-ui-transport.yml'), 'utf8');
+  assert.match(yaml, /recovery_source_path:\n[\s\S]*recovery_url:/);
+  assert.match(yaml, /NOTE_RECOVERY_SOURCE_PATH: \$\{\{ github.event_name == 'workflow_dispatch' && inputs.recovery_source_path \|\| '' \}\}/);
+  assert.match(yaml, /NOTE_RECOVERY_URL: \$\{\{ github.event_name == 'workflow_dispatch' && inputs.recovery_url \|\| '' \}\}/);
+  assert.match(yaml, /const handoff = mode === 'publish' \?/);
+  assert.doesNotMatch(yaml, /\['publish', 'recover'\]\.includes\(mode\) \? require/);
+  const shell = yaml.slice(yaml.indexOf('    steps:'));
+  assert.doesNotMatch(shell, /\$\{\{[^}]*inputs\.recovery_/);
+  assert.match(yaml, /group: note-ui-transport/);
 });
