@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "version": "local-water-priority-selection-consistency-audit-v1",
-  "generatedAt": "2026-10-11T11:53:19.754Z",
+  "generatedAt": "2026-10-12T01:35:13.455Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
   "methodology": "当地・水面の同一確定コホートで、実5・6号艇勝ちが同じ保存済み候補配列内で最終頭以上のpriorityScoreを持ちながら未選択だった例だけを対象に、締切前保存済みの選択フラグ・除外理由・配列順・役割・重複信号を監査する。",
   "sourceVersion": "local-water-outer-head-priority-score-audit-v1",
-  "sourceGeneratedAt": "2026-10-11T11:25:24.525Z",
+  "sourceGeneratedAt": "2026-10-12T00:46:32.182Z",
   "sourceNextStep": "audit-local-water-priority-selection-consistency",
   "applicable": true,
   "fixedDecisionRules": {
@@ -20,40 +20,40 @@
     "explicitRejectionCountForContractAudit": 5
   },
   "metrics": {
-    "sourceComparableCount": 125,
-    "targetCount": 35,
-    "predictionMatchedCount": 35,
-    "resolvedPairCount": 35,
+    "sourceComparableCount": 126,
+    "targetCount": 36,
+    "predictionMatchedCount": 36,
+    "resolvedPairCount": 36,
     "strictInversionCount": 6,
-    "tiedCount": 29,
+    "tiedCount": 30,
     "explicitWinnerRejectionCount": 0,
     "explicitWinnerSelectedCount": 0,
     "explicitFinalSelectedCount": 0,
-    "duplicateSignalCount": 14,
-    "tieFinalEarlierCount": 29,
+    "duplicateSignalCount": 15,
+    "tieFinalEarlierCount": 30,
     "tieWinnerEarlierCount": 0,
     "tieSameIndexCount": 0,
     "winnerRoleLowerPriorityCount": 0,
     "resolvedPairCoverageRate": 100,
-    "strictInversionRate": 17.1,
-    "tiedRate": 82.9,
-    "duplicateSignalShare": 40,
+    "strictInversionRate": 16.7,
+    "tiedRate": 83.3,
+    "duplicateSignalShare": 41.7,
     "tieFinalEarlierShare": 100,
     "winnerRoleLowerPriorityShare": 0
   },
   "classifications": {
-    "tie-final-earlier-order": 29,
+    "tie-final-earlier-order": 30,
     "winner-ahead-selector-inversion": 6
   },
   "signalCounts": {
-    "final-earlier": 35,
-    "same-role-class": 35,
-    "priority-score-tied": 29,
-    "duplicate-overlap": 14,
+    "final-earlier": 36,
+    "same-role-class": 36,
+    "priority-score-tied": 30,
+    "duplicate-overlap": 15,
     "winner-score-ahead": 6
   },
   "comparisonPathCounts": {
-    "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches": 14,
+    "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches": 15,
     "practicalSelection.targetDecisions[0].candidateDecisions": 8,
     "practicalSelection.targetDecisions[1].candidateDecisions": 6,
     "practicalSelection.targetDecisions[2].candidateDecisions": 3,
@@ -1600,6 +1600,53 @@
       "classification": "tie-final-earlier-order",
       "signals": [
         "priority-score-tied",
+        "final-earlier",
+        "same-role-class"
+      ]
+    },
+    {
+      "date": "20261011",
+      "jcd": "19",
+      "raceNo": 9,
+      "actualHead": 6,
+      "finalHead": 1,
+      "comparisonPath": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+      "upstreamWinnerScore": 89,
+      "upstreamFinalScore": 89,
+      "upstreamGap": 0,
+      "upstreamWinnerAhead": false,
+      "upstreamTied": true,
+      "upstreamDuplicateReason": true,
+      "resolved": true,
+      "rankingArrayLength": 202,
+      "resolvedWinnerScore": 89,
+      "resolvedFinalScore": 89,
+      "resolvedGap": 0,
+      "winnerIndex": 98,
+      "finalIndex": 1,
+      "orderRelation": "final-earlier",
+      "winnerRole": "unclassified",
+      "finalRole": "unclassified",
+      "winnerSelectionState": {
+        "selected": false,
+        "rejected": false,
+        "duplicate": true
+      },
+      "finalSelectionState": {
+        "selected": false,
+        "rejected": false,
+        "duplicate": true
+      },
+      "winnerReasons": [
+        "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhold・89点・実1コースからの内残り / 既存フォーメーションに同一買い目あり"
+      ],
+      "finalReasons": [
+        "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhead・89点・最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 既存フォーメーションに同一買い目あり"
+      ],
+      "classification": "tie-final-earlier-order",
+      "signals": [
+        "priority-score-tied",
+        "duplicate-overlap",
         "final-earlier",
         "same-role-class"
       ]
