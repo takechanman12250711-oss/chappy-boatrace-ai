@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "analysisId": "playful-link-position-forward-v1",
-  "generatedAt": "2026-10-12T02:55:58.486Z",
+  "generatedAt": "2026-10-12T03:53:58.690Z",
   "productionChanged": false,
   "automaticApplication": false,
   "preregistration": {
@@ -24,48 +24,48 @@
     "rookieInferenceEnabled": false
   },
   "diagnostics": {
-    "canonicalPredictionCount": 3410,
-    "preDeadlinePredictionCount": 3395,
+    "canonicalPredictionCount": 3427,
+    "preDeadlinePredictionCount": 3412,
     "excludedPredictionCount": 15,
     "excludedReasons": {
       "captured-at-or-after-deadline": 6,
       "source-fetched-at-or-after-deadline": 2,
       "timestamp-missing": 7
     },
-    "officialResultCount": 3337,
-    "settledJoinCount": 3337,
+    "officialResultCount": 3359,
+    "settledJoinCount": 3359,
     "deduplication": "predictions-preferred-over-verificationPredictions",
     "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json",
     "beforeRegistration": 2569,
     "missingBase": 0,
-    "noAddedLinkCandidate": 735,
-    "eligibleForwardRows": 33
+    "noAddedLinkCandidate": 756,
+    "eligibleForwardRows": 34
   },
   "baseline": {
-    "races": 33,
-    "tickets": 268,
+    "races": 34,
+    "tickets": 275,
     "hits": 10,
-    "hitRate": 30.3,
-    "stakeYen": 26800,
+    "hitRate": 29.41,
+    "stakeYen": 27500,
     "returnYen": 20180,
-    "profitYen": -6620,
-    "roi": 75.3
+    "profitYen": -7320,
+    "roi": 73.38
   },
   "candidate": {
-    "races": 33,
-    "tickets": 364,
+    "races": 34,
+    "tickets": 374,
     "hits": 12,
-    "hitRate": 36.36,
-    "stakeYen": 36400,
+    "hitRate": 35.29,
+    "stakeYen": 37400,
     "returnYen": 23270,
-    "profitYen": -13130,
-    "roi": 63.93
+    "profitYen": -14130,
+    "roi": 62.22
   },
   "delta": {
     "hits": 2,
-    "hitRatePoint": 6.06,
-    "profitYen": -6510,
-    "roiPoint": -11.37,
+    "hitRatePoint": 5.88,
+    "profitYen": -6810,
+    "roiPoint": -11.16,
     "newHits": 2
   },
   "rows": [
@@ -1256,6 +1256,40 @@
       ],
       "actual": "1-6-5",
       "payout": 11070,
+      "baseHit": false,
+      "candidateHit": false
+    },
+    {
+      "raceKey": "20261012-23-6",
+      "selectedAt": "2026-10-12T01:48:53.958Z",
+      "base": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-4-3",
+        "2-1-4",
+        "2-1-5"
+      ],
+      "candidate": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-4-3",
+        "2-1-4",
+        "2-1-5",
+        "2-4-5",
+        "2-4-1",
+        "2-4-6"
+      ],
+      "added": [
+        "2-4-5",
+        "2-4-1",
+        "2-4-6"
+      ],
+      "actual": "3-2-6",
+      "payout": 5250,
       "baseHit": false,
       "candidateHit": false
     }
