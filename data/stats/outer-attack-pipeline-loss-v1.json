@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
   "analysisId": "outer-attack-pipeline-loss-v1",
-  "generatedAt": "2026-10-13T03:23:26.117Z",
+  "generatedAt": "2026-10-13T03:30:38.115Z",
   "productionChanged": false,
   "automaticApplication": false,
-  "signalRaceCount": 70,
+  "signalRaceCount": 71,
   "stageCounts": {
     "archive-missed": 18,
     "not-comparable": 17,
     "settled": 34,
-    "archived-unsettled": 1
+    "archived-unsettled": 2
   },
   "notComparableVariantStatus": {
     "cover:no-category-candidate": 13,
@@ -3106,6 +3106,63 @@
             "status": "signal-not-active",
             "candidateCount": 0,
             "sourceTicketPresent": true,
+            "replacement": null
+          }
+        ]
+      ]
+    },
+    {
+      "raceKey": "20261013-22-3",
+      "selectedAt": "2026-10-13T03:08:33.524Z",
+      "signalGate": "active",
+      "stage": "archived-unsettled",
+      "archiveCount": 1,
+      "exclusionStatus": "",
+      "variantDiagnostics": [
+        [
+          {
+            "variant": "cover",
+            "status": "ready",
+            "candidateCount": 3,
+            "sourceTicketPresent": true,
+            "replacement": {
+              "sourceKey": "cover",
+              "validEntryIndex": 1,
+              "fromTicket": "1-2-4",
+              "toTicket": "1-3-4",
+              "carriedAmountYen": 100,
+              "targetPosition": 3,
+              "candidateId": "candidate:1-3-4",
+              "candidateKind": "canonical-formation",
+              "purchaseEligible": false,
+              "evidenceQualified": true,
+              "priorityScore": 88
+            }
+          },
+          {
+            "variant": "flow",
+            "status": "ready",
+            "candidateCount": 2,
+            "sourceTicketPresent": true,
+            "replacement": {
+              "sourceKey": "flow",
+              "validEntryIndex": 1,
+              "fromTicket": "2-1-6",
+              "toTicket": "2-4-6",
+              "carriedAmountYen": 100,
+              "targetPosition": 2,
+              "candidateId": "candidate:2-4-6",
+              "candidateKind": "canonical-formation",
+              "purchaseEligible": false,
+              "evidenceQualified": true,
+              "priorityScore": 82
+            }
+          },
+          {
+            "variant": "hole",
+            "status": "no-source-ticket",
+            "candidateCount": 0,
+            "sourceTicketPresent": false,
             "replacement": null
           }
         ]
