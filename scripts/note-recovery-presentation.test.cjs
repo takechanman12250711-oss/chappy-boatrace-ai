@@ -442,7 +442,7 @@ test('body mismatch logs its original snapshot and preserves rejection even when
         assert.deepEqual(ui.visited, [recoveryUrl]);
         assert.deepEqual(ui.anonymousVisited, []);
         assert.equal(ui.closed(), 0);
-        assert.equal(logs.length, 2);
+        assert.equal(logs.length, 3);
         assert.match(logs[0], /^NOTE_UI_RECOVERY_BODY_DIAGNOSTIC=/);
         const diagnostic = JSON.parse(logs[0].split('=', 2)[1]);
         assert.equal(diagnostic.equalsFreeText, true);
@@ -594,7 +594,7 @@ test('matching editor and later public bodies can never turn the initial mismatc
           /^Error: publication_recovery_body_mismatch$/);
         assert.equal(reads, 2); assert.equal(h.calls.opened, 1); assert.equal(h.calls.closed, 1);
         assert.equal(h.calls.mutations, 0); assert.deepEqual(ui.anonymousVisited, []);
-        assert.equal(ui.closed(), 0); assert.equal(logs.length, 2);
+        assert.equal(ui.closed(), 0); assert.equal(logs.length, 3);
         assert.match(logs[1], /^NOTE_UI_RECOVERY_ACCESS_DIAGNOSTIC=/);
         const d = JSON.parse(logs[1].split('=', 2)[1]);
         assert.equal(d.publicAfter.changedSinceInitial, true);
@@ -609,4 +609,343 @@ test('matching editor and later public bodies can never turn the initial mismatc
     await recoverClaimedPublication(ui.page, p.payload, f.rootDir, p.recoveryEvidence, target(p.payload));
     assert.equal(diagnosticPages, 0, 'an initially matching public body never opens an editor diagnostic');
   } finally { f.cleanup(); }
+});
+
+// Passive reader diagnostics are part of this existing production gate. They
+// never issue network requests or make a full-body recovery failure pass.
+const { EventEmitter } = require('node:events');
+const { startRecoveryReaderObserver, VIEWER_QUERY_SHA256, DETAIL_ACTION } = require('./note-recovery-reader-observer.cjs');
+// Reconstructed solely from public module 27071 in 337-0a15753b7145f5c6.js.
+// Standard GraphQL printing + client __typename fields reproduces the measured
+// document digest; this fixture contains no runtime variables or responses.
+const publicViewerQuery = `query ViewerQuery {
+  viewer {
+    ...ViewerFragment
+    ...NotLoggedInViewerFragment
+    __typename
+  }
+}
+
+fragment ViewerFragment on Viewer {
+  __typename
+  id
+  numberTypeId
+  key
+  urlname
+  nickname
+  profileImageUrl
+  isNew
+  isPremium
+  isBusiness
+  isPro
+  isProMember
+  isAnalysisMember
+  isWriteMember
+  isTwitterIntegrated
+  isTwitterReconnectionNeeded
+  isEmailConfirmed
+  isBoardDisabled
+  isNoteMoneyActivated
+  hasLikedEverOnce
+  isCircleOwner
+  isCircleOwner
+  hasJoinedCircle
+  canUseUserPage
+  isUserPageMember
+  customDomain {
+    id
+    host
+    key
+    isTlsEnabled
+    type
+    isOauthRequired
+    __typename
+  }
+  dmAcceptanceScope
+  canUseDm
+  pointBalance {
+    total
+    paid
+    free
+    __typename
+  }
+  reactions {
+    toNoteLike {
+      messages {
+        id
+        __typename
+      }
+      __typename
+    }
+    toNotePurchasing {
+      messages {
+        id
+        __typename
+      }
+      __typename
+    }
+    toMagazinePurchasing {
+      messages {
+        id
+        __typename
+      }
+      __typename
+    }
+    toTip {
+      messages {
+        id
+        __typename
+      }
+      __typename
+    }
+    __typename
+  }
+}
+
+fragment NotLoggedInViewerFragment on NotLoggedInViewer {
+  __typename
+}`;
+const readerTarget = { url: recoveryUrl, noteId: 'n123abc' };
+const readerTick = () => new Promise(resolve => setImmediate(resolve));
+const readerDeferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
+function readerHarness() {
+  const page = new EventEmitter(), frame = { url: () => current }, otherFrame = {};
+  let current = 'about:blank', bodyReads = 0, oneHeaderReads = 0;
+  page.url = () => current; page.mainFrame = () => frame;
+  const forbidden = () => { throw Error('CANARY forbidden operation'); };
+  for (const name of ['goto', 'reload', 'evaluate', 'waitForTimeout', 'context', 'request', 'route']) page[name] = forbidden;
+  const request = (kind = 'creator', overrides = {}) => ({
+    frame: () => frame, isNavigationRequest: () => false,
+    url: () => ({ creator: `https://note.com/api/v3/notes/${readerTarget.noteId}`,
+      viewer: 'https://graphql.note.com/graphql', auth: 'https://note.com/api/v3/graphql/auth',
+      detail: recoveryUrl, assets: 'https://frontend.st-note.com/next/_next/static/chunks/10961-02318a79c2dbfa50.js' })[kind],
+    method: () => ['viewer', 'auth', 'detail'].includes(kind) ? 'POST' : 'GET',
+    postDataJSON: () => ({ operationName: 'ViewerQuery', query: publicViewerQuery, variables: { CANARY: 'private' } }),
+    headerValue: async name => { oneHeaderReads++; assert.equal(name, 'next-action'); return DETAIL_ACTION; },
+    headers: forbidden, allHeaders: forbidden, postData: forbidden, ...overrides
+  });
+  const response = (req, data, overrides = {}) => ({ request: () => req, status: () => 200,
+    json: async () => { bodyReads++; return data; }, body: forbidden, text: forbidden,
+    headers: forbidden, allHeaders: forbidden, ...overrides });
+  const navigate = () => {
+    page.emit('request', request('creator', { url: () => recoveryUrl, isNavigationRequest: () => true }));
+    current = recoveryUrl; page.emit('framenavigated', frame);
+  };
+  return { page, frame, otherFrame, request, response, navigate, setUrl: url => { current = url; },
+    reads: () => ({ bodyReads, oneHeaderReads }) };
+}
+const viewerData = identity => ({ data: { viewer: { __typename: 'Viewer', key: identity,
+  email: 'CANARY_EMAIL', pointBalance: 'CANARY_BALANCE' } }, CANARY: 'raw' });
+const creatorData = identity => ({ data: { key: readerTarget.noteId,
+  body: 'CANARY_ARTICLE', user: { key: identity, urlname: 'great_robin3243' } } });
+
+test('reader observer strictly projects owner/guest/unknown metadata without retaining identities', async t => {
+  assert.equal(publicViewerQuery.length, 1229);
+  assert.equal(hash(publicViewerQuery), VIEWER_QUERY_SHA256);
+  {
+    for (const [viewer, creator, expected, match] of [
+      [viewerData('CANARY_OWNER'), creatorData('CANARY_OWNER'), 'viewer', true],
+      [viewerData('CANARY_OTHER'), creatorData('CANARY_OWNER'), 'viewer', false],
+      [viewerData(undefined), creatorData('CANARY_OWNER'), 'viewer', null],
+      [{ data: { viewer: { __typename: 'NotLoggedInViewer' } } }, creatorData('CANARY_OWNER'), 'not_logged_in', null],
+      [{ data: { viewer: { __typename: 'FutureViewer', key: 'CANARY_OWNER' } } }, creatorData('CANARY_OWNER'), 'unknown', null],
+      [{ ...viewerData('CANARY_OWNER'), errors: [{ message: 'CANARY_ERROR' }] }, creatorData('CANARY_OWNER'), 'unknown', null],
+      [{ ...viewerData('CANARY_OWNER'), errors: {} }, creatorData('CANARY_OWNER'), 'unknown', null],
+      [viewerData('CANARY_OWNER'), { data: { key: 'n999', user: { key: 'CANARY_OWNER', urlname: 'great_robin3243' } } }, 'viewer', null]
+    ]) {
+      const h = readerHarness(), o = startRecoveryReaderObserver(h.page, readerTarget); h.navigate();
+      for (const [kind, data] of [['viewer', viewer], ['creator', creator]]) {
+        const req = h.request(kind); h.page.emit('request', req); h.page.emit('response', h.response(req, data));
+      }
+      await readerTick(); const result = o.stop();
+      assert.equal(result.viewer.state, expected); assert.equal(result.viewer.ownerMatch, match);
+      assert.equal(result.navigationObserved, true); assert.equal(result.attached, true); assert.equal(result.detached, true);
+      assert.equal(result.pendingAtDetach, 0); assert.equal(result.observerErrors, 0);
+      assert.equal(h.page.eventNames().length, 0); assert.strictEqual(o.stop(), result);
+      assert.doesNotMatch(JSON.stringify(result), /CANARY|https:|cookie|token|password|query|body|email|balance/i);
+      assert.deepEqual(Object.keys(result).sort(), ['version','attached','navigationObserved','detached','observerErrors','dropped',
+        'pendingAtDetach','viewer','creator','auth','detail','assets'].sort());
+    }
+  }
+});
+
+test('reader observer ignores unrelated, stale, iframe, editor and unrecognized operations', async t => {
+  {
+    const h = readerHarness(), stale = h.request(), o = startRecoveryReaderObserver(h.page, readerTarget);
+    h.setUrl(recoveryUrl); h.page.emit('framenavigated', h.frame); // No observed document request.
+    const early = h.request(); h.page.emit('request', early); h.page.emit('response', h.response(early, creatorData('CANARY')));
+    h.navigate(); h.page.emit('response', h.response(stale, creatorData('CANARY')));
+    for (const [kind, overrides] of [
+      ['creator', { frame: () => h.otherFrame }], ['creator', { url: () => 'https://editor.note.com/api/v3/notes/n123abc' }],
+      ['creator', { url: () => 'https://note.com/api/v3/notes/n999' }], ['creator', { method: () => 'POST' }],
+      ['creator', { url: () => 'https://note.com/api/v3/notes/n123abc?CANARY=1' }],
+      ['creator', { url: () => 'https://CANARY@note.com/api/v3/notes/n123abc' }],
+      ['viewer', { postDataJSON: () => ({ operationName: 'Mutation', query: publicViewerQuery }) }],
+      ['viewer', { postDataJSON: () => ({ operationName: 'ViewerQuery', query: publicViewerQuery + ' ' }) }],
+      ['viewer', { url: () => 'https://graphql.note.com/graphql?CANARY=1' }],
+      ['detail', { headerValue: async () => 'unknown_action_CANARY' }],
+      ['assets', { url: () => 'https://frontend.st-note.com/next/_next/static/chunks/unknown.js' }]
+    ]) {
+      const req = h.request(kind, overrides); h.page.emit('request', req); h.page.emit('response', h.response(req, { CANARY: 'must not read' }));
+    }
+    await readerTick(); const result = o.stop();
+    for (const kind of ['viewer','creator','auth','detail','assets']) assert.equal(result[kind].requests, 0, kind);
+    assert.equal(h.reads().bodyReads, 0); assert.equal(result.navigationObserved, true);
+    assert.equal(result.viewer.ownerMatch, null);
+  }
+});
+
+test('reader observer never reads authentication, action or asset bodies and permits only one named action header', async () => {
+  const h = readerHarness(), o = startRecoveryReaderObserver(h.page, readerTarget); h.navigate();
+  for (const [kind, status] of [['auth',201], ['detail',200], ['assets',404]]) {
+    const req = h.request(kind); h.page.emit('request', req);
+    h.page.emit('response', h.response(req, null, { status: () => status,
+      json: async () => { throw Error('CANARY body must not read'); } }));
+  }
+  let consoleReads = 0;
+  h.page.emit('console', { type() { consoleReads++; return 'error'; }, text() { consoleReads++; return 'CANARY_SECRET'; } });
+  assert.equal(consoleReads, 0, 'unattributable console content is not inspected');
+  await readerTick(); const result = o.stop();
+  assert.equal(result.auth.httpStatus, 201); assert.equal(result.detail.responses, 1);
+  assert.equal(result.assets.httpErrors, 1);
+  assert.equal(result.observerErrors, 0); assert.deepEqual(h.reads(), { bodyReads: 0, oneHeaderReads: 1 });
+  assert.doesNotMatch(JSON.stringify(result), /CANARY/);
+});
+
+test('reader observer distinguishes absent, pending, failure, conflict and late completion', async t => {
+  {
+    for (const scenario of ['absent','pending','failed','json-error','conflict','late','redirect','header-pending']) {
+      const h = readerHarness(), o = startRecoveryReaderObserver(h.page, readerTarget); h.navigate();
+      const deferred = readerDeferred(), req = h.request(scenario === 'header-pending' ? 'detail' : 'viewer',
+        scenario === 'header-pending' ? { headerValue: () => deferred.promise } : {});
+      if (scenario !== 'absent') h.page.emit('request', req);
+      if (scenario === 'failed') h.page.emit('requestfailed', req);
+      if (scenario === 'json-error') h.page.emit('response', h.response(req, null, { json: async () => { throw Error('CANARY_JSON'); } }));
+      if (['late','redirect','conflict'].includes(scenario)) {
+        h.page.emit('response', h.response(req, null, { json: () => deferred.promise }));
+      }
+      if (scenario === 'conflict') {
+        const req2 = h.request('viewer'); h.page.emit('request', req2); h.page.emit('response', h.response(req2, viewerData('CANARY_SECOND')));
+        await readerTick(); deferred.resolve(viewerData('CANARY_FIRST'));
+      }
+      await readerTick();
+      if (scenario === 'redirect') { h.setUrl('https://note.com/other'); deferred.resolve(viewerData('CANARY_FIRST')); await readerTick(); }
+      const result = o.stop(), serialized = JSON.stringify(result);
+      assert.equal(result.viewer.state, ({ absent:'not_observed',pending:'pending',failed:'unknown','json-error':'unknown',
+        conflict:'conflicting',late:'pending',redirect:'pending','header-pending':'not_observed' })[scenario]);
+      assert.equal(result.viewer.ownerMatch, null);
+      if (['late','header-pending'].includes(scenario)) assert.ok(result.pendingAtDetach > 0);
+      deferred.resolve(scenario === 'header-pending' ? DETAIL_ACTION : viewerData('CANARY_LATE'));
+      h.page.emit('response', h.response(req, viewerData('CANARY_LATE'))); await readerTick();
+      assert.equal(JSON.stringify(result), serialized, 'late callbacks cannot change frozen evidence');
+      assert.equal(result.observerErrors, scenario === 'json-error' ? 1 : 0);
+      assert.doesNotMatch(serialized, /CANARY/);
+    }
+  }
+});
+
+test('reader observer contains registration, callback, parsing and teardown failures', async () => {
+  const invalid = startRecoveryReaderObserver({}, { ...readerTarget, noteId: 'n999' }).stop();
+  assert.equal(invalid.attached, false); assert.equal(invalid.observerErrors, 1);
+  const h = readerHarness(), on = h.page.on.bind(h.page), off = h.page.off.bind(h.page);
+  let registrations = 0, removals = 0;
+  h.page.on = (event, callback) => { on(event, callback); if (++registrations === 2) throw Error('CANARY_REGISTER'); return h.page; };
+  h.page.off = (event, callback) => { removals++; off(event, callback); throw Error('CANARY_OFF'); };
+  const result = startRecoveryReaderObserver(h.page, readerTarget).stop();
+  assert.equal(removals, 2); assert.equal(result.attached, false); assert.equal(result.detached, false);
+  assert.equal(result.observerErrors, 3); assert.equal(h.page.eventNames().length, 0);
+  assert.doesNotMatch(JSON.stringify(result), /CANARY/);
+  const c = readerHarness(), observer = startRecoveryReaderObserver(c.page, readerTarget); c.navigate();
+  c.page.emit('request', { frame() { throw Error('CANARY_FRAME'); } });
+  c.page.emit('response', { request() { throw Error('CANARY_RESPONSE'); } });
+  c.page.emit('request', c.request('viewer', { postDataJSON() { throw Error('CANARY_REQUEST'); } }));
+  await readerTick(); const errors = observer.stop(); assert.equal(errors.observerErrors, 3);
+  assert.doesNotMatch(JSON.stringify(errors), /CANARY/);
+});
+
+test('reader listeners attach before recovery navigation and detach on success or every original rejection', async t => {
+  const f = original(), logs = [], logger = t.mock.method(console, 'error', value => logs.push(value));
+  try {
+    const p = await pinned(f, 'readable-v4');
+    for (const scenario of ['success','body','navigation','heading','layout','price','timestamp','anonymous','cleanup']) {
+      const ui = publicPage(p.payload, scenario === 'body' ? 'different content' : undefined), events = new EventEmitter();
+      const frame = { url: ui.page.url }, goto = ui.page.goto, locate = ui.page.locator;
+      ui.page.mainFrame = () => frame; ui.page.on = events.on.bind(events);
+      ui.page.off = (event, callback) => { events.off(event, callback); if (scenario === 'cleanup') throw Error('CANARY_CLEANUP'); };
+      ui.page.goto = async (...args) => {
+        assert.equal(events.eventNames().length, 4, 'observer precedes goto');
+        if (scenario === 'navigation') throw Error('original_navigation_error');
+        events.emit('request', { frame: () => frame, isNavigationRequest: () => true, method: () => 'GET', url: () => recoveryUrl });
+        const result = await goto(...args); events.emit('framenavigated', frame); return result;
+      };
+      if (scenario === 'heading') ui.page.getByRole = () => ({ waitFor: async () => { throw Error('original_heading_error'); } });
+      if (scenario === 'layout') ui.page.locator = selector => selector === '.note-common-styles__textnote-body' ? { count: async () => 2 } : locate(selector);
+      if (scenario === 'price') ui.page.locator = selector => selector === 'article' ? { innerText: async () => 'no price' } : locate(selector);
+      if (scenario === 'timestamp') ui.page.locator = selector => selector === 'time[datetime]' ? { evaluateAll: async () => [] } : locate(selector);
+      if (scenario === 'anonymous') ui.anonymous.goto = async () => { throw Error('original_anonymous_error'); };
+      logs.length = 0;
+      if (['success','cleanup'].includes(scenario)) {
+        await recoverClaimedPublication(ui.page, p.payload, f.rootDir, p.recoveryEvidence, target(p.payload)); assert.deepEqual(logs, []);
+      } else {
+        const expected = { body:'publication_recovery_body_mismatch',navigation:'original_navigation_error',heading:'original_heading_error',
+          layout:'publication_recovery_body_layout_unverified',price:'publication_price_unverified',
+          timestamp:'publication_timestamp_unverified_review_required',anonymous:'original_anonymous_error' }[scenario];
+        await assert.rejects(recoverClaimedPublication(ui.page, p.payload, f.rootDir, p.recoveryEvidence, target(p.payload)),
+          error => error.message === expected);
+      }
+      assert.equal(events.eventNames().length, 0, scenario);
+      if (scenario === 'body') {
+        assert.equal(logs.length, 2); assert.match(logs[1], /^NOTE_UI_RECOVERY_READER_DIAGNOSTIC=/);
+        const d = JSON.parse(logs[1].split('=', 2)[1]); assert.equal(d.navigationObserved, true); assert.equal(d.detached, true);
+      }
+    }
+  } finally { logger.mock.restore(); f.cleanup(); }
+});
+
+test('reader observer bounds workload, rejects unsuccessful responses and records mixed statuses', async () => {
+  const h = readerHarness(), o = startRecoveryReaderObserver(h.page, readerTarget); h.navigate();
+  for (const [kind, status] of [['viewer',401], ['creator',500], ['assets',200], ['assets',404]]) {
+    const req = h.request(kind); h.page.emit('request', req);
+    const res = h.response(req, { CANARY: 'HTTP failure body must not read' }, { status: () => status });
+    h.page.emit('response', res); h.page.emit('response', res); // Duplicate event is ignored.
+  }
+  await readerTick(); const result = o.stop();
+  assert.equal(result.viewer.state, 'unknown'); assert.equal(result.creator.state, 'unknown');
+  assert.equal(result.viewer.ownerMatch, null); assert.equal(h.reads().bodyReads, 0);
+  assert.equal(result.viewer.responses, 1); assert.equal(result.assets.responses, 2);
+  assert.equal(result.assets.httpStatus, null); assert.equal(result.assets.httpStatusConflict, true);
+  const bounded = readerHarness(), observer = startRecoveryReaderObserver(bounded.page, readerTarget); bounded.navigate();
+  for (let i = 0; i < 100; i++) bounded.page.emit('request', bounded.request('auth'));
+  await readerTick(); const limit = observer.stop();
+  assert.equal(limit.auth.requests, 64); assert.equal(limit.dropped, 36);
+  assert.doesNotMatch(JSON.stringify(limit), /CANARY/);
+});
+
+test('reader observer stopped before queued classification reads no request document or header', async () => {
+  const h = readerHarness(), o = startRecoveryReaderObserver(h.page, readerTarget); h.navigate();
+  let documentReads = 0, headerReads = 0;
+  h.page.emit('request', h.request('viewer', { postDataJSON() { documentReads++; throw Error('CANARY_LATE_DOCUMENT'); } }));
+  h.page.emit('request', h.request('detail', { headerValue() { headerReads++; throw Error('CANARY_LATE_HEADER'); } }));
+  const snapshot = o.stop(), before = JSON.stringify(snapshot);
+  assert.equal(snapshot.pendingAtDetach, 2); await readerTick();
+  assert.equal(documentReads, 0); assert.equal(headerReads, 0); assert.equal(JSON.stringify(snapshot), before);
+});
+
+test('reader owner comparison stays unknown when observation has errors, drops or pending parsing', async () => {
+  for (const scenario of ['error', 'drop', 'pending']) {
+    const h = readerHarness(), o = startRecoveryReaderObserver(h.page, readerTarget); h.navigate();
+    for (const [kind, data] of [['viewer', viewerData('CANARY_OWNER')], ['creator', creatorData('CANARY_OWNER')]]) {
+      const req = h.request(kind); h.page.emit('request', req); h.page.emit('response', h.response(req, data));
+    }
+    await readerTick();
+    const deferred = readerDeferred();
+    if (scenario === 'error') h.page.emit('request', h.request('viewer', { postDataJSON() { throw Error('CANARY'); } }));
+    if (scenario === 'drop') for (let i = 0; i < 100; i++) h.page.emit('request', h.request('auth'));
+    if (scenario === 'pending') h.page.emit('request', h.request('detail', { headerValue: () => deferred.promise }));
+    await readerTick(); const result = o.stop();
+    assert.equal(result.viewer.state, 'viewer'); assert.equal(result.creator.state, 'verified');
+    assert.equal(result.viewer.ownerMatch, null, scenario);
+    deferred.resolve(DETAIL_ACTION); await readerTick();
+    assert.equal(result.viewer.ownerMatch, null);
+  }
 });
