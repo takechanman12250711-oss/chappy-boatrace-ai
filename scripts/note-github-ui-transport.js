@@ -715,6 +715,90 @@ function recoveryBodyDiagnostic(actualBody, payload) {
     equalsFreeText: compareEditorContent(actual, payload.freeText).equal };
 }
 
+async function recoveryAccessDiagnostic(page, payload, target, initialBody, findVisible) {
+  const diagnostic = { version: 'note-recovery-access-diagnostic-v1',
+    editor: { status: 'target_invalid', httpOk: null, exactUrl: null, titleMatches: null,
+      titleEditable: null, bodyEditable: null, body: null },
+    tabClose: 'not_opened', publicAfter: { status: 'not_checked', body: null, changedSinceInitial: null } };
+  let selected;
+  try {
+    selected = loadRecoveryTarget({ NOTE_RECOVERY_SOURCE_PATH: target?.sourcePath, NOTE_RECOVERY_URL: target?.url });
+    if (selected.sourcePath !== payload.sourcePath || target?.noteId !== selected.noteId) return diagnostic;
+  } catch { return diagnostic; }
+  let editor;
+  const observed = diagnostic.editor;
+  try {
+    observed.status = 'tab_open_failed';
+    editor = await page.context().newPage(); // Reuse the saved profile, never create an anonymous context.
+    const editUrl = `https://editor.note.com/notes/${selected.noteId}/edit/`;
+    observed.status = 'navigation_failed';
+    const response = await editor.goto(editUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    observed.httpOk = Boolean(response?.ok());
+    observed.exactUrl = editor.url() === editUrl;
+    if (!observed.exactUrl) {
+      observed.status = 'unexpected_url';
+      try {
+        const url = new URL(editor.url());
+        if (url.protocol === 'https:' && url.hostname === 'note.com' && url.pathname === '/login') observed.status = 'login_redirect';
+      } catch {}
+    } else if (!observed.httpOk) observed.status = 'http_error';
+    else {
+      observed.status = 'field_read_failed';
+      const locate = findVisible || require('./note-browserbase-draft-save').waitForVisibleAcrossFrames;
+      const title = await locate(editor, ['textarea[placeholder*="タイトル"]']);
+      const body = await locate(editor, ['.ProseMirror[contenteditable="true"]']);
+      observed.exactUrl = editor.url() === editUrl;
+      if (!observed.exactUrl) observed.status = 'unexpected_url';
+      else if (!title || !body) observed.status = 'fields_missing';
+      else {
+        observed.titleMatches = (await title.inputValue()).trim() === payload.title;
+        observed.exactUrl = editor.url() === editUrl;
+        if (!observed.exactUrl) observed.status = 'unexpected_url';
+        else if (!observed.titleMatches) observed.status = 'title_mismatch';
+        else {
+          observed.titleEditable = await title.isEditable();
+          observed.bodyEditable = await body.isEditable();
+          observed.exactUrl = editor.url() === editUrl;
+          if (!observed.exactUrl) observed.status = 'unexpected_url';
+          else if (!observed.titleEditable || !observed.bodyEditable) observed.status = 'fields_not_editable';
+          else {
+            observed.status = 'body_read_failed';
+            const text = await require('./note-editor-content').readEditorContent(body);
+            observed.exactUrl = editor.url() === editUrl;
+            if (!observed.exactUrl) observed.status = 'unexpected_url';
+            else {
+              observed.body = recoveryBodyDiagnostic(text, payload);
+              observed.status = 'body_observed';
+            }
+          }
+        }
+      }
+    }
+  } catch { /* Only fixed stage/status values leave this diagnostic, never exception text. */ }
+  finally {
+    if (editor) {
+      diagnostic.tabClose = 'failed';
+      try { await editor.close(); diagnostic.tabClose = 'closed'; } catch {}
+    }
+  }
+  // Observe the same public tab once more without waits, reloads or interaction.
+  // A changed snapshot is evidence of change, not proof of its cause or a receipt.
+  const after = diagnostic.publicAfter;
+  try {
+    after.status = 'unexpected_url';
+    if (page.url() !== selected.url) return diagnostic;
+    after.status = 'body_read_failed';
+    const body = page.locator('.note-common-styles__textnote-body');
+    if (await body.count() !== 1) { after.status = 'body_layout_unverified'; return diagnostic; }
+    const text = await body.innerText();
+    if (page.url() !== selected.url) { after.status = 'unexpected_url'; return diagnostic; }
+    after.body = recoveryBodyDiagnostic(text, payload);
+    after.changedSinceInitial = !require('./note-editor-content').compareEditorContent(text, initialBody).equal;
+    after.status = 'body_observed';
+  } catch { /* Keep the original mismatch even when the public tab closed or moved. */ }
+  return diagnostic;
+}
+
 async function verifyRecoveredPublicPage(page, payload, target, publishedAt) {
   const response = await page.goto(target.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
   if (!response?.ok() || page.url() !== target.url) throw new Error('publication_public_page_unavailable');
@@ -751,6 +835,11 @@ async function recoverClaimedPublication(page, payload, rootDir = process.cwd(),
     try {
       console.error(`NOTE_UI_RECOVERY_BODY_DIAGNOSTIC=${JSON.stringify(recoveryBodyDiagnostic(actualBody, payload))}`);
     } catch { /* Diagnostics must not hide the original body mismatch. */ }
+    try {
+      if (require('./note-editor-content').compareEditorContent(actualBody, payload.freeText).equal) {
+        console.error(`NOTE_UI_RECOVERY_ACCESS_DIAGNOSTIC=${JSON.stringify(await recoveryAccessDiagnostic(page, payload, selected, actualBody))}`);
+      }
+    } catch { /* Neither editor access nor a later matching public snapshot can authorize recovery. */ }
     throw new Error('publication_recovery_body_mismatch');
   }
   const articleText = await page.locator('article').innerText();
@@ -953,6 +1042,7 @@ module.exports = {
   recoverClaimedPublication,
   recoveryBodyMatches,
   recoveryBodyDiagnostic,
+  recoveryAccessDiagnostic,
   publishConfiguredArticle,
   savePublicationReceipt,
   run

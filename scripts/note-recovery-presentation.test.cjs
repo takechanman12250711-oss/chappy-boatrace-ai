@@ -10,7 +10,7 @@ const { publicationPayload, parsePublishedDisplayProof } = require('./note-publi
 const { recoveryIdentity } = require('./note-recovery-presentation.cjs');
 const { recoveryClaimStatus, requireRecoveryPublicationGate, requirePublicationGate,
   preparePublicationRecovery, recoverClaimedPublication, loadRecoveryTarget, verifyRecoveredPublicPage,
-  recoveryBodyDiagnostic, articleBody } = require('./note-github-ui-transport');
+  recoveryBodyDiagnostic, recoveryAccessDiagnostic, articleBody } = require('./note-github-ui-transport');
 const { requestFixture, response, blobSha } = require('./note-recovery-test-fixture.cjs');
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const env = { GITHUB_REPOSITORY: 'takechanman12250711-oss/chappy-boatrace-ai', GITHUB_SHA: 'a'.repeat(40), NOTE_CLAIM_TOKEN: 'synthetic-test' };
@@ -420,7 +420,7 @@ test('recovery body diagnostics expose only bounded metadata, never text or call
   assert.doesNotMatch(JSON.stringify(unknown), /CANARY/);
 });
 
-test('body mismatch logs one existing snapshot and preserves rejection even when logging fails', async t => {
+test('body mismatch logs its original snapshot and preserves rejection even when logging fails', async t => {
   const f = original();
   try {
     const p = await pinned(f, 'readable-v4');
@@ -438,11 +438,11 @@ test('body mismatch logs one existing snapshot and preserves rejection even when
       try {
         await assert.rejects(recoverClaimedPublication(ui.page, p.payload, f.rootDir, p.recoveryEvidence, target(p.payload)),
           /^Error: publication_recovery_body_mismatch$/);
-        assert.equal(reads, 1); assert.equal(counts, 1);
+        assert.equal(reads, 2); assert.equal(counts, 2);
         assert.deepEqual(ui.visited, [recoveryUrl]);
         assert.deepEqual(ui.anonymousVisited, []);
         assert.equal(ui.closed(), 0);
-        assert.equal(logs.length, 1);
+        assert.equal(logs.length, 2);
         assert.match(logs[0], /^NOTE_UI_RECOVERY_BODY_DIAGNOSTIC=/);
         const diagnostic = JSON.parse(logs[0].split('=', 2)[1]);
         assert.equal(diagnostic.equalsFreeText, true);
@@ -459,5 +459,154 @@ test('body mismatch logs one existing snapshot and preserves rejection even when
       await recoverClaimedPublication(ui.page, p.payload, f.rootDir, p.recoveryEvidence, target(p.payload));
       assert.deepEqual(logs, [], 'matching owner body emits no mismatch diagnostic');
     } finally { logger.mock.restore(); }
+  } finally { f.cleanup(); }
+});
+
+function accessHarness(payload, scenario = 'match', later = payload.freeText) {
+  const editUrl = 'https://editor.note.com/notes/n123abc/edit/';
+  let editorUrl = editUrl, publicUrl = recoveryUrl;
+  const calls = { opened: 0, closed: 0, navigation: [], located: 0, titleReads: 0,
+    bodyReads: 0, publicReads: 0, mutations: 0 };
+  const fail = () => { throw Error('PRIVATE_EXCEPTION_CANARY https://private.invalid/?token=TOKEN_CANARY'); };
+  const mutate = () => { calls.mutations++; fail(); };
+  const title = {
+    inputValue: async () => { calls.titleReads++; if (scenario === 'title-read-error') fail();
+      if (scenario === 'title-redirect') editorUrl += '?private=CANARY';
+      return scenario === 'title-mismatch' ? 'PRIVATE_TITLE_CANARY' : payload.title; },
+    isEditable: async () => { if (scenario === 'editable-error') fail(); return scenario !== 'title-disabled'; },
+    fill: mutate, click: mutate
+  };
+  const body = {
+    isEditable: async () => { if (scenario === 'editable-redirect') editorUrl += '?private=CANARY'; return scenario !== 'body-disabled'; },
+    evaluate: async fn => { calls.bodyReads++; if (scenario === 'body-read-error') fail();
+      if (scenario === 'body-redirect') editorUrl += '?private=CANARY';
+      if (scenario === 'diagnostic-error') return { toString: fail };
+      return fn({ tagName: 'DIV', getAttribute: key => key === 'contenteditable' ? 'true' : null,
+        innerText: scenario === 'body-changed' ? payload.freeText + '\nPRIVATE_CHANGED_CANARY' : articleBody(payload) }); },
+    fill: mutate, click: mutate
+  };
+  const editor = {
+    goto: async url => { calls.navigation.push(url); if (scenario === 'navigation-error') fail();
+      if (scenario === 'login') editorUrl = 'https://note.com/login?token=TOKEN_CANARY';
+      if (scenario === 'wrong-note') editorUrl = 'https://editor.note.com/notes/n999/edit/';
+      return { ok: () => scenario !== 'http-error' }; },
+    url: () => editorUrl,
+    close: async () => { calls.closed++; if (scenario === 'close-error') fail(); },
+    click: mutate, fill: mutate, keyboard: { type: mutate, press: mutate }, waitForTimeout: mutate
+  };
+  const locate = async (_page, selectors) => { calls.located++; if (scenario === 'fields-error') fail();
+    if (scenario === 'fields-redirect') editorUrl += '?private=CANARY';
+    if (scenario === 'fields-missing') return null;
+    return selectors[0].startsWith('textarea') ? title : body; };
+  const page = {
+    context: () => ({ newPage: async () => { calls.opened++; if (scenario === 'new-page-error') fail(); return editor; },
+      newContext: mutate, browser: mutate }),
+    url: () => scenario === 'public-before-redirect' ? recoveryUrl + '?private=CANARY' : publicUrl,
+    locator: selector => { assert.equal(selector, '.note-common-styles__textnote-body'); return {
+      count: async () => scenario === 'public-ambiguous' ? 2 : 1,
+      innerText: async () => { calls.publicReads++; if (scenario === 'public-read-error') fail();
+        if (scenario === 'public-after-redirect') publicUrl += '?private=CANARY'; return later; }
+    }; },
+    goto: mutate, reload: mutate, click: mutate, fill: mutate, waitForTimeout: mutate
+  };
+  return { page, editor, title, body, locate, calls, editUrl };
+}
+
+test('target editor and later public reads remain separate, private observations without writes or sleeps', async () => {
+  const payload = { sourcePath: 'data/note-drafts/20261012/20261012-12-12-' + 'a'.repeat(64) + '.json',
+    title: 'PRIVATE_TITLE_CANARY', presentationVersion: 'readable-v4',
+    freeText: 'PRIVATE_FREE_CANARY\nhttps://private.invalid/', paidText: 'PRIVATE_PAID_CANARY\n  1 → 2' };
+  const selected = loadRecoveryTarget(targetedEnv(payload.sourcePath));
+  for (const [later, changed] of [[payload.freeText, false], [articleBody(payload), true], ['OTHER_PRIVATE_CANARY', true]]) {
+    const h = accessHarness(payload, 'match', later);
+    const d = await recoveryAccessDiagnostic(h.page, payload, selected, payload.freeText, h.locate);
+    assert.equal(d.version, 'note-recovery-access-diagnostic-v1');
+    assert.deepEqual(d.editor, { status: 'body_observed', httpOk: true, exactUrl: true, titleMatches: true,
+      titleEditable: true, bodyEditable: true, body: recoveryBodyDiagnostic(articleBody(payload), payload) });
+    assert.deepEqual(d.publicAfter, { status: 'body_observed', body: recoveryBodyDiagnostic(later, payload), changedSinceInitial: changed });
+    assert.equal(d.tabClose, 'closed');
+    assert.deepEqual(h.calls, { opened: 1, closed: 1, navigation: [h.editUrl], located: 2,
+      titleReads: 1, bodyReads: 1, publicReads: 1, mutations: 0 });
+    assert.doesNotMatch(JSON.stringify(d), /CANARY|https:|private\.invalid|1 → 2|cookie|token/i);
+  }
+  for (const selected of [{ ...target(payload), noteId: 'n999' }, { ...target(payload), noteId: 'n123abc', sourcePath: 'other' },
+    { ...target(payload), noteId: 'n123abc', url: recoveryUrl + '?preview=true' }]) {
+    const h = accessHarness(payload);
+    const d = await recoveryAccessDiagnostic(h.page, payload, selected, payload.freeText, h.locate);
+    assert.equal(d.editor.status, 'target_invalid');
+    assert.equal(d.tabClose, 'not_opened'); assert.equal(d.publicAfter.status, 'not_checked');
+    assert.equal(h.calls.opened + h.calls.bodyReads + h.calls.publicReads + h.calls.mutations, 0);
+  }
+});
+
+test('access diagnostics fail closed on identity changes, unavailable fields, read errors and cleanup errors', async () => {
+  const payload = { sourcePath: 'data/note-drafts/20261012/20261012-12-12-' + 'a'.repeat(64) + '.json',
+    title: 'expected title', presentationVersion: 'readable-v4', freeText: 'FREE_CANARY', paidText: 'PAID_CANARY' };
+  const selected = loadRecoveryTarget(targetedEnv(payload.sourcePath));
+  const cases = { 'new-page-error': 'tab_open_failed', 'navigation-error': 'navigation_failed', login: 'login_redirect',
+    'wrong-note': 'unexpected_url', 'http-error': 'http_error', 'fields-error': 'field_read_failed',
+    'fields-redirect': 'unexpected_url', 'fields-missing': 'fields_missing', 'title-read-error': 'field_read_failed',
+    'title-redirect': 'unexpected_url', 'title-mismatch': 'title_mismatch', 'editable-error': 'field_read_failed',
+    'title-disabled': 'fields_not_editable', 'body-disabled': 'fields_not_editable', 'editable-redirect': 'unexpected_url',
+    'body-read-error': 'body_read_failed', 'diagnostic-error': 'body_read_failed', 'body-redirect': 'unexpected_url', 'body-changed': 'body_observed', 'close-error': 'body_observed' };
+  for (const [scenario, status] of Object.entries(cases)) {
+    const h = accessHarness(payload, scenario);
+    const d = await recoveryAccessDiagnostic(h.page, payload, selected, payload.freeText, h.locate);
+    assert.equal(d.editor.status, status, scenario);
+    assert.equal(d.tabClose, scenario === 'new-page-error' ? 'not_opened' : scenario === 'close-error' ? 'failed' : 'closed', scenario);
+    assert.equal(h.calls.closed, scenario === 'new-page-error' ? 0 : 1, scenario);
+    assert.equal(d.publicAfter.status, 'body_observed', scenario);
+    assert.equal(h.calls.publicReads, 1, scenario); assert.equal(h.calls.mutations, 0, scenario);
+    if (status !== 'body_observed') assert.equal(d.editor.body, null, scenario);
+    if (!['body-read-error', 'diagnostic-error', 'body-redirect', 'body-changed', 'close-error'].includes(scenario)) assert.equal(h.calls.bodyReads, 0, scenario);
+    if (scenario === 'login') { assert.equal(d.editor.titleMatches, null); assert.equal(d.editor.titleEditable, null); }
+    if (scenario === 'body-changed') assert.equal(d.editor.body.firstMismatchLine, 2);
+    assert.doesNotMatch(JSON.stringify(d), /CANARY|https:|private\.invalid|cookie|token/i, scenario);
+  }
+  for (const [scenario, reads, status] of [['public-before-redirect', 0, 'unexpected_url'], ['public-after-redirect', 1, 'unexpected_url'],
+    ['public-ambiguous', 0, 'body_layout_unverified'], ['public-read-error', 1, 'body_read_failed']]) {
+    const h = accessHarness(payload, scenario);
+    const d = await recoveryAccessDiagnostic(h.page, payload, selected, payload.freeText, h.locate);
+    assert.equal(d.publicAfter.status, status); assert.equal(d.publicAfter.body, null);
+    assert.equal(d.publicAfter.changedSinceInitial, null); assert.equal(h.calls.publicReads, reads);
+    assert.equal(h.calls.closed, 1); assert.equal(h.calls.mutations, 0);
+  }
+});
+
+test('matching editor and later public bodies can never turn the initial mismatch into a receipt', async t => {
+  const f = original();
+  try {
+    const p = await pinned(f, 'readable-v4');
+    for (const scenario of ['match', 'close-error', 'body-read-error', 'diagnostic-error']) {
+      const ui = publicPage(p.payload, p.payload.freeText), h = accessHarness(p.payload, scenario, articleBody(p.payload));
+      const originalLocator = ui.page.locator;
+      let reads = 0;
+      ui.page.locator = selector => selector === '.note-common-styles__textnote-body' ? {
+        count: async () => 1, innerText: async () => ++reads === 1 ? p.payload.freeText : articleBody(p.payload)
+      } : originalLocator(selector);
+      const context = ui.page.context();
+      ui.page.context = () => ({ ...context, newPage: async () => { h.calls.opened++; return h.editor; } });
+      const helper = require('./note-browserbase-draft-save');
+      const locate = t.mock.method(helper, 'waitForVisibleAcrossFrames', h.locate);
+      const logs = [], logger = t.mock.method(console, 'error', message => logs.push(message));
+      try {
+        await assert.rejects(recoverClaimedPublication(ui.page, p.payload, f.rootDir, p.recoveryEvidence, target(p.payload)),
+          /^Error: publication_recovery_body_mismatch$/);
+        assert.equal(reads, 2); assert.equal(h.calls.opened, 1); assert.equal(h.calls.closed, 1);
+        assert.equal(h.calls.mutations, 0); assert.deepEqual(ui.anonymousVisited, []);
+        assert.equal(ui.closed(), 0); assert.equal(logs.length, 2);
+        assert.match(logs[1], /^NOTE_UI_RECOVERY_ACCESS_DIAGNOSTIC=/);
+        const d = JSON.parse(logs[1].split('=', 2)[1]);
+        assert.equal(d.publicAfter.changedSinceInitial, true);
+        assert.equal(d.publicAfter.body.firstMismatchLine, null);
+        assert.equal(d.editor.body?.firstMismatchLine ?? null, null);
+        assert.doesNotMatch(logs.join('\n'), /CANARY|https:|cookie|token|NOTE_UI_PUBLICATION/i);
+      } finally { locate.mock.restore(); logger.mock.restore(); }
+    }
+    const ui = publicPage(p.payload), context = ui.page.context();
+    let diagnosticPages = 0;
+    ui.page.context = () => ({ ...context, newPage: async () => { diagnosticPages++; throw Error('not allowed'); } });
+    await recoverClaimedPublication(ui.page, p.payload, f.rootDir, p.recoveryEvidence, target(p.payload));
+    assert.equal(diagnosticPages, 0, 'an initially matching public body never opens an editor diagnostic');
   } finally { f.cleanup(); }
 });
