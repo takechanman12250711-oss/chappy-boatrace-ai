@@ -8,6 +8,7 @@ on:
       - "scripts/build-race-stats.js"
       - "scripts/test-racer-skill-st-history.js"
       - "scripts/test-racer-skill-cutoff.cjs"
+      - "scripts/test-racer-skill-positions.cjs"
       - "scripts/collect-predictions.js"
       - "scripts/venue-race-history.js"
       - ".github/workflows/check-racer-skill-st-history.yml"
@@ -18,6 +19,7 @@ on:
       - "scripts/build-race-stats.js"
       - "scripts/test-racer-skill-st-history.js"
       - "scripts/test-racer-skill-cutoff.cjs"
+      - "scripts/test-racer-skill-positions.cjs"
       - "scripts/collect-predictions.js"
       - "scripts/venue-race-history.js"
       - ".github/workflows/check-racer-skill-st-history.yml"
@@ -32,6 +34,7 @@ jobs:
         with:
           node-version: 20
       - run: node scripts/test-racer-skill-cutoff.cjs
+      - run: node scripts/test-racer-skill-positions.cjs
       - run: node scripts/test-racer-skill-st-history.js
       - run: node --check scripts/collect-predictions.js
       - run: node --check scripts/venue-race-history.js
