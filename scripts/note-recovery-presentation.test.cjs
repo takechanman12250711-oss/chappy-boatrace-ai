@@ -9,7 +9,8 @@ const { fixture } = require('./note-independent-monitor-fixture');
 const { publicationPayload, parsePublishedDisplayProof } = require('./note-publication-source');
 const { recoveryIdentity } = require('./note-recovery-presentation.cjs');
 const { recoveryClaimStatus, requireRecoveryPublicationGate, requirePublicationGate,
-  preparePublicationRecovery, recoverClaimedPublication, loadRecoveryTarget, verifyRecoveredPublicPage } = require('./note-github-ui-transport');
+  preparePublicationRecovery, recoverClaimedPublication, loadRecoveryTarget, verifyRecoveredPublicPage,
+  recoveryBodyDiagnostic, articleBody } = require('./note-github-ui-transport');
 const { requestFixture, response, blobSha } = require('./note-recovery-test-fixture.cjs');
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const env = { GITHUB_REPOSITORY: 'takechanman12250711-oss/chappy-boatrace-ai', GITHUB_SHA: 'a'.repeat(40), NOTE_CLAIM_TOKEN: 'synthetic-test' };
@@ -381,4 +382,82 @@ test('workflow keeps recovery inputs out of shell interpolation and never rebuil
   const shell = yaml.slice(yaml.indexOf('    steps:'));
   assert.doesNotMatch(shell, /\$\{\{[^}]*inputs\.recovery_/);
   assert.match(yaml, /group: note-ui-transport/);
+});
+
+test('recovery body diagnostics expose only bounded metadata, never text or caller fields', () => {
+  const payload = { presentationVersion: 'readable-v4', freeText: 'FREE_CANARY\nhttps://private.invalid/login',
+    paidText: 'PAID_CANARY\n  2 → 3', cookie: 'COOKIE_CANARY', token: 'TOKEN_CANARY' };
+  const full = articleBody(payload), lines = require('./note-editor-content').contentLines(full);
+  const fields = ['version', 'presentationVersion', 'actualLength', 'expectedLength', 'actualLines',
+    'expectedLines', 'actualSha256', 'expectedSha256', 'firstMismatchLine', 'equalsFreeText'];
+  const cases = [
+    [full, null, false],
+    [full.replace(/\n/g, '\r\n').replace(/ /g, '\u00a0'), null, false],
+    [payload.freeText, 3, true],
+    ['', 1, false],
+    [lines.slice(0, 3).join('\n'), 4, false],
+    [full + '\nEXTRA_CANARY', 5, false],
+    [full.replace('PAID_CANARY', 'CHANGED_CANARY'), 3, false],
+    [full.replace('  2', ' 2'), 4, false]
+  ];
+  for (const [actual, mismatch, freeOnly] of cases) {
+    const diagnostic = recoveryBodyDiagnostic(actual, payload), serialized = JSON.stringify(diagnostic);
+    assert.deepEqual(Object.keys(diagnostic).sort(), [...fields].sort());
+    assert.equal(diagnostic.version, 'note-recovery-body-diagnostic-v1');
+    assert.equal(diagnostic.presentationVersion, 'readable-v4');
+    assert.equal(diagnostic.actualLength, actual.length);
+    assert.equal(diagnostic.expectedLength, full.length);
+    assert.equal(diagnostic.actualLines, require('./note-editor-content').contentLines(actual).length);
+    assert.equal(diagnostic.expectedLines, 4);
+    assert.equal(diagnostic.expectedSha256, hash(JSON.stringify(lines)));
+    assert.equal(diagnostic.actualSha256, hash(JSON.stringify(require('./note-editor-content').contentLines(actual))));
+    assert.equal(diagnostic.firstMismatchLine, mismatch);
+    assert.equal(diagnostic.equalsFreeText, freeOnly);
+    assert.doesNotMatch(serialized, /CANARY|https:|private\.invalid|2 → 3|cookie|token/i);
+  }
+  const unknown = recoveryBodyDiagnostic(full, { ...payload, presentationVersion: 'UNTRUSTED_CANARY' });
+  assert.equal(unknown.presentationVersion, 'unknown');
+  assert.doesNotMatch(JSON.stringify(unknown), /CANARY/);
+});
+
+test('body mismatch logs one existing snapshot and preserves rejection even when logging fails', async t => {
+  const f = original();
+  try {
+    const p = await pinned(f, 'readable-v4');
+    for (const throws of [false, true]) {
+      const ui = publicPage(p.payload, p.payload.freeText), locator = ui.page.locator;
+      let reads = 0, counts = 0;
+      ui.page.locator = selector => selector === '.note-common-styles__textnote-body' ? {
+        count: async () => { counts++; return 1; },
+        innerText: async () => { reads++; return p.payload.freeText; }
+      } : locator(selector);
+      const logs = [], logger = t.mock.method(console, 'error', message => {
+        logs.push(message);
+        if (throws) throw Error('LOGGER_CANARY');
+      });
+      try {
+        await assert.rejects(recoverClaimedPublication(ui.page, p.payload, f.rootDir, p.recoveryEvidence, target(p.payload)),
+          /^Error: publication_recovery_body_mismatch$/);
+        assert.equal(reads, 1); assert.equal(counts, 1);
+        assert.deepEqual(ui.visited, [recoveryUrl]);
+        assert.deepEqual(ui.anonymousVisited, []);
+        assert.equal(ui.closed(), 0);
+        assert.equal(logs.length, 1);
+        assert.match(logs[0], /^NOTE_UI_RECOVERY_BODY_DIAGNOSTIC=/);
+        const diagnostic = JSON.parse(logs[0].split('=', 2)[1]);
+        assert.equal(diagnostic.equalsFreeText, true);
+        assert.equal(diagnostic.firstMismatchLine, diagnostic.actualLines + 1);
+        assert.ok(diagnostic.expectedLines > diagnostic.actualLines);
+        assert.ok(!logs[0].includes(p.payload.freeText));
+        assert.ok(!logs[0].includes(p.payload.paidText));
+        assert.doesNotMatch(logs[0], /LOGGER_CANARY|https:|<[^>]+>|cookie|token/i);
+      } finally { logger.mock.restore(); }
+    }
+    const logs = [], logger = t.mock.method(console, 'error', message => logs.push(message));
+    try {
+      const ui = publicPage(p.payload);
+      await recoverClaimedPublication(ui.page, p.payload, f.rootDir, p.recoveryEvidence, target(p.payload));
+      assert.deepEqual(logs, [], 'matching owner body emits no mismatch diagnostic');
+    } finally { logger.mock.restore(); }
+  } finally { f.cleanup(); }
 });

@@ -697,6 +697,24 @@ function recoveryBodyMatches(articleText, payload) {
   return require('./note-editor-content').compareEditorContent(articleText, articleBody(payload)).equal;
 }
 
+function recoveryBodyDiagnostic(actualBody, payload) {
+  const { contentLines, compareEditorContent } = require('./note-editor-content');
+  const actual = String(actualBody || ''), expected = articleBody(payload);
+  const actualLines = contentLines(actual), expectedLines = contentLines(expected);
+  const hashLines = lines => createHash('sha256').update(JSON.stringify(lines)).digest('hex');
+  let firstMismatch = 0;
+  while (firstMismatch < Math.max(actualLines.length, expectedLines.length) &&
+    actualLines[firstMismatch] === expectedLines[firstMismatch]) firstMismatch++;
+  return { version: 'note-recovery-body-diagnostic-v1',
+    presentationVersion: ['readable-v1', 'readable-v2', 'readable-v3', 'readable-v4'].includes(payload.presentationVersion)
+      ? payload.presentationVersion : 'unknown',
+    actualLength: actual.length, expectedLength: expected.length,
+    actualLines: actualLines.length, expectedLines: expectedLines.length,
+    actualSha256: hashLines(actualLines), expectedSha256: hashLines(expectedLines),
+    firstMismatchLine: firstMismatch < Math.max(actualLines.length, expectedLines.length) ? firstMismatch + 1 : null,
+    equalsFreeText: compareEditorContent(actual, payload.freeText).equal };
+}
+
 async function verifyRecoveredPublicPage(page, payload, target, publishedAt) {
   const response = await page.goto(target.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
   if (!response?.ok() || page.url() !== target.url) throw new Error('publication_public_page_unavailable');
@@ -728,6 +746,11 @@ async function recoverClaimedPublication(page, payload, rootDir = process.cwd(),
   if (await body.count() !== 1) throw Error('publication_recovery_body_layout_unverified');
   const actualBody = await body.innerText();
   if (!recoveryBodyMatches(actualBody, payload)) {
+    // Use only the already-read snapshot. Never emit article text, per-line
+    // hashes, DOM or authentication state, or change the original rejection.
+    try {
+      console.error(`NOTE_UI_RECOVERY_BODY_DIAGNOSTIC=${JSON.stringify(recoveryBodyDiagnostic(actualBody, payload))}`);
+    } catch { /* Diagnostics must not hide the original body mismatch. */ }
     throw new Error('publication_recovery_body_mismatch');
   }
   const articleText = await page.locator('article').innerText();
@@ -929,6 +952,7 @@ module.exports = {
   findPublishedArticleInList,
   recoverClaimedPublication,
   recoveryBodyMatches,
+  recoveryBodyDiagnostic,
   publishConfiguredArticle,
   savePublicationReceipt,
   run
