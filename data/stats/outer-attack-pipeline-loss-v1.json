@@ -1,14 +1,15 @@
 {
   "schemaVersion": 1,
   "analysisId": "outer-attack-pipeline-loss-v1",
-  "generatedAt": "2026-10-13T03:03:31.633Z",
+  "generatedAt": "2026-10-13T03:13:35.323Z",
   "productionChanged": false,
   "automaticApplication": false,
-  "signalRaceCount": 69,
+  "signalRaceCount": 70,
   "stageCounts": {
     "archive-missed": 18,
     "not-comparable": 17,
-    "settled": 34
+    "settled": 34,
+    "archived-unsettled": 1
   },
   "notComparableVariantStatus": {
     "cover:no-category-candidate": 13,
@@ -3072,6 +3073,39 @@
             "status": "no-source-ticket",
             "candidateCount": 0,
             "sourceTicketPresent": false,
+            "replacement": null
+          }
+        ]
+      ]
+    },
+    {
+      "raceKey": "20261013-06-3",
+      "selectedAt": "2026-10-13T02:50:59.700Z",
+      "signalGate": "ambiguous",
+      "stage": "archived-unsettled",
+      "archiveCount": 1,
+      "exclusionStatus": "",
+      "variantDiagnostics": [
+        [
+          {
+            "variant": "cover",
+            "status": "signal-not-active",
+            "candidateCount": 0,
+            "sourceTicketPresent": true,
+            "replacement": null
+          },
+          {
+            "variant": "flow",
+            "status": "signal-not-active",
+            "candidateCount": 0,
+            "sourceTicketPresent": true,
+            "replacement": null
+          },
+          {
+            "variant": "hole",
+            "status": "signal-not-active",
+            "candidateCount": 0,
+            "sourceTicketPresent": true,
             "replacement": null
           }
         ]
