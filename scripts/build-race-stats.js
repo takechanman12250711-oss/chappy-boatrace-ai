@@ -1294,6 +1294,8 @@ function addRacerPerformance(
         course,
         starts: 0,
         wins: 0,
+        seconds: 0,
+        thirds: 0,
         top3: 0,
         stSum: 0,
         stSquaredSum: 0,
@@ -1304,6 +1306,8 @@ function addRacerPerformance(
       };
 
     courseStats.starts += 1;
+    if (rank === 2) courseStats.seconds += 1;
+    if (rank === 3) courseStats.thirds += 1;
 
     if (rank === 1) {
       courseStats.wins += 1;
@@ -1532,6 +1536,8 @@ function finalizeRacerCourses(
               item.starts
             ),
           wins: item.wins,
+          seconds: item.seconds,
+          thirds: item.thirds,
           winRate: percent(
             item.wins,
             item.starts
