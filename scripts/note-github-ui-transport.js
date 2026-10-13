@@ -823,46 +823,54 @@ async function recoverClaimedPublication(page, payload, rootDir = process.cwd(),
   if (selected.sourcePath !== payload.sourcePath) throw new Error('publication_recovery_target_mismatch');
   const publishedDisplayProof = require('./note-publication-source').parsePublishedDisplayProof(payload);
   const url = selected.url;
-  const articleResponse = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-  if (!articleResponse?.ok() || page.url() !== url) throw new Error('publication_public_page_unavailable');
-  await page.getByRole('heading', { name: payload.title, exact: true }).waitFor({ state: 'visible', timeout: 15000 });
-  const body = page.locator('.note-common-styles__textnote-body');
-  if (await body.count() !== 1) throw Error('publication_recovery_body_layout_unverified');
-  const actualBody = await body.innerText();
-  if (!recoveryBodyMatches(actualBody, payload)) {
-    // Use only the already-read snapshot. Never emit article text, per-line
-    // hashes, DOM or authentication state, or change the original rejection.
-    try {
-      console.error(`NOTE_UI_RECOVERY_BODY_DIAGNOSTIC=${JSON.stringify(recoveryBodyDiagnostic(actualBody, payload))}`);
-    } catch { /* Diagnostics must not hide the original body mismatch. */ }
-    try {
-      if (require('./note-editor-content').compareEditorContent(actualBody, payload.freeText).equal) {
-        console.error(`NOTE_UI_RECOVERY_ACCESS_DIAGNOSTIC=${JSON.stringify(await recoveryAccessDiagnostic(page, payload, selected, actualBody))}`);
-      }
-    } catch { /* Neither editor access nor a later matching public snapshot can authorize recovery. */ }
-    throw new Error('publication_recovery_body_mismatch');
-  }
-  const articleText = await page.locator('article').innerText();
-  if (!String(articleText).replace(/\s+/g, '').includes(`¥${EXPECTED_PRICE_YEN}`)) {
-    throw new Error('publication_price_unverified');
-  }
-  const dates = await page.locator('time[datetime]').evaluateAll(elements => elements.map(el => el.getAttribute('datetime')));
-  const deadline = Date.parse(payload.deadlineAt);
-  const publishedAt = dates.length === 1 && dates.find(value => Number.isFinite(Date.parse(value)) &&
-    Date.parse(value) >= sourceTime && Date.parse(value) < deadline && Date.parse(value) <= Date.now());
-  if (!publishedAt) throw new Error('publication_timestamp_unverified_review_required');
-  // Reading the owner's full body proves the saved paid text; a separate fresh
-  // context must also prove the anonymous free boundary, price and same date.
-  const verification = await page.context().browser().newContext();
+  const readerObserver = require('./note-recovery-reader-observer.cjs').startRecoveryReaderObserver(page, selected);
   try {
-    await verifyRecoveredPublicPage(await verification.newPage(), payload, selected, publishedAt);
-  } finally { await verification.close(); }
-  const receipt = { version: 'note-publication-receipt-v1', raceKey: payload.raceKey, url,
-    articleSeries: payload.articleSeries, publicationKey: payload.publicationKey,
-    publishedAt, verifiedAt: new Date().toISOString(), price: EXPECTED_PRICE_YEN,
-    sourceSha256: payload.sourceSha256, publishedDisplayProof };
-  console.log(`NOTE_UI_PUBLICATION_URL_RECOVERED=${url}`);
-  return receipt;
+    const articleResponse = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    if (!articleResponse?.ok() || page.url() !== url) throw new Error('publication_public_page_unavailable');
+    await page.getByRole('heading', { name: payload.title, exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+    const body = page.locator('.note-common-styles__textnote-body');
+    if (await body.count() !== 1) throw Error('publication_recovery_body_layout_unverified');
+    const actualBody = await body.innerText();
+    if (!recoveryBodyMatches(actualBody, payload)) {
+      // Use only the already-read snapshot. Never emit article text, per-line
+      // hashes, DOM or authentication state, or change the original rejection.
+      try {
+        console.error(`NOTE_UI_RECOVERY_BODY_DIAGNOSTIC=${JSON.stringify(recoveryBodyDiagnostic(actualBody, payload))}`);
+      } catch { /* Diagnostics must not hide the original body mismatch. */ }
+      try {
+        if (require('./note-editor-content').compareEditorContent(actualBody, payload.freeText).equal) {
+          console.error(`NOTE_UI_RECOVERY_ACCESS_DIAGNOSTIC=${JSON.stringify(await recoveryAccessDiagnostic(page, payload, selected, actualBody))}`);
+        }
+      } catch { /* Neither editor access nor a later matching public snapshot can authorize recovery. */ }
+      try {
+        console.error(`NOTE_UI_RECOVERY_READER_DIAGNOSTIC=${JSON.stringify(readerObserver.stop())}`);
+      } catch { /* Reader observation never changes the strict full-body guard. */ }
+      throw new Error('publication_recovery_body_mismatch');
+    }
+    const articleText = await page.locator('article').innerText();
+    if (!String(articleText).replace(/\s+/g, '').includes(`¥${EXPECTED_PRICE_YEN}`)) {
+      throw new Error('publication_price_unverified');
+    }
+    const dates = await page.locator('time[datetime]').evaluateAll(elements => elements.map(el => el.getAttribute('datetime')));
+    const deadline = Date.parse(payload.deadlineAt);
+    const publishedAt = dates.length === 1 && dates.find(value => Number.isFinite(Date.parse(value)) &&
+      Date.parse(value) >= sourceTime && Date.parse(value) < deadline && Date.parse(value) <= Date.now());
+    if (!publishedAt) throw new Error('publication_timestamp_unverified_review_required');
+    // Reading the owner's full body proves the saved paid text; a separate fresh
+    // context must also prove the anonymous free boundary, price and same date.
+    const verification = await page.context().browser().newContext();
+    try {
+      await verifyRecoveredPublicPage(await verification.newPage(), payload, selected, publishedAt);
+    } finally { await verification.close(); }
+    const receipt = { version: 'note-publication-receipt-v1', raceKey: payload.raceKey, url,
+      articleSeries: payload.articleSeries, publicationKey: payload.publicationKey,
+      publishedAt, verifiedAt: new Date().toISOString(), price: EXPECTED_PRICE_YEN,
+      sourceSha256: payload.sourceSha256, publishedDisplayProof };
+    console.log(`NOTE_UI_PUBLICATION_URL_RECOVERED=${url}`);
+    return receipt;
+  } finally {
+    try { readerObserver.stop(); } catch { /* Cleanup cannot replace the recovery outcome. */ }
+  }
 }
 
 async function savePublicationReceipt(payload, receipt, env = process.env, request = fetch) {
