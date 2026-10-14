@@ -269,6 +269,23 @@ async function main() {
   await assert.rejects(lookup(actions), error => error === transportError);
   assert.equal(transportReads, 1);
 
+  // A retryable count change or duplicate must not mask an invalid row in the
+  // same page. Even if the next response would be healthy, stop immediately.
+  for (const mode of ["changed-total", "duplicate"]) {
+    for (const invalid of [null, oldRun, { ...recent, id: 0 }]) {
+      let reads = 0;
+      actions = { ...runApi([recent]), listWorkflowRunsForRepo: async args => {
+        reads++;
+        if (reads > 2) return { data: { total_count: 1, workflow_runs: [recent] } };
+        return { data: args.page === 1 ? { total_count: 101, workflow_runs: [older, ...noise] }
+          : { total_count: mode === "changed-total" ? 102 : 101,
+            workflow_runs: [mode === "duplicate" ? older : recent, invalid] } };
+      } };
+      await assert.rejects(lookup(actions, { sleep: async () => assert.fail("invalid row must not retry") }), /invalid or out-of-window/);
+      assert.equal(reads, 2);
+    }
+  }
+
   // Exactly 1,000 entries remains valid, while page 10 cannot silently truncate
   // the listing. The current run/attempt is refreshed after snapshot selection.
   const manyNoise = Array.from({ length: 999 }, (_, i) => ({ ...older, id: 2000 + i,

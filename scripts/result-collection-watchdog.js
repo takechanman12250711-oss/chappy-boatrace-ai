@@ -35,14 +35,19 @@ async function readCollectorWindow({ github, owner, repo, start, end, sleep, log
         if (!Number.isInteger(data?.total_count) || data.total_count < 0 || data.total_count > 1000 ||
             !Array.isArray(data.workflow_runs) || data.workflow_runs.length > 100)
           throw new Error(`Collector run listing is invalid or exceeds its limit: ${JSON.stringify(details)}`);
-        if (total != null && total !== data.total_count)
-          throw new ListingSnapshotChanged("changed during pagination", details);
-        total = data.total_count;
+        // Validate the entire page before a retryable inconsistency can mask a
+        // malformed/out-of-window row later in the same response.
         for (const run of data.workflow_runs) {
           const created = Date.parse(run?.created_at);
           if (!Number.isSafeInteger(run?.id) || run.id <= 0 || !Number.isFinite(created) || created < start || created > end)
             throw new Error(`Collector run listing returned an invalid or out-of-window run: ${JSON.stringify(details)}`);
-          if (seen.has(run.id)) throw new ListingSnapshotChanged("contains duplicate runs", details);
+        }
+        if (total != null && total !== data.total_count)
+          throw new ListingSnapshotChanged("changed during pagination", details);
+        total = data.total_count;
+        for (const run of data.workflow_runs) {
+          if (seen.has(run.id))
+            throw new ListingSnapshotChanged("contains duplicate runs", { ...details, uniqueCount: seen.size });
           seen.set(run.id, run);
         }
         if (seen.size === total) return [...seen.values()];
