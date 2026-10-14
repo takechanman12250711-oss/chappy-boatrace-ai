@@ -14,10 +14,10 @@ function text(html) {
     .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').normalize('NFKC');
 }
 function tickets(value, allowNone = false) {
-  // The reporter also uses the Japanese prolonged sound mark as a dash.
+  // The reporter also uses the Japanese prolonged sound mark and U+2015 horizontal bar as dashes.
   // Normalize only separators; the strict formation grammar below still
   // rejects unknown or partially readable ticket notation in full.
-  const s = value.normalize('NFKC').trim().replace(/[−‐–ー]/g, '-');
+  const s = value.normalize('NFKC').trim().replace(/[−‐–ー―]/g, '-');
   if (allowNone && /^(?:なし|無し)$/.test(s)) return [];
   const parts = s.split(/[\s、,\/]+/).filter(Boolean), out = new Set();
   if (!parts.length) throw new Error('tickets_missing');
