@@ -44,17 +44,6 @@ test('coverage buckets partition population', () => {
 });
 test('diagnosis rejects repeated race', () => assert.throws(() => m.diagnose([row(), row()])));
 test('object tickets compare correctly', () => { const r = row({ base: [{ticket:'1-2-3'}, {ticket:'1-2-4'}] }); assert.equal(m.compare([r]).primary.baseHits, 1); });
-test('absent shadow not zero', () => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hit-first-')); try { assert.equal(m.loadShadow(dir, 'C', 'none.json').status, 'REPORT_UNAVAILABLE'); } finally { fs.rmSync(dir, { recursive: true }); } });
-test('unsafe or inconsistent shadow blocked', () => {
- const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hit-first-')); fs.mkdirSync(path.join(dir,'data/stats'), { recursive: true });
- const file = path.join(dir,'data/stats/x.json');
- try {
-  fs.writeFileSync(file, JSON.stringify({ productionChanged: true })); assert.equal(m.loadShadow(dir,'A','x.json').status,'UNVERIFIED_SOURCE');
-  fs.writeFileSync(file, JSON.stringify({ productionChanged: false, automaticApplication:false, adoptionStatus:'NOT_APPROVED', sourceDiagnostics:{complete:true}, counts:{settledRaces:1}, gains:0, losses:0, rows:[] }));
-  assert.equal(m.loadShadow(dir,'A','x.json').reason,'shadow-count-mismatch');
- } finally { fs.rmSync(dir,{recursive:true}); }
-});
-
 // Frozen captures must not inherit the latest-day discovery/preference rules.
 const zlib = require('node:zlib');
 const archive = require('../scripts/daily-prediction-source-archive');

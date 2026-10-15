@@ -1,6 +1,6 @@
 'use strict';
 
-// Frozen output transport for two existing writers, not a general data writer.
+// Frozen output transport for the existing negative-clip writer, not a general data writer.
 // Compute/pack outside the shared lock; publish exact bytes without rebuilding.
 const fs = require('node:fs');
 const path = require('node:path');
@@ -10,7 +10,7 @@ const { execFileSync } = require('node:child_process');
 const archive = require('./daily-prediction-source-archive');
 const VERSION = 'generated-data-checkpoint-v1';
 const LIMIT = 100 * 1024 * 1024;
-const PROFILES = new Set(['negative-clip', 'active-100r']);
+const PROFILES = new Set(['negative-clip']);
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const gitBlob = bytes => createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
 const git = (root, args, env = {}) => execFileSync('git', args, {
@@ -19,9 +19,8 @@ const git = (root, args, env = {}) => execFileSync('git', args, {
 }).trimEnd();
 const validBlob = value => value === null || /^[a-f0-9]{40}$/.test(value || '');
 function profilePaths(profile, date) {
-  if (!PROFILES.has(profile) || (profile === 'negative-clip' && !/^\d{8}$/.test(date || '')) ||
-      (profile === 'active-100r' && date !== '')) throw new Error('Invalid profile/date');
-  return profile === 'active-100r' ? ['data/stats/active-100r-early-monitor.json'] : [
+  if (!PROFILES.has(profile) || !/^\d{8}$/.test(date || '')) throw new Error('Invalid profile/date');
+  return [
     `data/predictions/${date}.json`,
     `data/predictions/source-archives/${date}.json.gz`,
     `data/predictions/source-archives/${date}.meta.json`,
@@ -140,7 +139,7 @@ function load({ directory, expected }) {
 function publish({ root = process.cwd(), directory, expected, beforePush = () => {} }) {
   const manifest = load({ directory, expected });
   const { baseSha, profile } = manifest;
-  const workflow = profile === 'negative-clip' ? 'collect-frame-rise-fall-negative-clip-ab.yml' : 'check-active-100r-early-monitor.yml';
+  const workflow = 'collect-frame-rise-fall-negative-clip-ab.yml';
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'generated-data-publish-'));
   const env = { GIT_INDEX_FILE: path.join(temporary, 'index'),
     GIT_AUTHOR_NAME: 'github-actions[bot]', GIT_AUTHOR_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com',
