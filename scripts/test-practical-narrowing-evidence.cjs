@@ -1,0 +1,16 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {diagnose}=require('./audit-practical-narrowing-evidence.cjs');
+const review={raceKey:'20260917-14-3',selectedAt:'2026-09-17T00:11:56.638Z',actual:'1-4-3'};
+const record={raceKey:review.raceKey,selectedAt:review.selectedAt,prediction:{practicalTickets:['1-2-3']}};
+const original=structuredClone(record);
+original.prediction.practicalSelection={candidateDecisions:[{ticket:'1-4-3',reasonCode:'CANDIDATE_ONLY_EVALUATION'}]};
+assert.equal(diagnose(review,{record},[original]).status,'SAVED_REASON_FOUND');
+assert.equal(diagnose(review,{record},[]).status,'EXACT_SOURCE_NOT_FOUND');
+assert.equal(diagnose(review,{record},[record]).status,'MATCHED_SOURCE_REASON_MISSING');
+original.selectedAt='2026-09-17T00:12:00.000Z';
+assert.equal(diagnose(review,{record},[original]).status,'EXACT_SOURCE_NOT_FOUND');
+original.selectedAt=record.selectedAt;original.prediction.practicalTickets=['1-2-4'];
+assert.equal(diagnose(review,{record},[original]).status,'EXACT_SOURCE_NOT_FOUND');
+assert.equal(diagnose(review,null,[original]).status,'BUNDLE_TIMESTAMP_MISMATCH');
+console.log('exact timestamp and practical-ticket evidence tests passed');
