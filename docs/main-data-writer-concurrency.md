@@ -4,13 +4,18 @@ Workflows that write generated data to `main` share the `chappy-main-data-writer
 
 Mixing the default single-pending queue with `queue: max` can replace an older waiting writer when several follow-up workflows start together. The shared invariant keeps pending writers queued while retaining serialization; it does not identify any one workflow as the proven source of a past cancellation.
 
-## Negative-clip comparison and active-100R publication
+## Negative-clip comparison publication
 
-`collect-frame-rise-fall-negative-clip-ab.yml` and
-`check-active-100r-early-monitor.yml` compute outside the shared writer group.
-Only `publish_comparison` / `publish_monitor` enter the shared queue. Their
-existing triggers and calculation rules remain unchanged. Neither publisher
-runs a builder, restores a daily archive, or collects a new prediction.
+`collect-frame-rise-fall-negative-clip-ab.yml` computes outside the shared writer
+group. Only `publish_comparison` enters the shared queue. Its existing triggers
+and calculation rules remain unchanged. The publisher does not run a builder,
+restore a daily archive, or collect a new prediction.
+
+As of 2026-10-15, `check-active-100r-early-monitor.yml` is retired from automatic
+and manual execution. It retains read-only PR compatibility checks, with no
+report generation, publication, completion issue, or collector dispatch. Existing
+100R report bytes and the checkpoint profile remain available for historical
+verification; they are not an active waiting task. See [the current work plan](ACTIVE_WORK_PLAN.md).
 
 Before publication, `generated-data-checkpoint.cjs pack` freezes the prepared
 Git-save outputs as byte payloads plus a manifest. The negative-clip profile

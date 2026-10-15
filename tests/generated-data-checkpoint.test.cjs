@@ -256,7 +256,7 @@ try {
     assert.deepEqual(JSON.parse(zlib.gunzipSync(remoteFile(f, gzip))), f.next);
   });
   test('workflow contract: compute outside lock, backup before publish, exact artifact ID/hash, bounded publish-only job', () => {
-    for (const [file, job] of [['collect-frame-rise-fall-negative-clip-ab.yml', 'publish_comparison'], ['check-active-100r-early-monitor.yml', 'publish_monitor']]) {
+    for (const [file, job] of [['collect-frame-rise-fall-negative-clip-ab.yml', 'publish_comparison']]) {
       const source = fs.readFileSync(path.join(__dirname, '../.github/workflows', file), 'utf8');
       const [compute, writer] = source.split(`\n  ${job}:`);
       assert.ok(writer); assert.doesNotMatch(compute, /group: chappy-main-data-writers|contents: write/);
@@ -267,6 +267,18 @@ try {
       assert.match(writer, /generated-data-checkpoint.cjs publish/);
       assert.doesNotMatch(writer, /build-|restore-daily|prepare-daily|git (push|pull|rebase)/);
       assert.match(writer, /if: github.event_name != 'pull_request'/);
+    }
+  });
+  test('retired fixed-100R monitor has no execution triggers, write access, or upstream dispatch', () => {
+    const directory = path.join(__dirname, '../.github/workflows');
+    const retired = 'check-active-100r-early-monitor.yml';
+    const source = fs.readFileSync(path.join(directory, retired), 'utf8');
+    assert.match(source, /^  pull_request:/m);
+    assert.doesNotMatch(source, /^  (?:workflow_run|workflow_dispatch|workflow_call|schedule|push):/m);
+    assert.doesNotMatch(source, /(?:contents|issues): write|gh issue create|publish_monitor:|generated-data-checkpoint\.cjs (?:pack|publish)/);
+    for (const file of fs.readdirSync(directory).filter(file => /\.ya?ml$/.test(file) && file !== retired)) {
+      const caller = fs.readFileSync(path.join(directory, file), 'utf8');
+      assert.ok(!caller.includes(retired), `${file} must not invoke the retired monitor`);
     }
   });
   test('automatic frame handoff captures and publishes negative clip before releasing the shared writer lock', () => {
