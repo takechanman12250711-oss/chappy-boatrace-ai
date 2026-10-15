@@ -106,3 +106,8 @@ Workからの切り離しはGitHub側の稼働だけで完了とせず、既存C
 ## 2026-10-07 コロがし対象の明示
 
 新規記事はreadable-v3で4区分を維持し、有料末尾の「🔄 コロがし検証対象」に保存済み実戦厳選の完全一致部分集合を再掲する。原本・券・オッズ・区分別成績は変更しない。対象欄のsource hash・ticket hash・点数と有料本文hashを公開receiptへ固定し、初回・次段・結果照合で検査する。無料へ券を出さず、対象欄を新たな成績区分や参考へ数えない。既公開v1/v2を保持し、v2の本命を中心券と読み替えない。詳細と実証状況は `docs/note-korogashi-draft.md` を確認する。
+
+
+## 2026-10-16 通常AIコロがしの毎日開始
+
+`config/note-korogashi.json` の明示autoStart設定と `scripts/note-korogashi-autostart.cjs` を確認する。既存Update note marketing内でJST当日の公開済み通常AIから、締切順に既存の公開原本・検証対象検査を通る最初の1件を使う。1日1コース、目標10万円、最大3段。適格なしは見送り、当日既存normalコースが未登録・失効・終了でも自動再開始しない。独立研究候補の流用、追加入金、別cron、実購入を追加しない。main反映・事前登録・匿名掲載確認・公式照合は別々に確認する。詳細は `docs/note-korogashi-draft.md`。
