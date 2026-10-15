@@ -1,0 +1,36 @@
+name: Build outer attack fallback diagnostic replay
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - scripts/build-outer-attack-fallback-diagnostic-replay.cjs
+      - tests/outer-attack-fallback-diagnostic-replay.test.cjs
+      - .github/workflows/build-outer-attack-fallback-diagnostic-replay.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/build-outer-attack-fallback-diagnostic-replay.cjs
+      - tests/outer-attack-fallback-diagnostic-replay.test.cjs
+      - .github/workflows/build-outer-attack-fallback-diagnostic-replay.yml
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node tests/outer-attack-fallback-diagnostic-replay.test.cjs
+      - if: github.event_name != 'pull_request'
+        run: node scripts/build-outer-attack-fallback-diagnostic-replay.cjs
+      - if: github.event_name != 'pull_request'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/stats/outer-attack-fallback-diagnostic-replay-v1.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Update outer attack fallback diagnostic replay"
+          git pull --rebase origin main
+          git push origin HEAD:main
