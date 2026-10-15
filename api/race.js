@@ -8,6 +8,7 @@ const {
   fetchOriginalExhibition,
   attachOriginalLapTimes
 } = require("./_original-exhibition");
+const { captureSources } = require("./_official-source-capture");
 const OFFICIAL_REQUEST_TIMEOUT_MS = 15000;
 
 function fetchOfficial(url) {
@@ -70,11 +71,14 @@ module.exports = async function handler(req, res) {
     }
 
     const entryHtml = await entryRes.text();
+    const entryObservedAt = new Date().toISOString();
+    let beforeObservedAt = null;
     let beforeHtml = "";
     let beforeInfoWarning = "";
     if (beforeRes?.ok) {
       try {
         beforeHtml = await beforeRes.text();
+        beforeObservedAt = new Date().toISOString();
       } catch (error) {
         beforeInfoWarning = `直前情報の本文取得を省略: ${error?.message || error}`;
       }
@@ -86,6 +90,11 @@ module.exports = async function handler(req, res) {
           : "応答なし";
       beforeInfoWarning = `直前情報を省略: ${reason?.message || reason}`;
     }
+    // In-process opt-in only: raw HTML never enters the public API response.
+    captureSources(req, [
+      { role: "entry", url: entryUrl, observedAt: entryObservedAt, text: entryHtml },
+      { role: "exhibition", url: beforeInfoUrl, observedAt: beforeObservedAt, text: beforeHtml }
+    ]);
     const beforeInfoAvailable = Boolean(beforeHtml);
     const centralParsed = parseOfficialRaceHtml(
       entryHtml,
