@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "local-water-outer-head-priority-score-audit-v1",
-  "generatedAt": "2026-10-14T21:43:34.546Z",
+  "generatedAt": "2026-10-15T15:21:55.049Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
@@ -17,31 +17,31 @@
     "largeMedianGapThreshold": 15
   },
   "metrics": {
-    "unselectedScenarioHeadCount": 140,
-    "scoreComparableCount": 140,
-    "winnerOutscoredCount": 99,
+    "unselectedScenarioHeadCount": 142,
+    "scoreComparableCount": 142,
+    "winnerOutscoredCount": 101,
     "winnerAheadCount": 6,
     "tiedCount": 35,
     "winnerAheadOrTiedCount": 41,
     "nearTieWithin5Count": 29,
-    "gap5To10Count": 32,
-    "gap10To20Count": 32,
+    "gap5To10Count": 33,
+    "gap10To20Count": 33,
     "gapOver20Count": 6,
-    "duplicateReasonCount": 104,
+    "duplicateReasonCount": 106,
     "averagePositiveGap": 9.9,
     "medianPositiveGap": 9,
     "comparableCoverageRate": 100,
-    "winnerOutscoredRate": 70.7,
-    "winnerAheadOrTiedRate": 29.3,
-    "nearTieWithin5Rate": 20.7,
-    "duplicateReasonShare": 74.3
+    "winnerOutscoredRate": 71.1,
+    "winnerAheadOrTiedRate": 28.9,
+    "nearTieWithin5Rate": 20.4,
+    "duplicateReasonShare": 74.6
   },
   "gapBands": {
     "winnerAhead": 6,
     "tied": 35,
     "within5": 29,
-    "from5To10": 32,
-    "from10To20": 32,
+    "from5To10": 33,
+    "from10To20": 33,
     "over20": 6
   },
   "dominantComponent": {
@@ -78,7 +78,7 @@
   "topComparisonPaths": [
     {
       "value": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
-      "count": 104
+      "count": 106
     },
     {
       "value": "practicalSelection.targetDecisions[0].candidateDecisions",
@@ -19464,6 +19464,204 @@
           "winnerAhead": false,
           "tied": true,
           "winnerOutscored": false,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        }
+      ]
+    },
+    {
+      "date": "20261015",
+      "jcd": "14",
+      "raceNo": 3,
+      "actualHead": 6,
+      "finalHead": 3,
+      "scenario": true,
+      "selected": false,
+      "finalCorrect": false,
+      "comparable": true,
+      "primaryComparison": {
+        "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+        "pathPriority": 1,
+        "winnerScore": 81,
+        "finalScore": 97,
+        "gap": 16,
+        "winnerAhead": false,
+        "tied": false,
+        "winnerOutscored": true,
+        "duplicateReason": true,
+        "winnerReasons": [
+          "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 1号艇のpickup・81点・1号艇 島川 海輝 は🔥攻め艇 / 🌊展開艇 / 🛟イン残し。総合80点。プラス材料はインコース利、A2安定、ST安定 .16。マイナス材料はボート2連率低め 23.76%。 / 既存フォーメーションに同一買い目あり"
+        ],
+        "finalReasons": [
+          "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 6号艇のpickup・97点・荒れ水面で当地・道中重視 / 6コース最内差し・道中拾い / 道中指数上位 / 水面荒れで拾い上昇 / 既存フォーメーションに同一買い目あり"
+        ],
+        "componentDiffs": []
+      },
+      "allComparisons": [
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+          "pathPriority": 1,
+          "winnerScore": 81,
+          "finalScore": 97,
+          "gap": 16,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 1号艇のpickup・81点・1号艇 島川 海輝 は🔥攻め艇 / 🌊展開艇 / 🛟イン残し。総合80点。プラス材料はインコース利、A2安定、ST安定 .16。マイナス材料はボート2連率低め 23.76%。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 6号艇のpickup・97点・荒れ水面で当地・道中重視 / 6コース最内差し・道中拾い / 道中指数上位 / 水面荒れで拾い上昇 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.branches",
+          "pathPriority": 2,
+          "winnerScore": 81,
+          "finalScore": 97,
+          "gap": 16,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 1号艇のpickup・81点・1号艇 島川 海輝 は🔥攻め艇 / 🌊展開艇 / 🛟イン残し。総合80点。プラス材料はインコース利、A2安定、ST安定 .16。マイナス材料はボート2連率低め 23.76%。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 6号艇のpickup・97点・荒れ水面で当地・道中重視 / 6コース最内差し・道中拾い / 道中指数上位 / 水面荒れで拾い上昇 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches",
+          "pathPriority": 2,
+          "winnerScore": 81,
+          "finalScore": 97,
+          "gap": 16,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 1号艇のpickup・81点・1号艇 島川 海輝 は🔥攻め艇 / 🌊展開艇 / 🛟イン残し。総合80点。プラス材料はインコース利、A2安定、ST安定 .16。マイナス材料はボート2連率低め 23.76%。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 6号艇のpickup・97点・荒れ水面で当地・道中重視 / 6コース最内差し・道中拾い / 道中指数上位 / 水面荒れで拾い上昇 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "pathPriority": 3,
+          "winnerScore": 81,
+          "finalScore": 97,
+          "gap": 16,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        }
+      ]
+    },
+    {
+      "date": "20261015",
+      "jcd": "15",
+      "raceNo": 10,
+      "actualHead": 5,
+      "finalHead": 1,
+      "scenario": true,
+      "selected": false,
+      "finalCorrect": false,
+      "comparable": true,
+      "primaryComparison": {
+        "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+        "pathPriority": 1,
+        "winnerScore": 88,
+        "finalScore": 94,
+        "gap": 6,
+        "winnerAhead": false,
+        "tied": false,
+        "winnerOutscored": true,
+        "duplicateReason": true,
+        "winnerReasons": [
+          "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 5号艇のalternate-head・88点・5号艇 金田 諭 は🔥攻め艇 / 🌊展開艇 / ⚡道中艇 / 💣外コース妙味。総合87点。プラス材料はまくり差し・展開拾い、A1格上、ST安定 .16。大きなマイナスは少ない。 / 既存フォーメーションに同一買い目あり"
+        ],
+        "finalReasons": [
+          "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 5号艇のpickup・94点・5コースまくり差し拾い / 道中指数上位 / 既存フォーメーションに同一買い目あり"
+        ],
+        "componentDiffs": []
+      },
+      "allComparisons": [
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+          "pathPriority": 1,
+          "winnerScore": 88,
+          "finalScore": 94,
+          "gap": 6,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 5号艇のalternate-head・88点・5号艇 金田 諭 は🔥攻め艇 / 🌊展開艇 / ⚡道中艇 / 💣外コース妙味。総合87点。プラス材料はまくり差し・展開拾い、A1格上、ST安定 .16。大きなマイナスは少ない。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 5号艇のpickup・94点・5コースまくり差し拾い / 道中指数上位 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.branches",
+          "pathPriority": 2,
+          "winnerScore": 88,
+          "finalScore": 94,
+          "gap": 6,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 5号艇のalternate-head・88点・5号艇 金田 諭 は🔥攻め艇 / 🌊展開艇 / ⚡道中艇 / 💣外コース妙味。総合87点。プラス材料はまくり差し・展開拾い、A1格上、ST安定 .16。大きなマイナスは少ない。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 5号艇のpickup・94点・5コースまくり差し拾い / 道中指数上位 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches",
+          "pathPriority": 2,
+          "winnerScore": 88,
+          "finalScore": 94,
+          "gap": 6,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 5号艇のalternate-head・88点・5号艇 金田 諭 は🔥攻め艇 / 🌊展開艇 / ⚡道中艇 / 💣外コース妙味。総合87点。プラス材料はまくり差し・展開拾い、A1格上、ST安定 .16。大きなマイナスは少ない。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 5号艇のpickup・94点・5コースまくり差し拾い / 道中指数上位 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "pathPriority": 3,
+          "winnerScore": 88,
+          "finalScore": 94,
+          "gap": 6,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
           "duplicateReason": false,
           "winnerReasons": [],
           "finalReasons": [],
