@@ -9,7 +9,7 @@ const { observeSources, captureSources, validateSources } = require('../api/_off
 const { captureIndependentOfficialInput } = require('./capture-independent-official-input.cjs');
 const at = '2026-01-01T01:00:00.000Z', now = () => Date.parse(at);
 const target = { date: '20260101', jcd: '01', raceNo: 1, deadlineAt: '2026-01-01T01:10:00.000Z' };
-const text = '<html>公式の原文を空白・改行も含めて保存します。\r\n　６艇展示</html>';
+const text = '<html>公式の原文を空白・改行も含めて保存します。\r\n　６艇展示\n締切予定時刻 10:10 10:40 11:10 11:40 12:10 12:40 13:10 13:40 14:10 14:40 15:10 15:40</html>';
 function sources() {
   return ['entry', 'exhibition'].map((role, i) => ({ role, observedAt: at, text,
     url: `https://www.boatrace.jp/owpc/pc/race/${i ? 'beforeinfo' : 'racelist'}?hd=20260101&jcd=01&rno=1` }));
@@ -30,6 +30,8 @@ test('exact UTF-8 bytes and SHA survive, with no publication or prediction claim
   assert.equal(out.automaticReady, false); assert.equal(out.publicationReady, false);
   assert.equal(out.historyContext, undefined); assert.equal(out.tickets, undefined);
   assert.equal(out.startExhibition[0].marker, 'F', 'capture does not impose a new F exclusion');
+  assert.equal(out.officialDeadline.sourceSha256, out.sources[0].sha256);
+  assert.equal(Date.parse(out.officialDeadline.deadlineAt), Date.parse(target.deadlineAt));
 });
 test('source observation is opt-in by request identity, never query flags', () => {
   const req = { query: { date: target.date, jcd: '01', rno: '1', captureSources: true } };
@@ -74,25 +76,50 @@ test('missing capture and elapsed deadline fail closed without another fetch', a
     handler: async () => { calls++; }, now }), /current_deadline_required/);
   assert.equal(calls, 1);
 });
+test('caller deadline must be same JST day and match the fetched official race deadline', async () => {
+  for (const deadlineAt of ['2026-01-02T01:10:00Z', '2026-01-01T15:00:00Z']) {
+    await assert.rejects(captureIndependentOfficialInput({ ...target, deadlineAt }, { handler: handler(), now }), /deadline_date_mismatch/);
+  }
+  await assert.rejects(captureIndependentOfficialInput({ ...target, deadlineAt: '2026-01-01T01:20:00Z' }, { handler: handler(), now }), /official_deadline_mismatch/);
+  await assert.rejects(captureIndependentOfficialInput({ ...target, deadlineAt: '2026-01-01T25:10:00Z' }, { handler: handler(), now }), /target_invalid/);
+  await assert.rejects(captureIndependentOfficialInput({ ...target, deadlineAt: '2026-01-01T01:10:00' }, { handler: handler(), now }), /target_invalid/);
+});
+test('missing, incomplete and invalid official deadline tables cannot be guessed', async () => {
+  for (const replacement of [text.replace('締切予定時刻', '予定不明'), text.replace(' 15:40', ''), text.replace('10:10', '25:10'), text.replace('10:10', '10:99')]) {
+    await assert.rejects(captureIndependentOfficialInput(target, {
+      handler: handler(() => {}, s => { s[0].text = replacement; }), now
+    }), /official_deadline_missing/);
+  }
+});
 
 // Exercise the real API handler with only its existing I/O dependencies stubbed.
 // No network calls, production data writes, model execution or publication.
-function apiFixture({ missingBefore = false } = {}) {
+function apiFixture({ missingBefore = false, fault = '', realParser = false, entryHtml = text, beforeHtml = text } = {}) {
   const calls = [], exports = { exports: {} };
   const parsed = data(); delete parsed.ok; delete parsed.source; delete parsed.date;
   delete parsed.stadiumCode; delete parsed.raceNo; delete parsed.fetchedAt; delete parsed.historyContext;
   const dependencies = {
-    './_parser': { parseOfficialRaceHtml: () => structuredClone(parsed) },
+    './_parser': { parseOfficialRaceHtml: (...args) => {
+      if (fault === 'parser') throw new Error('synthetic parser error');
+      return realParser ? require('../api/_parser').parseOfficialRaceHtml(...args) : structuredClone(parsed);
+    } },
     './_history': { buildHistoryContext: () => ({ preserved: true }) },
     './_official-start-rank': { attachOfficialStartRanks: async d => d },
-    './_original-exhibition': { fetchOriginalExhibition: async () => { calls.push('original-exhibition'); return {}; }, attachOriginalLapTimes: d => d },
+    './_original-exhibition': { fetchOriginalExhibition: async () => { calls.push('original-exhibition');
+      if (fault === 'original') throw new Error('synthetic original error'); return {}; }, attachOriginalLapTimes: d => d },
     './_official-source-capture': require('../api/_official-source-capture')
   };
   class FixedDate extends Date { constructor(...args) { super(...(args.length ? args : [at])); } static now() { return now(); } }
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../api/race.js'), 'utf8'), {
     module: exports, require: name => { assert.ok(dependencies[name], name); return dependencies[name]; },
     Date: FixedDate, Intl, AbortSignal,
-    fetch: async url => { calls.push(url); return { ok: !(missingBefore && url.includes('beforeinfo')), status: 503, text: async () => text }; }
+    fetch: async url => {
+      calls.push(url); const role = url.includes('beforeinfo') ? 'before' : 'entry';
+      if (fault === `${role}-fetch`) throw new Error(`synthetic ${role} fetch error`);
+      return { ok: !(missingBefore && role === 'before') && fault !== `${role}-http`, status: 503,
+        text: async () => { if (fault === `${role}-text`) throw new Error(`synthetic ${role} text error`);
+          return role === 'entry' ? entryHtml : beforeHtml; } };
+    }
   });
   return { handler: exports.exports, calls };
 }
@@ -119,3 +146,35 @@ test('real API partial beforeinfo response still works normally but independent 
   assert.equal(response.ok, true); assert.equal(response.beforeInfoAvailable, false);
   await assert.rejects(captureIndependentOfficialInput(target, { handler: fixture.handler, now }), /capture_failed/);
 });
+test('real parser preserves synthetic HTML F/L and changed entry order without inventing judgments', async () => {
+  const entryHtml = '<main>枠 ボートレーサー 全国 当地 モーター ボート ' +
+    Array.from({ length: 6 }, (_, i) => `${i + 1} ${4201 + i} / A1 山田 太郎 東京/東京 40歳/52.0kg F0 L0 0.15 6.50 40.0 60.0 6.20 35.0 55.0 12 30.0 50.0 24 30.0 50.0`).join(' ') +
+    ' モーター・ボート変更時 ' + text + '</main>';
+  const order = [4, 1, 2, 3, 5, 6], st = ['F.01', '.17', '.05', '.02', '.01', 'L.09'];
+  const beforeHtml = '<main>枠 写真 ボートレーサー ' +
+    Array.from({ length: 6 }, (_, i) => `${i + 1} 山田 太郎 52.0kg 6.7${i} 0.0`).join(' ') +
+    ' 部品交換凡例 スタート展示 ' + order.map((boat, i) =>
+      `<div>${i + 1}<img src="/static_extra/pc/images/img_boat2_${boat}.png">${st[i]}</div>`).join(' ') +
+    ' 水面気象情報</main>';
+  const fixture = apiFixture({ realParser: true, entryHtml, beforeHtml });
+  const out = await captureIndependentOfficialInput(target, { handler: fixture.handler, now });
+  assert.deepEqual(out.startExhibition.map(row => row.boat), order);
+  assert.deepEqual(out.startExhibition.map(row => row.marker), ['F', '', '', '', '', 'L']);
+  assert.equal(out.startExhibition[0].st, 0.01, 'numeric ST remains paired with F marker, not treated as ordinary positive ST');
+  assert.equal(out.sources[0].text, entryHtml); assert.equal(out.sources[1].text, beforeHtml);
+  assert.equal(out.exhibitionSnapshot.startExhibition[0].marker, undefined, 'legacy publication snapshot is not the judgment input');
+  assert.equal(out.publicationReady, false);
+});
+for (const fault of ['entry-fetch', 'entry-http', 'entry-text', 'before-fetch', 'before-http', 'before-text', 'parser', 'original']) {
+  test(`normal API failure behavior unchanged: ${fault}`, async () => {
+    async function run(observed) {
+      const fixture = apiFixture({ fault }), req = { query: { date: target.date, jcd: '01', rno: '1' } };
+      if (observed) observeSources(req);
+      let status = 200, response;
+      await fixture.handler(req, { setHeader() {}, status(value) { status = value; return this; }, json(value) { response = value; } });
+      const { stack, ...stable } = response;
+      return { status, stable: JSON.parse(JSON.stringify(stable)), calls: fixture.calls };
+    }
+    assert.deepEqual(await run(true), await run(false));
+  });
+}

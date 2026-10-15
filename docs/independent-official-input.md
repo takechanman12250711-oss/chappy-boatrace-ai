@@ -12,7 +12,9 @@ APIの公開JSONにはHTMLを追加しない。`api/_official-source-capture.js`
 
 - `sources`: entry / exhibitionの実際の取得文字列、本文取得完了時刻、公式URL、UTF-8 SHA256。HTMLの空白・改行を正規化せず、解析値から原文を再生成しない。
 - 日付・場・R・締切・capture時刻と、既存 `note-exhibition-v1` の6艇展示snapshot。
+- `officialDeadline`: 同時取得したentry原文の12R予定表を既存 `api/schedule.js` のparserで読み、対象Rの公式締切・原文SHA・URL・取得時刻を固定する。呼出側の締切はJST同日かつ公式値と一致する場合だけ採用する。予定表欠測・不正時刻・不一致は停止し、追加取得や推測で埋めない。
 - 取得済みのentriesとstartExhibition。通常AI評価・候補券・historyContextはコピーしない。
+- F/Lの判断材料は原文とpacket直下のstartExhibitionを必須とする。既存exhibitionSnapshotは公開条件の確認用でmarkerを持たないため、そこだけからSTの意味を解釈しない。
 - `automaticReady=false`、`publicationReady=false`。原文の存在やhash一致は予想判断の妥当性を証明しない。
 
 取得前後ともJST当日・締切余裕120秒超を検査する。対象URL、ページ種別、本文hash、実取得時刻、6艇の実進入/ST/展示タイムを検査し、取得失敗・展示未完成・締切不足を別エラーとする。F/Lマーカーはそのまま保持し、素材取得の段階で独立販売用の新しい見送り条件を追加しない。
