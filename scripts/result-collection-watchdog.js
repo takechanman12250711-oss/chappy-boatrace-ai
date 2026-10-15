@@ -8,6 +8,61 @@ function isCollector(run) {
   return run?.path === COLLECTOR_PATH && run.head_branch === "main" &&
     Number.isSafeInteger(run.id) && run.id > 0 && Number.isFinite(Date.parse(run.created_at));
 }
+const LISTING_ATTEMPTS = 3;
+class ListingSnapshotChanged extends Error {
+  constructor(reason, details) {
+    super(`Collector run listing ${reason}: ${JSON.stringify(details)}`);
+    this.details = { reason, ...details };
+  }
+}
+async function readCollectorWindow({ github, owner, repo, start, end, sleep, log }) {
+  // Retry only a pagination inconsistency, from page 1 of the SAME closed
+  // window. Never combine pages from different attempts or accept partial data.
+  for (let attempt = 1; attempt <= LISTING_ATTEMPTS; attempt++) {
+    const seen = new Map();
+    let total;
+    try {
+      for (let page = 1; page <= 10; page++) {
+        const { data } = await github.rest.actions.listWorkflowRunsForRepo({ owner, repo,
+          branch: "main", created: `${new Date(start).toISOString()}..${new Date(end).toISOString()}`,
+          per_page: 100, page });
+        const details = { start: new Date(start).toISOString(), end: new Date(end).toISOString(),
+          attempt, page, expectedTotal: total ?? null, reportedTotal: data?.total_count ?? null,
+          receivedCount: Array.isArray(data?.workflow_runs) ? data.workflow_runs.length : null,
+          uniqueCount: seen.size };
+        // Malformed responses, capacity limits and invalid identities are not
+        // transient pagination changes. API/network exceptions also propagate.
+        if (!Number.isInteger(data?.total_count) || data.total_count < 0 || data.total_count > 1000 ||
+            !Array.isArray(data.workflow_runs) || data.workflow_runs.length > 100)
+          throw new Error(`Collector run listing is invalid or exceeds its limit: ${JSON.stringify(details)}`);
+        // Validate the entire page before a retryable inconsistency can mask a
+        // malformed/out-of-window row later in the same response.
+        for (const run of data.workflow_runs) {
+          const created = Date.parse(run?.created_at);
+          if (!Number.isSafeInteger(run?.id) || run.id <= 0 || !Number.isFinite(created) || created < start || created > end)
+            throw new Error(`Collector run listing returned an invalid or out-of-window run: ${JSON.stringify(details)}`);
+        }
+        if (total != null && total !== data.total_count)
+          throw new ListingSnapshotChanged("changed during pagination", details);
+        total = data.total_count;
+        for (const run of data.workflow_runs) {
+          if (seen.has(run.id))
+            throw new ListingSnapshotChanged("contains duplicate runs", { ...details, uniqueCount: seen.size });
+          seen.set(run.id, run);
+        }
+        if (seen.size === total) return [...seen.values()];
+        if (data.workflow_runs.length < 100 || page === 10 || seen.size > total)
+          throw new ListingSnapshotChanged("pagination is incomplete", { ...details, uniqueCount: seen.size });
+      }
+    } catch (error) {
+      if (!(error instanceof ListingSnapshotChanged)) throw error;
+      log(JSON.stringify({ event: "collector-listing-retry", ...error.details,
+        retrying: attempt < LISTING_ATTEMPTS }));
+      if (attempt === LISTING_ATTEMPTS) throw error;
+      await sleep(attempt * 1000);
+    }
+  }
+}
 // The workflow-specific first page has returned historical runs while newer
 // collectors were present in the repository listing. Read every page of each
 // recent window instead, without relying on API order or a delayed event alone.
@@ -15,7 +70,8 @@ function isCollector(run) {
 // normal operation. A truncated/inconsistent read must not close an incident or
 // dispatch a duplicate recovery run.
 async function latestCollectorRun({ github, owner, repo, now = new Date(),
-  since = scheduledAfter(dueDates(now)[0]), eventRunId }) {
+  since = scheduledAfter(dueDates(now)[0]), eventRunId,
+  sleep = ms => new Promise(resolve => setTimeout(resolve, ms)), log = message => console.warn(message) }) {
   const until = now.getTime();
   if (!Number.isFinite(since) || !Number.isFinite(until) || since > until || until - since > 36 * HOUR)
     throw new Error("Invalid collector lookup window");
@@ -29,27 +85,8 @@ async function latestCollectorRun({ github, owner, repo, now = new Date(),
   let selected;
   for (let end = until; end >= since;) {
     const start = Math.max(since, end - 3 * HOUR);
-    const seen = new Map();
-    let total;
-    for (let page = 1; page <= 10; page++) {
-      const { data } = await github.rest.actions.listWorkflowRunsForRepo({ owner, repo,
-        branch: "main", created: `${new Date(start).toISOString()}..${new Date(end).toISOString()}`,
-        per_page: 100, page });
-      if (!Number.isInteger(data.total_count) || data.total_count < 0 || data.total_count > 1000 ||
-          !Array.isArray(data.workflow_runs) || (total != null && total !== data.total_count))
-        throw new Error("Collector run listing is incomplete or changed during pagination");
-      total = data.total_count;
-      for (const run of data.workflow_runs) {
-        const created = Date.parse(run.created_at);
-        if (!Number.isSafeInteger(run.id) || !Number.isFinite(created) || created < start || created > end)
-          throw new Error("Collector run listing returned an invalid or out-of-window run");
-        seen.set(run.id, run);
-      }
-      if (seen.size === total) break;
-      if (data.workflow_runs.length < 100 || page === 10 || seen.size > total)
-        throw new Error("Collector run listing pagination is incomplete");
-    }
-    selected = [...seen.values()].filter(isCollector).sort(newestFirst)[0];
+    const runs = await readCollectorWindow({ github, owner, repo, start, end, sleep, log });
+    selected = runs.filter(isCollector).sort(newestFirst)[0];
     if (selected || start === since) break;
     end = start; // Inclusive boundary duplicates across windows are harmless.
   }

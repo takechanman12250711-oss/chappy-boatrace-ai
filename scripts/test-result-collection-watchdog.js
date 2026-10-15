@@ -142,7 +142,7 @@ async function main() {
   const context = { repo: { owner: "example", repo: "repo" }, payload: { workflow_run: { id: 99 } } };
   assert.equal((await runWatchdog({ github, context, core, now })).healthy, true);
   const lookup = (actions, extra = {}) => latestCollectorRun({ github: { rest: { actions } },
-    owner: "example", repo: "repo", now, ...extra });
+    owner: "example", repo: "repo", now, sleep: async () => {}, log: () => {}, ...extra });
   const recent = { ...successRun, id: 300, created_at: "2026-09-13T23:30:00Z", status: "pending", conclusion: null };
   const older = { ...successRun, id: 250, created_at: "2026-09-13T22:00:00Z" };
   const noise = Array.from({ length: 99 }, (_, i) => ({ ...older, id: 1000 + i, path: ".github/workflows/other.yml" }));
@@ -186,11 +186,132 @@ async function main() {
     total_count: args.page === 1 ? 101 : 102, workflow_runs: args.page === 1 ? [older, ...noise] : [recent]
   } }) };
   await assert.rejects(lookup(actions), /changed during pagination/);
+
+  // A complete fixed-window reread can recover a changing total. Pages from the
+  // rejected snapshot must not leak into the new selection (id 900 is absent).
+  const snapshotReads = [], retryLogs = [], sleeps = [];
+  const phantom = { ...recent, id: 900, created_at: "2026-09-13T23:59:00Z" };
+  let snapshot = 0;
+  actions = { ...runApi([older, ...noise, recent]), listWorkflowRunsForRepo: async args => {
+    if (args.page === 1) snapshot++;
+    snapshotReads.push({ snapshot, ...args });
+    if (snapshot === 1) return { data: { total_count: args.page === 1 ? 101 : 102,
+      workflow_runs: args.page === 1 ? [phantom, ...noise] : [recent] } };
+    return { data: { total_count: 101, workflow_runs: args.page === 1 ? [older, ...noise] : [recent] } };
+  } };
+  assert.equal((await lookup(actions, { eventRunId: older.id,
+    sleep: async ms => sleeps.push(ms), log: text => retryLogs.push(JSON.parse(text)) })).id, recent.id);
+  assert.deepEqual(snapshotReads.map(x => x.page), [1, 2, 1, 2]);
+  assert.equal(new Set(snapshotReads.map(x => x.created)).size, 1, "retry retains the original window");
+  assert.deepEqual(sleeps, [1000]);
+  assert.equal(retryLogs.length, 1);
+  assert.equal(retryLogs[0].page, 2);
+  assert.equal(retryLogs[0].expectedTotal, 101);
+  assert.equal(retryLogs[0].reportedTotal, 102);
+  assert.equal(retryLogs[0].retrying, true);
+
+  // Reordering that overlaps pages must restart. A reordered but complete set
+  // still selects the newest collector by timestamp/id, never by API ordering.
+  snapshot = 0;
+  actions = { ...runApi([older, ...noise, recent]), listWorkflowRunsForRepo: async args => {
+    if (args.page === 1) snapshot++;
+    if (snapshot === 1) return { data: { total_count: 101,
+      workflow_runs: args.page === 1 ? [older, ...noise] : [older] } };
+    const reordered = [recent, ...noise.slice().reverse(), older];
+    return { data: { total_count: 101, workflow_runs: reordered.slice((args.page - 1) * 100, args.page * 100) } };
+  } };
+  assert.equal((await lookup(actions)).id, recent.id);
+  assert.equal(snapshot, 2);
+  snapshot = 0;
+  actions = { ...runApi([recent]), listWorkflowRunsForRepo: async () => {
+    snapshot++;
+    return { data: { total_count: snapshot === 1 ? 2 : 1, workflow_runs: [recent] } };
+  } };
+  assert.equal((await lookup(actions)).id, recent.id, "short-page inconsistency is retried from scratch");
+
+  // Never succeed from duplicate rows, truncated data or endlessly changing
+  // totals; retries are bounded to three complete attempts, with two waits.
+  for (const mode of ["total", "duplicate", "short"]) {
+    let attempts = 0;
+    const waits = [], logs = [];
+    actions = { ...runApi([recent]), listWorkflowRunsForRepo: async args => {
+      if (args.page === 1) attempts++;
+      return { data: mode === "short" ? { total_count: 2, workflow_runs: [recent] }
+        : { total_count: mode === "total" && args.page === 2 ? 102 : 101,
+          workflow_runs: args.page === 1 ? [older, ...noise] : [mode === "duplicate" ? older : recent] } };
+    } };
+    await assert.rejects(lookup(actions, { sleep: async ms => waits.push(ms), log: text => logs.push(JSON.parse(text)) }), /listing/);
+    assert.equal(attempts, 3);
+    assert.deepEqual(waits, [1000, 2000]);
+    assert.equal(logs.length, 3);
+    assert.equal(logs[2].retrying, false);
+  }
+  // Invalid identities, capacity violations, malformed responses and transport
+  // failures are not treated as changing snapshots and are never blindly retried.
+  for (const data of [
+    { total_count: 1001, workflow_runs: [] },
+    { total_count: -1, workflow_runs: [] },
+    { total_count: 1, workflow_runs: [oldRun] },
+    { total_count: 1, workflow_runs: [{ ...recent, id: 0 }] },
+    { total_count: 1, workflow_runs: [null] },
+    { total_count: 1, workflow_runs: [{ ...recent, created_at: "invalid" }] },
+    { total_count: 101, workflow_runs: [older, ...noise, recent] },
+    { total_count: 0, workflow_runs: null }, null
+  ]) {
+    let reads = 0;
+    actions = { ...runApi([recent]), listWorkflowRunsForRepo: async () => { reads++; return { data }; } };
+    await assert.rejects(lookup(actions, { sleep: async () => assert.fail("invalid listing must not wait") }), /listing/);
+    assert.equal(reads, 1);
+  }
+  let transportReads = 0;
+  const transportError = Object.assign(new Error("network unavailable"), { status: 503 });
+  actions = { ...runApi([recent]), listWorkflowRunsForRepo: async () => { transportReads++; throw transportError; } };
+  await assert.rejects(lookup(actions), error => error === transportError);
+  assert.equal(transportReads, 1);
+
+  // A retryable count change or duplicate must not mask an invalid row in the
+  // same page. Even if the next response would be healthy, stop immediately.
+  for (const mode of ["changed-total", "duplicate"]) {
+    for (const invalid of [null, oldRun, { ...recent, id: 0 }]) {
+      let reads = 0;
+      actions = { ...runApi([recent]), listWorkflowRunsForRepo: async args => {
+        reads++;
+        if (reads > 2) return { data: { total_count: 1, workflow_runs: [recent] } };
+        return { data: args.page === 1 ? { total_count: 101, workflow_runs: [older, ...noise] }
+          : { total_count: mode === "changed-total" ? 102 : 101,
+            workflow_runs: [mode === "duplicate" ? older : recent, invalid] } };
+      } };
+      await assert.rejects(lookup(actions, { sleep: async () => assert.fail("invalid row must not retry") }), /invalid or out-of-window/);
+      assert.equal(reads, 2);
+    }
+  }
+
+  // Exactly 1,000 entries remains valid, while page 10 cannot silently truncate
+  // the listing. The current run/attempt is refreshed after snapshot selection.
+  const manyNoise = Array.from({ length: 999 }, (_, i) => ({ ...older, id: 2000 + i,
+    path: ".github/workflows/other.yml" }));
+  const attempt2 = { ...recent, run_attempt: 2, status: "completed", conclusion: "success" };
+  actions = runApi([...manyNoise, { ...recent, run_attempt: 1 }], [attempt2]);
+  const currentAttempt = await lookup(actions, { eventRunId: recent.id });
+  assert.equal(currentAttempt.id, recent.id);
+  assert.equal(currentAttempt.run_attempt, 2);
+  assert.equal(currentAttempt.conclusion, "success");
+  assert.equal(actions.reads.length, 10);
+
   // Selection/API errors must leave issue state unchanged, not signal recovery.
   const goodActions = github.rest.actions;
   github.rest.actions = { ...goodActions, listWorkflowRunsForRepo: async () => ({ data: { total_count: 1001, workflow_runs: [] } }) };
   await assert.rejects(runWatchdog({ github, context, core, now }), /listing/);
   assert.deepEqual(github.calls, []);
+  let rejectedPages = 0;
+  github.rest.actions = { ...goodActions, listWorkflowRunsForRepo: async args => {
+    rejectedPages++;
+    return { data: { total_count: args.page === 1 ? 101 : 102,
+      workflow_runs: args.page === 1 ? [older, ...noise] : [recent] } };
+  } };
+  await assert.rejects(runWatchdog({ github, context, core, now }), /changed during pagination/);
+  assert.equal(rejectedPages, 6);
+  assert.deepEqual(github.calls, [], "exhausted snapshot retries cannot create, comment on or close an issue");
   github.rest.actions = goodActions;
   github.rest.repos.getContent = async () => { throw Object.assign(new Error("API unavailable"), { status: 503 }); };
   await assert.rejects(runWatchdog({ github, context, core, now }), /API unavailable/);
