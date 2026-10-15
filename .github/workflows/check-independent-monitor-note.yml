@@ -2,6 +2,9 @@ name: Check independent monitor note source
 on:
   pull_request:
     paths:
+      - "api/race.js"
+      - "api/_official-source-capture.js"
+      - "scripts/capture-independent-official-input*"
       - "scripts/note-article-series*"
       - "scripts/save-independent-monitor-note.js"
       - "scripts/independent-monitor-decision*"
@@ -26,6 +29,7 @@ jobs:
           sparse-checkout: |
             .github/workflows
             scripts
+            api
             js
             config
             assets/note
@@ -36,6 +40,7 @@ jobs:
           node-version: '20'
       - name: Test unchanged originals and existing publication protections
         run: |
+          node --test scripts/capture-independent-official-input.test.cjs
           node --test scripts/independent-monitor-decision.test.cjs scripts/independent-role-selector.test.cjs scripts/independent-rule-forward.test.cjs
           node scripts/note-independent-monitor-source.test.js
           node scripts/note-publication-source.test.js
