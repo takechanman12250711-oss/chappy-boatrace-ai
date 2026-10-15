@@ -21,7 +21,7 @@ node scripts/note-korogashi-draft.cjs --input /path/to/session.json
 
 ## 運用接続 v1（2026-10-06）
 
-確認用CLIとは別に、`note-korogashi-lifecycle.cjs` / `note-korogashi-store.cjs` / `note-korogashi-run.cjs` を既存の `Update note marketing` へ接続する。新しいcron、公式collector、有料API、舟券購入処理は作らない。未登録のコースを毎日自動作成しない。
+確認用CLIとは別に、`note-korogashi-lifecycle.cjs` / `note-korogashi-store.cjs` / `note-korogashi-run.cjs` を既存の `Update note marketing` へ接続する。新しいcron、公式collector、有料API、舟券購入処理は作らない。当初は明示開始のみ。2026-10-16承認の通常1日1コース自動開始は下記の追加仕様を参照。
 
 - 開始は既存workflowのRun workflowで、`korogashi_first_publication_key` に当日の公開済み初回レース（`YYYYMMDD-JCD-R:normal|escape|manshu`）を指定する。目標は `korogashi_targets` に円・カンマ区切り、既定は `100000,200000,300000`。最大回数は `korogashi_max_legs` の2または3。初回キーが空欄なら通常更新だけ。同じ初回・目標の再実行では新しいコースを増やさず、既存の回数や目標も変更しない。iPhoneのGitHub画面から入力でき、PC認証やCookieは不要。実端末での操作確認は別途必要。
 - `config/note-korogashi.json` の明示requestも受け付ける。初期値は空で、架空のレースや過去レースを開始設定しない。登録後のrequestは専用状態に残り、設定から消しても履歴は消えない。
@@ -54,3 +54,14 @@ node scripts/note-korogashi-draft.cjs --input /path/to/session.json
 ### 過去表示の明示的なreceipt回復
 
 `recover` は従来どおり明示実行だけで、記事の編集・再投稿をしない。claimのリモートrefから確認した不変commitに元原稿が存在し、renderer・公開元adapter・必要な依存コードがレビュー済みの固定版と一致する場合だけ、その版で本文・公開証明を復元する。入力のversion名、現在の日付、原稿のsourceCommitだけでは旧版を選ばない。未確認のhash・欠けた原稿・本文不一致は停止する。v1/v2の記事へv3の検証対象欄を後付けせず、回復をコロがしの締切前公開証拠に昇格させない。
+
+
+## 2026-10-16 通常AIの1日1コース自動開始
+
+`config/note-korogashi.json` の `autoStart` を明示有効にした場合、既存 Update note marketing のprepareで、JST当日の公開済み通常AIから締切順（同時刻はpublicationKey順）に既存の初回検査を通る最初の1件を使う。目標10万円、初回込み最大3段、1日1コースに限定する。適格記事がなければ見送り、後続の既存実行で再確認する。別のcronや有料API、舟券購入を追加しない。
+
+- 公開receipt、原本SHA、展示、公開済み検証対象1〜7点、締切120秒超の既存makeLeg検査を省略しない。結果やオッズで初回を選び直さず、独立escape/manshu・研究候補は選ばない。
+- 当日のnormal要求が設定または専用状態にあれば、未登録・失効・終了も含め新規自動開始しない。固定の日次IDを使い、既存の要求・配分・証拠を変更しない。翌日は別の1コースを開始できる。
+- 初回1点1,000円、以後のモデル払戻内の配分、追加入金なし、同日内の継続・終了条件は変更しない。既存artifact登録と無料一覧の匿名確認が必要で、選定成功だけでは実績にしない。
+- 設定がない場合やenabled=falseは従来の明示開始・既存コース継続を維持する。設定の上限、種類、目標、最大段数を無断拡張しないよう未知の値は停止する。
+- main反映と自然起動での事前登録・公開確認・結果照合は別々に確認する。自動開始のテスト成功を実レースの掲載成功と呼ばない。

@@ -1,6 +1,7 @@
 'use strict';
 const fs=require('node:fs');
 const k=require('./note-korogashi-lifecycle.cjs');
+const autoStart=require('./note-korogashi-autostart.cjs');
 const {client,REPO}=require('./note-marketing-store');
 const {loadConfig,jstDate}=require('./note-marketing-content');
 const {repository}=require('./note-korogashi-store.cjs');
@@ -43,17 +44,18 @@ async function run(mode,file,{env=process.env,clock=Date.now,store=client(env),f
   const ctx=context(env), repo=repository(store), before=await repo.load();
   if(mode==='prepare') {
     config=withDispatch(config||JSON.parse(fs.readFileSync('config/note-korogashi.json','utf8')),env,clock());
-    if(!config.requests.length&&!Object.keys(before.state.plans).length) {
+    if(!autoStart.enabled(config)&&!config.requests.length&&!Object.keys(before.state.plans).length) {
       if(env.GITHUB_OUTPUT)fs.appendFileSync(env.GITHUB_OUTPUT,'count=0\n');
       return {status:'no_requested_courses',count:0};
     }
     const marketingConfig=loadConfig(), loaded=await store.load(marketingConfig);
     const marketing=await store.collect(loaded.state,clock());
-    const out=await k.prepare(before.state,config,{rows:marketing.rows,source:repo.source,result:repo.officialLoader(marketing),now:clock(),context:ctx});
+    const automatic=await autoStart.withAutoStart(config,before.state,{rows:marketing.rows,source:repo.source,now:clock()});
+    const out=await k.prepare(before.state,automatic.config,{rows:marketing.rows,source:repo.source,result:repo.officialLoader(marketing),now:clock(),context:ctx});
     await repo.save(before,out.state);
     if(out.staged.length)fs.writeFileSync(file,k.json({version:'note-korogashi-stage-v1',snapshots:out.staged})+'\n',{flag:'wx'});
     if(env.GITHUB_OUTPUT)fs.appendFileSync(env.GITHUB_OUTPUT,`count=${out.staged.length}\n`);
-    return {status:'prepared',count:out.staged.length,skipped:out.skipped};
+    return {status:'prepared',count:out.staged.length,skipped:out.skipped,autoStart:{status:automatic.status,publicationKey:automatic.publicationKey,skipped:automatic.skipped}};
   }
   if(mode==='confirm') {
     const staged=JSON.parse(fs.readFileSync(file,'utf8'));
