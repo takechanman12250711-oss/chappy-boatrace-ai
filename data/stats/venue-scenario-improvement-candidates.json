@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "analysisId": "venue-scenario-improvement-candidates-v1",
-  "generatedAt": "2026-10-14T21:23:51.432Z",
-  "sourceGeneratedAt": "2026-10-14T21:23:51.429Z",
+  "generatedAt": "2026-10-15T14:28:28.470Z",
+  "sourceGeneratedAt": "2026-10-15T14:28:28.466Z",
   "source": "data/stats/venue-theory-profile.json",
   "analysisInputContract": "official-pre-deadline-cohort-v1",
   "productionChanged": false,
@@ -113,19 +113,19 @@
       "strongestTheory": {
         "theoryKey": "course",
         "label": "コース理論",
-        "evaluatedCount": 108,
-        "practicalHitRate": 29.6,
-        "recoveryRate": 202,
-        "profit": 42440,
+        "evaluatedCount": 109,
+        "practicalHitRate": 29.4,
+        "recoveryRate": 201.5,
+        "profit": 42340,
         "classification": "STRONG"
       },
       "weakestTheory": {
         "theoryKey": "frame-rise-fall",
         "label": "枠別浮沈率",
-        "evaluatedCount": 99,
-        "practicalHitRate": 24.2,
-        "recoveryRate": 76.7,
-        "profit": -12700,
+        "evaluatedCount": 102,
+        "practicalHitRate": 24.5,
+        "recoveryRate": 74.8,
+        "profit": -14100,
         "classification": "WEAK"
       }
     },
@@ -141,19 +141,19 @@
       "strongestTheory": {
         "theoryKey": "exhibition",
         "label": "展示・足理論",
-        "evaluatedCount": 44,
-        "practicalHitRate": 27.3,
-        "recoveryRate": 141,
-        "profit": 14100,
+        "evaluatedCount": 46,
+        "practicalHitRate": 26.1,
+        "recoveryRate": 135.1,
+        "profit": 12600,
         "classification": "STRONG"
       },
       "weakestTheory": {
         "theoryKey": "remain-pickup",
         "label": "残し・拾い理論",
-        "evaluatedCount": 162,
-        "practicalHitRate": 29,
-        "recoveryRate": 97.7,
-        "profit": -3210,
+        "evaluatedCount": 165,
+        "practicalHitRate": 28.5,
+        "recoveryRate": 95.9,
+        "profit": -5810,
         "classification": "WATCH"
       }
     }
@@ -162,11 +162,11 @@
     "twoCourseSashiSkip": {
       "source": "data/stats/race-flow-2course-sashi-skip-ab-report.json",
       "version": "race-flow-2course-sashi-skip-ab-v1-prospective",
-      "generatedAt": "2026-10-14T20:49:11.489Z",
+      "generatedAt": "2026-10-15T14:20:13.103Z",
       "targetLabel": "2コース差し",
-      "targetSettledCount": 586,
-      "deltaRecoveryRate": 5.1,
-      "deltaHitRate": 0.9,
+      "targetSettledCount": 596,
+      "deltaRecoveryRate": 5.3,
+      "deltaHitRate": 0.8,
       "adoptionDecisionReady": true,
       "usableForPrediction": false
     }
@@ -275,37 +275,37 @@
       "direction": "LOSS",
       "theoryCount": 3,
       "evaluatedCountRange": {
-        "minimum": 23,
-        "maximum": 27
+        "minimum": 24,
+        "maximum": 28
       },
-      "medianRecoveryRate": 24.7,
-      "medianPracticalHitRate": 18.5,
+      "medianRecoveryRate": 23.7,
+      "medianPracticalHitRate": 17.9,
       "theoryRows": [
         {
           "theoryKey": "race-flow",
           "label": "展開理論",
-          "evaluatedCount": 27,
-          "practicalHitRate": 18.5,
-          "recoveryRate": 24.7,
-          "profit": -17930,
+          "evaluatedCount": 28,
+          "practicalHitRate": 17.9,
+          "recoveryRate": 23.7,
+          "profit": -18930,
           "classification": "WEAK"
         },
         {
           "theoryKey": "remain-pickup",
           "label": "残し・拾い理論",
-          "evaluatedCount": 27,
-          "practicalHitRate": 18.5,
-          "recoveryRate": 25,
-          "profit": -17630,
+          "evaluatedCount": 28,
+          "practicalHitRate": 17.9,
+          "recoveryRate": 24,
+          "profit": -18630,
           "classification": "WEAK"
         },
         {
           "theoryKey": "local-water",
           "label": "当地・水面理論",
-          "evaluatedCount": 23,
-          "practicalHitRate": 17.4,
-          "recoveryRate": 24.4,
-          "profit": -15350,
+          "evaluatedCount": 24,
+          "practicalHitRate": 16.7,
+          "recoveryRate": 23.2,
+          "profit": -16350,
           "classification": "WEAK"
         }
       ]
@@ -406,6 +406,58 @@
       ]
     },
     {
+      "jcd": "14",
+      "place": "鳴門",
+      "scenarioKey": "fourAttack",
+      "scenarioLabel": "4カド攻め",
+      "direction": "LOSS",
+      "theoryCount": 4,
+      "evaluatedCountRange": {
+        "minimum": 28,
+        "maximum": 32
+      },
+      "medianRecoveryRate": 26.3,
+      "medianPracticalHitRate": 11.3,
+      "theoryRows": [
+        {
+          "theoryKey": "race-flow",
+          "label": "展開理論",
+          "evaluatedCount": 32,
+          "practicalHitRate": 12.5,
+          "recoveryRate": 26.1,
+          "profit": -21500,
+          "classification": "WEAK"
+        },
+        {
+          "theoryKey": "remain-pickup",
+          "label": "残し・拾い理論",
+          "evaluatedCount": 32,
+          "practicalHitRate": 12.5,
+          "recoveryRate": 26.4,
+          "profit": -21200,
+          "classification": "WEAK"
+        },
+        {
+          "theoryKey": "local-water",
+          "label": "当地・水面理論",
+          "evaluatedCount": 30,
+          "practicalHitRate": 10,
+          "recoveryRate": 26.8,
+          "profit": -20800,
+          "classification": "WEAK"
+        },
+        {
+          "theoryKey": "wall-boat",
+          "label": "壁艇理論",
+          "evaluatedCount": 28,
+          "practicalHitRate": 7.1,
+          "recoveryRate": 21.2,
+          "profit": -17720,
+          "classification": "WEAK"
+        }
+      ]
+    },
+    {
       "jcd": "16",
       "place": "児島",
       "scenarioKey": "threeAttack",
@@ -453,119 +505,6 @@
           "practicalHitRate": 11.4,
           "recoveryRate": 30.9,
           "profit": -17970,
-          "classification": "WEAK"
-        }
-      ]
-    },
-    {
-      "jcd": "14",
-      "place": "鳴門",
-      "scenarioKey": "fourAttack",
-      "scenarioLabel": "4カド攻め",
-      "direction": "LOSS",
-      "theoryCount": 5,
-      "evaluatedCountRange": {
-        "minimum": 27,
-        "maximum": 31
-      },
-      "medianRecoveryRate": 27,
-      "medianPracticalHitRate": 12.9,
-      "theoryRows": [
-        {
-          "theoryKey": "race-flow",
-          "label": "展開理論",
-          "evaluatedCount": 31,
-          "practicalHitRate": 12.9,
-          "recoveryRate": 27,
-          "profit": -20600,
-          "classification": "WEAK"
-        },
-        {
-          "theoryKey": "remain-pickup",
-          "label": "残し・拾い理論",
-          "evaluatedCount": 31,
-          "practicalHitRate": 12.9,
-          "recoveryRate": 27.2,
-          "profit": -20300,
-          "classification": "WEAK"
-        },
-        {
-          "theoryKey": "local-water",
-          "label": "当地・水面理論",
-          "evaluatedCount": 29,
-          "practicalHitRate": 10.3,
-          "recoveryRate": 27.6,
-          "profit": -19900,
-          "classification": "WEAK"
-        },
-        {
-          "theoryKey": "wall-boat",
-          "label": "壁艇理論",
-          "evaluatedCount": 27,
-          "practicalHitRate": 7.4,
-          "recoveryRate": 22,
-          "profit": -16920,
-          "classification": "WEAK"
-        },
-        {
-          "theoryKey": "course",
-          "label": "コース理論",
-          "evaluatedCount": 30,
-          "practicalHitRate": 13.3,
-          "recoveryRate": 0,
-          "profit": -14200,
-          "classification": "WEAK"
-        }
-      ]
-    },
-    {
-      "jcd": "10",
-      "place": "三国",
-      "scenarioKey": "threeAttack",
-      "scenarioLabel": "3コース攻め",
-      "direction": "LOSS",
-      "theoryCount": 4,
-      "evaluatedCountRange": {
-        "minimum": 27,
-        "maximum": 29
-      },
-      "medianRecoveryRate": 28,
-      "medianPracticalHitRate": 12.5,
-      "theoryRows": [
-        {
-          "theoryKey": "local-water",
-          "label": "当地・水面理論",
-          "evaluatedCount": 28,
-          "practicalHitRate": 10.7,
-          "recoveryRate": 29.1,
-          "profit": -18500,
-          "classification": "WEAK"
-        },
-        {
-          "theoryKey": "race-flow",
-          "label": "展開理論",
-          "evaluatedCount": 29,
-          "practicalHitRate": 13.8,
-          "recoveryRate": 27.3,
-          "profit": -18110,
-          "classification": "WEAK"
-        },
-        {
-          "theoryKey": "remain-pickup",
-          "label": "残し・拾い理論",
-          "evaluatedCount": 29,
-          "practicalHitRate": 13.8,
-          "recoveryRate": 28.6,
-          "profit": -16910,
-          "classification": "WEAK"
-        },
-        {
-          "theoryKey": "wall-boat",
-          "label": "壁艇理論",
-          "evaluatedCount": 27,
-          "practicalHitRate": 11.1,
-          "recoveryRate": 26.5,
-          "profit": -14410,
           "classification": "WEAK"
         }
       ]
@@ -630,37 +569,37 @@
       "direction": "LOSS",
       "theoryCount": 3,
       "evaluatedCountRange": {
-        "minimum": 22,
-        "maximum": 25
+        "minimum": 23,
+        "maximum": 27
       },
-      "medianRecoveryRate": 32.1,
-      "medianPracticalHitRate": 20,
+      "medianRecoveryRate": 30,
+      "medianPracticalHitRate": 18.5,
       "theoryRows": [
         {
           "theoryKey": "race-flow",
           "label": "展開理論",
-          "evaluatedCount": 25,
-          "practicalHitRate": 20,
-          "recoveryRate": 31,
-          "profit": -15460,
+          "evaluatedCount": 27,
+          "practicalHitRate": 18.5,
+          "recoveryRate": 29,
+          "profit": -16960,
           "classification": "WEAK"
         },
         {
           "theoryKey": "remain-pickup",
           "label": "残し・拾い理論",
-          "evaluatedCount": 25,
-          "practicalHitRate": 20,
-          "recoveryRate": 32.1,
-          "profit": -14660,
+          "evaluatedCount": 27,
+          "practicalHitRate": 18.5,
+          "recoveryRate": 30,
+          "profit": -16160,
           "classification": "WEAK"
         },
         {
           "theoryKey": "local-water",
           "label": "当地・水面理論",
-          "evaluatedCount": 22,
-          "practicalHitRate": 22.7,
-          "recoveryRate": 32.9,
-          "profit": -14160,
+          "evaluatedCount": 23,
+          "practicalHitRate": 21.7,
+          "recoveryRate": 31.4,
+          "profit": -15160,
           "classification": "WEAK"
         }
       ]
@@ -725,98 +664,107 @@
       "direction": "LOSS",
       "theoryCount": 5,
       "evaluatedCountRange": {
-        "minimum": 38,
-        "maximum": 51
+        "minimum": 39,
+        "maximum": 52
       },
-      "medianRecoveryRate": 35.1,
-      "medianPracticalHitRate": 31.4,
+      "medianRecoveryRate": 36,
+      "medianPracticalHitRate": 32.7,
       "theoryRows": [
         {
           "theoryKey": "local-water",
           "label": "当地・水面理論",
-          "evaluatedCount": 51,
-          "practicalHitRate": 31.4,
-          "recoveryRate": 35,
-          "profit": -25360,
+          "evaluatedCount": 52,
+          "practicalHitRate": 32.7,
+          "recoveryRate": 35.9,
+          "profit": -25390,
           "classification": "WEAK"
         },
         {
           "theoryKey": "race-flow",
           "label": "展開理論",
-          "evaluatedCount": 51,
-          "practicalHitRate": 31.4,
-          "recoveryRate": 35,
-          "profit": -25360,
+          "evaluatedCount": 52,
+          "practicalHitRate": 32.7,
+          "recoveryRate": 35.9,
+          "profit": -25390,
           "classification": "WEAK"
         },
         {
           "theoryKey": "remain-pickup",
           "label": "残し・拾い理論",
-          "evaluatedCount": 51,
-          "practicalHitRate": 31.4,
-          "recoveryRate": 35.1,
-          "profit": -25260,
+          "evaluatedCount": 52,
+          "practicalHitRate": 32.7,
+          "recoveryRate": 36,
+          "profit": -25290,
           "classification": "WEAK"
         },
         {
           "theoryKey": "skill",
           "label": "技量理論",
-          "evaluatedCount": 43,
-          "practicalHitRate": 34.9,
-          "recoveryRate": 37.2,
-          "profit": -20780,
+          "evaluatedCount": 44,
+          "practicalHitRate": 36.4,
+          "recoveryRate": 38.2,
+          "profit": -20810,
           "classification": "WEAK"
         },
         {
           "theoryKey": "motor",
           "label": "モーター理論",
-          "evaluatedCount": 38,
-          "practicalHitRate": 31.6,
-          "recoveryRate": 37.6,
-          "profit": -18350,
+          "evaluatedCount": 39,
+          "practicalHitRate": 33.3,
+          "recoveryRate": 38.7,
+          "profit": -18380,
           "classification": "WEAK"
         }
       ]
     },
     {
-      "jcd": "02",
-      "place": "戸田",
-      "scenarioKey": "sashi",
-      "scenarioLabel": "2コース差し",
+      "jcd": "10",
+      "place": "三国",
+      "scenarioKey": "threeAttack",
+      "scenarioLabel": "3コース攻め",
       "direction": "LOSS",
-      "theoryCount": 3,
+      "theoryCount": 4,
       "evaluatedCountRange": {
-        "minimum": 36,
-        "maximum": 38
+        "minimum": 28,
+        "maximum": 30
       },
-      "medianRecoveryRate": 39.2,
-      "medianPracticalHitRate": 15.8,
+      "medianRecoveryRate": 37.5,
+      "medianPracticalHitRate": 15.5,
       "theoryRows": [
+        {
+          "theoryKey": "local-water",
+          "label": "当地・水面理論",
+          "evaluatedCount": 29,
+          "practicalHitRate": 13.8,
+          "recoveryRate": 37.2,
+          "profit": -17020,
+          "classification": "WEAK"
+        },
         {
           "theoryKey": "race-flow",
           "label": "展開理論",
-          "evaluatedCount": 38,
-          "practicalHitRate": 15.8,
-          "recoveryRate": 38.1,
-          "profit": -20930,
+          "evaluatedCount": 30,
+          "practicalHitRate": 16.7,
+          "recoveryRate": 35.9,
+          "profit": -16530,
           "classification": "WEAK"
         },
         {
           "theoryKey": "remain-pickup",
           "label": "残し・拾い理論",
-          "evaluatedCount": 38,
-          "practicalHitRate": 15.8,
-          "recoveryRate": 39.2,
-          "profit": -19930,
+          "evaluatedCount": 30,
+          "practicalHitRate": 16.7,
+          "recoveryRate": 37.7,
+          "profit": -15330,
           "classification": "WEAK"
         },
         {
-          "theoryKey": "local-water",
-          "label": "当地・水面理論",
-          "evaluatedCount": 36,
-          "practicalHitRate": 16.7,
-          "recoveryRate": 40,
-          "profit": -19330,
+          "theoryKey": "wall-boat",
+          "label": "壁艇理論",
+          "evaluatedCount": 28,
+          "practicalHitRate": 14.3,
+          "recoveryRate": 37.8,
+          "profit": -12630,
           "classification": "WEAK"
         }
       ]
@@ -829,37 +777,80 @@
       "direction": "LOSS",
       "theoryCount": 3,
       "evaluatedCountRange": {
-        "minimum": 41,
-        "maximum": 43
+        "minimum": 42,
+        "maximum": 44
       },
-      "medianRecoveryRate": 40,
-      "medianPracticalHitRate": 25.6,
+      "medianRecoveryRate": 39.2,
+      "medianPracticalHitRate": 25,
       "theoryRows": [
         {
           "theoryKey": "race-flow",
           "label": "展開理論",
-          "evaluatedCount": 43,
-          "practicalHitRate": 25.6,
-          "recoveryRate": 40,
-          "profit": -18720,
+          "evaluatedCount": 44,
+          "practicalHitRate": 25,
+          "recoveryRate": 39.2,
+          "profit": -19320,
           "classification": "WEAK"
         },
         {
           "theoryKey": "remain-pickup",
           "label": "残し・拾い理論",
-          "evaluatedCount": 43,
-          "practicalHitRate": 25.6,
-          "recoveryRate": 40,
-          "profit": -18720,
+          "evaluatedCount": 44,
+          "practicalHitRate": 25,
+          "recoveryRate": 39.2,
+          "profit": -19320,
           "classification": "WEAK"
         },
         {
           "theoryKey": "local-water",
           "label": "当地・水面理論",
-          "evaluatedCount": 41,
-          "practicalHitRate": 26.8,
-          "recoveryRate": 42.2,
-          "profit": -17120,
+          "evaluatedCount": 42,
+          "practicalHitRate": 26.2,
+          "recoveryRate": 41.3,
+          "profit": -17720,
+          "classification": "WEAK"
+        }
+      ]
+    },
+    {
+      "jcd": "02",
+      "place": "戸田",
+      "scenarioKey": "sashi",
+      "scenarioLabel": "2コース差し",
+      "direction": "LOSS",
+      "theoryCount": 3,
+      "evaluatedCountRange": {
+        "minimum": 37,
+        "maximum": 40
+      },
+      "medianRecoveryRate": 40.4,
+      "medianPracticalHitRate": 17.5,
+      "theoryRows": [
+        {
+          "theoryKey": "race-flow",
+          "label": "展開理論",
+          "evaluatedCount": 40,
+          "practicalHitRate": 17.5,
+          "recoveryRate": 40.4,
+          "profit": -21150,
+          "classification": "WEAK"
+        },
+        {
+          "theoryKey": "local-water",
+          "label": "当地・水面理論",
+          "evaluatedCount": 37,
+          "practicalHitRate": 16.2,
+          "recoveryRate": 38.9,
+          "profit": -20230,
+          "classification": "WEAK"
+        },
+        {
+          "theoryKey": "remain-pickup",
+          "label": "残し・拾い理論",
+          "evaluatedCount": 40,
+          "practicalHitRate": 17.5,
+          "recoveryRate": 41.7,
+          "profit": -20050,
           "classification": "WEAK"
         }
       ]
@@ -915,46 +906,46 @@
       "direction": "LOSS",
       "theoryCount": 4,
       "evaluatedCountRange": {
-        "minimum": 46,
-        "maximum": 50
+        "minimum": 48,
+        "maximum": 52
       },
-      "medianRecoveryRate": 49.9,
-      "medianPracticalHitRate": 24,
+      "medianRecoveryRate": 48,
+      "medianPracticalHitRate": 23,
       "theoryRows": [
         {
           "theoryKey": "race-flow",
           "label": "展開理論",
-          "evaluatedCount": 50,
-          "practicalHitRate": 24,
-          "recoveryRate": 49.3,
-          "profit": -24330,
+          "evaluatedCount": 52,
+          "practicalHitRate": 23.1,
+          "recoveryRate": 47.4,
+          "profit": -26230,
           "classification": "WEAK"
         },
         {
           "theoryKey": "remain-pickup",
           "label": "残し・拾い理論",
-          "evaluatedCount": 50,
-          "practicalHitRate": 24,
-          "recoveryRate": 50.5,
-          "profit": -23230,
+          "evaluatedCount": 52,
+          "practicalHitRate": 23.1,
+          "recoveryRate": 48.6,
+          "profit": -25030,
           "classification": "WEAK"
         },
         {
           "theoryKey": "local-water",
           "label": "当地・水面理論",
-          "evaluatedCount": 46,
-          "practicalHitRate": 23.9,
-          "recoveryRate": 51.2,
-          "profit": -21570,
+          "evaluatedCount": 48,
+          "practicalHitRate": 22.9,
+          "recoveryRate": 49.1,
+          "profit": -23470,
           "classification": "WEAK"
         },
         {
           "theoryKey": "wall-boat",
           "label": "壁艇理論",
-          "evaluatedCount": 47,
-          "practicalHitRate": 21.3,
-          "recoveryRate": 43.8,
-          "profit": -21410,
+          "evaluatedCount": 49,
+          "practicalHitRate": 20.4,
+          "recoveryRate": 42.1,
+          "profit": -22910,
           "classification": "WEAK"
         }
       ]
@@ -1168,67 +1159,6 @@
       ]
     },
     {
-      "jcd": "21",
-      "place": "芦屋",
-      "scenarioKey": "escape",
-      "scenarioLabel": "1号艇逃げ",
-      "direction": "LOSS",
-      "theoryCount": 5,
-      "evaluatedCountRange": {
-        "minimum": 35,
-        "maximum": 39
-      },
-      "medianRecoveryRate": 59.5,
-      "medianPracticalHitRate": 41,
-      "theoryRows": [
-        {
-          "theoryKey": "race-flow",
-          "label": "展開理論",
-          "evaluatedCount": 39,
-          "practicalHitRate": 41,
-          "recoveryRate": 59.5,
-          "profit": -12480,
-          "classification": "WEAK"
-        },
-        {
-          "theoryKey": "remain-pickup",
-          "label": "残し・拾い理論",
-          "evaluatedCount": 39,
-          "practicalHitRate": 41,
-          "recoveryRate": 60.1,
-          "profit": -12180,
-          "classification": "WEAK"
-        },
-        {
-          "theoryKey": "skill",
-          "label": "技量理論",
-          "evaluatedCount": 37,
-          "practicalHitRate": 40.5,
-          "recoveryRate": 59.5,
-          "profit": -11350,
-          "classification": "WEAK"
-        },
-        {
-          "theoryKey": "local-water",
-          "label": "当地・水面理論",
-          "evaluatedCount": 35,
-          "practicalHitRate": 42.9,
-          "recoveryRate": 63.6,
-          "profit": -10060,
-          "classification": "WEAK"
-        },
-        {
-          "theoryKey": "course",
-          "label": "コース理論",
-          "evaluatedCount": 39,
-          "practicalHitRate": 41,
-          "recoveryRate": 38.9,
-          "profit": -9720,
-          "classification": "WEAK"
-        }
-      ]
-    },
-    {
       "jcd": "17",
       "place": "宮島",
       "scenarioKey": "sashi",
@@ -1313,6 +1243,67 @@
           "classification": "WEAK"
         }
       ]
+    },
+    {
+      "jcd": "21",
+      "place": "芦屋",
+      "scenarioKey": "escape",
+      "scenarioLabel": "1号艇逃げ",
+      "direction": "LOSS",
+      "theoryCount": 5,
+      "evaluatedCountRange": {
+        "minimum": 25,
+        "maximum": 41
+      },
+      "medianRecoveryRate": 64.6,
+      "medianPracticalHitRate": 41.5,
+      "theoryRows": [
+        {
+          "theoryKey": "race-flow",
+          "label": "展開理論",
+          "evaluatedCount": 41,
+          "practicalHitRate": 41.5,
+          "recoveryRate": 64.2,
+          "profit": -11560,
+          "classification": "WEAK"
+        },
+        {
+          "theoryKey": "remain-pickup",
+          "label": "残し・拾い理論",
+          "evaluatedCount": 41,
+          "practicalHitRate": 41.5,
+          "recoveryRate": 64.8,
+          "profit": -11260,
+          "classification": "WEAK"
+        },
+        {
+          "theoryKey": "skill",
+          "label": "技量理論",
+          "evaluatedCount": 39,
+          "practicalHitRate": 41,
+          "recoveryRate": 64.6,
+          "profit": -10430,
+          "classification": "WEAK"
+        },
+        {
+          "theoryKey": "local-water",
+          "label": "当地・水面理論",
+          "evaluatedCount": 36,
+          "practicalHitRate": 44.4,
+          "recoveryRate": 70.5,
+          "profit": -8340,
+          "classification": "WEAK"
+        },
+        {
+          "theoryKey": "frame-rise-fall",
+          "label": "枠別浮沈率",
+          "evaluatedCount": 25,
+          "practicalHitRate": 36,
+          "recoveryRate": 53.8,
+          "profit": -7950,
+          "classification": "WEAK"
+        }
+      ]
     }
   ],
   "positiveControls": [
@@ -1385,55 +1376,55 @@
       "direction": "PROFIT",
       "theoryCount": 5,
       "evaluatedCountRange": {
-        "minimum": 22,
-        "maximum": 34
+        "minimum": 23,
+        "maximum": 35
       },
-      "medianRecoveryRate": 232.6,
-      "medianPracticalHitRate": 38.2,
+      "medianRecoveryRate": 225.9,
+      "medianPracticalHitRate": 37.1,
       "theoryRows": [
         {
           "theoryKey": "local-water",
           "label": "当地・水面理論",
-          "evaluatedCount": 34,
-          "practicalHitRate": 38.2,
-          "recoveryRate": 229.3,
-          "profit": 41130,
+          "evaluatedCount": 35,
+          "practicalHitRate": 37.1,
+          "recoveryRate": 222.3,
+          "profit": 40130,
           "classification": "STRONG"
         },
         {
           "theoryKey": "race-flow",
           "label": "展開理論",
-          "evaluatedCount": 34,
-          "practicalHitRate": 38.2,
-          "recoveryRate": 232.6,
-          "profit": 39920,
+          "evaluatedCount": 35,
+          "practicalHitRate": 37.1,
+          "recoveryRate": 225.9,
+          "profit": 39020,
           "classification": "STRONG"
         },
         {
           "theoryKey": "motor",
           "label": "モーター理論",
-          "evaluatedCount": 22,
-          "practicalHitRate": 36.4,
-          "recoveryRate": 330.3,
-          "profit": 37310,
+          "evaluatedCount": 23,
+          "practicalHitRate": 34.8,
+          "recoveryRate": 314.8,
+          "profit": 36510,
           "classification": "STRONG"
         },
         {
           "theoryKey": "wall-boat",
           "label": "壁艇理論",
-          "evaluatedCount": 28,
-          "practicalHitRate": 28.6,
-          "recoveryRate": 268.7,
-          "profit": 35420,
+          "evaluatedCount": 29,
+          "practicalHitRate": 27.6,
+          "recoveryRate": 258.8,
+          "profit": 34620,
           "classification": "STRONG"
         },
         {
           "theoryKey": "remain-pickup",
           "label": "残し・拾い理論",
-          "evaluatedCount": 34,
-          "practicalHitRate": 38.2,
-          "recoveryRate": 210.4,
-          "profit": 32240,
+          "evaluatedCount": 35,
+          "practicalHitRate": 37.1,
+          "recoveryRate": 204.1,
+          "profit": 31340,
           "classification": "STRONG"
         }
       ]
@@ -1534,6 +1525,110 @@
       ]
     },
     {
+      "jcd": "21",
+      "place": "芦屋",
+      "scenarioKey": "fourAttack",
+      "scenarioLabel": "4カド攻め",
+      "direction": "PROFIT",
+      "theoryCount": 5,
+      "evaluatedCountRange": {
+        "minimum": 20,
+        "maximum": 23
+      },
+      "medianRecoveryRate": 140.5,
+      "medianPracticalHitRate": 13.6,
+      "theoryRows": [
+        {
+          "theoryKey": "course",
+          "label": "コース理論",
+          "evaluatedCount": 23,
+          "practicalHitRate": 13,
+          "recoveryRate": 158.3,
+          "profit": 6650,
+          "classification": "STRONG"
+        },
+        {
+          "theoryKey": "wall-boat",
+          "label": "壁艇理論",
+          "evaluatedCount": 20,
+          "practicalHitRate": 15,
+          "recoveryRate": 140.5,
+          "profit": 6030,
+          "classification": "STRONG"
+        },
+        {
+          "theoryKey": "frame-rise-fall",
+          "label": "枠別浮沈率",
+          "evaluatedCount": 20,
+          "practicalHitRate": 15,
+          "recoveryRate": 146.7,
+          "profit": 5750,
+          "classification": "STRONG"
+        },
+        {
+          "theoryKey": "remain-pickup",
+          "label": "残し・拾い理論",
+          "evaluatedCount": 23,
+          "practicalHitRate": 13,
+          "recoveryRate": 111.7,
+          "profit": 2480,
+          "classification": "STRONG"
+        },
+        {
+          "theoryKey": "local-water",
+          "label": "当地・水面理論",
+          "evaluatedCount": 22,
+          "practicalHitRate": 13.6,
+          "recoveryRate": 110.1,
+          "profit": 2180,
+          "classification": "STRONG"
+        }
+      ]
+    },
+    {
+      "jcd": "22",
+      "place": "福岡",
+      "scenarioKey": "threeAttack",
+      "scenarioLabel": "3コース攻め",
+      "direction": "PROFIT",
+      "theoryCount": 3,
+      "evaluatedCountRange": {
+        "minimum": 35,
+        "maximum": 35
+      },
+      "medianRecoveryRate": 136.5,
+      "medianPracticalHitRate": 20,
+      "theoryRows": [
+        {
+          "theoryKey": "remain-pickup",
+          "label": "残し・拾い理論",
+          "evaluatedCount": 35,
+          "practicalHitRate": 20,
+          "recoveryRate": 140.5,
+          "profit": 12240,
+          "classification": "STRONG"
+        },
+        {
+          "theoryKey": "race-flow",
+          "label": "展開理論",
+          "evaluatedCount": 35,
+          "practicalHitRate": 20,
+          "recoveryRate": 136.5,
+          "profit": 11340,
+          "classification": "STRONG"
+        },
+        {
+          "theoryKey": "local-water",
+          "label": "当地・水面理論",
+          "evaluatedCount": 35,
+          "practicalHitRate": 20,
+          "recoveryRate": 129,
+          "profit": 9750,
+          "classification": "STRONG"
+        }
+      ]
+    },
+    {
       "jcd": "24",
       "place": "大村",
       "scenarioKey": "threeAttack",
@@ -1541,55 +1636,55 @@
       "direction": "PROFIT",
       "theoryCount": 5,
       "evaluatedCountRange": {
-        "minimum": 20,
-        "maximum": 30
+        "minimum": 21,
+        "maximum": 33
       },
-      "medianRecoveryRate": 142.3,
-      "medianPracticalHitRate": 23.3,
+      "medianRecoveryRate": 128.6,
+      "medianPracticalHitRate": 21.2,
       "theoryRows": [
         {
           "theoryKey": "skill",
           "label": "技量理論",
-          "evaluatedCount": 20,
-          "practicalHitRate": 30,
-          "recoveryRate": 232.5,
-          "profit": 18950,
+          "evaluatedCount": 21,
+          "practicalHitRate": 28.6,
+          "recoveryRate": 220.2,
+          "profit": 18150,
           "classification": "STRONG"
         },
         {
           "theoryKey": "wall-boat",
           "label": "壁艇理論",
-          "evaluatedCount": 26,
-          "practicalHitRate": 23.1,
-          "recoveryRate": 176.9,
-          "profit": 14450,
+          "evaluatedCount": 29,
+          "practicalHitRate": 20.7,
+          "recoveryRate": 157.6,
+          "profit": 12150,
           "classification": "STRONG"
         },
         {
           "theoryKey": "race-flow",
           "label": "展開理論",
-          "evaluatedCount": 30,
-          "practicalHitRate": 23.3,
-          "recoveryRate": 142.3,
-          "profit": 10670,
+          "evaluatedCount": 33,
+          "practicalHitRate": 21.2,
+          "recoveryRate": 128.6,
+          "profit": 7970,
           "classification": "STRONG"
         },
         {
           "theoryKey": "local-water",
           "label": "当地・水面理論",
-          "evaluatedCount": 30,
-          "practicalHitRate": 23.3,
-          "recoveryRate": 138.4,
-          "profit": 10400,
+          "evaluatedCount": 33,
+          "practicalHitRate": 21.2,
+          "recoveryRate": 124.6,
+          "profit": 7400,
           "classification": "STRONG"
         },
         {
           "theoryKey": "remain-pickup",
           "label": "残し・拾い理論",
-          "evaluatedCount": 30,
-          "practicalHitRate": 23.3,
-          "recoveryRate": 132.2,
-          "profit": 7950,
+          "evaluatedCount": 33,
+          "practicalHitRate": 21.2,
+          "recoveryRate": 120,
+          "profit": 5450,
           "classification": "STRONG"
         }
       ]
@@ -1751,58 +1846,6 @@
       ]
     },
     {
-      "jcd": "21",
-      "place": "芦屋",
-      "scenarioKey": "fourAttack",
-      "scenarioLabel": "4カド攻め",
-      "direction": "PROFIT",
-      "theoryCount": 4,
-      "evaluatedCountRange": {
-        "minimum": 21,
-        "maximum": 22
-      },
-      "medianRecoveryRate": 116.1,
-      "medianPracticalHitRate": 13.6,
-      "theoryRows": [
-        {
-          "theoryKey": "course",
-          "label": "コース理論",
-          "evaluatedCount": 22,
-          "practicalHitRate": 13.6,
-          "recoveryRate": 165.6,
-          "profit": 7150,
-          "classification": "STRONG"
-        },
-        {
-          "theoryKey": "remain-pickup",
-          "label": "残し・拾い理論",
-          "evaluatedCount": 22,
-          "practicalHitRate": 13.6,
-          "recoveryRate": 116.7,
-          "profit": 3380,
-          "classification": "STRONG"
-        },
-        {
-          "theoryKey": "local-water",
-          "label": "当地・水面理論",
-          "evaluatedCount": 21,
-          "practicalHitRate": 14.3,
-          "recoveryRate": 115.5,
-          "profit": 3180,
-          "classification": "STRONG"
-        },
-        {
-          "theoryKey": "race-flow",
-          "label": "展開理論",
-          "evaluatedCount": 22,
-          "practicalHitRate": 13.6,
-          "recoveryRate": 113.8,
-          "profit": 2880,
-          "classification": "STRONG"
-        }
-      ]
-    },
-    {
       "jcd": "09",
       "place": "津",
       "scenarioKey": "threeAttack",
@@ -1854,10 +1897,10 @@
       "theoryCount": 3,
       "evaluatedCountRange": {
         "minimum": 25,
-        "maximum": 42
+        "maximum": 43
       },
-      "medianRecoveryRate": 106.6,
-      "medianPracticalHitRate": 28.6,
+      "medianRecoveryRate": 104.5,
+      "medianPracticalHitRate": 27.9,
       "theoryRows": [
         {
           "theoryKey": "course",
@@ -1871,19 +1914,19 @@
         {
           "theoryKey": "wall-boat",
           "label": "壁艇理論",
-          "evaluatedCount": 42,
-          "practicalHitRate": 28.6,
-          "recoveryRate": 106.6,
-          "profit": 2000,
+          "evaluatedCount": 43,
+          "practicalHitRate": 27.9,
+          "recoveryRate": 104.5,
+          "profit": 1400,
           "classification": "STRONG"
         },
         {
           "theoryKey": "skill",
           "label": "技量理論",
-          "evaluatedCount": 41,
-          "practicalHitRate": 24.4,
-          "recoveryRate": 106.5,
-          "profit": 1940,
+          "evaluatedCount": 42,
+          "practicalHitRate": 23.8,
+          "recoveryRate": 104.4,
+          "profit": 1340,
           "classification": "STRONG"
         }
       ]
@@ -2080,37 +2123,37 @@
         "direction": "LOSS",
         "theoryCount": 3,
         "evaluatedCountRange": {
-          "minimum": 23,
-          "maximum": 27
+          "minimum": 24,
+          "maximum": 28
         },
-        "medianRecoveryRate": 24.7,
-        "medianPracticalHitRate": 18.5,
+        "medianRecoveryRate": 23.7,
+        "medianPracticalHitRate": 17.9,
         "theoryRows": [
           {
             "theoryKey": "race-flow",
             "label": "展開理論",
-            "evaluatedCount": 27,
-            "practicalHitRate": 18.5,
-            "recoveryRate": 24.7,
-            "profit": -17930,
+            "evaluatedCount": 28,
+            "practicalHitRate": 17.9,
+            "recoveryRate": 23.7,
+            "profit": -18930,
             "classification": "WEAK"
           },
           {
             "theoryKey": "remain-pickup",
             "label": "残し・拾い理論",
-            "evaluatedCount": 27,
-            "practicalHitRate": 18.5,
-            "recoveryRate": 25,
-            "profit": -17630,
+            "evaluatedCount": 28,
+            "practicalHitRate": 17.9,
+            "recoveryRate": 24,
+            "profit": -18630,
             "classification": "WEAK"
           },
           {
             "theoryKey": "local-water",
             "label": "当地・水面理論",
-            "evaluatedCount": 23,
-            "practicalHitRate": 17.4,
-            "recoveryRate": 24.4,
-            "profit": -15350,
+            "evaluatedCount": 24,
+            "practicalHitRate": 16.7,
+            "recoveryRate": 23.2,
+            "profit": -16350,
             "classification": "WEAK"
           }
         ]
@@ -2245,11 +2288,11 @@
       "existingFixedCounterfactual": {
         "source": "data/stats/race-flow-2course-sashi-skip-ab-report.json",
         "version": "race-flow-2course-sashi-skip-ab-v1-prospective",
-        "generatedAt": "2026-10-14T20:49:11.489Z",
+        "generatedAt": "2026-10-15T14:20:13.103Z",
         "targetLabel": "2コース差し",
-        "targetSettledCount": 586,
-        "deltaRecoveryRate": 5.1,
-        "deltaHitRate": 0.9,
+        "targetSettledCount": 596,
+        "deltaRecoveryRate": 5.3,
+        "deltaHitRate": 0.8,
         "adoptionDecisionReady": true,
         "usableForPrediction": false
       },
@@ -2258,6 +2301,74 @@
         "reason": "POSTHOC_VENUE_SCOPE_REQUIRES_INDEPENDENT_PROSPECTIVE_HOLDOUT",
         "eligibleForValidation": false,
         "nextAction": "PREREGISTER_VENUE_SCOPED_PROSPECTIVE_SHADOW"
+      },
+      "antiPosthoc": {
+        "discoveryAndValidationSeparated": true,
+        "retrospectiveRowsUsableForValidation": false,
+        "productionChangeAllowed": false
+      }
+    },
+    {
+      "candidateId": "venue-scenario-14-fourAttack-v1",
+      "candidateFingerprint": "22bd81ea4ab7361382ad33b95bcb83136fd04cd69250644bb78d904ec5173127",
+      "discoveryEvidence": {
+        "jcd": "14",
+        "place": "鳴門",
+        "scenarioKey": "fourAttack",
+        "scenarioLabel": "4カド攻め",
+        "direction": "LOSS",
+        "theoryCount": 4,
+        "evaluatedCountRange": {
+          "minimum": 28,
+          "maximum": 32
+        },
+        "medianRecoveryRate": 26.3,
+        "medianPracticalHitRate": 11.3,
+        "theoryRows": [
+          {
+            "theoryKey": "race-flow",
+            "label": "展開理論",
+            "evaluatedCount": 32,
+            "practicalHitRate": 12.5,
+            "recoveryRate": 26.1,
+            "profit": -21500,
+            "classification": "WEAK"
+          },
+          {
+            "theoryKey": "remain-pickup",
+            "label": "残し・拾い理論",
+            "evaluatedCount": 32,
+            "practicalHitRate": 12.5,
+            "recoveryRate": 26.4,
+            "profit": -21200,
+            "classification": "WEAK"
+          },
+          {
+            "theoryKey": "local-water",
+            "label": "当地・水面理論",
+            "evaluatedCount": 30,
+            "practicalHitRate": 10,
+            "recoveryRate": 26.8,
+            "profit": -20800,
+            "classification": "WEAK"
+          },
+          {
+            "theoryKey": "wall-boat",
+            "label": "壁艇理論",
+            "evaluatedCount": 28,
+            "practicalHitRate": 7.1,
+            "recoveryRate": 21.2,
+            "profit": -17720,
+            "classification": "WEAK"
+          }
+        ]
+      },
+      "existingFixedCounterfactual": null,
+      "phase8Eligibility": {
+        "state": "NO_CANDIDATE",
+        "reason": "NO_EXISTING_FIXED_STANDALONE_COUNTERFACTUAL",
+        "eligibleForValidation": false,
+        "nextAction": "DIAGNOSE_RACE_LEVEL_CONFOUNDERS_BEFORE_CANDIDATE"
       },
       "antiPosthoc": {
         "discoveryAndValidationSeparated": true,
@@ -2316,151 +2427,6 @@
             "practicalHitRate": 11.4,
             "recoveryRate": 30.9,
             "profit": -17970,
-            "classification": "WEAK"
-          }
-        ]
-      },
-      "existingFixedCounterfactual": null,
-      "phase8Eligibility": {
-        "state": "NO_CANDIDATE",
-        "reason": "NO_EXISTING_FIXED_STANDALONE_COUNTERFACTUAL",
-        "eligibleForValidation": false,
-        "nextAction": "DIAGNOSE_RACE_LEVEL_CONFOUNDERS_BEFORE_CANDIDATE"
-      },
-      "antiPosthoc": {
-        "discoveryAndValidationSeparated": true,
-        "retrospectiveRowsUsableForValidation": false,
-        "productionChangeAllowed": false
-      }
-    },
-    {
-      "candidateId": "venue-scenario-14-fourAttack-v1",
-      "candidateFingerprint": "22bd81ea4ab7361382ad33b95bcb83136fd04cd69250644bb78d904ec5173127",
-      "discoveryEvidence": {
-        "jcd": "14",
-        "place": "鳴門",
-        "scenarioKey": "fourAttack",
-        "scenarioLabel": "4カド攻め",
-        "direction": "LOSS",
-        "theoryCount": 5,
-        "evaluatedCountRange": {
-          "minimum": 27,
-          "maximum": 31
-        },
-        "medianRecoveryRate": 27,
-        "medianPracticalHitRate": 12.9,
-        "theoryRows": [
-          {
-            "theoryKey": "race-flow",
-            "label": "展開理論",
-            "evaluatedCount": 31,
-            "practicalHitRate": 12.9,
-            "recoveryRate": 27,
-            "profit": -20600,
-            "classification": "WEAK"
-          },
-          {
-            "theoryKey": "remain-pickup",
-            "label": "残し・拾い理論",
-            "evaluatedCount": 31,
-            "practicalHitRate": 12.9,
-            "recoveryRate": 27.2,
-            "profit": -20300,
-            "classification": "WEAK"
-          },
-          {
-            "theoryKey": "local-water",
-            "label": "当地・水面理論",
-            "evaluatedCount": 29,
-            "practicalHitRate": 10.3,
-            "recoveryRate": 27.6,
-            "profit": -19900,
-            "classification": "WEAK"
-          },
-          {
-            "theoryKey": "wall-boat",
-            "label": "壁艇理論",
-            "evaluatedCount": 27,
-            "practicalHitRate": 7.4,
-            "recoveryRate": 22,
-            "profit": -16920,
-            "classification": "WEAK"
-          },
-          {
-            "theoryKey": "course",
-            "label": "コース理論",
-            "evaluatedCount": 30,
-            "practicalHitRate": 13.3,
-            "recoveryRate": 0,
-            "profit": -14200,
-            "classification": "WEAK"
-          }
-        ]
-      },
-      "existingFixedCounterfactual": null,
-      "phase8Eligibility": {
-        "state": "NO_CANDIDATE",
-        "reason": "NO_EXISTING_FIXED_STANDALONE_COUNTERFACTUAL",
-        "eligibleForValidation": false,
-        "nextAction": "DIAGNOSE_RACE_LEVEL_CONFOUNDERS_BEFORE_CANDIDATE"
-      },
-      "antiPosthoc": {
-        "discoveryAndValidationSeparated": true,
-        "retrospectiveRowsUsableForValidation": false,
-        "productionChangeAllowed": false
-      }
-    },
-    {
-      "candidateId": "venue-scenario-10-threeAttack-v1",
-      "candidateFingerprint": "eed3060d929d2af7e0137e79f7b6e561ee8c3f8a9822b7018d1818ef01fecab4",
-      "discoveryEvidence": {
-        "jcd": "10",
-        "place": "三国",
-        "scenarioKey": "threeAttack",
-        "scenarioLabel": "3コース攻め",
-        "direction": "LOSS",
-        "theoryCount": 4,
-        "evaluatedCountRange": {
-          "minimum": 27,
-          "maximum": 29
-        },
-        "medianRecoveryRate": 28,
-        "medianPracticalHitRate": 12.5,
-        "theoryRows": [
-          {
-            "theoryKey": "local-water",
-            "label": "当地・水面理論",
-            "evaluatedCount": 28,
-            "practicalHitRate": 10.7,
-            "recoveryRate": 29.1,
-            "profit": -18500,
-            "classification": "WEAK"
-          },
-          {
-            "theoryKey": "race-flow",
-            "label": "展開理論",
-            "evaluatedCount": 29,
-            "practicalHitRate": 13.8,
-            "recoveryRate": 27.3,
-            "profit": -18110,
-            "classification": "WEAK"
-          },
-          {
-            "theoryKey": "remain-pickup",
-            "label": "残し・拾い理論",
-            "evaluatedCount": 29,
-            "practicalHitRate": 13.8,
-            "recoveryRate": 28.6,
-            "profit": -16910,
-            "classification": "WEAK"
-          },
-          {
-            "theoryKey": "wall-boat",
-            "label": "壁艇理論",
-            "evaluatedCount": 27,
-            "practicalHitRate": 11.1,
-            "recoveryRate": 26.5,
-            "profit": -14410,
             "classification": "WEAK"
           }
         ]
@@ -2557,37 +2523,37 @@
         "direction": "LOSS",
         "theoryCount": 3,
         "evaluatedCountRange": {
-          "minimum": 22,
-          "maximum": 25
+          "minimum": 23,
+          "maximum": 27
         },
-        "medianRecoveryRate": 32.1,
-        "medianPracticalHitRate": 20,
+        "medianRecoveryRate": 30,
+        "medianPracticalHitRate": 18.5,
         "theoryRows": [
           {
             "theoryKey": "race-flow",
             "label": "展開理論",
-            "evaluatedCount": 25,
-            "practicalHitRate": 20,
-            "recoveryRate": 31,
-            "profit": -15460,
+            "evaluatedCount": 27,
+            "practicalHitRate": 18.5,
+            "recoveryRate": 29,
+            "profit": -16960,
             "classification": "WEAK"
           },
           {
             "theoryKey": "remain-pickup",
             "label": "残し・拾い理論",
-            "evaluatedCount": 25,
-            "practicalHitRate": 20,
-            "recoveryRate": 32.1,
-            "profit": -14660,
+            "evaluatedCount": 27,
+            "practicalHitRate": 18.5,
+            "recoveryRate": 30,
+            "profit": -16160,
             "classification": "WEAK"
           },
           {
             "theoryKey": "local-water",
             "label": "当地・水面理論",
-            "evaluatedCount": 22,
-            "practicalHitRate": 22.7,
-            "recoveryRate": 32.9,
-            "profit": -14160,
+            "evaluatedCount": 23,
+            "practicalHitRate": 21.7,
+            "recoveryRate": 31.4,
+            "profit": -15160,
             "classification": "WEAK"
           }
         ]
@@ -2684,55 +2650,182 @@
         "direction": "LOSS",
         "theoryCount": 5,
         "evaluatedCountRange": {
-          "minimum": 38,
-          "maximum": 51
+          "minimum": 39,
+          "maximum": 52
         },
-        "medianRecoveryRate": 35.1,
-        "medianPracticalHitRate": 31.4,
+        "medianRecoveryRate": 36,
+        "medianPracticalHitRate": 32.7,
         "theoryRows": [
           {
             "theoryKey": "local-water",
             "label": "当地・水面理論",
-            "evaluatedCount": 51,
-            "practicalHitRate": 31.4,
-            "recoveryRate": 35,
-            "profit": -25360,
+            "evaluatedCount": 52,
+            "practicalHitRate": 32.7,
+            "recoveryRate": 35.9,
+            "profit": -25390,
             "classification": "WEAK"
           },
           {
             "theoryKey": "race-flow",
             "label": "展開理論",
-            "evaluatedCount": 51,
-            "practicalHitRate": 31.4,
-            "recoveryRate": 35,
-            "profit": -25360,
+            "evaluatedCount": 52,
+            "practicalHitRate": 32.7,
+            "recoveryRate": 35.9,
+            "profit": -25390,
             "classification": "WEAK"
           },
           {
             "theoryKey": "remain-pickup",
             "label": "残し・拾い理論",
-            "evaluatedCount": 51,
-            "practicalHitRate": 31.4,
-            "recoveryRate": 35.1,
-            "profit": -25260,
+            "evaluatedCount": 52,
+            "practicalHitRate": 32.7,
+            "recoveryRate": 36,
+            "profit": -25290,
             "classification": "WEAK"
           },
           {
             "theoryKey": "skill",
             "label": "技量理論",
-            "evaluatedCount": 43,
-            "practicalHitRate": 34.9,
-            "recoveryRate": 37.2,
-            "profit": -20780,
+            "evaluatedCount": 44,
+            "practicalHitRate": 36.4,
+            "recoveryRate": 38.2,
+            "profit": -20810,
             "classification": "WEAK"
           },
           {
             "theoryKey": "motor",
             "label": "モーター理論",
-            "evaluatedCount": 38,
-            "practicalHitRate": 31.6,
-            "recoveryRate": 37.6,
-            "profit": -18350,
+            "evaluatedCount": 39,
+            "practicalHitRate": 33.3,
+            "recoveryRate": 38.7,
+            "profit": -18380,
+            "classification": "WEAK"
+          }
+        ]
+      },
+      "existingFixedCounterfactual": null,
+      "phase8Eligibility": {
+        "state": "NO_CANDIDATE",
+        "reason": "NO_EXISTING_FIXED_STANDALONE_COUNTERFACTUAL",
+        "eligibleForValidation": false,
+        "nextAction": "DIAGNOSE_RACE_LEVEL_CONFOUNDERS_BEFORE_CANDIDATE"
+      },
+      "antiPosthoc": {
+        "discoveryAndValidationSeparated": true,
+        "retrospectiveRowsUsableForValidation": false,
+        "productionChangeAllowed": false
+      }
+    },
+    {
+      "candidateId": "venue-scenario-10-threeAttack-v1",
+      "candidateFingerprint": "eed3060d929d2af7e0137e79f7b6e561ee8c3f8a9822b7018d1818ef01fecab4",
+      "discoveryEvidence": {
+        "jcd": "10",
+        "place": "三国",
+        "scenarioKey": "threeAttack",
+        "scenarioLabel": "3コース攻め",
+        "direction": "LOSS",
+        "theoryCount": 4,
+        "evaluatedCountRange": {
+          "minimum": 28,
+          "maximum": 30
+        },
+        "medianRecoveryRate": 37.5,
+        "medianPracticalHitRate": 15.5,
+        "theoryRows": [
+          {
+            "theoryKey": "local-water",
+            "label": "当地・水面理論",
+            "evaluatedCount": 29,
+            "practicalHitRate": 13.8,
+            "recoveryRate": 37.2,
+            "profit": -17020,
+            "classification": "WEAK"
+          },
+          {
+            "theoryKey": "race-flow",
+            "label": "展開理論",
+            "evaluatedCount": 30,
+            "practicalHitRate": 16.7,
+            "recoveryRate": 35.9,
+            "profit": -16530,
+            "classification": "WEAK"
+          },
+          {
+            "theoryKey": "remain-pickup",
+            "label": "残し・拾い理論",
+            "evaluatedCount": 30,
+            "practicalHitRate": 16.7,
+            "recoveryRate": 37.7,
+            "profit": -15330,
+            "classification": "WEAK"
+          },
+          {
+            "theoryKey": "wall-boat",
+            "label": "壁艇理論",
+            "evaluatedCount": 28,
+            "practicalHitRate": 14.3,
+            "recoveryRate": 37.8,
+            "profit": -12630,
+            "classification": "WEAK"
+          }
+        ]
+      },
+      "existingFixedCounterfactual": null,
+      "phase8Eligibility": {
+        "state": "NO_CANDIDATE",
+        "reason": "NO_EXISTING_FIXED_STANDALONE_COUNTERFACTUAL",
+        "eligibleForValidation": false,
+        "nextAction": "DIAGNOSE_RACE_LEVEL_CONFOUNDERS_BEFORE_CANDIDATE"
+      },
+      "antiPosthoc": {
+        "discoveryAndValidationSeparated": true,
+        "retrospectiveRowsUsableForValidation": false,
+        "productionChangeAllowed": false
+      }
+    },
+    {
+      "candidateId": "venue-scenario-13-escape-v1",
+      "candidateFingerprint": "847d6d72e600267aef52b27fed9362444eaccb8e284ea0f73689525fb831c541",
+      "discoveryEvidence": {
+        "jcd": "13",
+        "place": "尼崎",
+        "scenarioKey": "escape",
+        "scenarioLabel": "1号艇逃げ",
+        "direction": "LOSS",
+        "theoryCount": 3,
+        "evaluatedCountRange": {
+          "minimum": 42,
+          "maximum": 44
+        },
+        "medianRecoveryRate": 39.2,
+        "medianPracticalHitRate": 25,
+        "theoryRows": [
+          {
+            "theoryKey": "race-flow",
+            "label": "展開理論",
+            "evaluatedCount": 44,
+            "practicalHitRate": 25,
+            "recoveryRate": 39.2,
+            "profit": -19320,
+            "classification": "WEAK"
+          },
+          {
+            "theoryKey": "remain-pickup",
+            "label": "残し・拾い理論",
+            "evaluatedCount": 44,
+            "practicalHitRate": 25,
+            "recoveryRate": 39.2,
+            "profit": -19320,
+            "classification": "WEAK"
+          },
+          {
+            "theoryKey": "local-water",
+            "label": "当地・水面理論",
+            "evaluatedCount": 42,
+            "practicalHitRate": 26.2,
+            "recoveryRate": 41.3,
+            "profit": -17720,
             "classification": "WEAK"
           }
         ]
@@ -2761,37 +2854,37 @@
         "direction": "LOSS",
         "theoryCount": 3,
         "evaluatedCountRange": {
-          "minimum": 36,
-          "maximum": 38
+          "minimum": 37,
+          "maximum": 40
         },
-        "medianRecoveryRate": 39.2,
-        "medianPracticalHitRate": 15.8,
+        "medianRecoveryRate": 40.4,
+        "medianPracticalHitRate": 17.5,
         "theoryRows": [
           {
             "theoryKey": "race-flow",
             "label": "展開理論",
-            "evaluatedCount": 38,
-            "practicalHitRate": 15.8,
-            "recoveryRate": 38.1,
-            "profit": -20930,
-            "classification": "WEAK"
-          },
-          {
-            "theoryKey": "remain-pickup",
-            "label": "残し・拾い理論",
-            "evaluatedCount": 38,
-            "practicalHitRate": 15.8,
-            "recoveryRate": 39.2,
-            "profit": -19930,
+            "evaluatedCount": 40,
+            "practicalHitRate": 17.5,
+            "recoveryRate": 40.4,
+            "profit": -21150,
             "classification": "WEAK"
           },
           {
             "theoryKey": "local-water",
             "label": "当地・水面理論",
-            "evaluatedCount": 36,
-            "practicalHitRate": 16.7,
-            "recoveryRate": 40,
-            "profit": -19330,
+            "evaluatedCount": 37,
+            "practicalHitRate": 16.2,
+            "recoveryRate": 38.9,
+            "profit": -20230,
+            "classification": "WEAK"
+          },
+          {
+            "theoryKey": "remain-pickup",
+            "label": "残し・拾い理論",
+            "evaluatedCount": 40,
+            "practicalHitRate": 17.5,
+            "recoveryRate": 41.7,
+            "profit": -20050,
             "classification": "WEAK"
           }
         ]
@@ -2799,11 +2892,11 @@
       "existingFixedCounterfactual": {
         "source": "data/stats/race-flow-2course-sashi-skip-ab-report.json",
         "version": "race-flow-2course-sashi-skip-ab-v1-prospective",
-        "generatedAt": "2026-10-14T20:49:11.489Z",
+        "generatedAt": "2026-10-15T14:20:13.103Z",
         "targetLabel": "2コース差し",
-        "targetSettledCount": 586,
-        "deltaRecoveryRate": 5.1,
-        "deltaHitRate": 0.9,
+        "targetSettledCount": 596,
+        "deltaRecoveryRate": 5.3,
+        "deltaHitRate": 0.8,
         "adoptionDecisionReady": true,
         "usableForPrediction": false
       },
@@ -2812,65 +2905,6 @@
         "reason": "POSTHOC_VENUE_SCOPE_REQUIRES_INDEPENDENT_PROSPECTIVE_HOLDOUT",
         "eligibleForValidation": false,
         "nextAction": "PREREGISTER_VENUE_SCOPED_PROSPECTIVE_SHADOW"
-      },
-      "antiPosthoc": {
-        "discoveryAndValidationSeparated": true,
-        "retrospectiveRowsUsableForValidation": false,
-        "productionChangeAllowed": false
-      }
-    },
-    {
-      "candidateId": "venue-scenario-13-escape-v1",
-      "candidateFingerprint": "847d6d72e600267aef52b27fed9362444eaccb8e284ea0f73689525fb831c541",
-      "discoveryEvidence": {
-        "jcd": "13",
-        "place": "尼崎",
-        "scenarioKey": "escape",
-        "scenarioLabel": "1号艇逃げ",
-        "direction": "LOSS",
-        "theoryCount": 3,
-        "evaluatedCountRange": {
-          "minimum": 41,
-          "maximum": 43
-        },
-        "medianRecoveryRate": 40,
-        "medianPracticalHitRate": 25.6,
-        "theoryRows": [
-          {
-            "theoryKey": "race-flow",
-            "label": "展開理論",
-            "evaluatedCount": 43,
-            "practicalHitRate": 25.6,
-            "recoveryRate": 40,
-            "profit": -18720,
-            "classification": "WEAK"
-          },
-          {
-            "theoryKey": "remain-pickup",
-            "label": "残し・拾い理論",
-            "evaluatedCount": 43,
-            "practicalHitRate": 25.6,
-            "recoveryRate": 40,
-            "profit": -18720,
-            "classification": "WEAK"
-          },
-          {
-            "theoryKey": "local-water",
-            "label": "当地・水面理論",
-            "evaluatedCount": 41,
-            "practicalHitRate": 26.8,
-            "recoveryRate": 42.2,
-            "profit": -17120,
-            "classification": "WEAK"
-          }
-        ]
-      },
-      "existingFixedCounterfactual": null,
-      "phase8Eligibility": {
-        "state": "NO_CANDIDATE",
-        "reason": "NO_EXISTING_FIXED_STANDALONE_COUNTERFACTUAL",
-        "eligibleForValidation": false,
-        "nextAction": "DIAGNOSE_RACE_LEVEL_CONFOUNDERS_BEFORE_CANDIDATE"
       },
       "antiPosthoc": {
         "discoveryAndValidationSeparated": true,
@@ -2948,46 +2982,46 @@
         "direction": "LOSS",
         "theoryCount": 4,
         "evaluatedCountRange": {
-          "minimum": 46,
-          "maximum": 50
+          "minimum": 48,
+          "maximum": 52
         },
-        "medianRecoveryRate": 49.9,
-        "medianPracticalHitRate": 24,
+        "medianRecoveryRate": 48,
+        "medianPracticalHitRate": 23,
         "theoryRows": [
           {
             "theoryKey": "race-flow",
             "label": "展開理論",
-            "evaluatedCount": 50,
-            "practicalHitRate": 24,
-            "recoveryRate": 49.3,
-            "profit": -24330,
+            "evaluatedCount": 52,
+            "practicalHitRate": 23.1,
+            "recoveryRate": 47.4,
+            "profit": -26230,
             "classification": "WEAK"
           },
           {
             "theoryKey": "remain-pickup",
             "label": "残し・拾い理論",
-            "evaluatedCount": 50,
-            "practicalHitRate": 24,
-            "recoveryRate": 50.5,
-            "profit": -23230,
+            "evaluatedCount": 52,
+            "practicalHitRate": 23.1,
+            "recoveryRate": 48.6,
+            "profit": -25030,
             "classification": "WEAK"
           },
           {
             "theoryKey": "local-water",
             "label": "当地・水面理論",
-            "evaluatedCount": 46,
-            "practicalHitRate": 23.9,
-            "recoveryRate": 51.2,
-            "profit": -21570,
+            "evaluatedCount": 48,
+            "practicalHitRate": 22.9,
+            "recoveryRate": 49.1,
+            "profit": -23470,
             "classification": "WEAK"
           },
           {
             "theoryKey": "wall-boat",
             "label": "壁艇理論",
-            "evaluatedCount": 47,
-            "practicalHitRate": 21.3,
-            "recoveryRate": 43.8,
-            "profit": -21410,
+            "evaluatedCount": 49,
+            "practicalHitRate": 20.4,
+            "recoveryRate": 42.1,
+            "profit": -22910,
             "classification": "WEAK"
           }
         ]
@@ -2995,11 +3029,11 @@
       "existingFixedCounterfactual": {
         "source": "data/stats/race-flow-2course-sashi-skip-ab-report.json",
         "version": "race-flow-2course-sashi-skip-ab-v1-prospective",
-        "generatedAt": "2026-10-14T20:49:11.489Z",
+        "generatedAt": "2026-10-15T14:20:13.103Z",
         "targetLabel": "2コース差し",
-        "targetSettledCount": 586,
-        "deltaRecoveryRate": 5.1,
-        "deltaHitRate": 0.9,
+        "targetSettledCount": 596,
+        "deltaRecoveryRate": 5.3,
+        "deltaHitRate": 0.8,
         "adoptionDecisionReady": true,
         "usableForPrediction": false
       },
@@ -3132,11 +3166,11 @@
       "existingFixedCounterfactual": {
         "source": "data/stats/race-flow-2course-sashi-skip-ab-report.json",
         "version": "race-flow-2course-sashi-skip-ab-v1-prospective",
-        "generatedAt": "2026-10-14T20:49:11.489Z",
+        "generatedAt": "2026-10-15T14:20:13.103Z",
         "targetLabel": "2コース差し",
-        "targetSettledCount": 586,
-        "deltaRecoveryRate": 5.1,
-        "deltaHitRate": 0.9,
+        "targetSettledCount": 596,
+        "deltaRecoveryRate": 5.3,
+        "deltaHitRate": 0.8,
         "adoptionDecisionReady": true,
         "usableForPrediction": false
       },
@@ -3210,11 +3244,11 @@
       "existingFixedCounterfactual": {
         "source": "data/stats/race-flow-2course-sashi-skip-ab-report.json",
         "version": "race-flow-2course-sashi-skip-ab-v1-prospective",
-        "generatedAt": "2026-10-14T20:49:11.489Z",
+        "generatedAt": "2026-10-15T14:20:13.103Z",
         "targetLabel": "2コース差し",
-        "targetSettledCount": 586,
-        "deltaRecoveryRate": 5.1,
-        "deltaHitRate": 0.9,
+        "targetSettledCount": 596,
+        "deltaRecoveryRate": 5.3,
+        "deltaHitRate": 0.8,
         "adoptionDecisionReady": true,
         "usableForPrediction": false
       },
@@ -3308,83 +3342,6 @@
       }
     },
     {
-      "candidateId": "venue-scenario-21-escape-v1",
-      "candidateFingerprint": "024817cd0cd7be6808b0627518adc9f3300d6ceda51e793b48107ba803d65aff",
-      "discoveryEvidence": {
-        "jcd": "21",
-        "place": "芦屋",
-        "scenarioKey": "escape",
-        "scenarioLabel": "1号艇逃げ",
-        "direction": "LOSS",
-        "theoryCount": 5,
-        "evaluatedCountRange": {
-          "minimum": 35,
-          "maximum": 39
-        },
-        "medianRecoveryRate": 59.5,
-        "medianPracticalHitRate": 41,
-        "theoryRows": [
-          {
-            "theoryKey": "race-flow",
-            "label": "展開理論",
-            "evaluatedCount": 39,
-            "practicalHitRate": 41,
-            "recoveryRate": 59.5,
-            "profit": -12480,
-            "classification": "WEAK"
-          },
-          {
-            "theoryKey": "remain-pickup",
-            "label": "残し・拾い理論",
-            "evaluatedCount": 39,
-            "practicalHitRate": 41,
-            "recoveryRate": 60.1,
-            "profit": -12180,
-            "classification": "WEAK"
-          },
-          {
-            "theoryKey": "skill",
-            "label": "技量理論",
-            "evaluatedCount": 37,
-            "practicalHitRate": 40.5,
-            "recoveryRate": 59.5,
-            "profit": -11350,
-            "classification": "WEAK"
-          },
-          {
-            "theoryKey": "local-water",
-            "label": "当地・水面理論",
-            "evaluatedCount": 35,
-            "practicalHitRate": 42.9,
-            "recoveryRate": 63.6,
-            "profit": -10060,
-            "classification": "WEAK"
-          },
-          {
-            "theoryKey": "course",
-            "label": "コース理論",
-            "evaluatedCount": 39,
-            "practicalHitRate": 41,
-            "recoveryRate": 38.9,
-            "profit": -9720,
-            "classification": "WEAK"
-          }
-        ]
-      },
-      "existingFixedCounterfactual": null,
-      "phase8Eligibility": {
-        "state": "NO_CANDIDATE",
-        "reason": "NO_EXISTING_FIXED_STANDALONE_COUNTERFACTUAL",
-        "eligibleForValidation": false,
-        "nextAction": "DIAGNOSE_RACE_LEVEL_CONFOUNDERS_BEFORE_CANDIDATE"
-      },
-      "antiPosthoc": {
-        "discoveryAndValidationSeparated": true,
-        "retrospectiveRowsUsableForValidation": false,
-        "productionChangeAllowed": false
-      }
-    },
-    {
       "candidateId": "venue-scenario-17-sashi-v1",
       "candidateFingerprint": "a46e975c5e39e9bf78c17340c7449147b8fe010b40b399400bdd0b589d73f7c1",
       "discoveryEvidence": {
@@ -3433,11 +3390,11 @@
       "existingFixedCounterfactual": {
         "source": "data/stats/race-flow-2course-sashi-skip-ab-report.json",
         "version": "race-flow-2course-sashi-skip-ab-v1-prospective",
-        "generatedAt": "2026-10-14T20:49:11.489Z",
+        "generatedAt": "2026-10-15T14:20:13.103Z",
         "targetLabel": "2コース差し",
-        "targetSettledCount": 586,
-        "deltaRecoveryRate": 5.1,
-        "deltaHitRate": 0.9,
+        "targetSettledCount": 596,
+        "deltaRecoveryRate": 5.3,
+        "deltaHitRate": 0.8,
         "adoptionDecisionReady": true,
         "usableForPrediction": false
       },
@@ -3495,6 +3452,83 @@
             "practicalHitRate": 38.8,
             "recoveryRate": 62.7,
             "profit": -23960,
+            "classification": "WEAK"
+          }
+        ]
+      },
+      "existingFixedCounterfactual": null,
+      "phase8Eligibility": {
+        "state": "NO_CANDIDATE",
+        "reason": "NO_EXISTING_FIXED_STANDALONE_COUNTERFACTUAL",
+        "eligibleForValidation": false,
+        "nextAction": "DIAGNOSE_RACE_LEVEL_CONFOUNDERS_BEFORE_CANDIDATE"
+      },
+      "antiPosthoc": {
+        "discoveryAndValidationSeparated": true,
+        "retrospectiveRowsUsableForValidation": false,
+        "productionChangeAllowed": false
+      }
+    },
+    {
+      "candidateId": "venue-scenario-21-escape-v1",
+      "candidateFingerprint": "024817cd0cd7be6808b0627518adc9f3300d6ceda51e793b48107ba803d65aff",
+      "discoveryEvidence": {
+        "jcd": "21",
+        "place": "芦屋",
+        "scenarioKey": "escape",
+        "scenarioLabel": "1号艇逃げ",
+        "direction": "LOSS",
+        "theoryCount": 5,
+        "evaluatedCountRange": {
+          "minimum": 25,
+          "maximum": 41
+        },
+        "medianRecoveryRate": 64.6,
+        "medianPracticalHitRate": 41.5,
+        "theoryRows": [
+          {
+            "theoryKey": "race-flow",
+            "label": "展開理論",
+            "evaluatedCount": 41,
+            "practicalHitRate": 41.5,
+            "recoveryRate": 64.2,
+            "profit": -11560,
+            "classification": "WEAK"
+          },
+          {
+            "theoryKey": "remain-pickup",
+            "label": "残し・拾い理論",
+            "evaluatedCount": 41,
+            "practicalHitRate": 41.5,
+            "recoveryRate": 64.8,
+            "profit": -11260,
+            "classification": "WEAK"
+          },
+          {
+            "theoryKey": "skill",
+            "label": "技量理論",
+            "evaluatedCount": 39,
+            "practicalHitRate": 41,
+            "recoveryRate": 64.6,
+            "profit": -10430,
+            "classification": "WEAK"
+          },
+          {
+            "theoryKey": "local-water",
+            "label": "当地・水面理論",
+            "evaluatedCount": 36,
+            "practicalHitRate": 44.4,
+            "recoveryRate": 70.5,
+            "profit": -8340,
+            "classification": "WEAK"
+          },
+          {
+            "theoryKey": "frame-rise-fall",
+            "label": "枠別浮沈率",
+            "evaluatedCount": 25,
+            "practicalHitRate": 36,
+            "recoveryRate": 53.8,
+            "profit": -7950,
             "classification": "WEAK"
           }
         ]
