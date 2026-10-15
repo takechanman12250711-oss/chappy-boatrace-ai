@@ -57,6 +57,64 @@ test('reporter long-vowel dash expands exact tickets while retaining source nota
   assert.equal(capture.source.sha256,hash(input.responseBytes));
   assert.deepEqual(capture.chappy.practicalTickets,input.bundle.baselinePracticalTickets);
 });
+test('reporter horizontal bar is only a separator; unknown notation still fails closed', () => {
+  // Captured diagnostic, not a backfill of the rejected 2026-10-14 Omura 6R:
+  // actions/runs/38535182422/artifacts/11880110098, response SHA256
+  // 80c6dcf786d551f7d5a1e4ec6e2edd709e62c0786b1b56645ca8468125b55297.
+  const expected = ['1-2-5','1-2-6','1-5-2','1-5-6','1-6-2','1-6-5'];
+  for (const notation of ['1―256―256','１―２５６―２５６','1―256-256'])
+    assert.deepEqual(tickets(notation),expected);
+  assert.deepEqual(tickets('1―2=3'),['1-2-3','1-3-2']);
+  for (const none of ['なし','無し']) {
+    assert.deepEqual(tickets(none,true),[]);
+    assert.throws(()=>tickets(none),/ticket_notation_unsupported/,'main is never optional');
+  }
+  for (const bad of ['1―256―256BOX','1―256―256 失敗','1―256→256','1—256—256',
+    '1=2=3','1―1―1','1―2―7','1―2―3?','なし 1―2―3'])
+    assert.throws(()=>tickets(bad,true),'no partial salvage or broader formation grammar');
+});
+test('UTF-8 and Shift_JIS horizontal bars preserve notation, source hash and Chappy originals', () => {
+  const notation = '1―256―256';
+  const page = html().replace('1-26-256',notation).replace('2-1-6','なし');
+  // Numeric entities keep the synthetic fixture ASCII except for the real
+  // Shift_JIS 0x815c horizontal-bar bytes. No encoding package or live fetch.
+  const parts = page.replace('charset="utf-8"','charset="shift_jis"').split('―')
+    .map(s => Buffer.from(s.replace(/[^\x00-\x7f]/gu,c=>`&#${c.codePointAt(0)};`),'ascii'));
+  const shiftJis = Buffer.concat(parts.flatMap((part,i)=>i ? [Buffer.from([0x81,0x5c]),part] : [part]));
+  for (const [encoding,responseBytes] of [['utf-8',Buffer.from(page)],['shift_jis',shiftJis]]) {
+    const input = {...fixture(),responseBytes}, originalBundle = JSON.stringify(input.bundle);
+    const originalBytes = Buffer.from(input.bytes), capture = buildCapture(input);
+    assert.equal(capture.status,'captured');
+    assert.equal(capture.source.encoding,encoding);
+    assert.deepEqual(capture.source.ticketNotation,{main:notation,aim:'なし'});
+    assert.deepEqual(capture.source.mainTickets,tickets('1-256-256'));
+    assert.deepEqual(capture.source.aimTickets,[]);
+    assert.equal(capture.source.sha256,hash(responseBytes));
+    assert.equal(capture.comparison.reporterMainTicketCount,6);
+    assert.equal(capture.comparison.equalMainTicketCount,false,'do not force equal-count eligibility');
+    assert.deepEqual(capture.chappy.practicalTickets,input.bundle.baselinePracticalTickets);
+    assert.equal(JSON.stringify(input.bundle),originalBundle);
+    assert.deepEqual(input.bytes,originalBytes);
+    assert.equal(capture.productionChanged,false);
+    assert.equal(capture.usableForPrediction,false);
+  }
+});
+test('horizontal-bar acceptance never bypasses cutoff or replaces immutable captures', () => withRoot(async root => {
+  const input = fixture();
+  input.responseBytes = Buffer.from(html().replace('1-26-256','1―256―256').replace('2-1-6','なし'));
+  writeBundle(root,input);
+  let calls = 0;
+  const request = async()=>{calls++;return {ok:true,arrayBuffer:async()=>input.responseBytes};};
+  const first = await collect({root,now:()=>clock,request});
+  assert.equal(first.saved.length,1); assert.equal(first.errors.length,0);
+  const saved = path.join(root,first.saved[0].file), original = fs.readFileSync(saved);
+  const late = await collect({root,now:()=>clock+3600000,request});
+  assert.equal(late.saved.length,0); assert.equal(late.skipped.outside_capture_window,1);
+  assert.equal(calls,1,'no post-deadline fetch or retroactive comparison');
+  assert.deepEqual(fs.readFileSync(saved),original);
+  assert.deepEqual(fs.readFileSync(path.join(root,input.file)),input.bytes);
+  assert.throws(()=>buildCapture({...input,capturedAt:'2030-09-14T19:54:00+09:00'}),/outside_capture_window/);
+}));
 test('unsupported notation remains a bounded diagnostic, never a comparison capture', () => withRoot(async root => {
   const input = fixture(); writeBundle(root,input);
   for (const [field,value] of [['main','1ー3=256BOX'],['aim','2ー1ー6?'],['main','x'.repeat(300)]]) {
