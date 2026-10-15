@@ -275,7 +275,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh workflow run check-active-100r-early-monitor.yml --ref main
           gh workflow run check-wall-boat-branch-profit.yml --ref main
           gh workflow run check-wall-established-breakdown.yml --ref main
           gh workflow run collect-playful-link-position-forward.yml --ref main
@@ -285,7 +284,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh workflow run check-active-100r-early-monitor.yml --ref main
           gh workflow run check-wall-boat-branch-profit.yml --ref main
           gh workflow run check-wall-established-breakdown.yml --ref main
           gh workflow run collect-playful-link-position-forward.yml --ref main
