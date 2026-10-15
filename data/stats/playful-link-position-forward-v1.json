@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "analysisId": "playful-link-position-forward-v1",
-  "generatedAt": "2026-10-15T13:42:33.539Z",
+  "generatedAt": "2026-10-15T14:05:19.360Z",
   "productionChanged": false,
   "automaticApplication": false,
   "preregistration": {
@@ -32,40 +32,40 @@
       "source-fetched-at-or-after-deadline": 2,
       "timestamp-missing": 7
     },
-    "officialResultCount": 3489,
-    "settledJoinCount": 3489,
+    "officialResultCount": 3531,
+    "settledJoinCount": 3531,
     "deduplication": "predictions-preferred-over-verificationPredictions",
     "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json",
     "beforeRegistration": 2569,
     "missingBase": 0,
-    "noAddedLinkCandidate": 880,
-    "eligibleForwardRows": 40
+    "noAddedLinkCandidate": 919,
+    "eligibleForwardRows": 43
   },
   "baseline": {
-    "races": 40,
-    "tickets": 327,
-    "hits": 12,
-    "hitRate": 30,
-    "stakeYen": 32700,
-    "returnYen": 23680,
-    "profitYen": -9020,
-    "roi": 72.42
+    "races": 43,
+    "tickets": 353,
+    "hits": 13,
+    "hitRate": 30.23,
+    "stakeYen": 35300,
+    "returnYen": 26100,
+    "profitYen": -9200,
+    "roi": 73.94
   },
   "candidate": {
-    "races": 40,
-    "tickets": 444,
-    "hits": 14,
-    "hitRate": 35,
-    "stakeYen": 44400,
-    "returnYen": 26770,
-    "profitYen": -17630,
-    "roi": 60.29
+    "races": 43,
+    "tickets": 479,
+    "hits": 15,
+    "hitRate": 34.88,
+    "stakeYen": 47900,
+    "returnYen": 29190,
+    "profitYen": -18710,
+    "roi": 60.94
   },
   "delta": {
     "hits": 2,
-    "hitRatePoint": 5,
-    "profitYen": -8610,
-    "roiPoint": -12.13,
+    "hitRatePoint": 4.65,
+    "profitYen": -9510,
+    "roiPoint": -13,
     "newHits": 2
   },
   "rows": [
@@ -1516,6 +1516,118 @@
       "payout": 1700,
       "baseHit": true,
       "candidateHit": true
+    },
+    {
+      "raceKey": "20261015-21-3",
+      "selectedAt": "2026-10-15T00:30:30.502Z",
+      "base": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-5",
+        "1-3-5",
+        "1-3-2"
+      ],
+      "candidate": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-5",
+        "1-3-5",
+        "1-3-2",
+        "1-4-5",
+        "1-4-2",
+        "1-4-6"
+      ],
+      "added": [
+        "1-4-5",
+        "1-4-2",
+        "1-4-6"
+      ],
+      "actual": "1-2-5",
+      "payout": 2420,
+      "baseHit": true,
+      "candidateHit": true
+    },
+    {
+      "raceKey": "20261015-11-4",
+      "selectedAt": "2026-10-15T02:28:52.297Z",
+      "base": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6",
+        "3-2-1",
+        "3-2-4"
+      ],
+      "candidate": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6",
+        "3-2-1",
+        "3-2-4",
+        "1-4-5",
+        "1-3-5",
+        "1-4-2"
+      ],
+      "added": [
+        "1-4-5",
+        "1-3-5",
+        "1-4-2"
+      ],
+      "actual": "1-5-3",
+      "payout": 1920,
+      "baseHit": false,
+      "candidateHit": false
+    },
+    {
+      "raceKey": "20261015-12-10",
+      "selectedAt": "2026-10-15T10:06:48.857Z",
+      "base": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-6",
+        "2-1-4",
+        "2-1-5",
+        "6-1-3",
+        "1-4-3"
+      ],
+      "candidate": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-6",
+        "2-1-4",
+        "2-1-5",
+        "6-1-3",
+        "1-4-3",
+        "2-4-5",
+        "2-4-1",
+        "2-4-6"
+      ],
+      "added": [
+        "2-4-5",
+        "2-4-1",
+        "2-4-6"
+      ],
+      "actual": "1-3-2",
+      "payout": 800,
+      "baseHit": false,
+      "candidateHit": false
     }
   ]
 }
