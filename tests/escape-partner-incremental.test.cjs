@@ -1,6 +1,7 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {select}=require('../scripts/escape-partner-incremental.cjs');
+const {metrics}=require('../scripts/report-escape-partner-incremental.cjs');
 function fixture(){return {main:4,formal:true,exhibition:true,boats:[{boatNo:1,course:1}],base:['4-1-5','1-2-3','1-2-4'],
   baseRows:[{ticket:'4-1-5',category:'本線'},{ticket:'1-2-3',category:'押さえ'},{ticket:'1-2-4',category:'押さえ'}],
   pool:['4-1-5','1-2-3','1-2-4','1-5-4'].map(ticket=>({ticket,evidenceQualified:true,priorityScore:90,candidateKind:'canonical-formation',branchIds:['saved:'+ticket],purchaseEligible:false}))};}
@@ -25,4 +26,12 @@ test('cannot remove the only old second or manufacture a new third',()=>{
 test('duplicate pool rejects ambiguity and invalid baseline throws',()=>{
  const x=fixture();x.pool.push(x.pool[0]);assert.equal(select(x).reason,'invalid-or-duplicate-pool');
  assert.throws(()=>select({...fixture(),base:['1-1-2']}),/invalid-baseline/);
+});
+test('pair improvement is not a trifecta gain; lost hits are retained in accounting',()=>{
+ const rows=[{raceKey:'a',base:['1-2-3','1-2-4'],actual:'1-5-2',payout:2000,
+  candidate:{tickets:['1-2-3','1-5-4']}},
+ {raceKey:'b',base:['1-2-3','1-2-4'],actual:'1-2-4',payout:1000,
+  candidate:{tickets:['1-2-3','1-5-4']}}];
+ const m=metrics(rows,'candidate');assert.deepEqual(m.secondPair.gained,['a']);assert.deepEqual(m.secondPair.lost,[]);
+ assert.equal(m.primary.gains,0);assert.equal(m.primary.losses,1);assert.equal(m.secondary.profitDifferenceYen,-1000);
 });
