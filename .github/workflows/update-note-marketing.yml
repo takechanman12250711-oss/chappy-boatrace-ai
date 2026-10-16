@@ -120,6 +120,7 @@ jobs:
       - name: Update and verify free guide and daily index
         id: index
         env:
+          NOTE_OFFICIAL_REFRESH_STARTED: ${{ steps.korogashi-prepare.outputs.official-refresh-started }}
           BROWSER_USE_API_KEY: ${{ secrets.BROWSER_USE_API_KEY }}
           BROWSER_USE_PROFILE_ID: ${{ secrets.BROWSER_USE_PROFILE_ID }}
           NOTE_CLAIM_TOKEN: ${{ github.token }}

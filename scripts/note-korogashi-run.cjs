@@ -52,7 +52,11 @@ async function run(mode,file,{env=process.env,clock=Date.now,store=client(env),f
     // Refresh and persist official evidence before course evaluation. The later
     // index updater reuses this cache (including failed-attempt cooldowns), so
     // a result does not need a second workflow run to reach the course.
-    const marketing=await store.settle(await store.collect(loaded.state,clock()),marketingConfig,clock(),{refresh:true,clock});
+    const collected=await store.collect(loaded.state,clock());
+    // Claim this workflow's refresh budget before any official request, even
+    // if a later save fails. The index step must not start another 12 fetches.
+    if(env.GITHUB_OUTPUT)fs.appendFileSync(env.GITHUB_OUTPUT,'official-refresh-started=true\n');
+    const marketing=await store.settle(collected,marketingConfig,clock(),{refresh:true,clock});
     if(k.json(marketing)!==k.json(loaded.state))await store.save(marketing,loaded.head);
     const automatic=await autoStart.withAutoStart(config,before.state,{rows:marketing.rows,source:repo.source,now:clock()});
     const out=await k.prepare(before.state,automatic.config,{rows:marketing.rows,source:repo.source,result:repo.officialLoader(marketing),now:clock(),context:ctx});

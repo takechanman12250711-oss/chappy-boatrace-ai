@@ -168,5 +168,17 @@ test('runner refreshes and saves results before course settlement; retries reuse
     assert.equal(fetches,1);assert.equal(marketingSaves,1);
     assert.deepEqual(commits.get(head),after);
     assert.equal(plan.events.filter(e=>e.type==='announced').length,1);
+    if(!fails) {
+      const dir=fs.mkdtempSync(require('node:path').join(require('node:os').tmpdir(),'korogashi-budget-'));
+      const output=dir+'/output';
+      try {
+        marketing={rows:[f.row],date:'20260928'};events.length=0;
+        store.save=async()=>{throw Error('marketing_save_cas_failed');};
+        await assert.rejects(run('prepare',dir+'/unused.json',{env:{...env,GITHUB_OUTPUT:output},store,config:c,clock:()=>at}),/marketing_save_cas_failed/);
+        assert.equal(fs.readFileSync(output,'utf8'),'official-refresh-started=true\n');
+        assert.deepEqual(events,['fetch'],'failed evidence save must not advance course');
+        assert.deepEqual(commits.get(head),after);
+      } finally {fs.rmSync(dir,{recursive:true,force:true});}
+    }
   }
 });

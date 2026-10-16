@@ -217,3 +217,39 @@ test('first result-seen and note-verified timestamps are observations, preserved
  const changed=observeResult(verified,{...settlement,evidenceId:'f'.repeat(64)},f.result,now+2000);
  assert.equal(changed.noteVerifiedAt,null);assert.equal(changed.firstResultSeenAt,new Date(now+2000).toISOString());
 });
+
+test('course refresh consumes the only 12-request budget; index cache-only pass cannot fetch a thirteenth',async()=>{
+  const originals=new Map(),rows=[];
+  for(let n=1;n<=13;n++) {
+    const f=fixture(),jcd=String(n).padStart(2,'0');
+    f.bundle.record.raceKey=`20260929-${jcd}-4`;
+    const bytes=JSON.stringify(f.bundle),receipt={...f.receipt,raceKey:f.bundle.record.raceKey,sourceSha256:hash(bytes)};
+    const row=receiptRow(receipt,bytes,now);rows.push(row);originals.set(row.raceKey,bytes);
+  }
+  const store=client({GITHUB_REPOSITORY:REPO,NOTE_CLAIM_TOKEN:'test-only',NOTE_CLAIM_SHA:'f'.repeat(40)},async url=>{
+    if(!url.includes('/contents/data/note-drafts/'))return {ok:false,status:404};
+    const key=[...originals.keys()].find(k=>url.includes(k+'-'));
+    return {ok:true,status:200,json:async()=>({encoding:'base64',content:Buffer.from(originals.get(key)).toString('base64')})};
+  });
+  let calls=0;const options={clock:()=>now,fetchResult:async()=>{calls++;throw Error('unavailable');}};
+  const first=await store.settle({...initialState(config),date:'20260929',rows},config,now,{...options,refresh:true});
+  assert.equal(calls,12);assert.equal(Object.keys(first.resultAttempts).length,12);
+  const indexed=await store.settle(first,config,now,{...options,refresh:false});
+  assert.equal(calls,12);assert(indexed.rows.every(r=>r.settlement.status==='pending'));
+  await store.settle(indexed,config,now+1000,{...options,refresh:true});
+  assert.equal(calls,13,'next workflow may fetch the remaining eligible race');
+});
+
+test('index refresh is cache-only after prepare claimed budget, and remains enabled for standalone or early-failed prepare',async()=>{
+  const {run}=require('./update-note-marketing');
+  for(const value of ['true','false','',undefined]) {
+    let refresh;
+    const store={load:async()=>({state:{}}),collect:async s=>s,settle:async(s,c,n,options)=>{
+      refresh=options.refresh;throw Error('stop_before_publication');
+    }};
+    await assert.rejects(run({env:{NOTE_OFFICIAL_REFRESH_STARTED:value},store}),/stop_before_publication/);
+    assert.equal(refresh,value!=='true');
+  }
+  const workflow=require('node:fs').readFileSync('.github/workflows/update-note-marketing.yml','utf8');
+  assert(workflow.includes('NOTE_OFFICIAL_REFRESH_STARTED: ${{ steps.korogashi-prepare.outputs.official-refresh-started }}'));
+});
