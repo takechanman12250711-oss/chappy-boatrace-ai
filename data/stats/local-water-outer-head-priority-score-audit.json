@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "local-water-outer-head-priority-score-audit-v1",
-  "generatedAt": "2026-10-15T21:59:07.535Z",
+  "generatedAt": "2026-10-16T20:09:02.365Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
@@ -17,83 +17,83 @@
     "largeMedianGapThreshold": 15
   },
   "metrics": {
-    "unselectedScenarioHeadCount": 142,
-    "scoreComparableCount": 142,
-    "winnerOutscoredCount": 101,
+    "unselectedScenarioHeadCount": 150,
+    "scoreComparableCount": 150,
+    "winnerOutscoredCount": 107,
     "winnerAheadCount": 6,
-    "tiedCount": 35,
-    "winnerAheadOrTiedCount": 41,
-    "nearTieWithin5Count": 29,
-    "gap5To10Count": 33,
-    "gap10To20Count": 33,
+    "tiedCount": 37,
+    "winnerAheadOrTiedCount": 43,
+    "nearTieWithin5Count": 30,
+    "gap5To10Count": 37,
+    "gap10To20Count": 34,
     "gapOver20Count": 6,
-    "duplicateReasonCount": 106,
-    "averagePositiveGap": 9.9,
+    "duplicateReasonCount": 110,
+    "averagePositiveGap": 9.8,
     "medianPositiveGap": 9,
     "comparableCoverageRate": 100,
-    "winnerOutscoredRate": 71.1,
-    "winnerAheadOrTiedRate": 28.9,
-    "nearTieWithin5Rate": 20.4,
-    "duplicateReasonShare": 74.6
+    "winnerOutscoredRate": 71.3,
+    "winnerAheadOrTiedRate": 28.7,
+    "nearTieWithin5Rate": 20,
+    "duplicateReasonShare": 73.3
   },
   "gapBands": {
     "winnerAhead": 6,
-    "tied": 35,
-    "within5": 29,
-    "from5To10": 33,
-    "from10To20": 33,
+    "tied": 37,
+    "within5": 30,
+    "from5To10": 37,
+    "from10To20": 34,
     "over20": 6
   },
   "dominantComponent": {
     "label": "差し場・空き水面",
-    "count": 18,
-    "totalPositiveGap": 135,
+    "count": 19,
+    "totalPositiveGap": 143,
     "averageGap": 7.5,
-    "shareOfPositiveComponentGap": 63.4
+    "shareOfPositiveComponentGap": 64.1
   },
   "componentRanking": [
     {
       "label": "差し場・空き水面",
-      "count": 18,
-      "totalPositiveGap": 135,
+      "count": 19,
+      "totalPositiveGap": 143,
       "averageGap": 7.5,
-      "shareOfPositiveComponentGap": 63.4
+      "shareOfPositiveComponentGap": 64.1
     },
     {
       "label": "実進入・位置関係",
-      "count": 24,
-      "totalPositiveGap": 73,
+      "count": 25,
+      "totalPositiveGap": 75,
       "averageGap": 3,
-      "shareOfPositiveComponentGap": 34.3
+      "shareOfPositiveComponentGap": 33.6
     },
     {
       "label": "壁・内側残存経路",
       "count": 1,
       "totalPositiveGap": 5,
       "averageGap": 5,
-      "shareOfPositiveComponentGap": 2.3
+      "shareOfPositiveComponentGap": 2.2
     }
   ],
   "nextStep": "audit-local-water-priority-selection-consistency",
   "topComparisonPaths": [
     {
       "value": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
-      "count": 106
+      "count": 110
     },
     {
       "value": "practicalSelection.targetDecisions[0].candidateDecisions",
-      "count": 14
+      "count": 15
     },
     {
       "value": "practicalSelection.targetDecisions[1].candidateDecisions",
-      "count": 7
-    },
-    {
-      "value": "practicalSelection.targetDecisions[2].candidateDecisions",
-      "count": 6
+      "count": 8
     },
     {
       "value": "practicalSelection.targetDecisions[4].candidateDecisions",
+      "count": 8
+    },
+    {
+      "value": "practicalSelection.targetDecisions[2].candidateDecisions",
       "count": 6
     },
     {
@@ -112,7 +112,7 @@
     },
     {
       "value": "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 4号艇のpickup・83点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係23/15 / バック・2マーク到達8/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり",
-      "count": 7
+      "count": 8
     },
     {
       "value": "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 3号艇のpickup・89点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度5/5 / 既存フォーメーションに同一買い目あり",
@@ -19659,6 +19659,1173 @@
           "winnerScore": 88,
           "finalScore": 94,
           "gap": 6,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        }
+      ]
+    },
+    {
+      "date": "20261016",
+      "jcd": "10",
+      "raceNo": 3,
+      "actualHead": 5,
+      "finalHead": 3,
+      "scenario": true,
+      "selected": false,
+      "finalCorrect": false,
+      "comparable": true,
+      "primaryComparison": {
+        "path": "practicalSelection.targetDecisions[0].candidateDecisions",
+        "pathPriority": 0,
+        "winnerScore": 82,
+        "finalScore": 92,
+        "gap": 10,
+        "winnerAhead": false,
+        "tied": false,
+        "winnerOutscored": true,
+        "duplicateReason": false,
+        "winnerReasons": [],
+        "finalReasons": [],
+        "componentDiffs": []
+      },
+      "allComparisons": [
+        {
+          "path": "practicalSelection.targetDecisions[0].candidateDecisions",
+          "pathPriority": 0,
+          "winnerScore": 82,
+          "finalScore": 92,
+          "gap": 10,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+          "pathPriority": 1,
+          "winnerScore": 82,
+          "finalScore": 92,
+          "gap": 10,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 5号艇のalternate-head・82点・5号艇 都築 正治 は🔥攻め艇 / 🌊展開艇 / 💣外コース妙味。総合70点。プラス材料はまくり差し・展開拾い、ST安定 .16、今節ST速い .12。マイナス材料は級別は控えめ、外コースで展開待ち。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 5号艇のpickup・92点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.branches",
+          "pathPriority": 2,
+          "winnerScore": 82,
+          "finalScore": 92,
+          "gap": 10,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 5号艇のalternate-head・82点・5号艇 都築 正治 は🔥攻め艇 / 🌊展開艇 / 💣外コース妙味。総合70点。プラス材料はまくり差し・展開拾い、ST安定 .16、今節ST速い .12。マイナス材料は級別は控えめ、外コースで展開待ち。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 5号艇のpickup・92点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches",
+          "pathPriority": 2,
+          "winnerScore": 82,
+          "finalScore": 92,
+          "gap": 10,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 5号艇のalternate-head・82点・5号艇 都築 正治 は🔥攻め艇 / 🌊展開艇 / 💣外コース妙味。総合70点。プラス材料はまくり差し・展開拾い、ST安定 .16、今節ST速い .12。マイナス材料は級別は控えめ、外コースで展開待ち。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 5号艇のpickup・92点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "pathPriority": 3,
+          "winnerScore": 82,
+          "finalScore": 92,
+          "gap": 10,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        }
+      ]
+    },
+    {
+      "date": "20261016",
+      "jcd": "19",
+      "raceNo": 1,
+      "actualHead": 6,
+      "finalHead": 3,
+      "scenario": true,
+      "selected": false,
+      "finalCorrect": false,
+      "comparable": true,
+      "primaryComparison": {
+        "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+        "pathPriority": 1,
+        "winnerScore": 80,
+        "finalScore": 88,
+        "gap": 8,
+        "winnerAhead": false,
+        "tied": false,
+        "winnerOutscored": true,
+        "duplicateReason": true,
+        "winnerReasons": [
+          "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 1号艇のhold・80点・実1コースからの内残り / 既存フォーメーションに同一買い目あり"
+        ],
+        "finalReasons": [
+          "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 6号艇のpickup・88点・荒れ水面で当地・道中重視 / 6コース最内差し・道中拾い / 道中指数上位 / 水面荒れで拾い上昇 / 既存フォーメーションに同一買い目あり"
+        ],
+        "componentDiffs": []
+      },
+      "allComparisons": [
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+          "pathPriority": 1,
+          "winnerScore": 80,
+          "finalScore": 88,
+          "gap": 8,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 1号艇のhold・80点・実1コースからの内残り / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 6号艇のpickup・88点・荒れ水面で当地・道中重視 / 6コース最内差し・道中拾い / 道中指数上位 / 水面荒れで拾い上昇 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.branches",
+          "pathPriority": 2,
+          "winnerScore": 80,
+          "finalScore": 88,
+          "gap": 8,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 1号艇のhold・80点・実1コースからの内残り / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 6号艇のpickup・88点・荒れ水面で当地・道中重視 / 6コース最内差し・道中拾い / 道中指数上位 / 水面荒れで拾い上昇 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches",
+          "pathPriority": 2,
+          "winnerScore": 80,
+          "finalScore": 88,
+          "gap": 8,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 1号艇のhold・80点・実1コースからの内残り / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 6号艇のpickup・88点・荒れ水面で当地・道中重視 / 6コース最内差し・道中拾い / 道中指数上位 / 水面荒れで拾い上昇 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "pathPriority": 3,
+          "winnerScore": 80,
+          "finalScore": 88,
+          "gap": 8,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        }
+      ]
+    },
+    {
+      "date": "20261016",
+      "jcd": "10",
+      "raceNo": 6,
+      "actualHead": 5,
+      "finalHead": 2,
+      "scenario": true,
+      "selected": false,
+      "finalCorrect": false,
+      "comparable": true,
+      "primaryComparison": {
+        "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+        "pathPriority": 1,
+        "winnerScore": 83,
+        "finalScore": 92,
+        "gap": 9,
+        "winnerAhead": false,
+        "tied": false,
+        "winnerOutscored": true,
+        "duplicateReason": true,
+        "winnerReasons": [
+          "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 2号艇のpickup・83点・2号艇 和田 拓也 は🔥攻め艇 / 🌊展開艇 / ⚡道中艇 / 🏠当地巧者 / 🛟差し残し。総合88点。プラス材料は2コース差し・残し、A1格上、ST速い .13。大きなマイナスは少ない。 / 既存フォーメーションに同一買い目あり"
+        ],
+        "finalReasons": [
+          "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 3号艇のpickup・92点・最有力展開連動40/40 / 差し場・空き水面20/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+        ],
+        "componentDiffs": []
+      },
+      "allComparisons": [
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+          "pathPriority": 1,
+          "winnerScore": 83,
+          "finalScore": 92,
+          "gap": 9,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 2号艇のpickup・83点・2号艇 和田 拓也 は🔥攻め艇 / 🌊展開艇 / ⚡道中艇 / 🏠当地巧者 / 🛟差し残し。総合88点。プラス材料は2コース差し・残し、A1格上、ST速い .13。大きなマイナスは少ない。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 3号艇のpickup・92点・最有力展開連動40/40 / 差し場・空き水面20/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.branches",
+          "pathPriority": 2,
+          "winnerScore": 83,
+          "finalScore": 92,
+          "gap": 9,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 2号艇のpickup・83点・2号艇 和田 拓也 は🔥攻め艇 / 🌊展開艇 / ⚡道中艇 / 🏠当地巧者 / 🛟差し残し。総合88点。プラス材料は2コース差し・残し、A1格上、ST速い .13。大きなマイナスは少ない。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 3号艇のpickup・92点・最有力展開連動40/40 / 差し場・空き水面20/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches",
+          "pathPriority": 2,
+          "winnerScore": 83,
+          "finalScore": 92,
+          "gap": 9,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 2号艇のpickup・83点・2号艇 和田 拓也 は🔥攻め艇 / 🌊展開艇 / ⚡道中艇 / 🏠当地巧者 / 🛟差し残し。総合88点。プラス材料は2コース差し・残し、A1格上、ST速い .13。大きなマイナスは少ない。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 3号艇のpickup・92点・最有力展開連動40/40 / 差し場・空き水面20/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "pathPriority": 3,
+          "winnerScore": 83,
+          "finalScore": 92,
+          "gap": 9,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.candidateValidationEvidence.branches",
+          "pathPriority": 3,
+          "winnerScore": 83,
+          "finalScore": 92,
+          "gap": 9,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        }
+      ]
+    },
+    {
+      "date": "20261016",
+      "jcd": "09",
+      "raceNo": 2,
+      "actualHead": 5,
+      "finalHead": 3,
+      "scenario": true,
+      "selected": false,
+      "finalCorrect": false,
+      "comparable": true,
+      "primaryComparison": {
+        "path": "practicalSelection.targetDecisions[4].candidateDecisions",
+        "pathPriority": 0,
+        "winnerScore": 85,
+        "finalScore": 85,
+        "gap": 0,
+        "winnerAhead": false,
+        "tied": true,
+        "winnerOutscored": false,
+        "duplicateReason": false,
+        "winnerReasons": [],
+        "finalReasons": [],
+        "componentDiffs": []
+      },
+      "allComparisons": [
+        {
+          "path": "practicalSelection.targetDecisions[4].candidateDecisions",
+          "pathPriority": 0,
+          "winnerScore": 85,
+          "finalScore": 85,
+          "gap": 0,
+          "winnerAhead": false,
+          "tied": true,
+          "winnerOutscored": false,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.targetDecisions[2].candidateDecisions",
+          "pathPriority": 0,
+          "winnerScore": 85,
+          "finalScore": 87,
+          "gap": 2,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+          "pathPriority": 1,
+          "winnerScore": 85,
+          "finalScore": 87,
+          "gap": 2,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 2号艇のhold・85点・最有力展開一致40/40 / 実進入・位置関係20/25 / 壁・内側残存経路15/20 / 1マーク後の残し経路10/10 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 5号艇のpickup・87点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": [
+            {
+              "label": "実進入・位置関係",
+              "winnerScore": 20,
+              "finalScore": 25,
+              "gap": 5,
+              "maximum": 25
+            },
+            {
+              "label": "取得信頼度",
+              "winnerScore": 0,
+              "finalScore": 0,
+              "gap": 0,
+              "maximum": 5
+            }
+          ]
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.branches",
+          "pathPriority": 2,
+          "winnerScore": 85,
+          "finalScore": 87,
+          "gap": 2,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 2号艇のhold・85点・最有力展開一致40/40 / 実進入・位置関係20/25 / 壁・内側残存経路15/20 / 1マーク後の残し経路10/10 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 5号艇のpickup・87点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": [
+            {
+              "label": "実進入・位置関係",
+              "winnerScore": 20,
+              "finalScore": 25,
+              "gap": 5,
+              "maximum": 25
+            },
+            {
+              "label": "取得信頼度",
+              "winnerScore": 0,
+              "finalScore": 0,
+              "gap": 0,
+              "maximum": 5
+            }
+          ]
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches",
+          "pathPriority": 2,
+          "winnerScore": 85,
+          "finalScore": 87,
+          "gap": 2,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 2号艇のhold・85点・最有力展開一致40/40 / 実進入・位置関係20/25 / 壁・内側残存経路15/20 / 1マーク後の残し経路10/10 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 5号艇のpickup・87点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": [
+            {
+              "label": "実進入・位置関係",
+              "winnerScore": 20,
+              "finalScore": 25,
+              "gap": 5,
+              "maximum": 25
+            },
+            {
+              "label": "取得信頼度",
+              "winnerScore": 0,
+              "finalScore": 0,
+              "gap": 0,
+              "maximum": 5
+            }
+          ]
+        },
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "pathPriority": 3,
+          "winnerScore": 85,
+          "finalScore": 87,
+          "gap": 2,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        }
+      ]
+    },
+    {
+      "date": "20261016",
+      "jcd": "03",
+      "raceNo": 8,
+      "actualHead": 5,
+      "finalHead": 4,
+      "scenario": true,
+      "selected": false,
+      "finalCorrect": false,
+      "comparable": true,
+      "primaryComparison": {
+        "path": "practicalSelection.targetDecisions[4].candidateDecisions",
+        "pathPriority": 0,
+        "winnerScore": 85,
+        "finalScore": 86,
+        "gap": 1,
+        "winnerAhead": false,
+        "tied": false,
+        "winnerOutscored": true,
+        "duplicateReason": false,
+        "winnerReasons": [],
+        "finalReasons": [],
+        "componentDiffs": []
+      },
+      "allComparisons": [
+        {
+          "path": "practicalSelection.targetDecisions[4].candidateDecisions",
+          "pathPriority": 0,
+          "winnerScore": 85,
+          "finalScore": 86,
+          "gap": 1,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+          "pathPriority": 1,
+          "winnerScore": 85,
+          "finalScore": 95,
+          "gap": 10,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは1・5・3号艇、3着拾いは5・6・2号艇を評価する。 / 3号艇のhold・85点・最有力展開一致40/40 / 実進入・位置関係25/25 / 壁・内側残存経路12/20 / 1マーク後の残し経路8/10 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは1・5・3号艇、3着拾いは5・6・2号艇を評価する。 / 5号艇のpickup・95点・最有力展開連動40/40 / 差し場・空き水面20/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": [
+            {
+              "label": "実進入・位置関係",
+              "winnerScore": 25,
+              "finalScore": 25,
+              "gap": 0,
+              "maximum": 25
+            },
+            {
+              "label": "取得信頼度",
+              "winnerScore": 0,
+              "finalScore": 0,
+              "gap": 0,
+              "maximum": 5
+            }
+          ]
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.branches",
+          "pathPriority": 2,
+          "winnerScore": 85,
+          "finalScore": 95,
+          "gap": 10,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは1・5・3号艇、3着拾いは5・6・2号艇を評価する。 / 3号艇のhold・85点・最有力展開一致40/40 / 実進入・位置関係25/25 / 壁・内側残存経路12/20 / 1マーク後の残し経路8/10 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは1・5・3号艇、3着拾いは5・6・2号艇を評価する。 / 5号艇のpickup・95点・最有力展開連動40/40 / 差し場・空き水面20/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": [
+            {
+              "label": "実進入・位置関係",
+              "winnerScore": 25,
+              "finalScore": 25,
+              "gap": 0,
+              "maximum": 25
+            },
+            {
+              "label": "取得信頼度",
+              "winnerScore": 0,
+              "finalScore": 0,
+              "gap": 0,
+              "maximum": 5
+            }
+          ]
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches",
+          "pathPriority": 2,
+          "winnerScore": 85,
+          "finalScore": 95,
+          "gap": 10,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは1・5・3号艇、3着拾いは5・6・2号艇を評価する。 / 3号艇のhold・85点・最有力展開一致40/40 / 実進入・位置関係25/25 / 壁・内側残存経路12/20 / 1マーク後の残し経路8/10 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは1・5・3号艇、3着拾いは5・6・2号艇を評価する。 / 5号艇のpickup・95点・最有力展開連動40/40 / 差し場・空き水面20/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": [
+            {
+              "label": "実進入・位置関係",
+              "winnerScore": 25,
+              "finalScore": 25,
+              "gap": 0,
+              "maximum": 25
+            },
+            {
+              "label": "取得信頼度",
+              "winnerScore": 0,
+              "finalScore": 0,
+              "gap": 0,
+              "maximum": 5
+            }
+          ]
+        },
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "pathPriority": 3,
+          "winnerScore": 85,
+          "finalScore": 95,
+          "gap": 10,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.candidateValidationEvidence.branches",
+          "pathPriority": 3,
+          "winnerScore": 85,
+          "finalScore": 95,
+          "gap": 10,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        }
+      ]
+    },
+    {
+      "date": "20261016",
+      "jcd": "01",
+      "raceNo": 2,
+      "actualHead": 5,
+      "finalHead": 2,
+      "scenario": true,
+      "selected": false,
+      "finalCorrect": false,
+      "comparable": true,
+      "primaryComparison": {
+        "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+        "pathPriority": 1,
+        "winnerScore": 83,
+        "finalScore": 92,
+        "gap": 9,
+        "winnerAhead": false,
+        "tied": false,
+        "winnerOutscored": true,
+        "duplicateReason": true,
+        "winnerReasons": [
+          "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 4号艇のpickup・83点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係23/15 / バック・2マーク到達8/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+        ],
+        "finalReasons": [
+          "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 3号艇のpickup・92点・最有力展開連動40/40 / 差し場・空き水面20/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+        ],
+        "componentDiffs": [
+          {
+            "label": "差し場・空き水面",
+            "winnerScore": 12,
+            "finalScore": 20,
+            "gap": 8,
+            "maximum": 25
+          },
+          {
+            "label": "実進入・位置関係",
+            "winnerScore": 23,
+            "finalScore": 25,
+            "gap": 2,
+            "maximum": 15
+          },
+          {
+            "label": "バック・2マーク到達",
+            "winnerScore": 8,
+            "finalScore": 7,
+            "gap": -1,
+            "maximum": 15
+          },
+          {
+            "label": "取得信頼度",
+            "winnerScore": 0,
+            "finalScore": 0,
+            "gap": 0,
+            "maximum": 5
+          }
+        ]
+      },
+      "allComparisons": [
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+          "pathPriority": 1,
+          "winnerScore": 83,
+          "finalScore": 92,
+          "gap": 9,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 4号艇のpickup・83点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係23/15 / バック・2マーク到達8/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 3号艇のpickup・92点・最有力展開連動40/40 / 差し場・空き水面20/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": [
+            {
+              "label": "差し場・空き水面",
+              "winnerScore": 12,
+              "finalScore": 20,
+              "gap": 8,
+              "maximum": 25
+            },
+            {
+              "label": "実進入・位置関係",
+              "winnerScore": 23,
+              "finalScore": 25,
+              "gap": 2,
+              "maximum": 15
+            },
+            {
+              "label": "バック・2マーク到達",
+              "winnerScore": 8,
+              "finalScore": 7,
+              "gap": -1,
+              "maximum": 15
+            },
+            {
+              "label": "取得信頼度",
+              "winnerScore": 0,
+              "finalScore": 0,
+              "gap": 0,
+              "maximum": 5
+            }
+          ]
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.branches",
+          "pathPriority": 2,
+          "winnerScore": 83,
+          "finalScore": 92,
+          "gap": 9,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 4号艇のpickup・83点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係23/15 / バック・2マーク到達8/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 3号艇のpickup・92点・最有力展開連動40/40 / 差し場・空き水面20/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": [
+            {
+              "label": "差し場・空き水面",
+              "winnerScore": 12,
+              "finalScore": 20,
+              "gap": 8,
+              "maximum": 25
+            },
+            {
+              "label": "実進入・位置関係",
+              "winnerScore": 23,
+              "finalScore": 25,
+              "gap": 2,
+              "maximum": 15
+            },
+            {
+              "label": "バック・2マーク到達",
+              "winnerScore": 8,
+              "finalScore": 7,
+              "gap": -1,
+              "maximum": 15
+            },
+            {
+              "label": "取得信頼度",
+              "winnerScore": 0,
+              "finalScore": 0,
+              "gap": 0,
+              "maximum": 5
+            }
+          ]
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches",
+          "pathPriority": 2,
+          "winnerScore": 83,
+          "finalScore": 92,
+          "gap": 9,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 4号艇のpickup・83点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係23/15 / バック・2マーク到達8/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 3号艇のpickup・92点・最有力展開連動40/40 / 差し場・空き水面20/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": [
+            {
+              "label": "差し場・空き水面",
+              "winnerScore": 12,
+              "finalScore": 20,
+              "gap": 8,
+              "maximum": 25
+            },
+            {
+              "label": "実進入・位置関係",
+              "winnerScore": 23,
+              "finalScore": 25,
+              "gap": 2,
+              "maximum": 15
+            },
+            {
+              "label": "バック・2マーク到達",
+              "winnerScore": 8,
+              "finalScore": 7,
+              "gap": -1,
+              "maximum": 15
+            },
+            {
+              "label": "取得信頼度",
+              "winnerScore": 0,
+              "finalScore": 0,
+              "gap": 0,
+              "maximum": 5
+            }
+          ]
+        },
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "pathPriority": 3,
+          "winnerScore": 83,
+          "finalScore": 92,
+          "gap": 9,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.candidateValidationEvidence.branches",
+          "pathPriority": 3,
+          "winnerScore": 83,
+          "finalScore": 92,
+          "gap": 9,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        }
+      ]
+    },
+    {
+      "date": "20261016",
+      "jcd": "08",
+      "raceNo": 12,
+      "actualHead": 5,
+      "finalHead": 4,
+      "scenario": true,
+      "selected": false,
+      "finalCorrect": false,
+      "comparable": true,
+      "primaryComparison": {
+        "path": "practicalSelection.targetDecisions[1].candidateDecisions",
+        "pathPriority": 0,
+        "winnerScore": 93,
+        "finalScore": 93,
+        "gap": 0,
+        "winnerAhead": false,
+        "tied": true,
+        "winnerOutscored": false,
+        "duplicateReason": false,
+        "winnerReasons": [],
+        "finalReasons": [],
+        "componentDiffs": []
+      },
+      "allComparisons": [
+        {
+          "path": "practicalSelection.targetDecisions[1].candidateDecisions",
+          "pathPriority": 0,
+          "winnerScore": 93,
+          "finalScore": 93,
+          "gap": 0,
+          "winnerAhead": false,
+          "tied": true,
+          "winnerOutscored": false,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.targetDecisions[4].candidateDecisions",
+          "pathPriority": 0,
+          "winnerScore": 93,
+          "finalScore": 93,
+          "gap": 0,
+          "winnerAhead": false,
+          "tied": true,
+          "winnerOutscored": false,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+          "pathPriority": 1,
+          "winnerScore": 93,
+          "finalScore": 95,
+          "gap": 2,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは3・1・5号艇、3着拾いは5・6・2号艇を評価する。 / 3号艇のhold・93点・最有力展開一致40/40 / 実進入・位置関係25/25 / 壁・内側残存経路20/20 / 1マーク後の残し経路8/10 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは3・1・5号艇、3着拾いは5・6・2号艇を評価する。 / 5号艇のpickup・95点・最有力展開連動40/40 / 差し場・空き水面20/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": [
+            {
+              "label": "実進入・位置関係",
+              "winnerScore": 25,
+              "finalScore": 25,
+              "gap": 0,
+              "maximum": 25
+            },
+            {
+              "label": "取得信頼度",
+              "winnerScore": 0,
+              "finalScore": 0,
+              "gap": 0,
+              "maximum": 5
+            }
+          ]
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.branches",
+          "pathPriority": 2,
+          "winnerScore": 93,
+          "finalScore": 95,
+          "gap": 2,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは3・1・5号艇、3着拾いは5・6・2号艇を評価する。 / 3号艇のhold・93点・最有力展開一致40/40 / 実進入・位置関係25/25 / 壁・内側残存経路20/20 / 1マーク後の残し経路8/10 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは3・1・5号艇、3着拾いは5・6・2号艇を評価する。 / 5号艇のpickup・95点・最有力展開連動40/40 / 差し場・空き水面20/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": [
+            {
+              "label": "実進入・位置関係",
+              "winnerScore": 25,
+              "finalScore": 25,
+              "gap": 0,
+              "maximum": 25
+            },
+            {
+              "label": "取得信頼度",
+              "winnerScore": 0,
+              "finalScore": 0,
+              "gap": 0,
+              "maximum": 5
+            }
+          ]
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches",
+          "pathPriority": 2,
+          "winnerScore": 93,
+          "finalScore": 95,
+          "gap": 2,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは3・1・5号艇、3着拾いは5・6・2号艇を評価する。 / 3号艇のhold・93点・最有力展開一致40/40 / 実進入・位置関係25/25 / 壁・内側残存経路20/20 / 1マーク後の残し経路8/10 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "finalReasons": [
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは3・1・5号艇、3着拾いは5・6・2号艇を評価する。 / 5号艇のpickup・95点・最有力展開連動40/40 / 差し場・空き水面20/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": [
+            {
+              "label": "実進入・位置関係",
+              "winnerScore": 25,
+              "finalScore": 25,
+              "gap": 0,
+              "maximum": 25
+            },
+            {
+              "label": "取得信頼度",
+              "winnerScore": 0,
+              "finalScore": 0,
+              "gap": 0,
+              "maximum": 5
+            }
+          ]
+        },
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "pathPriority": 3,
+          "winnerScore": 93,
+          "finalScore": 95,
+          "gap": 2,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        }
+      ]
+    },
+    {
+      "date": "20261016",
+      "jcd": "01",
+      "raceNo": 12,
+      "actualHead": 5,
+      "finalHead": 1,
+      "scenario": true,
+      "selected": false,
+      "finalCorrect": false,
+      "comparable": true,
+      "primaryComparison": {
+        "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+        "pathPriority": 1,
+        "winnerScore": 81,
+        "finalScore": 95,
+        "gap": 14,
+        "winnerAhead": false,
+        "tied": false,
+        "winnerOutscored": true,
+        "duplicateReason": true,
+        "winnerReasons": [
+          "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 5号艇のalternate-head・81点・5号艇 中村 日向 は🔥攻め艇 / 🌊展開艇 / ⚡道中艇 / 💣外コース妙味。総合79点。プラス材料はまくり差し・展開拾い、A1格上、ST速い .13。マイナス材料は当地勝率下位 6.14。 / 1号艇の2着役割・95点・実1コースからの内残り / 3号艇の3着役割・84点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度0/5 / 対象艇の正式な攻め根拠 / 2着partnerの残し根拠 / 3着partnerの残し・拾い根拠"
+        ],
+        "finalReasons": [
+          "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhead・95点・最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 既存フォーメーションに同一買い目あり"
+        ],
+        "componentDiffs": []
+      },
+      "allComparisons": [
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+          "pathPriority": 1,
+          "winnerScore": 81,
+          "finalScore": 95,
+          "gap": 14,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 5号艇のalternate-head・81点・5号艇 中村 日向 は🔥攻め艇 / 🌊展開艇 / ⚡道中艇 / 💣外コース妙味。総合79点。プラス材料はまくり差し・展開拾い、A1格上、ST速い .13。マイナス材料は当地勝率下位 6.14。 / 1号艇の2着役割・95点・実1コースからの内残り / 3号艇の3着役割・84点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度0/5 / 対象艇の正式な攻め根拠 / 2着partnerの残し根拠 / 3着partnerの残し・拾い根拠"
+          ],
+          "finalReasons": [
+            "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhead・95点・最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.branches",
+          "pathPriority": 2,
+          "winnerScore": 81,
+          "finalScore": 95,
+          "gap": 14,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 5号艇のalternate-head・81点・5号艇 中村 日向 は🔥攻め艇 / 🌊展開艇 / ⚡道中艇 / 💣外コース妙味。総合79点。プラス材料はまくり差し・展開拾い、A1格上、ST速い .13。マイナス材料は当地勝率下位 6.14。 / 1号艇の2着役割・95点・実1コースからの内残り / 3号艇の3着役割・84点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度0/5 / 対象艇の正式な攻め根拠 / 2着partnerの残し根拠 / 3着partnerの残し・拾い根拠"
+          ],
+          "finalReasons": [
+            "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhead・95点・最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches",
+          "pathPriority": 2,
+          "winnerScore": 81,
+          "finalScore": 95,
+          "gap": 14,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": true,
+          "winnerReasons": [
+            "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 5号艇のalternate-head・81点・5号艇 中村 日向 は🔥攻め艇 / 🌊展開艇 / ⚡道中艇 / 💣外コース妙味。総合79点。プラス材料はまくり差し・展開拾い、A1格上、ST速い .13。マイナス材料は当地勝率下位 6.14。 / 1号艇の2着役割・95点・実1コースからの内残り / 3号艇の3着役割・84点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度0/5 / 対象艇の正式な攻め根拠 / 2着partnerの残し根拠 / 3着partnerの残し・拾い根拠"
+          ],
+          "finalReasons": [
+            "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhead・95点・最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "componentDiffs": []
+        },
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "pathPriority": 3,
+          "winnerScore": 81,
+          "finalScore": 95,
+          "gap": 14,
+          "winnerAhead": false,
+          "tied": false,
+          "winnerOutscored": true,
+          "duplicateReason": false,
+          "winnerReasons": [],
+          "finalReasons": [],
+          "componentDiffs": []
+        },
+        {
+          "path": "practicalSelection.candidateValidationEvidence.branches",
+          "pathPriority": 3,
+          "winnerScore": 81,
+          "finalScore": 95,
+          "gap": 14,
           "winnerAhead": false,
           "tied": false,
           "winnerOutscored": true,
