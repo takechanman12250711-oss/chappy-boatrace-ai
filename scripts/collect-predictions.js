@@ -253,10 +253,12 @@ function getTargetDate() {
   return date;
 }
 
-function callApi(handler, query) {
+function callApi(handler, query, { observeRequest = null } = {}) {
   return new Promise((resolve, reject) => {
     let statusCode = 200;
     const req = { query };
+    // Internal opt-in only; observer failure cannot block the normal response.
+    try { if (observeRequest) observeRequest(req); } catch {}
     const res = {
       setHeader() {},
       status(code) {
@@ -1044,7 +1046,7 @@ async function loadTargets(date) {
     .filter(target => target.jcd && target.raceNo);
 }
 
-async function evaluateTargets(date, targets, { allRaces = false, onOfficialRace = null } = {}) {
+async function evaluateTargets(date, targets, { allRaces = false, onOfficialRace = null, captureIndependentInput = false } = {}) {
   const results = [];
   const attempts = [];
   let nextIndex = 0;
@@ -1054,14 +1056,27 @@ async function evaluateTargets(date, targets, { allRaces = false, onOfficialRace
       const target = targets[nextIndex++];
 
       try {
-        const raceData = await callApi(raceApi, {
-          date,
-          jcd: target.jcd,
-          rno: String(target.raceNo)
-        });
-        // Research receives only the official response, before any model/history
-        // enrichment. Its recorder handles failures without blocking publication.
-        if (onOfficialRace) onOfficialRace(raceData, target);
+        const query = { date, jcd: target.jcd, rno: String(target.raceNo) };
+        let raceData, independentInput;
+        if (captureIndependentInput && onOfficialRace) {
+          let captureCall;
+          try { captureCall = require('./independent-collector-input.cjs').callWithIndependentOfficialInput; } catch {}
+          if (captureCall) {
+            ({ data: raceData, independentInput } = await captureCall(callApi, raceApi, query, { ...target, date }));
+          } else {
+            raceData = await callApi(raceApi, query);
+            independentInput = { status: 'not_ready', reason: 'independent_official_observer_unavailable',
+              automaticReady: false, publicationReady: false };
+          }
+        } else {
+          raceData = await callApi(raceApi, query);
+        }
+        // Official response before model/history enrichment. Sources are a separate
+        // opt-in argument and never attached to the response or saved research data.
+        if (onOfficialRace) {
+          if (captureIndependentInput) onOfficialRace(raceData, target, independentInput);
+          else onOfficialRace(raceData, target);
+        }
         const identity =
           boatIdentity.inspectEntries(
             raceData?.entries,
