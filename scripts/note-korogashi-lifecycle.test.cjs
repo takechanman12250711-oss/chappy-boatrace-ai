@@ -256,7 +256,7 @@ test('runner persists prepare, remote seal, public receipt and funded continuati
     if(path.startsWith('data/note-drafts/'))return path.includes('-7-')?g.bytes:f.bytes;
     if(path==='data/results/20260928.json')return k.json({source:'boatrace-official',date:'20260928',races:[f.result]});
     throw Error('unexpected_file');
-  },load:async()=>({state:{rows:[f.row,g.row]}}),collect:async state=>state};
+  },load:async()=>({state:{rows:[f.row,g.row]}}),collect:async state=>state,settle:async state=>state};
   const env={GITHUB_REPOSITORY:'takechanman12250711-oss/chappy-boatrace-ai',GITHUB_REF:'refs/heads/main',GITHUB_RUN_ID:ctx.runId,
     GITHUB_RUN_ATTEMPT:ctx.runAttempt,GITHUB_SHA:ctx.headSha,KOROGASHI_ARTIFACT_ID:'44',KOROGASHI_ARTIFACT_DIGEST:'c'.repeat(64)};
   const stage=dir+'/stage.json',original=k.json([f,g]);

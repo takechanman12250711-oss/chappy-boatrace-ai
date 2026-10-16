@@ -16,6 +16,8 @@ on:
       - "scripts/test-practical-priority-shadow-artifact.js"
       - "scripts/test-practical-priority-shadow-regression.js"
       - "scripts/test-shadow-predictions.js"
+      - "scripts/test-daily-candidate-evidence.cjs"
+      - "scripts/practical-selection-evidence.js"
       - "scripts/check-charter.js"
       - ".github/workflows/collect-predictions.yml"
       - ".github/workflows/collect-results.yml"
@@ -49,4 +51,5 @@ jobs:
           node scripts/test-practical-priority-shadow-regression.js
           node scripts/test-priority-gate-hole-replacement-regression.js
           node scripts/test-shadow-predictions.js
+          node scripts/test-daily-candidate-evidence.cjs
           node scripts/check-charter.js

@@ -88,7 +88,7 @@ test('daily slot is consumed by explicit, pending, failed or finished plans; no 
 });
 test('runner starts with empty requests and persists exactly one pending course, never publishing or querying a result',async()=>{
   const {run}=require('./note-korogashi-run.cjs');
-  const f=fixture(),dir=fs.mkdtempSync('/tmp/korogashi-auto-');
+  const f=fixture(),dir=fs.mkdtempSync(require('node:path').join(require('node:os').tmpdir(),'korogashi-auto-'));
   let head=null,tree=null,serial=0;const commits=new Map();
   const store={revision:ctx.headSha,api:async(route,method,body)=>{
     if(route.startsWith('/git/ref/heads/'))return head?{object:{sha:head}}:null;
@@ -101,7 +101,7 @@ test('runner starts with empty requests and persists exactly one pending course,
     if(path==='receipt.json')return k.json(f.receipt);
     if(path.startsWith('data/note-drafts/'))return f.bytes;
     throw Error('unexpected_file');
-  },load:async()=>({state:{rows:[f.row]}}),collect:async state=>state};
+  },load:async()=>({state:{rows:[f.row]}}),collect:async state=>state,settle:async state=>state};
   const env={GITHUB_REPOSITORY:'takechanman12250711-oss/chappy-boatrace-ai',GITHUB_REF:'refs/heads/main',
     GITHUB_RUN_ID:ctx.runId,GITHUB_RUN_ATTEMPT:ctx.runAttempt,GITHUB_SHA:ctx.headSha};
   try {
@@ -116,4 +116,69 @@ test('runner starts with empty requests and persists exactly one pending course,
     assert.equal(interrupted.count,0);assert.equal(Object.keys(commits.get(head).plans).length,1);
     assert.equal(k.project(Object.values(commits.get(head).plans)[0]).status,'not_started');
   } finally {fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+test('runner refreshes and saves results before course settlement; retries reuse evidence without duplicate events or publication',async()=>{
+  const {run}=require('./note-korogashi-run.cjs'),{client,REPO}=require('./note-marketing-store');
+  const f=fixture(),at=now+1200000,c=config();
+  const selected=await auto.withAutoStart(c,k.initialState(),opts([f]));
+  const staged=await k.prepare(k.initialState(),selected.config,{...opts([f]),context:ctx,result:async()=>null});
+  const seal={id:44,name:'note-korogashi-123-1',digest:'sha256:'+'c'.repeat(64),runId:ctx.runId,headSha:ctx.headSha,
+    createdAt:new Date(now).toISOString(),confirmedAt:new Date(now+1000).toISOString()};
+  const registered=k.announce(k.confirm(staged.state,staged.staged,seal,now+1000),
+    {url:'https://note.com/great_robin3243/n/nabcdef',contentHash:'f'.repeat(64)},now+2000);
+  const result={ok:true,source:'boatrace-official',date:'20260928',jcd:'15',raceNo:6,resultUrl:f.row.resultUrl,
+    checkedAt:new Date(at).toISOString(),resultAvailable:true,status:'finished',void:false,
+    trifecta:{combination:'1-2-3',payout:10000},finishers:[{rank:1,boat:1},{rank:2,boat:2},{rank:3,boat:3}],starts:[]};
+  for(const fails of [false,true]) {
+    let head='1'.repeat(40),tree,serial=1,fetches=0,marketingSaves=0;
+    const commits=new Map([[head,structuredClone(registered)]]),events=[];
+    let marketing={rows:[f.row],date:'20260928'},saved=false;
+    const real=client({GITHUB_REPOSITORY:REPO,NOTE_CLAIM_TOKEN:'test-only',NOTE_CLAIM_SHA:ctx.headSha},async url=>{
+      let content;if(url.includes('/contents/data/note-drafts/'))content=f.bytes;
+      else return {ok:false,status:404};
+      return {ok:true,status:200,json:async()=>({encoding:'base64',content:Buffer.from(content).toString('base64')})};
+    });
+    const store={revision:ctx.headSha,api:async(route,method,body)=>{
+      if(route.startsWith('/git/ref/heads/'))return {object:{sha:head}};
+      if(route==='/git/trees'){assert(saved,'official evidence must be durable first');events.push('course-save');tree=JSON.parse(body.tree[0].content);return {sha:'b'.repeat(40)};}
+      if(route==='/git/commits'){const sha=(++serial).toString(16).padStart(40,'0');commits.set(sha,structuredClone(tree));return {sha};}
+      if(route.startsWith('/git/refs/heads/')){head=body.sha;return {object:{sha:head}};}
+      throw Error('unexpected_api');
+    },file:async(path,ref)=>{
+      if(path==='state.json')return k.json(commits.get(ref));
+      if(path==='receipt.json')return k.json(f.receipt);
+      if(path.startsWith('data/note-drafts/'))return f.bytes;
+      if(path.startsWith('data/results/'))return null;
+      throw Error('unexpected_file');
+    },load:async()=>({state:structuredClone(marketing),head:'a'.repeat(40)}),collect:async state=>state,
+    settle:async(state,cfg,t,options)=>real.settle(state,cfg,t,{...options,fetchResult:async()=>{
+      fetches++;events.push('fetch');if(fails)throw Error('official_unavailable');return result;
+    }}),save:async state=>{events.push('marketing-save');marketing=structuredClone(state);saved=true;marketingSaves++;}};
+    const env={GITHUB_REPOSITORY:REPO,GITHUB_REF:'refs/heads/main',GITHUB_RUN_ID:ctx.runId,GITHUB_RUN_ATTEMPT:ctx.runAttempt,GITHUB_SHA:ctx.headSha};
+    await run('prepare','/tmp/unused-korogashi-stage.json',{env,store,config:c,clock:()=>at});
+    const after=structuredClone(commits.get(head)),plan=Object.values(after.plans)[0];
+    assert.equal(k.project(plan).status,fails?'waiting_result':'target_reached');
+    assert.equal(plan.events.filter(e=>e.type==='settled').length,fails?0:1);
+    assert.deepEqual(events,fails?['fetch','marketing-save']:['fetch','marketing-save','course-save']);
+    // This is the same refresh the later index updater performs after loading
+    // the saved marketing branch: no second official request in this run.
+    await store.settle(marketing,require('../config/note-marketing.json'),at,{refresh:true,clock:()=>at});
+    await run('prepare','/tmp/unused-korogashi-stage.json',{env,store,config:c,clock:()=>at});
+    assert.equal(fetches,1);assert.equal(marketingSaves,1);
+    assert.deepEqual(commits.get(head),after);
+    assert.equal(plan.events.filter(e=>e.type==='announced').length,1);
+    if(!fails) {
+      const dir=fs.mkdtempSync(require('node:path').join(require('node:os').tmpdir(),'korogashi-budget-'));
+      const output=dir+'/output';
+      try {
+        marketing={rows:[f.row],date:'20260928'};events.length=0;
+        store.save=async()=>{throw Error('marketing_save_cas_failed');};
+        await assert.rejects(run('prepare',dir+'/unused.json',{env:{...env,GITHUB_OUTPUT:output},store,config:c,clock:()=>at}),/marketing_save_cas_failed/);
+        assert.equal(fs.readFileSync(output,'utf8'),'official-refresh-started=true\n');
+        assert.deepEqual(events,['fetch'],'failed evidence save must not advance course');
+        assert.deepEqual(commits.get(head),after);
+      } finally {fs.rmSync(dir,{recursive:true,force:true});}
+    }
+  }
 });
