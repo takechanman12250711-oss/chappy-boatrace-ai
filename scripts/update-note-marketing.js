@@ -110,7 +110,8 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
   const config = loadConfig();
   if (!config) throw new Error('marketing_config_missing');
   const loaded = await store.load(config);
-  const state = await store.settle(await store.collect(loaded.state, now), config, now, { refresh: true, clock });
+  const state = await store.settle(await store.collect(loaded.state, now), config, now,
+    { refresh: env.NOTE_OFFICIAL_REFRESH_STARTED !== 'true', clock });
   const courseRepo = require('./note-korogashi-store.cjs').repository(store);
   const courses = await courseRepo.load();
   const courseText = korogashi.publicText(courses.state, now);
