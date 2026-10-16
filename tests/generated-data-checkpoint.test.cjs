@@ -76,7 +76,7 @@ try {
     assert.deepEqual(git(f.remote, ['diff-tree', '--no-commit-id', '--name-only', '-r', result.savedSha]).split('\n'), [gzip, meta]);
     assert.equal(publish(f).status, 'already-persisted', 'replay of exact bytes creates no extra commit');
   });
-  for (const profile of ['negative-clip', 'active-100r']) {
+  for (const profile of ['negative-clip']) {
     test(`${profile}: true partial clone preserves 13 missing remote originals through an exact push`, () => {
       const f = fixture('promisor-' + profile, profile, true, true, 13);
       const partial = path.join(f.dir, 'partial');
@@ -269,16 +269,14 @@ try {
       assert.match(writer, /if: github.event_name != 'pull_request'/);
     }
   });
-  test('retired fixed-100R monitor has no execution triggers, write access, or upstream dispatch', () => {
+  test('removed fixed-100R paths cannot execute or publish', () => {
     const directory = path.join(__dirname, '../.github/workflows');
     const retired = 'check-active-100r-early-monitor.yml';
-    const source = fs.readFileSync(path.join(directory, retired), 'utf8');
-    assert.match(source, /^  pull_request:/m);
-    assert.doesNotMatch(source, /^  (?:workflow_run|workflow_dispatch|workflow_call|schedule|push):/m);
-    assert.doesNotMatch(source, /(?:contents|issues): write|gh issue create|publish_monitor:|generated-data-checkpoint\.cjs (?:pack|publish)/);
-    for (const file of fs.readdirSync(directory).filter(file => /\.ya?ml$/.test(file) && file !== retired)) {
-      const caller = fs.readFileSync(path.join(directory, file), 'utf8');
-      assert.ok(!caller.includes(retired), `${file} must not invoke the retired monitor`);
+    assert.equal(fs.existsSync(path.join(directory, retired)), false);
+    assert.equal(fs.existsSync(path.join(__dirname, '../scripts/build-active-100r-early-monitor.cjs')), false);
+    assert.throws(() => checkpoint.pack({ root: process.cwd(), profile: 'active-100r', date: '', output: path.join(root, 'retired'), runId: '101', runAttempt: '1' }), /Invalid profile/);
+    for (const file of fs.readdirSync(directory).filter(file => /\.ya?ml$/.test(file))) {
+      assert.ok(!fs.readFileSync(path.join(directory, file), 'utf8').includes(retired), `${file} must not invoke the removed monitor`);
     }
   });
   test('automatic frame handoff captures and publishes negative clip before releasing the shared writer lock', () => {

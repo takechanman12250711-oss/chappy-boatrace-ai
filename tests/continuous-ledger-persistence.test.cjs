@@ -105,15 +105,14 @@ test('retry limit cannot be expanded beyond three',t=>{
 test('workflow isolates report generation from ledger publication failure',()=>{
   const text=fs.readFileSync(path.join(__dirname,'../.github/workflows/build-continuous-performance-ledger.yml'),'utf8');
   assert.match(text,/node scripts\/persist-continuous-performance-ledger\.cjs/);
-  const step=text.split('      - name: Build separate eight-ticket promotion shadow report')[1].split('      - name: Preserve separate eight-ticket shadow report')[0];
+  const step=text.split('      - name: Build four-stage miss diagnosis without changing predictions')[1].split('      - name: Preserve four-stage miss diagnosis')[0];
   assert.match(step,/!cancelled\(\)/);assert.match(step,/steps\.checkout\.outcome == 'success'/);assert.match(step,/steps\.node\.outcome == 'success'/);
   assert.doesNotMatch(step,/steps\.persist\.outcome/);
-  assert.match(text,/steps\.shadow_report\.outcome == 'success'/);
+  assert.match(text,/steps\.four_stage\.outcome == 'success'/);
   assert.match(text,/if-no-files-found: error/);
   const build=text.split('  build:')[1].split('  capture-report:')[0];
   assert.match(build,/concurrency:\n      group: chappy-main-data-writers\n      queue: max\n      cancel-in-progress: false/);
   assert.match(build,/REPORT_COMMIT: \$\{\{ steps\.persist\.outputs\.report_commit \}\}/);
   assert.ok(build.indexOf('git checkout --detach "$REPORT_COMMIT"') < build.indexOf('Build hit-first report'));
-  const capture=text.split('  capture-report:')[1];
-  assert.doesNotMatch(capture,/chappy-main-data-writers|persist-continuous/);
+  assert.doesNotMatch(text, /capture-report:|build-eight-ticket-/);
 });

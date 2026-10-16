@@ -83,20 +83,6 @@ function compare(rows) {
     interpretation: 'A positive historical or small-sample hit difference is not proof of future improvement. ROI never changes hitDecision.'
   };
 }
-function loadShadow(root, letter, file) {
-  const full = path.join(root, 'data/stats', file);
-  if (!fs.existsSync(full)) return { status: 'REPORT_UNAVAILABLE' };
-  const s = JSON.parse(fs.readFileSync(full, 'utf8'));
-  if (s.productionChanged !== false || s.automaticApplication !== false || s.adoptionStatus !== 'NOT_APPROVED' || s.sourceDiagnostics?.complete !== true) return { status: 'UNVERIFIED_SOURCE' };
-  try {
-    const rows = (s.rows || []).map(r => ({ raceKey: r.raceKey, base: r.base,
-      candidate: r[letter], actual: r.actual, payout: r.payout }));
-    const result = compare(rows);
-    if (s.counts?.settledRaces !== rows.length || s.gains !== result.primary.gains || s.losses !== result.primary.losses) throw Error('shadow-count-mismatch');
-    return { status: 'VERIFIED_EXISTING_REPORT', generatedAt: s.generatedAt,
-      logicFingerprint: s.logicFingerprint, counts: s.counts, ...result };
-  } catch (e) { return { status: 'UNVERIFIED_SOURCE', reason: e.message }; }
-}
 function build(root = path.resolve(__dirname, '..')) {
   const input = require('./analysis-input-contract');
   const source = require('./eight-ticket-promotion-report-source.cjs');
@@ -158,8 +144,7 @@ function build(root = path.resolve(__dirname, '..')) {
       primary: { races: observed.races, hits: observed.hits, hitRate: observed.hitRate },
       secondary: { stakeYen: observed.stakeYen, returnYen: observed.returnYen, profitYen: observed.profitYen, roi: observed.roi } },
     diagnosis: diagnose(details),
-    shadows: { A: loadShadow(root, 'A', 'eight-ticket-promotion-shadow-report.json'),
-      C: loadShadow(root, 'C', 'eight-ticket-exhibition-shadow-report.json') }, details };
+    shadows: { A: { status: 'RETIRED_NOT_ADOPTED' }, C: { status: 'RETIRED_NOT_ADOPTED' } }, details };
 }
 if (require.main === module) {
   const root = path.resolve(__dirname, '..');
@@ -171,4 +156,4 @@ if (require.main === module) {
     primary: report.baseline.primary, secondary: report.baseline.secondary, diagnosis: report.diagnosis.counts }));
   if (!report.source.complete) process.exitCode = 1;
 }
-module.exports = { VERSION, LABELS, tickets, pct, summary, classify, diagnose, compare, loadShadow, build };
+module.exports = { VERSION, LABELS, tickets, pct, summary, classify, diagnose, compare, build };
