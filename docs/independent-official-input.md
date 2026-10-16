@@ -49,3 +49,15 @@ sourcesは既存 `monitor.sources` と同じ形。ただしpacketをそのまま
 保守的な次工程は、旧Chatの8段階を維持して新しい締切前判断にdecisionEvidenceを残し、曖昧な点を具体例で確定すること。限られた旧原稿の文章から数値閾値を創作しない。全体をF/Lなし単一頭方式へ変えることも、この取得改善には含まない。
 
 検査: `node --test scripts/capture-independent-official-input.test.cjs`。synthetic fixture、既存API応答不変、取得回数不変、欠測・不正出典・改変・締切超過を確認。実レース取得、Chat原稿保存、実公開成功はそれぞれ別途確認する。
+
+## Collector同一リクエストの受渡し（入力接続のみ）
+
+`evaluateTargets(date, targets, { onOfficialRace, captureIndependentInput: true })` の明示指定時だけ、既存 `callApi` の同一reqで原文を捕捉し、通常モデル処理前のcallback第3引数へ渡す。第1引数の公式応答と第2引数targetは従来どおり。無指定時はcallback引数も従来の2つのまま。購読者がなければ捕捉しない。
+
+第3引数は `{ status: 'captured', packet, automaticReady: false, publicationReady: false }`、または `{ status: 'not_ready', reason, automaticReady: false, publicationReady: false }`。packet生成は独立helperと同じ出典・実時計・展示・公式締切検査を通す。欠損・締切不正・observer不能でも通常応答を再取得せず、そのまま通常AIへ渡す。通常API自体の失敗は従来どおり失敗として扱う。
+
+原文はメモリ内の別引数だけで、raceData・comparison・既存研究snapshot・公開API応答へ追加しない。エラー診断は固定形式のreasonに限定しHTMLを出力しない。既存の起動経路はこのopt-inを指定していないため、本変更だけで新たな記録・販売・外部送信は始まらない。保存先と受渡し先の実運用接続、8段階判断器、原稿生成、採用gateは未完成のまま明示する。
+
+PR1318 head20858b3fのcollector変更は旧研究Cの保存wrapper除去、PR1319 heade31d3bd5は通常AI研究で、この同一req捕捉とは別箇所。既存研究payloadは変更しない。検査: `node --test scripts/independent-collector-input.test.cjs`。実collector関数をVMで読み、同一req・一回取得・第3引数互換・無購読・原文非保存・通常API失敗不変を確認する。
+
+opt-in consumerが同期例外・Promise rejection・then getter例外を返しても、固定診断に置換して通常comparisonを継続する。consumerの完了待ちで通常AIを止めないため非await。consumer側の非同期永続化完了は本契約では保証しない。無指定の従来callback挙動は変更しない。
