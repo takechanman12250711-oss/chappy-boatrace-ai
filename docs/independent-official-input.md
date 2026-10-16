@@ -59,3 +59,5 @@ sourcesは既存 `monitor.sources` と同じ形。ただしpacketをそのまま
 原文はメモリ内の別引数だけで、raceData・comparison・既存研究snapshot・公開API応答へ追加しない。エラー診断は固定形式のreasonに限定しHTMLを出力しない。既存の起動経路はこのopt-inを指定していないため、本変更だけで新たな記録・販売・外部送信は始まらない。保存先と受渡し先の実運用接続、8段階判断器、原稿生成、採用gateは未完成のまま明示する。
 
 PR1318 head20858b3fのcollector変更は旧研究Cの保存wrapper除去、PR1319 heade31d3bd5は通常AI研究で、この同一req捕捉とは別箇所。既存研究payloadは変更しない。検査: `node --test scripts/independent-collector-input.test.cjs`。実collector関数をVMで読み、同一req・一回取得・第3引数互換・無購読・原文非保存・通常API失敗不変を確認する。
+
+opt-in consumerが同期例外・Promise rejection・then getter例外を返しても、固定診断に置換して通常comparisonを継続する。consumerの完了待ちで通常AIを止めないため非await。consumer側の非同期永続化完了は本契約では保証しない。無指定の従来callback挙動は変更しない。

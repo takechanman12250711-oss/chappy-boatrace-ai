@@ -1074,7 +1074,13 @@ async function evaluateTargets(date, targets, { allRaces = false, onOfficialRace
         // Official response before model/history enrichment. Sources are a separate
         // opt-in argument and never attached to the response or saved research data.
         if (onOfficialRace) {
-          if (captureIndependentInput) onOfficialRace(raceData, target, independentInput);
+          if (captureIndependentInput) {
+            const consumerFailed = () => console.warn('Independent official input consumer failed; normal prediction unchanged');
+            try {
+              // Do not await optional consumers or expose their exception text.
+              Promise.resolve(onOfficialRace(raceData, target, independentInput)).catch(consumerFailed);
+            } catch { consumerFailed(); }
+          }
           else onOfficialRace(raceData, target);
         }
         const identity =

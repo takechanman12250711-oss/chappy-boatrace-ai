@@ -83,3 +83,23 @@ test('observer failure cannot reject the ordinary API call',async()=>{
   const h=harness(); const out=await h.context.callApi(h.handler,{date:target.date,jcd:target.jcd,rno:String(target.raceNo)}, {observeRequest(){throw new Error('observer error');}});
   assert.equal(out,h.data); assert.equal(h.calls(),1);
 });
+
+for (const asynchronous of [false, true]) test(`raw consumer failure is isolated and sanitized, async=${asynchronous}`,async()=>{
+  const h=harness(); const warnings=[]; h.context.console={warn:(...args)=>warnings.push(args.join(' '))};
+  const fail=(data,target,input)=>{throw new Error(input.packet.sources[0].text);};
+  const onOfficialRace=asynchronous?async(...args)=>fail(...args):fail;
+  const out=await h.context.evaluateTargets(target.date,[target],{captureIndependentInput:true,onOfficialRace});
+  await Promise.resolve();
+  assert.equal(out.comparison.length,1); assert.equal(out.attempts[0].status,'evaluated');
+  assert.equal(h.calls(),1); assert.equal(warnings.length,1);
+  assert.equal(warnings[0],'Independent official input consumer failed; normal prediction unchanged');
+  assert.equal(JSON.stringify(out).includes(original),false);
+});
+test('throwing then getter is isolated without leaking original',async()=>{
+  const h=harness(); const warnings=[]; h.context.console={warn:line=>warnings.push(line)};
+  const out=await h.context.evaluateTargets(target.date,[target],{captureIndependentInput:true,
+    onOfficialRace:(data,target,input)=>({get then(){throw new Error(input.packet.sources[0].text);}})});
+  await Promise.resolve();
+  assert.equal(out.comparison.length,1); assert.equal(warnings.length,1);
+  assert.equal(warnings[0].includes(original),false);
+});
