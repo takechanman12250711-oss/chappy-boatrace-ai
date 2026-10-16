@@ -31,3 +31,13 @@ PR #1319/#1322の2・3着研究で読んでいたtargetDecisionsは画面用の�
 `scripts/test-candidate-validation-evidence.cjs` は変更前commit `429663f3a86cfc8cd345258f47412c6787806fe8` の実選定器と既存の多様なfixtureで比較する。追加項目以外の選定結果全体の一致、候補の資格、カテゴリ分離、結果/オッズ不使用、120種類とサイズ、独立コピー、旧形式、不整合を検査する。これは保存変更の互換性検査で、性能比較ではない。将来の承認済み選定変更では比較基準も明示的に更新する。
 
 既存note回帰CIで実行し、`test-all-race-notes.js`で原稿原本および公開不可時の研究原本までの保持を確認する。CI/fixtureによる保存成功と、main反映後の実レースにおける締切前保存の確認は別に報告する。
+
+## 救済置換後の不一致診断
+
+新規captureで既存3コース/4カドの固定救済が元の最終券を置換した場合も、`candidateValidationEvidence.status=invalid-or-unavailable`を維持する。診断を追加しても最終券の根拠を有効化せず、救済券へ役割・購入資格を付け足さない。
+
+元snapshotが自身の元券集合に対して既存capture契約を満たし、既知version・救済券・置換元・末尾index・説明と置換前後の順序が完全一致した場合だけ、`diagnostic`（`candidate-validation-mismatch-diagnostic-v1`）を保存する。`originalGeneratorSnapshot`は元の候補観測・枝・役割・最終券を既存allowlistで独立コピーし、`transformations`は既存救済metadata、`observedFinalTickets`は置換後の実券とする。`purpose=diagnostic-only`、`usableForPrediction=false`、`resultUsedForGeneration=false`を固定する。元snapshot内の`captured`は置換前の保存状態であり、最終実券の適格性ではない。採否のselectedフラグ・不採用理由を最終採否へ書き換えない。
+
+診断は1段だけで、循環・過深・protoキー・1MiB超の入力を保持しない。既知救済が複数有効、metadata不正、元観測不整合なら従来のinvalidだけを保存する。再縮約は同じ元snapshot・変換・実券を再検査して保持し、診断のない旧invalidや旧原本を修復しない。研究consumerは外側のstatusを必ず読み、入れ子の元snapshotを購入資格・新しい成績母数へ転用しない。
+
+これは診断の欠落を防ぐ変更であり、救済選定・予想方式・買い目・役割根拠・精度を変更するものではない。回帰は既存`test-daily-candidate-evidence.cjs`で両救済、役割なしの保持、変換改変の拒否、旧invalid保持、独立コピー、再縮約の同値性を検査する。
