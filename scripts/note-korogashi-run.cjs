@@ -49,7 +49,11 @@ async function run(mode,file,{env=process.env,clock=Date.now,store=client(env),f
       return {status:'no_requested_courses',count:0};
     }
     const marketingConfig=loadConfig(), loaded=await store.load(marketingConfig);
-    const marketing=await store.collect(loaded.state,clock());
+    // Refresh and persist official evidence before course evaluation. The later
+    // index updater reuses this cache (including failed-attempt cooldowns), so
+    // a result does not need a second workflow run to reach the course.
+    const marketing=await store.settle(await store.collect(loaded.state,clock()),marketingConfig,clock(),{refresh:true,clock});
+    if(k.json(marketing)!==k.json(loaded.state))await store.save(marketing,loaded.head);
     const automatic=await autoStart.withAutoStart(config,before.state,{rows:marketing.rows,source:repo.source,now:clock()});
     const out=await k.prepare(before.state,automatic.config,{rows:marketing.rows,source:repo.source,result:repo.officialLoader(marketing),now:clock(),context:ctx});
     await repo.save(before,out.state);
