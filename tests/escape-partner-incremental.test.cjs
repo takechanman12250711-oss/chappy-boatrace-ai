@@ -1,7 +1,7 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {select}=require('../scripts/escape-partner-incremental.cjs');
-const {metrics}=require('../scripts/report-escape-partner-incremental.cjs');
+const {metrics,targetDecisionEvidence,strictHigherOnly}=require('../scripts/report-escape-partner-incremental.cjs');
 function fixture(){return {main:4,formal:true,exhibition:true,boats:[{boatNo:1,course:1}],base:['4-1-5','1-2-3','1-2-4'],
   baseRows:[{ticket:'4-1-5',category:'本線'},{ticket:'1-2-3',category:'押さえ'},{ticket:'1-2-4',category:'押さえ'}],
   pool:['4-1-5','1-2-3','1-2-4','1-5-4'].map(ticket=>({ticket,evidenceQualified:true,priorityScore:90,candidateKind:'canonical-formation',branchIds:['saved:'+ticket],purchaseEligible:false}))};}
@@ -34,4 +34,23 @@ test('pair improvement is not a trifecta gain; lost hits are retained in account
   candidate:{tickets:['1-2-3','1-5-4']}}];
  const m=metrics(rows,'candidate');assert.deepEqual(m.secondPair.gained,['a']);assert.deepEqual(m.secondPair.lost,[]);
  assert.equal(m.primary.gains,0);assert.equal(m.primary.losses,1);assert.equal(m.secondary.profitDifferenceYen,-1000);
+});
+test('saved target decisions distinguish structured partner roles from physical-only rows',()=>{
+ const decisions=[{candidateDecisions:[
+  {ticket:'1-3-4',relation:'structured',reasonCode:'CANDIDATE_ONLY_EVALUATION',roleLabels:[
+   {boatNo:1,position:1,role:'position',structured:false},{boatNo:3,position:2,role:'hold',structured:true},
+   {boatNo:4,position:3,role:'pickup',structured:true}]},
+  {ticket:'1-3-5',relation:'physical-only',reasonCode:'NO_PURCHASE_ELIGIBLE_BRANCH',roleLabels:[
+   {boatNo:1,position:1,role:'position',structured:false},{boatNo:3,position:2,role:'position',structured:false},
+   {boatNo:5,position:3,role:'position',structured:false}]}]}];
+ const grounded=targetDecisionEvidence(decisions,'1-3-4'),physical=targetDecisionEvidence(decisions,'1-3-5');
+ assert.deepEqual(grounded.structuredPositions,[2,3]);assert.equal(grounded.completePartnerRoles,true);
+ assert.deepEqual(physical.structuredPositions,[]);assert.equal(physical.completePartnerRoles,false);
+ assert.equal(targetDecisionEvidence(decisions,'1-4-2').captured,false);
+});
+test('strict-higher diagnostic rejects ties without changing the selector',()=>{
+ const base=['1-2-3','1-2-4'],tie={tickets:['1-2-3','1-5-4'],changed:true,change:{fromPriority:88,toPriority:88}};
+ const higher={tickets:['1-2-3','1-5-4'],changed:true,change:{fromPriority:88,toPriority:89}};
+ assert.deepEqual(strictHigherOnly(base,tie).tickets,base);
+ assert.deepEqual(strictHigherOnly(base,higher),higher);
 });

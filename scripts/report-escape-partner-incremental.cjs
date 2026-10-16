@@ -10,11 +10,37 @@ const pair=(ts,actual)=>ts.some(t=>t.slice(0,3)===actual.slice(0,3));
 function preRace(record,baseline){
   const p=record.prediction||record,c=p.preRaceConditions||{},boats=c.boats||[];
   return {base:[...baseline],baseRows:p.practicalTickets,pool:p.evaluatedScenarioCandidates?.candidatePool,
+    targetDecisions:p.practicalSelection?.targetDecisions||[],
     main:Number(p.mainSheet?.honmei?.boatNo),boats,
     formal:boats.length===6 && new Set(boats.map(b=>b.boatNo)).size===6 && new Set(boats.map(b=>b.course)).size===6 &&
       boats.every(b=>b.courseOfficial===true&&Number.isInteger(b.course)&&b.course>=1&&b.course<=6),
     exhibition:boats.length===6&&boats.every(b=>Number.isFinite(b.exhibitionTime)&&Number.isFinite(b.exhibitionST)),
     weather:c.weather||{}};
+}
+function targetDecisionEvidence(targetDecisions,ticket){
+ const roles=[],relations=new Set(),reasonCodes=new Set();
+ for(const target of Array.isArray(targetDecisions)?targetDecisions:[]){
+  for(const candidate of Array.isArray(target?.candidateDecisions)?target.candidateDecisions:[]){
+   if(candidate?.ticket!==ticket)continue;
+   if(candidate.relation)relations.add(String(candidate.relation));
+   if(candidate.reasonCode)reasonCodes.add(String(candidate.reasonCode));
+   for(const role of Array.isArray(candidate.roleLabels)?candidate.roleLabels:[]){
+    const value={boatNo:Number(role?.boatNo),position:Number(role?.position),role:String(role?.role||''),structured:role?.structured===true};
+    if(!Number.isInteger(value.boatNo)||!Number.isInteger(value.position))continue;
+    if(!roles.some(r=>JSON.stringify(r)===JSON.stringify(value)))roles.push(value);
+   }
+  }
+ }
+ const boats=String(ticket||'').split('-').map(Number);
+ const structuredPositions=[1,2,3].filter(position=>roles.some(role=>role.structured&&role.position===position&&role.boatNo===boats[position-1]));
+ return {captured:roles.length>0||relations.size>0||reasonCodes.size>0,relations:[...relations].sort(),
+  reasonCodes:[...reasonCodes].sort(),roles:roles.sort((a,b)=>a.position-b.position||a.boatNo-b.boatNo||a.role.localeCompare(b.role)),
+  structuredPositions,completePartnerRoles:structuredPositions.includes(2)&&structuredPositions.includes(3)};
+}
+function strictHigherOnly(base,priorityProtected){
+ const change=priorityProtected?.change;
+ return priorityProtected?.changed===true&&Number(change?.toPriority)>Number(change?.fromPriority)
+  ? priorityProtected:{tickets:[...base],changed:false,reason:'equal-priority-not-promoted'};
 }
 function metrics(rows,variant){
   const evaluated=rows.map(r=>({...r,candidate:r[variant].tickets}));
@@ -47,18 +73,25 @@ function build(root,reference){
    const evidence=preRace(capture.record,r.base);
    // Construct both candidates before attaching outcome data to the evaluation row.
    const unrestricted=select(evidence),priorityProtected=select(evidence,{preservePriority:true});
+   const strictHigherPriority=strictHigherOnly(r.base,priorityProtected);
    const actualSecond=Number(r.actual[2]),secondBoat=evidence.boats.find(b=>b.boatNo===actualSecond);
    rows.push({...r,main:evidence.main,formal:evidence.formal,exhibition:evidence.exhibition,
     weather:evidence.weather,actualSecondRegisterNo:secondBoat?.registerNo||null,
     actualSecondPreRaceCourse:evidence.formal?secondBoat?.course:null,
     actualCandidate:(evidence.pool||[]).find(t=>t.ticket===r.actual)||null,
-    unrestricted,priorityProtected});
+    actualTargetDecisionEvidence:targetDecisionEvidence(evidence.targetDecisions,r.actual),
+    unrestricted,priorityProtected,strictHigherPriority,
+    priorityProtectedAddedTargetDecisionEvidence:priorityProtected.changed
+      ?targetDecisionEvidence(evidence.targetDecisions,priorityProtected.change.added):null});
   }
  }
  assert.deepEqual(stats.summary(rows),reference.baseline.verified,'saved accounting mismatch');
  const formal=rows.filter(r=>r.formal&&r.exhibition);
  const missing=rows.filter(r=>r.actual[0]==='1'&&r.missType==='pairMissing');
- return {version:VERSION,generatedAt:new Date().toISOString(),productionChanged:false,automaticApplication:false,
+ const pairGainRows=formal.filter(r=>!pair(r.base,r.actual)&&pair(r.priorityProtected.tickets,r.actual));
+ const priorityChanges=formal.filter(r=>r.priorityProtected.changed);
+ return {version:VERSION,reportExtensionVersion:'escape-partner-third-evidence-diagnostic-v1',
+  generatedAt:new Date().toISOString(),productionChanged:false,automaticApplication:false,
   adoptionStatus:'NOT_APPROVED',evaluationType:'KNOWN_PERIOD_COMPONENT_DIAGNOSIS',
   source:{referenceHash:hash(JSON.stringify(reference)),referenceGeneratedAt:reference.generatedAt,sources,
    originalExpectedRaces:reference.source.expectedRaces,verifiedRaces:rows.length,excluded:reference.source.failures,
@@ -66,8 +99,28 @@ function build(root,reference){
   finding:{oneWinPairMissing:missing.length,officialExhibitionPairMissing:missing.filter(r=>r.formal&&r.exhibition).length,
    officialPairMissingMainHeads:missing.filter(r=>r.formal&&r.exhibition).map(r=>({raceKey:r.raceKey,main:r.main})),
    officialExhibitionRaces:formal.length,provisionalRaces:rows.length-formal.length},
-  all:{unrestricted:metrics(rows,'unrestricted'),priorityProtected:metrics(rows,'priorityProtected')},
-  officialExhibition:{unrestricted:metrics(formal,'unrestricted'),priorityProtected:metrics(formal,'priorityProtected')},
+  all:{unrestricted:metrics(rows,'unrestricted'),priorityProtected:metrics(rows,'priorityProtected'),
+   strictHigherPriority:metrics(rows,'strictHigherPriority')},
+  officialExhibition:{unrestricted:metrics(formal,'unrestricted'),priorityProtected:metrics(formal,'priorityProtected'),
+   strictHigherPriority:metrics(formal,'strictHigherPriority')},
+  thirdEvidenceDiagnosis:{diagnosticOnly:true,knownPeriodPosthoc:true,usableForPrediction:false,
+   priorityProtectedChanges:priorityChanges.length,
+   scoreRelation:{higher:priorityChanges.filter(r=>r.priorityProtected.change.toPriority>r.priorityProtected.change.fromPriority).length,
+    equal:priorityChanges.filter(r=>r.priorityProtected.change.toPriority===r.priorityProtected.change.fromPriority).length,
+    lower:priorityChanges.filter(r=>r.priorityProtected.change.toPriority<r.priorityProtected.change.fromPriority).length},
+   pairGainRaces:pairGainRows.length,
+   pairGainsAllEqualPriority:pairGainRows.every(r=>r.priorityProtected.change.toPriority===r.priorityProtected.change.fromPriority),
+   chosenThirdMismatch:pairGainRows.filter(r=>r.priorityProtected.change.added[4]!==r.actual[4]).length,
+   actualPoolEvidenceQualified:pairGainRows.filter(r=>r.actualCandidate?.evidenceQualified===true).length,
+   actualTargetDecisionCaptured:pairGainRows.filter(r=>r.actualTargetDecisionEvidence.captured).length,
+   actualCompletePartnerRoles:pairGainRows.filter(r=>r.actualTargetDecisionEvidence.completePartnerRoles).length,
+   rows:pairGainRows.map(r=>({raceKey:r.raceKey,actual:r.actual,removed:r.priorityProtected.change.removed,
+    added:r.priorityProtected.change.added,fromPriority:r.priorityProtected.change.fromPriority,
+    toPriority:r.priorityProtected.change.toPriority,actualCandidateKind:r.actualCandidate?.candidateKind||null,
+    actualPoolEvidenceQualified:r.actualCandidate?.evidenceQualified===true,
+    actualPoolBranchIds:Array.isArray(r.actualCandidate?.branchIds)?r.actualCandidate.branchIds:[],
+    actualTargetDecisionEvidence:r.actualTargetDecisionEvidence,
+    addedTargetDecisionEvidence:r.priorityProtectedAddedTargetDecisionEvidence}))},
   // Diagnostic groups, not selection rules. Missing conditions remain explicit.
   byDate:groups(formal,r=>r.raceKey.slice(0,8)),byVenue:groups(formal,r=>r.raceKey.slice(9,11)),
   byWeather:groups(formal,r=>JSON.stringify([r.weather.windDirection||null,r.weather.windSpeed??null,r.weather.waveHeight??null])),
@@ -82,4 +135,4 @@ if(require.main===module){
  fs.mkdirSync(path.dirname(destination),{recursive:true});fs.writeFileSync(destination,JSON.stringify(report,null,2)+'\n');
  console.log(JSON.stringify({finding:report.finding,official:report.officialExhibition}));
 }
-module.exports={preRace,metrics,groups,build};
+module.exports={preRace,targetDecisionEvidence,strictHigherOnly,metrics,groups,build};
