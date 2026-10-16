@@ -260,3 +260,52 @@ test('empty rescue object stays distinct from a missing or null rescue', t => {
   archiveFixture(f.root, newer); assert.equal(m.build(f.root).source.failures[0].reason, 'conflicting-frozen-capture');
  }
 });
+
+// Synthetic equivalent of the observed 20261014-21-4 primary/verification
+// annotation difference. Never rewrite or supplement a historical capture.
+test('four-kado display odds resolve across primary and archive without changing originals', t => {
+ const f = frozenFixture(t), tickets = f.records[0].prediction.practicalTickets;
+ tickets.push('3-1-2', '3-1-4');
+ tickets[9] = { ticket: tickets[9], fourKadoEscapeRescueFixed5: { ...rescueEvidence(), targetLabel: '4カド攻め', index: 9 } };
+ f.ledger.rows[0].ticketCount = 10; f.ledger.rows[0].stakeYen = 1000;
+ f.ledger.rolling100 = ledgerHelpers.summary(f.ledger.rows);
+ writeFixture(f.root, 'data/stats/continuous-performance-ledger.json', f.ledger);
+ const primary = structuredClone(f.records[0]);
+ Object.assign(primary.prediction.practicalTickets[9].fourKadoEscapeRescueFixed5, { odds: 10.1, oddsText: '10.1倍', hasOdds: true });
+ f.daily.predictions = [primary]; f.save(); archiveFixture(f.root, f.daily);
+ const paths = [`data/predictions/${DATE}.json`, `data/predictions/source-archives/${DATE}.json.gz`, `data/predictions/source-archives/${DATE}.meta.json`, 'data/stats/continuous-performance-ledger.json'];
+ const before = paths.map(p => fs.readFileSync(path.join(f.root, p)));
+ assertComplete(m.build(f.root), f.ledger);
+ const capture = frozenSource.readFrozenDay(f.root, DATE, f.ledger.rows).captures.get(primary.raceKey);
+ assert.equal(capture.conflict, false); assert.deepEqual(capture.record, primary);
+ assert.equal(capture.evidence.length, 4);
+ assert.equal(new Set(capture.evidence.map(e => e.verifierEvidenceSha256)).size, 1);
+ assert.equal(new Set(capture.evidence.map(e => e.recordSha256)).size, 2);
+ paths.forEach((p, i) => assert.deepEqual(fs.readFileSync(path.join(f.root, p)), before[i]));
+});
+for (const [name, change] of [
+ ['ticket', r => { r.prediction.practicalTickets[0].ticket = '2-4-5'; }],
+ ...['applied', 'version', 'targetLabel', 'ticket', 'replacedTicket', 'index', 'stakeYen', 'roleEvidence'].map(key =>
+  [key, r => { r.prediction.practicalTickets[0].fourKadoEscapeRescueFixed5[key] = 'changed'; }]),
+ ['missing rescue', r => { delete r.prediction.practicalTickets[0].fourKadoEscapeRescueFixed5; }],
+ ['null rescue', r => { r.prediction.practicalTickets[0].fourKadoEscapeRescueFixed5 = null; }],
+ ['array rescue', r => { r.prediction.practicalTickets[0].fourKadoEscapeRescueFixed5 = []; }],
+ ['unrelated nested odds', r => { r.prediction.practicalTickets[0].otherEvidence = { odds: 10.1 }; }],
+ ['candidate nested odds', r => { r.prediction.practicalSelection.candidateOutcomes[0].fourKadoEscapeRescueFixed5.odds = 10.1; }]
+]) test(`four-kado display exception still rejects ${name}`, t => {
+ const f = frozenFixture(t);
+ f.records[0].prediction.practicalTickets[0] = { ticket: '2-4-3', fourKadoEscapeRescueFixed5: rescueEvidence() };
+ f.records[0].prediction.practicalSelection.candidateOutcomes[0].fourKadoEscapeRescueFixed5 = rescueEvidence();
+ f.save(); const newer = structuredClone(f.daily); change(newer.verificationPredictions[0]); archiveFixture(f.root, newer);
+ const out = m.build(f.root); assert.equal(out.source.complete, false);
+ assert.equal(out.source.failures[0].reason, 'conflicting-frozen-capture');
+});
+test('four-kado empty rescue stays distinct from missing, null and array', t => {
+ const f = frozenFixture(t);
+ f.records[0].prediction.practicalTickets[0] = { ticket: '2-4-3', fourKadoEscapeRescueFixed5: {} }; f.save();
+ for (const value of [undefined, null, []]) {
+  const newer = structuredClone(f.daily), ticket = newer.verificationPredictions[0].prediction.practicalTickets[0];
+  if (value === undefined) delete ticket.fourKadoEscapeRescueFixed5; else ticket.fourKadoEscapeRescueFixed5 = value;
+  archiveFixture(f.root, newer); assert.equal(m.build(f.root).source.failures[0].reason, 'conflicting-frozen-capture');
+ }
+});

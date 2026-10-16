@@ -77,11 +77,13 @@ function frozenEvidence(record) {
   };
   const practicalTicketEvidence = item => {
     const evidence = typeof item === "string" ? { ticket: item } : withoutOdds(item);
-    const rescue = evidence?.threeCourseEscapeRescueFixed5;
-    // This one saved practical-ticket annotation also carries display odds.
+    // Only these two saved practical-ticket annotations carry display odds.
     // Keep null/missing/array distinctions and every other rescue field intact.
-    if (rescue && typeof rescue === "object" && !Array.isArray(rescue))
-      evidence.threeCourseEscapeRescueFixed5 = withoutOdds(rescue);
+    for (const key of ["threeCourseEscapeRescueFixed5", "fourKadoEscapeRescueFixed5"]) {
+      const rescue = evidence?.[key];
+      if (rescue && typeof rescue === "object" && !Array.isArray(rescue))
+        evidence[key] = withoutOdds(rescue);
+    }
     return evidence;
   };
   // See docs/frozen-ledger-capture-resolution.md for the explicit boundary.
