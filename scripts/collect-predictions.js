@@ -368,10 +368,25 @@ function compactEvaluation(evaluation) {
 }
 
 function compactPracticalSelection(
-  selection
+  selection, baseline = selection?.tickets
 ) {
-  return practicalSelectionApi
-    .compactAudit(selection);
+  const compact = practicalSelectionApi.compactAudit(selection);
+  // Keep the existing full-pool branch/role observations, not just the UI
+  // target preview. Reuse the note capture validator; never rerun selection.
+  if (selection?.candidateValidationEvidence) {
+    try {
+      const captured = require('./practical-selection-evidence').capture(
+        {}, baseline, {...selection, tickets: selection.tickets || baseline});
+      compact.candidateValidationEvidence = captured.candidateValidationEvidence || {
+        version: 'candidate-validation-evidence-v1', status: 'invalid-or-unavailable'
+      };
+    } catch {
+      compact.candidateValidationEvidence = {
+        version: 'candidate-validation-evidence-v1', status: 'capture-error'
+      };
+    }
+  }
+  return compact;
 }
 
 // Research C uses the completed saved payload, never changes purchase tickets.
@@ -446,7 +461,7 @@ function compactPrediction(prediction, practicalTickets, raceData) {
     evaluatedScenarioCandidates: require("./outer-attack-research").compactPool(prediction),
     practicalSelection:
       compactPracticalSelection(
-        practicalSelection
+        practicalSelection, practicalTickets
       ),
     verificationEvidence:
       compactVerificationEvidence({
@@ -848,7 +863,7 @@ function compactVerificationPayload(
     practicalSelection:
       compactPracticalSelection(
         prediction
-          ?.practicalSelection
+          ?.practicalSelection, practicalTickets
       ),
     internalEvaluation:
       prediction
@@ -2448,6 +2463,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  compactPracticalSelection,
   evaluateTargets,
   MIN_SCORE,
   SHADOW_LOGIC_FINGERPRINT,

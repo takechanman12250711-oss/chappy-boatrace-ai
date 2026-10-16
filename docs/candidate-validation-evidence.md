@@ -16,7 +16,13 @@
 
 `js/practical-selection.js` が副次情報を返し、既存 `scripts/practical-selection-evidence.js::capture` が許可項目だけを独立コピーする。券集合・種類数・観測対象・stageが不整合なら副次情報だけ `invalid-or-unavailable` とし、有効な元予想は保持する。生成中の監査失敗は `capture-error`。欠測した項目をfalse・0として補わない。
 
-既存 `collect-all-race-notes.js` → `outer-attack-live-source` / `note-draft-bundle` の経路を使う。公開監査で止まったレースにも前者の原本が残る。新しいcollector、cron、結果による再生成は追加しない。旧practical-selection-evidence-v1の読者は追加項目を無視でき、旧原本は追記・更新しない。日次予想の縮約保存に本項目が必ずあるとは説明しない。
+既存 `collect-all-race-notes.js` → `outer-attack-live-source` / `note-draft-bundle` の経路を使う。公開監査で止まったレースにも前者の原本が残る。新しいcollector、cron、結果による再生成は追加しない。旧practical-selection-evidence-v1の読者は追加項目を無視でき、旧原本は追記・更新しない。
+
+2026-10-16の修正以降、日次 `collect-predictions.js::compactPracticalSelection` も同じcapture検査を再利用し、`prediction.practicalSelection.candidateValidationEvidence` に保存する。対象は新規生成時に既存選定器が返した副次情報のみ。元券との不一致は `invalid-or-unavailable`、例外は `capture-error`。旧形式の欠測は欠測のままとし、過去レースを再生成しない。既存日次データを再縮約する際にも外側のpracticalTicketsを照合し、保存済み根拠を保持する。
+
+PR #1319/#1322の2・3着研究で読んでいたtargetDecisionsは画面用の件数制限がある。このpreviewだけで「構造化役割なし」と断定せず、全候補のobservationsと参照branchesを読む。note原本の既存保存と日次側の旧欠測を区別する。branchが未適格ならその事実を保持し、別枝の役割を組み合わせて購入資格を作らない。日次保存の修正は予想改善の実証や候補の本番採用ではない。
+
+検査: `node scripts/test-daily-candidate-evidence.cjs`。実選定器のfixtureでpreview外の候補保持、元のcompact全項目一致、再縮約の同値性、券不一致拒否、旧形式と独立コピーを確認する。固定100R待ちは設けない。main反映後の実レース原本での保存確認は、fixture成功とは別に記録する。
 
 `js/practical-selection.js` は方式指紋の対象なので、買い目が同じでも指紋は更新される。旧固定100枠・receipt・凍結selectorは保持し、今後の方式別最初の100枠へ分離する。旧方式を新方式に改名・合算しない。
 
