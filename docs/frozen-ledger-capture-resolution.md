@@ -55,6 +55,15 @@ distinct. No arbitrary nested odds fields are stripped, and this nested exceptio
 does not apply to candidate outcomes. The original selected record and its full
 hash retain its original nested odds.
 
+The same three display fields are also ignored at the exact practical-ticket
+path `practicalTickets[n].fourKadoEscapeRescueFixed5`. The saved 2026-10-14
+21-4 capture at `01:02:11.703Z` has 10.1 / "10.1倍" / true in primary ticket
+index 9, while its verification copy omits them. Both raw and archived sources
+contain this same difference; all other verifier inputs agree. No ticket,
+replacement, role, version, amount, or other metadata is ignored. The exception
+does not apply to candidate outcomes or arbitrary nested objects. Source bytes,
+full record hashes, and the selected original record remain unchanged.
+
 All remaining fields outside this projection are outside the hit-first verifier's
 input contract. This includes compacted presentation fields such as
 `prediction.raceFlow` and `prediction.mainSheet`, other research shadows, note
