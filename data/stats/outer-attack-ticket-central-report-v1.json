@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "reportId": "outer-attack-ticket-central-report-v1",
   "monitorVersion": "outer-attack-ticket-central-monitor-v1",
-  "generatedAt": "2026-10-16T17:39:04.971Z",
+  "generatedAt": "2026-10-17T00:20:48.672Z",
   "productionChanged": false,
   "automaticApplication": false,
   "humanApprovalRequired": true,
@@ -10,37 +10,37 @@
   "primaryCohort": "central-before-result-and-prediction-before-result",
   "pipeline": {
     "noteCollection": {
-      "checked": 1482,
+      "checked": 1486,
       "saved": 0,
-      "inactive": 1179,
+      "inactive": 1183,
       "missing": 220,
       "invalid": 1,
       "missingBasis": 0,
-      "checkedAt": "2026-10-16T17:27:27.633Z"
+      "checkedAt": "2026-10-17T00:20:25.082Z"
     },
     "lastCapture": {
       "date": "20261017",
-      "capturedAt": "2026-10-16T17:27:27.633Z",
+      "capturedAt": "2026-10-17T00:20:25.082Z",
       "diagnostics": {
-        "sourceRecordCount": 14,
-        "preDeadlineRecordCount": 14,
-        "duplicateRaceKeyCount": 0,
+        "sourceRecordCount": 18,
+        "preDeadlineRecordCount": 18,
+        "duplicateRaceKeyCount": 1,
         "excludedReasons": {},
-        "selectedRaceCount": 14,
+        "selectedRaceCount": 17,
         "beforeProspectiveStartCount": 0,
-        "notPersistenceRecommendedCount": 14,
+        "notPersistenceRecommendedCount": 16,
         "notReadyCount": 0,
-        "capturedCount": 0,
+        "capturedCount": 1,
         "preservedCount": 0,
         "conflictCount": 0
       }
     },
-    "immutableSnapshotCount": 99,
-    "archivedRaceCount": 82,
+    "immutableSnapshotCount": 100,
+    "archivedRaceCount": 83,
     "archiveConflictCount": 0,
     "settlementCount": 61,
     "eligibleSettlementCount": 61,
-    "pendingOfficialResultCount": 0,
+    "pendingOfficialResultCount": 1,
     "exclusionCount": 21,
     "exclusionCounts": {
       "not-comparable": 21
@@ -50,7 +50,7 @@
     "schemaVersion": 1,
     "reportId": "outer-attack-ticket-ab-report-v1",
     "settlementVersion": "outer-attack-ticket-settlement-v1",
-    "generatedAt": "2026-10-16T17:39:04.971Z",
+    "generatedAt": "2026-10-17T00:20:48.672Z",
     "productionChanged": false,
     "automaticApplication": false,
     "primaryCohort": "prediction-before-result",
@@ -1106,7 +1106,7 @@
   "decision": {
     "schemaVersion": 1,
     "gateId": "outer-attack-ticket-decision-gate-v1",
-    "generatedAt": "2026-10-16T17:39:04.971Z",
+    "generatedAt": "2026-10-17T00:20:48.672Z",
     "frozenAt": "2026-08-31T01:40:00.000Z",
     "prospectiveStartAt": "2026-08-31T02:00:00.000Z",
     "sourceMainCommit": "ee644d55b889c0ff38f198b9747c9c4d86c83425",
@@ -1804,9 +1804,9 @@
   },
   "research": {
     "version": "outer-attack-all-scenarios-v1",
-    "capturedRaces": 561,
+    "capturedRaces": 563,
     "settledRaces": 526,
-    "pending": 0,
+    "pending": 2,
     "groups": {
       "3ab05c5223d5906322d2fe76440bc387c86733fba89c229052c61a04e977695d:boat3-position1": {
         "races": 5,
@@ -4424,12 +4424,14 @@
       "scheduledRaces": 168,
       "scheduleComplete": true,
       "observedRaces": 168,
-      "savedRaces": 0,
-      "missingRaces": 168,
+      "savedRaces": 2,
+      "missingRaces": 166,
       "reasons": {
-        "deferred-until-one-hour": 168
+        "deferred-until-one-hour": 156,
+        "waiting-exhibition": 8,
+        "closed-or-too-close": 2
       },
-      "lastObservedAt": "2026-10-16T17:18:36.921Z",
+      "lastObservedAt": "2026-10-17T00:10:43.207Z",
       "venueFailures": []
     }
   }
