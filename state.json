@@ -1486,15 +1486,46 @@
         }
       },
       "settlement": {
-        "status": "pending",
-        "reason": "official_result_pending"
+        "status": "miss",
+        "combination": "2-4-1",
+        "payoutPer100Yen": 11200,
+        "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261017&jcd=10&rno=7",
+        "evidenceId": "dade9424d09b527d33ddfd4bd785345d5ed2d899eb68139db1e2b554f29889a0"
       },
       "publishedSettlement": {
-        "status": "pending",
-        "reason": "official_result_pending",
-        "method": "published-main-sections-v1"
+        "status": "hit",
+        "combination": "2-4-1",
+        "payoutPer100Yen": 11200,
+        "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261017&jcd=10&rno=7",
+        "evidenceId": "0eb3e8498b8f4e5c6459f77d4ec2c51916134ad66bcb4c5e8b5cdf651455d98e",
+        "method": "published-main-sections-v1",
+        "publishedTicketCount": 35,
+        "sectionsSha256": "4c4f0db0fe6d64934ebca89f2a5429a99cfa41e9c4f0f0bb7389e5a41318f31a",
+        "referenceTicketCount": 6,
+        "matchedSections": [
+          "🌊 流し"
+        ]
       },
-      "winningProvenance": null,
+      "winningProvenance": {
+        "version": "note-result-provenance-v1",
+        "publicationKey": "20261017-10-7:normal",
+        "raceKey": "20261017-10-7",
+        "articleSeries": "normal",
+        "sourceSha256": "3a08f79d164c884adbab3a4cab8f82a2501b4169596f1757388d129bf71adcc6",
+        "combination": "2-4-1",
+        "settlementEvidenceId": "0eb3e8498b8f4e5c6459f77d4ec2c51916134ad66bcb4c5e8b5cdf651455d98e",
+        "sectionsSha256": "4c4f0db0fe6d64934ebca89f2a5429a99cfa41e9c4f0f0bb7389e5a41318f31a",
+        "matchedSections": [
+          "🌊 流し"
+        ],
+        "origins": [
+          {
+            "categoryId": "flow",
+            "sourceField": "record.prediction.mainSheet.flowTickets"
+          }
+        ],
+        "provenanceSha256": "61c4634a6aae1bfca74936475d81934fefc3bc1d279f45528ff94799b2c4232c"
+      },
       "socialContext": {
         "version": "source-context-v1",
         "sourceSha256": "3a08f79d164c884adbab3a4cab8f82a2501b4169596f1757388d129bf71adcc6",
@@ -1503,6 +1534,20 @@
           "2",
           "1"
         ]
+      },
+      "publicResultObservation": {
+        "version": "note-result-observation-v1",
+        "evidenceId": "0eb3e8498b8f4e5c6459f77d4ec2c51916134ad66bcb4c5e8b5cdf651455d98e",
+        "firstResultSeenAt": "2026-10-17T06:10:23.414Z",
+        "officialSourceCheckedAt": "2026-10-17T04:21:15.564Z",
+        "noteVerifiedAt": null
+      },
+      "resultObservation": {
+        "version": "note-result-observation-v1",
+        "evidenceId": "dade9424d09b527d33ddfd4bd785345d5ed2d899eb68139db1e2b554f29889a0",
+        "firstResultSeenAt": "2026-10-17T06:10:23.414Z",
+        "officialSourceCheckedAt": "2026-10-17T04:21:15.564Z",
+        "noteVerifiedAt": null
       }
     }
   ],
@@ -3262,25 +3307,53 @@
         "normal"
       ],
       "publishedArticles": 1,
-      "publishedTicketCount": null,
-      "status": "pending",
-      "matchedSections": [],
+      "publishedTicketCount": 35,
+      "status": "hit",
+      "matchedSections": [
+        {
+          "articleSeries": "normal",
+          "label": "🌊 流し"
+        }
+      ],
       "sources": [
         {
           "publicationKey": "20261017-10-7:normal",
           "sourceSha256": "3a08f79d164c884adbab3a4cab8f82a2501b4169596f1757388d129bf71adcc6",
           "publishedAt": "2026-10-17T11:32:24.000+09:00",
-          "sectionsSha256": null,
-          "status": "pending",
-          "evidenceId": null
+          "sectionsSha256": "4c4f0db0fe6d64934ebca89f2a5429a99cfa41e9c4f0f0bb7389e5a41318f31a",
+          "status": "hit",
+          "evidenceId": "0eb3e8498b8f4e5c6459f77d4ec2c51916134ad66bcb4c5e8b5cdf651455d98e"
         }
       ],
-      "sourceSha256": "896e1a6828b423d9046971b82d22414be764e9656225883f7f05761586802731",
-      "combination": null,
-      "payoutPer100Yen": null,
+      "sourceSha256": "4f9b372612d45f24242e7b5b14943e63205e5fc26888803a7e042551a099ae0a",
+      "combination": "2-4-1",
+      "payoutPer100Yen": 11200,
       "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261017&jcd=10&rno=7",
-      "firstResultSeenAt": null,
-      "noteVerifiedAt": null
+      "firstResultSeenAt": "2026-10-17T06:10:23.414Z",
+      "noteVerifiedAt": null,
+      "evidenceId": "f615a9f2317ed932e6b7b97f8997671b7c1e70da622154596dd74844c6176a69",
+      "winningProvenance": [
+        {
+          "version": "note-result-provenance-v1",
+          "publicationKey": "20261017-10-7:normal",
+          "raceKey": "20261017-10-7",
+          "articleSeries": "normal",
+          "sourceSha256": "3a08f79d164c884adbab3a4cab8f82a2501b4169596f1757388d129bf71adcc6",
+          "combination": "2-4-1",
+          "settlementEvidenceId": "0eb3e8498b8f4e5c6459f77d4ec2c51916134ad66bcb4c5e8b5cdf651455d98e",
+          "sectionsSha256": "4c4f0db0fe6d64934ebca89f2a5429a99cfa41e9c4f0f0bb7389e5a41318f31a",
+          "matchedSections": [
+            "🌊 流し"
+          ],
+          "origins": [
+            {
+              "categoryId": "flow",
+              "sourceField": "record.prediction.mainSheet.flowTickets"
+            }
+          ],
+          "provenanceSha256": "61c4634a6aae1bfca74936475d81934fefc3bc1d279f45528ff94799b2c4232c"
+        }
+      ]
     }
   ]
 }
