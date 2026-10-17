@@ -6,6 +6,9 @@ on:
       - js/prediction-runtime-loader.js
       - scripts/test-production-escape-role-partner-contract.js
       - scripts/verify-escape-partner-paired.cjs
+      - scripts/escape-partner-incremental.cjs
+      - scripts/report-escape-partner-incremental.cjs
+      - tests/escape-partner-incremental.test.cjs
       - scripts/test-strong-escape-trim-regression.js
       - scripts/test-very-strong-escape-trim-regression.js
       - .github/workflows/check-production-escape-role-partner.yml
@@ -41,6 +44,8 @@ jobs:
             echo '::endgroup::'
           done
           exit "$status"
+      - name: Verify isolated research components
+        run: node --test tests/escape-partner-incremental.test.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
