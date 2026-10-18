@@ -5,6 +5,9 @@ on:
     paths:
       - 'scripts/audit-escape-main.cjs'
       - 'scripts/research-escape-partners.cjs'
+      - 'scripts/escape-partner-structured-forward.cjs'
+      - 'scripts/test-escape-partner-structured-forward.cjs'
+      - 'config/escape-partner-structured-forward.json'
       - 'scripts/partner-forward.cjs'
       - 'scripts/test-partner-forward.cjs'
       - 'config/partner-forward.json'
@@ -53,6 +56,9 @@ on:
   pull_request:
     paths:
       - 'scripts/research-escape-partners.cjs'
+      - 'scripts/escape-partner-structured-forward.cjs'
+      - 'scripts/test-escape-partner-structured-forward.cjs'
+      - 'config/escape-partner-structured-forward.json'
       - 'scripts/partner-forward.cjs'
       - 'scripts/test-partner-forward.cjs'
       - 'config/partner-forward.json'
@@ -118,6 +124,7 @@ jobs:
           node scripts/test-prediction-conditions-missing-series.js
           node scripts/test-escape-main-audit.cjs
           node --test scripts/test-escape-partner-history.cjs
+          node --test scripts/test-escape-partner-structured-forward.cjs
           node --test scripts/test-partner-forward.cjs scripts/independent-role-selector.test.cjs scripts/independent-rule-forward.test.cjs scripts/independent-autonomous.test.cjs
           node --test scripts/independent-flow-roles.test.cjs scripts/independent-partner-selector.test.cjs scripts/independent-route-water.test.cjs scripts/independent-pair-route.test.cjs scripts/independent-weather.test.cjs scripts/independent-weather-v2.test.cjs
           node scripts/test-note-draft-bundle.js
@@ -131,6 +138,7 @@ jobs:
         run: |
           node scripts/audit-escape-main.cjs
           node scripts/research-escape-partners.cjs
+          node scripts/escape-partner-structured-forward.cjs
           node scripts/partner-forward.cjs report
           node scripts/independent-rule-forward.cjs report
           node scripts/independent-weather-history-v1.cjs
@@ -142,6 +150,7 @@ jobs:
           path: |
             data/stats/escape-main-audit.json
             data/stats/escape-partner-history-research.json
+            data/stats/escape-partner-structured-forward.json
             data/stats/partner-forward-report.json
             data/stats/independent-rule-report.json
             data/stats/independent-autonomous-report.json
@@ -155,7 +164,7 @@ jobs:
           git restore --worktree -- data/predictions
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/stats/independent-weather-history.json data/stats/independent-weather-history-v2.json data/stats/independent-autonomous-report.json data/stats/escape-main-audit.json data/stats/escape-partner-history-research.json data/stats/partner-forward-report.json data/stats/independent-rule-report.json
+          git add data/stats/independent-weather-history.json data/stats/independent-weather-history-v2.json data/stats/independent-autonomous-report.json data/stats/escape-main-audit.json data/stats/escape-partner-history-research.json data/stats/escape-partner-structured-forward.json data/stats/partner-forward-report.json data/stats/independent-rule-report.json
           if git diff --cached --quiet; then exit 0; fi
           git commit -m 'Update all-venue escape main audit'
           for attempt in 1 2 3; do
