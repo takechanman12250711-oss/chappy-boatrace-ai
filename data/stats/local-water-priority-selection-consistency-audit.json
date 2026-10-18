@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "version": "local-water-priority-selection-consistency-audit-v1",
-  "generatedAt": "2026-10-17T21:31:56.336Z",
+  "generatedAt": "2026-10-18T19:36:56.641Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
   "methodology": "当地・水面の同一確定コホートで、実5・6号艇勝ちが同じ保存済み候補配列内で最終頭以上のpriorityScoreを持ちながら未選択だった例だけを対象に、締切前保存済みの選択フラグ・除外理由・配列順・役割・重複信号を監査する。",
   "sourceVersion": "local-water-outer-head-priority-score-audit-v1",
-  "sourceGeneratedAt": "2026-10-17T21:12:11.958Z",
+  "sourceGeneratedAt": "2026-10-18T19:20:43.256Z",
   "sourceNextStep": "audit-local-water-priority-selection-consistency",
   "applicable": true,
   "fixedDecisionRules": {
@@ -20,11 +20,11 @@
     "explicitRejectionCountForContractAudit": 5
   },
   "metrics": {
-    "sourceComparableCount": 155,
-    "targetCount": 44,
-    "predictionMatchedCount": 44,
-    "resolvedPairCount": 44,
-    "strictInversionCount": 6,
+    "sourceComparableCount": 158,
+    "targetCount": 45,
+    "predictionMatchedCount": 45,
+    "resolvedPairCount": 45,
+    "strictInversionCount": 7,
     "tiedCount": 38,
     "explicitWinnerRejectionCount": 0,
     "explicitWinnerSelectedCount": 0,
@@ -35,26 +35,26 @@
     "tieSameIndexCount": 0,
     "winnerRoleLowerPriorityCount": 0,
     "resolvedPairCoverageRate": 100,
-    "strictInversionRate": 13.6,
-    "tiedRate": 86.4,
-    "duplicateSignalShare": 36.4,
+    "strictInversionRate": 15.6,
+    "tiedRate": 84.4,
+    "duplicateSignalShare": 35.6,
     "tieFinalEarlierShare": 100,
     "winnerRoleLowerPriorityShare": 0
   },
   "classifications": {
     "tie-final-earlier-order": 38,
-    "winner-ahead-selector-inversion": 6
+    "winner-ahead-selector-inversion": 7
   },
   "signalCounts": {
-    "final-earlier": 44,
-    "same-role-class": 44,
+    "final-earlier": 45,
+    "same-role-class": 45,
     "priority-score-tied": 38,
     "duplicate-overlap": 16,
-    "winner-score-ahead": 6
+    "winner-score-ahead": 7
   },
   "comparisonPathCounts": {
     "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches": 16,
-    "practicalSelection.targetDecisions[0].candidateDecisions": 10,
+    "practicalSelection.targetDecisions[0].candidateDecisions": 11,
     "practicalSelection.targetDecisions[1].candidateDecisions": 8,
     "practicalSelection.targetDecisions[2].candidateDecisions": 5,
     "practicalSelection.targetDecisions[4].candidateDecisions": 3,
@@ -62,7 +62,7 @@
     "practicalSelection.targetDecisions[5].candidateDecisions": 1
   },
   "nextStep": "build-local-water-priority-selector-shadow-replay",
-  "decisionReason": "勝ち艇のpriorityScoreが上なのに未選択が6Rあり、固定条件2R以上を満たした。",
+  "decisionReason": "勝ち艇のpriorityScoreが上なのに未選択が7Rあり、固定条件2R以上を満たした。",
   "cases": [
     {
       "date": "20260818",
@@ -1988,6 +1988,48 @@
       "classification": "tie-final-earlier-order",
       "signals": [
         "priority-score-tied",
+        "final-earlier",
+        "same-role-class"
+      ]
+    },
+    {
+      "date": "20261018",
+      "jcd": "04",
+      "raceNo": 1,
+      "actualHead": 5,
+      "finalHead": 3,
+      "comparisonPath": "practicalSelection.targetDecisions[0].candidateDecisions",
+      "upstreamWinnerScore": 94,
+      "upstreamFinalScore": 90,
+      "upstreamGap": -4,
+      "upstreamWinnerAhead": true,
+      "upstreamTied": false,
+      "upstreamDuplicateReason": false,
+      "resolved": true,
+      "rankingArrayLength": 10,
+      "resolvedWinnerScore": 94,
+      "resolvedFinalScore": 90,
+      "resolvedGap": -4,
+      "winnerIndex": 8,
+      "finalIndex": 2,
+      "orderRelation": "final-earlier",
+      "winnerRole": "unclassified",
+      "finalRole": "unclassified",
+      "winnerSelectionState": {
+        "selected": false,
+        "rejected": false,
+        "duplicate": false
+      },
+      "finalSelectionState": {
+        "selected": false,
+        "rejected": false,
+        "duplicate": false
+      },
+      "winnerReasons": [],
+      "finalReasons": [],
+      "classification": "winner-ahead-selector-inversion",
+      "signals": [
+        "winner-score-ahead",
         "final-earlier",
         "same-role-class"
       ]
