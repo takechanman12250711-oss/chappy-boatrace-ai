@@ -11,17 +11,15 @@ group. Only `publish_comparison` enters the shared queue. Its existing triggers
 and calculation rules remain unchanged. The publisher does not run a builder,
 restore a daily archive, or collect a new prediction.
 
-As of 2026-10-15, `check-active-100r-early-monitor.yml` is retired from automatic
-and manual execution. It retains read-only PR compatibility checks, with no
-report generation, publication, completion issue, or collector dispatch. Existing
-100R report bytes and the checkpoint profile remain available for historical
-verification; they are not an active waiting task. See [the current work plan](ACTIVE_WORK_PLAN.md).
+As of 2026-10-15, the fixed-100R workflow, builder, test and publication profile
+have been removed. Existing report bytes remain historical evidence; there is
+no automatic, manual, or PR execution route for this retired monitor. See
+[the current work plan](ACTIVE_WORK_PLAN.md).
 
 Before publication, `generated-data-checkpoint.cjs pack` freezes the prepared
 Git-save outputs as byte payloads plus a manifest. The negative-clip profile
 allows only the selected day's raw JSON, gzip + metadata pair, and its existing
-result report. The active-100R profile allows only its existing report. This is
-a separate narrow transport; it does not expand `result-report-checkpoint.cjs`
+result report. This is a separate narrow transport; it does not expand `result-report-checkpoint.cjs`
 to accept prediction originals. The original raw/archive readers are unchanged.
 
 The compute job uploads a run/attempt-specific artifact with 3-day retention.
