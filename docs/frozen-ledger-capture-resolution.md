@@ -80,6 +80,49 @@ SHA-256 (canonical JSON), and verifier-evidence SHA-256. Object key ordering is
 ignored by canonical hashes; array ordering is not. A conflicting evidence hash
 rejects that frozen row without selecting the copy that happens to pass.
 
+## Optional saved-selection diagnostics
+
+The hit-first report also reads `prediction.candidate24Tickets`,
+`record.practicalSelectionEvidence` and `record.reviewEvidence` from the same
+frozen capture. These are **separate diagnostic inputs**: the existing verifier
+projection/hash, first-record precedence, baseline population, tickets,
+accounting and `source.complete` are unchanged. `readFrozenDay` exposes this
+additional projection only when its caller supplies `diagnosticProjection`;
+existing callers receive the same output shape and hashes. The hit-first
+builder can disable the additive output with `{ selectionDiagnostics: false }`.
+
+Each diagnostic capture records a separate SHA-256 and the source/array/index of
+every matching copy. Its sidecar/review projection includes only fields read by
+the validator and stage-history output; unused generation and validation
+snapshots are excluded. Candidate24 projects ticket identities only; its display
+odds, amount, comments and labels are not diagnostic inputs. The explicit record
+identity/timestamps used by the diagnostic adapter are also sealed. The existing
+full-record hash still covers the original.
+Disagreement between same-time copies produces a diagnostic
+`conflict`, without rejecting a valid baseline row or borrowing the field from
+another copy. A later capture or a separate note is never used to fill a missing
+field. Missing input remains `unknown`; malformed candidate24 or sidecar
+race/time/method/final-ticket mismatches are diagnostic conflicts.
+
+`savedSelectionDiagnostics` summarizes these states over the unchanged verified
+baseline rows, and each detail has `savedSelectionDiagnostic`. Candidate24
+coverage is explicitly limited to the saved display pool (at most 24 distinct
+tickets). Missing the actual ticket or winning head in that pool does not prove
+it was never generated. An explicitly empty saved array has zero coverage;
+absence of the array has unknown coverage. The legacy `candidatePoolHasActual`
+field retains its original meaning and does not inherit this fallback.
+
+Selection history reuses the existing race-review validator, after requiring an
+explicit matching record race key, capture timestamp and valid deadline. A
+baseline's derived race key or timestamp fallback is not sufficient evidence
+for this optional diagnostic. Only a sidecar
+with matching identity, capture/deadline, review method and complete final saved
+ticket set can supply `actualDecisionHistory`. Its intermediate `selected`
+flags and reason codes remain stage observations; `actualFinalDisposition`
+comes from final saved ticket membership. These observations are not causal
+explanations or proof of prediction improvement. Diagnostic availability and
+conflicts do not alter hit-rate/ROI accounting or any prediction/buying rule.
+
 ## Unchanged safety checks
 
 After resolution, the existing report checks the selected record's pre-deadline

@@ -4,6 +4,12 @@ on:
   pull_request:
     paths:
       - 'scripts/build-continuous-performance-ledger.cjs'
+      - 'scripts/build-hit-first-practical-report.cjs'
+      - 'scripts/hit-first-selection-diagnostics.cjs'
+      - 'scripts/eight-ticket-promotion-report-source.cjs'
+      - 'scripts/build-race-review-progress.js'
+      - 'tests/hit-first-practical-report.test.cjs'
+      - 'tests/eight-ticket-promotion-report-source.test.cjs'
       - 'scripts/build-four-stage-miss-diagnosis.cjs'
       - 'scripts/analyze-ticket-expansion-7-12-18-24.cjs'
       - 'scripts/analysis-input-contract.js'
@@ -32,6 +38,8 @@ jobs:
       - name: Validate continuous performance ledger
         run: |
           node --check scripts/build-continuous-performance-ledger.cjs
+          node --check scripts/hit-first-selection-diagnostics.cjs
+          node --test tests/hit-first-practical-report.test.cjs tests/eight-ticket-promotion-report-source.test.cjs
           node --check tests/continuous-performance-ledger.test.cjs
           node --test tests/continuous-ledger-persistence.test.cjs
           node tests/main-data-writer-concurrency.test.cjs

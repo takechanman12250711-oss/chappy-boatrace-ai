@@ -83,11 +83,12 @@ function compare(rows) {
     interpretation: 'A positive historical or small-sample hit difference is not proof of future improvement. ROI never changes hitDecision.'
   };
 }
-function build(root = path.resolve(__dirname, '..')) {
+function build(root = path.resolve(__dirname, '..'), { selectionDiagnostics = true } = {}) {
   const input = require('./analysis-input-contract');
   const source = require('./eight-ticket-promotion-report-source.cjs');
   const ledgerHelpers = require('./build-continuous-performance-ledger.cjs');
   const evaluator = require('./final-ticket-candidate-evaluator.cjs');
+  const diagnostic = selectionDiagnostics ? require('./hit-first-selection-diagnostics.cjs') : null;
   const full = path.join(root, 'data/stats/continuous-performance-ledger.json');
   const bytes = fs.readFileSync(full), ledger = JSON.parse(bytes);
   if (ledger.analysisId !== 'continuous-performance-ledger-v1' || ledger.policy?.stakePerTicketYen !== 100 || !Array.isArray(ledger.rows)) throw Error('unsupported-ledger');
@@ -97,7 +98,8 @@ function build(root = path.resolve(__dirname, '..')) {
   const captures = new Map(), sources = [], sourceErrors = [];
   for (const date of [...new Set(frozen.map(r => r.raceKey.slice(0, 8)))].sort()) {
     try {
-      const d = source.readFrozenDay(root, date, frozen.filter(r => r.raceKey.slice(0, 8) === date));
+      const d = source.readFrozenDay(root, date, frozen.filter(r => r.raceKey.slice(0, 8) === date),
+        diagnostic ? { diagnosticProjection: diagnostic.project } : {});
       for (const [key, capture] of d.captures) captures.set(key, capture);
       sources.push(...d.sources);
     } catch (e) { sourceErrors.push({ date, reason: e.message }); }
@@ -124,6 +126,7 @@ function build(root = path.resolve(__dirname, '..')) {
       const row = { raceKey: r.raceKey, selectedAt: r.selectedAt, generationKey: r.generationKey,
         base, actual, payout, missType: classify(base, actual),
         candidatePoolHasActual: Array.isArray(pool) ? pool.some(x => x?.ticket === actual) : null };
+      if (diagnostic) row.savedSelectionDiagnostic = diagnostic.diagnose(p, row, capture.diagnostic);
       details.push(row);
     } catch (e) { failures.push({ raceKey: r.raceKey, reason: e.message }); }
   }
@@ -144,6 +147,7 @@ function build(root = path.resolve(__dirname, '..')) {
       primary: { races: observed.races, hits: observed.hits, hitRate: observed.hitRate },
       secondary: { stakeYen: observed.stakeYen, returnYen: observed.returnYen, profitYen: observed.profitYen, roi: observed.roi } },
     diagnosis: diagnose(details),
+    ...(diagnostic ? { savedSelectionDiagnostics: diagnostic.summarize(details) } : {}),
     shadows: { A: { status: 'RETIRED_NOT_ADOPTED' }, C: { status: 'RETIRED_NOT_ADOPTED' } }, details };
 }
 if (require.main === module) {
