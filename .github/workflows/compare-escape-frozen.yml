@@ -12,11 +12,15 @@ on:
       - 'js/ai-core.js'
       - 'js/evaluated-scenario-candidates.js'
       - 'js/practical-selection.js'
+      - 'js/research-selected-escape-partners.js'
       - 'scripts/compare-escape-frozen.cjs'
       - 'scripts/test-compare-escape-frozen.cjs'
       - 'scripts/compare-alternate-escape-partners.cjs'
       - 'scripts/test-compare-alternate-escape-partners.cjs'
       - 'scripts/test-alternate-escape-partner-roles.cjs'
+      - 'scripts/compare-selected-escape-partners.cjs'
+      - 'scripts/test-compare-selected-escape-partners.cjs'
+      - 'scripts/test-selected-escape-partners.cjs'
       - 'docs/alternate-escape-partner-research.md'
       - '.github/workflows/compare-escape-frozen.yml'
   workflow_run:
@@ -91,6 +95,8 @@ jobs:
           node scripts/test-compare-escape-frozen.cjs
           node --test scripts/test-compare-alternate-escape-partners.cjs
           node scripts/test-alternate-escape-partner-roles.cjs
+          node scripts/test-selected-escape-partners.cjs
+          node --test scripts/test-compare-selected-escape-partners.cjs
           node scripts/test-escape-main-audit.cjs
           node scripts/check-charter.js
       - name: Compare equal-count alternate escape partners from saved inputs
@@ -103,4 +109,14 @@ jobs:
         with:
           name: alternate-escape-partner-comparison
           path: data/stats/alternate-escape-partner-comparison.json
+      - name: Compare existing inside-head tickets using the fixed safety order
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+          COMPARISON_SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/compare-selected-escape-partners.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: selected-escape-partner-comparison
+          path: data/stats/selected-escape-partner-comparison.json
 

@@ -13,3 +13,13 @@
 今回の過去データは候補作成前に結果や旧候補の成績を確認した期間を含みます。定義後に保存された入力の再計算も、候補自体の締切前保存を証明しません。締切前に保存した前向き候補、未使用 holdout、正式採用の証拠とは呼びません。`INSUFFICIENT_EVIDENCE`・`usableForPrediction=false`・本番自動変更なしを維持します。
 
 既存 `Compare frozen escape predictions` workflow を利用し、新しい cron は作りません。PR は head SHA を checkout してテストと新比較を GitHub Actions で実行し、artifact `alternate-escape-partner-comparison` を残します。PR ではレポートを branch/main に commit しません。既存 four-inner guard の定義・レポートと main の保存経路は維持します。ローカルでは小さな入力例のテストだけを行い、大規模比較は Actions で実行します。
+
+## 既に選ばれたイン頭の相手順を使う v2
+
+v1 の実データ比較では、再現できた197R・確定186Rで券の変更が0件でした。的中43件・回収率72.20%は現行と同じで、改善実証にはなりません。v1 の定義とレポートを保持し、別候補 `selected-escape-partner-order-v2` を `2026-10-19T02:17:17Z` に定義します。
+
+v2 は通常の `createPrediction` と通常実戦厳選を先に実行し、その買い目に実1コースの頭が既に含まれる場合だけを対象にします。通常選択が保存した captured な購入枝の1着根拠から、通常実戦厳選への採用資格を対応照合します。新しい1着資格を作ったり、物理候補を購入候補へ格上げしたりしません。代替の逃げ展開から、既存の safety 配列の相手順を使って対象頭の非本線・非流し K 券を上位 K 券へ置き換えます。新しい採点式や閾値探索は追加しません。成績の金額は各券100円の仮定です。
+
+比較器は v1 の保存入力読取・現行完全再現・公式結果・同点数判定を再利用します。さらに頭別の券数、対象外の頭の券集合、本線・流しの券と区分を固定します。守れない行は理由を明記して除外します。補助 JS は候補 VM だけで読み込み、通常選択や v1 に接続しません。
+
+`scripts/compare-selected-escape-partners.cjs` が専用レポート `data/stats/selected-escape-partner-comparison.json` を出力し、既存 PR workflow が artifact `selected-escape-partner-comparison` として保存します。v1 の artifact と別に、定義時刻・fingerprint・全 JS SHA・追加/消失的中・回収率・不変条件の除外・不変更理由を残します。今回の過去期間は既に結果を確認している発見用データです。前向き保存や未使用 holdout と呼ばず、本番採用は自動化しません。

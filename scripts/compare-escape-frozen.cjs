@@ -29,11 +29,11 @@ function transformCore(source, mode) {
   if (mode !== 'four-inner-guard' || source.split(GUARD_MARKER).length !== 2) throw Error('Candidate source contract changed');
   return source.replace(GUARD_MARKER, GUARD + GUARD_MARKER);
 }
-function runner(root, mode, {mergeOptions, selectionOptions, modules=MODULES}={}) {
+function runner(root, mode, {mergeOptions, selectionOptions, modules=MODULES, additionalModules=[], selectionTransformer, includeSelectionDetails=false}={}) {
   const context = { console: { log(){}, warn(){}, error(){} }, document: { addEventListener(){} }, addEventListener(){} };
   context.window = context; context.global = context;
   vm.createContext(context);
-  for (const name of modules) {
+  for (const name of [...modules,...additionalModules]) {
     const file = path.join(root,'js',name+'.js');
     let source = fs.readFileSync(file,'utf8');
     if (name === 'ai-core') source = transformCore(source,mode);
@@ -50,6 +50,10 @@ function runner(root, mode, {mergeOptions, selectionOptions, modules=MODULES}={}
     })()`, context, {timeout:10000});
   }
   context.researchSelectionOptions = selectionOptions ? clone(selectionOptions) : null;
+  context.researchSelectionTransformer = selectionTransformer
+    ? vm.runInContext('('+selectionTransformer+')',context,{timeout:10000}) : null;
+  if(selectionTransformer&&typeof context.researchSelectionTransformer!=='function')throw Error('Invalid research selection transformer');
+  context.researchIncludeSelectionDetails = includeSelectionDetails === true;
   return row => {
     const e = row.conditions.escapeEvaluationEvidence, [date,jcd,rno] = row.key.split('-');
     const data = {ok:true,source:row.conditions.source,stadiumCode:jcd,raceNo:Number(rno),date,
@@ -61,10 +65,23 @@ function runner(root, mode, {mergeOptions, selectionOptions, modules=MODULES}={}
       boatIdentity:context.ChappyBoatIdentity.inspectEntries(data.entries,{allowBoatNoFallback:false})};
     context.replayData = data;
     const result = vm.runInContext(`(() => {
-      const p = createPrediction(replayData), selection = researchSelectionOptions
+      const p = createPrediction(replayData);
+      let selection = researchSelectionOptions
         ? ChappyPracticalSelection.select(p, researchSelectionOptions) : ChappyPracticalSelection.select(p);
+      let researchSelection = null;
+      if(researchSelectionTransformer){
+        const transformed=researchSelectionTransformer(p,replayData,selection);
+        if(!transformed||!Array.isArray(transformed.tickets))throw Error('Invalid transformed selection');
+        const {tickets:transformedTickets,...diagnostics}=transformed;
+        researchSelection=diagnostics;
+        selection={...selection,tickets:transformedTickets};
+      }
       return {head:p.mainSheet.honmei?.boatNo,tickets:selection.tickets.map(t=>t.ticket),
         mainTickets:selection.tickets.filter(t=>t.category==='本線'||t.displayCategory==='本命').map(t=>t.ticket),
+        ...(researchIncludeSelectionDetails?{
+          ticketRows:selection.tickets.map(t=>({ticket:t.ticket,category:t.category||'',displayCategory:t.displayCategory||'',
+            sourceCategory:t.sourceCategory||'',categories:Array.isArray(t.categories)?t.categories:[]})),
+          flowTickets:selection.tickets.filter(t=>[t.category,t.displayCategory,t.sourceCategory,...(Array.isArray(t.categories)?t.categories:[])].some(value=>['流し','flow','nagashi'].includes(value))).map(t=>t.ticket),researchSelection}:{}),
         scenarios:p.aiCore.raceScenarios.scenarios.map(s=>({type:s.type,score:s.score})),
         insideSkill:p.aiCore.racerSkillTheory.ranking.filter(s=>s.course===1).map(s=>({boatNo:s.boatNo,score:s.score,methodFit:s.components?.methodFit,role:s.role}))[0]||null};
     })()`,context,{timeout:10000});
