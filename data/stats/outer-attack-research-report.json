@@ -1,6 +1,6 @@
 {
   "version": "outer-attack-all-scenarios-v1",
-  "generatedAt": "2026-10-18T16:51:12.053Z",
+  "generatedAt": "2026-10-19T00:08:26.360Z",
   "productionChanged": false,
   "automaticApplication": false,
   "adoptionStatus": "NOT_REGISTERED_FOR_PRODUCTION_ADOPTION",
@@ -18903,10 +18903,12 @@
       "scheduledRaces": 132,
       "scheduleComplete": true,
       "observedRaces": 132,
-      "savedRaces": 0,
-      "missingRaces": 132,
+      "savedRaces": 1,
+      "missingRaces": 131,
       "reasons": {
-        "deferred-until-one-hour": 132
+        "deferred-until-one-hour": 125,
+        "closed-or-too-close": 1,
+        "waiting-exhibition": 5
       },
       "missing": [
         {
@@ -19151,15 +19153,15 @@
         },
         {
           "raceKey": "20261019-10-1",
-          "reason": "deferred-until-one-hour"
+          "reason": "closed-or-too-close"
         },
         {
           "raceKey": "20261019-10-2",
-          "reason": "deferred-until-one-hour"
+          "reason": "waiting-exhibition"
         },
         {
           "raceKey": "20261019-10-3",
-          "reason": "deferred-until-one-hour"
+          "reason": "waiting-exhibition"
         },
         {
           "raceKey": "20261019-10-4",
@@ -19295,19 +19297,15 @@
         },
         {
           "raceKey": "20261019-18-1",
-          "reason": "deferred-until-one-hour"
-        },
-        {
-          "raceKey": "20261019-18-2",
-          "reason": "deferred-until-one-hour"
+          "reason": "waiting-exhibition"
         },
         {
           "raceKey": "20261019-18-3",
-          "reason": "deferred-until-one-hour"
+          "reason": "waiting-exhibition"
         },
         {
           "raceKey": "20261019-18-4",
-          "reason": "deferred-until-one-hour"
+          "reason": "waiting-exhibition"
         },
         {
           "raceKey": "20261019-18-5",
@@ -19438,18 +19436,18 @@
           "reason": "deferred-until-one-hour"
         }
       ],
-      "lastObservedAt": "2026-10-18T16:33:53.747Z",
+      "lastObservedAt": "2026-10-18T23:56:59.861Z",
       "venueFailures": []
     }
   },
   "diagnosticCounts": {
-    "inactive": 628,
+    "inactive": 629,
     "active": 43,
     "ambiguous-multiple-targets": 3
   },
-  "capturedRaces": 655,
+  "capturedRaces": 656,
   "settledRaces": 609,
-  "pending": 0,
+  "pending": 1,
   "voidRaces": 35,
   "unknownPayout": 0,
   "rejected": {},
