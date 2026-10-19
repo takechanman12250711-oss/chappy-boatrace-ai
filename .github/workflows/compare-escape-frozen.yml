@@ -7,6 +7,18 @@ on:
       - 'scripts/test-compare-escape-frozen.cjs'
       - 'scripts/audit-escape-main.cjs'
       - '.github/workflows/compare-escape-frozen.yml'
+  pull_request:
+    paths:
+      - 'js/ai-core.js'
+      - 'js/evaluated-scenario-candidates.js'
+      - 'js/practical-selection.js'
+      - 'scripts/compare-escape-frozen.cjs'
+      - 'scripts/test-compare-escape-frozen.cjs'
+      - 'scripts/compare-alternate-escape-partners.cjs'
+      - 'scripts/test-compare-alternate-escape-partners.cjs'
+      - 'scripts/test-alternate-escape-partner-roles.cjs'
+      - 'docs/alternate-escape-partner-research.md'
+      - '.github/workflows/compare-escape-frozen.yml'
   workflow_run:
     workflows: ['Build candidate24 performance']
     types: [completed]
@@ -21,7 +33,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   compare:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name != 'pull_request' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -60,3 +72,35 @@ jobs:
             if git push origin "HEAD:$TARGET_BRANCH"; then exit 0; fi
           done
           exit 1
+  alternate-partner-research:
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check frozen inputs and isolated research option
+        run: |
+          node scripts/test-compare-escape-frozen.cjs
+          node --test scripts/test-compare-alternate-escape-partners.cjs
+          node scripts/test-alternate-escape-partner-roles.cjs
+          node scripts/test-escape-main-audit.cjs
+          node scripts/check-charter.js
+      - name: Compare equal-count alternate escape partners from saved inputs
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+          COMPARISON_SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/compare-alternate-escape-partners.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: alternate-escape-partner-comparison
+          path: data/stats/alternate-escape-partner-comparison.json
+

@@ -29,16 +29,27 @@ function transformCore(source, mode) {
   if (mode !== 'four-inner-guard' || source.split(GUARD_MARKER).length !== 2) throw Error('Candidate source contract changed');
   return source.replace(GUARD_MARKER, GUARD + GUARD_MARKER);
 }
-function runner(root, mode) {
+function runner(root, mode, {mergeOptions, selectionOptions, modules=MODULES}={}) {
   const context = { console: { log(){}, warn(){}, error(){} }, document: { addEventListener(){} }, addEventListener(){} };
   context.window = context; context.global = context;
   vm.createContext(context);
-  for (const name of MODULES) {
+  for (const name of modules) {
     const file = path.join(root,'js',name+'.js');
     let source = fs.readFileSync(file,'utf8');
     if (name === 'ai-core') source = transformCore(source,mode);
     vm.runInContext(source,context,{filename:file,timeout:10000});
   }
+  // A separate VM opts into research. The default/browser merge API stays unchanged.
+  if (mergeOptions) {
+    context.researchMergeOptions = clone(mergeOptions);
+    vm.runInContext(`(() => {
+      const original = ChappyAICore.mergeWithPrediction;
+      ChappyAICore.mergeWithPrediction = function(prediction, data, options) {
+        return original.call(this, prediction, data, Object.assign({}, options, researchMergeOptions));
+      };
+    })()`, context, {timeout:10000});
+  }
+  context.researchSelectionOptions = selectionOptions ? clone(selectionOptions) : null;
   return row => {
     const e = row.conditions.escapeEvaluationEvidence, [date,jcd,rno] = row.key.split('-');
     const data = {ok:true,source:row.conditions.source,stadiumCode:jcd,raceNo:Number(rno),date,
@@ -50,7 +61,8 @@ function runner(root, mode) {
       boatIdentity:context.ChappyBoatIdentity.inspectEntries(data.entries,{allowBoatNoFallback:false})};
     context.replayData = data;
     const result = vm.runInContext(`(() => {
-      const p = createPrediction(replayData), selection = ChappyPracticalSelection.select(p);
+      const p = createPrediction(replayData), selection = researchSelectionOptions
+        ? ChappyPracticalSelection.select(p, researchSelectionOptions) : ChappyPracticalSelection.select(p);
       return {head:p.mainSheet.honmei?.boatNo,tickets:selection.tickets.map(t=>t.ticket),
         mainTickets:selection.tickets.filter(t=>t.category==='本線'||t.displayCategory==='本命').map(t=>t.ticket),
         scenarios:p.aiCore.raceScenarios.scenarios.map(s=>({type:s.type,score:s.score})),
@@ -60,14 +72,14 @@ function runner(root, mode) {
     return clone(result);
   };
 }
-function snapshot(record, source) {
+function snapshot(record, source, {acceptedCoreVersions=['ai-core-v4.8.6-escape-skill-role']}={}) {
   const p = record.prediction || {}, c = p.preRaceConditions, e = c?.escapeEvaluationEvidence;
   if (!e || e.version !== 'escape-evaluation-evidence-v1' || e.historyStatus !== 'captured') return {reason:'frozen-history-unavailable'};
   if (input.preDeadlineReason(record)) return {reason:input.preDeadlineReason(record)};
   if (e.resultUsedForGeneration !== false || e.sourceFetchedAt !== c.sourceFetchedAt) return {reason:'invalid-frozen-timing'};
   if (![e.entries,e.beforeInfo,e.startExhibition].every(a=>Array.isArray(a)&&a.length===6)) return {reason:'incomplete-frozen-input'};
   if (!['officialCourses','exhibitionST','exhibitionTime'].every(k=>c.dataAvailability?.[k]===6)) return {reason:'official-exhibition-incomplete'};
-  if (e.aiCoreVersion !== 'ai-core-v4.8.6-escape-skill-role') return {reason:'different-core-generation'};
+  if (!acceptedCoreVersions.includes(e.aiCoreVersion)) return {reason:'different-core-generation'};
   const selected = tickets(p.practicalTickets || p.practicalSelection?.tickets);
   if (!selected.length || selected.length > 10) return {reason:'invalid-practical-tickets'};
   const key = input.raceKey(record); if (!key) return {reason:'invalid-race-identity'};
@@ -93,19 +105,33 @@ function totals(rows, mode) {
   const returned = hits.reduce((n,r)=>n+r.result.payout,0);
   return {races:evaluated.length,hits:hits.length,stake,returned,hitRate:evaluated.length?100*hits.length/evaluated.length:null,recoveryRate:stake?100*returned/stake:null};
 }
-async function build(root, since='20260922', {refreshResults=false, fetchResult, maxRequests=24, now=Date.now()}={}) {
+// Shared frozen reader. Research callers can decode archives without restoring files.
+async function loadFrozenInputs(root, since='20260922', {refreshResults=false, fetchResult, maxRequests=24, now=Date.now(), readOnlySources=false, acceptedCoreVersions}={}) {
   if (!/^\d{8}$/.test(since)) throw Error('Invalid since date');
   const chosen = new Map(), exclusions = {}, files = [];
   function add(record, source) {
-    const s=snapshot(record,source); if(s.reason){count(exclusions,s.reason);return;}
+    const s=snapshot(record,source,{acceptedCoreVersions}); if(s.reason){count(exclusions,s.reason);return;}
     const old=chosen.get(s.row.key);
     if(!old||Date.parse(s.row.selectedAt)>Date.parse(old.selectedAt))chosen.set(s.row.key,s.row);
   }
   function read(file) {const raw=fs.readFileSync(file);files.push({path:path.relative(root,file),sha256:crypto.createHash('sha256').update(raw).digest('hex')});return JSON.parse(raw);}
   const dates=[...new Set([...archive.predictionSourceDates(root),...archive.archivedSourceDates(root)])].filter(d=>d>=since).sort();
   for(const date of dates){
-    archive.restorePredictionSource({rootDirectory:root,date});
-    const d=read(path.join(root,'data/predictions',date+'.json'));
+    let d;
+    if (readOnlySources) {
+      const compressedPath=archive.archivePathFor(root,date),metadataPath=archive.metadataPathFor(root,date);
+      if (fs.existsSync(compressedPath)||fs.existsSync(metadataPath)) {
+        const metadata=archive.validateMetadata(read(metadataPath),date),compressed=fs.readFileSync(compressedPath);
+        files.push({path:path.relative(root,compressedPath),sha256:archive.sha256(compressed)});
+        if(compressed.length!==Number(metadata.archiveBytes)||archive.sha256(compressed)!==metadata.archiveSha256)throw Error('Frozen archive fingerprint mismatch: '+date);
+        const raw=require('node:zlib').gunzipSync(compressed);
+        if(raw.length!==Number(metadata.sourceBytes)||archive.sha256(raw)!==metadata.sourceSha256)throw Error('Frozen source fingerprint mismatch: '+date);
+        d=archive.parsePredictionJson(raw,archive.sourcePathFor(root,date));
+      } else d=read(archive.sourcePathFor(root,date));
+    } else {
+      archive.restorePredictionSource({rootDirectory:root,date});
+      d=read(path.join(root,'data/predictions',date+'.json'));
+    }
     const primary=new Set((d.predictions||[]).map(input.raceKey));
     for(const r of input.mergePredictionSources(d.predictions||[],d.verificationPredictions||[]))add(r,primary.has(input.raceKey(r))?'daily-primary':'daily-verification');
   }
@@ -124,7 +150,7 @@ async function build(root, since='20260922', {refreshResults=false, fetchResult,
   const ledger=path.join(root,'data/stats/race-review-results.json');
   if(fs.existsSync(ledger))for(const r of Object.values(read(ledger).races||{})){const key=input.raceKey(r);if(chosen.has(key))results.set(key,chooseResult(results.get(key),r));}
   const previousReport=path.join(root,'data/stats/escape-frozen-comparison.json');
-  if(fs.existsSync(previousReport))for(const r of JSON.parse(fs.readFileSync(previousReport,'utf8')).officialResultEvidence||[]){const key=input.raceKey(r);if(chosen.has(key))results.set(key,chooseResult(results.get(key),r));}
+  if(fs.existsSync(previousReport))for(const r of (readOnlySources?read(previousReport):JSON.parse(fs.readFileSync(previousReport,'utf8'))).officialResultEvidence||[]){const key=input.raceKey(r);if(chosen.has(key))results.set(key,chooseResult(results.get(key),r));}
   const resultAttempts=[];
   if(refreshResults){
     fetchResult ||= ({date,jcd,rno}) => require('./collect-results').callApi(require('../api/result'),{date,jcd,rno:String(rno)});
@@ -138,6 +164,10 @@ async function build(root, since='20260922', {refreshResults=false, fetchResult,
       }catch(error){resultAttempts.push({key:row.key,status:'retry',error:String(error.message).slice(0,160)});}
     }}));
   }
+  return {chosen,exclusions,files,results,resultAttempts};
+}
+async function build(root, since='20260922', options={}) {
+  const {chosen,exclusions,files,results,resultAttempts}=await loadFrozenInputs(root,since,options);
   const run={current:runner(root,'current'),previous:runner(root,'previous-role'),candidate:runner(root,'four-inner-guard')},rows=[];
   for(const row of [...chosen.values()].sort((a,b)=>a.key.localeCompare(b.key))){
     try{
@@ -173,4 +203,5 @@ function saveReport(file,report){
   archive.atomicWrite(file,JSON.stringify(report)+'\n');return true;
 }
 if(require.main===module)build(process.cwd(),process.argv[2]||'20260922',{refreshResults:true}).then(report=>{const changed=saveReport(path.join(process.cwd(),'data/stats/escape-frozen-comparison.json'),report);console.log(JSON.stringify({summary:report.summary,eligibleFrozen:report.eligibleFrozen,exclusions:report.exclusions,gate:report.candidate.adoptionGate,changed}));if(report.eligibleFrozen>0&&report.summary.replayed===0)throw Error('All eligible frozen baselines failed reproduction');}).catch(error=>{console.error(error);process.exitCode=1;});
-module.exports={DEFINED_AT,MODULES,GUARD,transformCore,runner,snapshot,chooseResult,checkReplay,totals,build,meaningful,saveReport};
+module.exports={DEFINED_AT,MODULES,GUARD,transformCore,runner,snapshot,chooseResult,checkReplay,totals,loadFrozenInputs,build,meaningful,saveReport};
+

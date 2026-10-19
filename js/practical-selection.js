@@ -927,6 +927,9 @@
 
     return {
       ...evidence,
+      ...(Array.isArray(formations.researchAlternateEscapePartnerRoles)
+        ? { researchAlternateEscapePartnerRoles: formations.researchAlternateEscapePartnerRoles }
+        : {}),
       mainEstablished:
         formations.mainEstablished === true,
       flow:
@@ -969,7 +972,8 @@
   }
 
   function createValidationContext(
-    evidence
+    evidence,
+    options = {}
   ) {
     const targetsById =
       new Map(
@@ -1008,6 +1012,11 @@
       raceFlow.phases || {};
 
     return {
+      ...(options.researchAlternateEscapePartnerRoles === true ? {
+        researchAlternateEscapePartnerRoles: true,
+        researchEscapeProfiles: evidence.researchAlternateEscapePartnerRoles,
+        mainScenarioType: evidence.scenarioType
+      } : {}),
       targetsById,
       branchesById,
       evaluationsByBoat,
@@ -1356,6 +1365,90 @@
     return 0;
   }
 
+  function validateResearchAlternateEscapeBranch(branch, context, boats, claims) {
+    const source = "research-alternate-escape-partner-roles-v1";
+    const reject = (reasonCode) => ({ purchaseEligible: false, reasonCode });
+    const head = boats[0];
+    const scenarioId = `independent:escape:${head}`;
+    const phase = branch.phaseEvidence || {};
+    if (context.researchAlternateEscapePartnerRoles !== true ||
+        branch.source !== source || branch.qualificationSource !== source ||
+        branch.scenarioId !== scenarioId || branch.attackerBoatNo !== head ||
+        branch.headBoatNo !== head || context.mainHeadBoatNo === head ||
+        context.courseMappingFormal !== true || courseOf(context, head) !== 1 ||
+        context.courseByBoat?.size !== 6 ||
+        new Set(context.courseByBoat.values()).size !== 6 ||
+        !["threeAttack", "fourAttack"].includes(context.mainScenarioType) ||
+        phase.kind !== "alternate-head" || phase.mainHeadBoatNo !== context.mainHeadBoatNo ||
+        phase.primaryAttackerBoatNo !== context.primaryAttackerBoatNo ||
+        phase.alternateAttackerBoatNo !== head ||
+        !Array.isArray(phase.goalOrder) || phase.goalOrder.length !== 0 ||
+        phase.exactGoalOrder !== false || branch.exactGoalOrder !== false ||
+        numeric(branch.priorityScore, 0) < 65) return reject("RESEARCH_ESCAPE_CONTEXT_MISMATCH");
+    const profiles = arrayify(context.researchEscapeProfiles).filter(row =>
+      row?.source === source && row.theorySource === "ai-core-hold-pickup-theory-v2" &&
+      row.scenarioId === scenarioId && row.scenarioType === "escape" &&
+      row.attackerBoatNo === head && row.attackerCourse === 1 &&
+      row.mainScenarioType === context.mainScenarioType &&
+      row.mappingFormal === true && row.isFormal === true && row.isProvisional === false);
+    if (profiles.length !== 1) return reject("RESEARCH_ESCAPE_PROFILE_MISMATCH");
+    const profile = profiles[0];
+    if (!Array.isArray(profile.courses) || profile.courses.length !== 6 ||
+        new Set(profile.courses.map(boatNo)).size !== 6 ||
+        new Set(profile.courses.map(row => row.course)).size !== 6 ||
+        !profile.courses.every(row => row.course >= 1 && row.course <= 6 &&
+          context.courseByBoat.get(boatNo(row)) === row.course)) {
+      return reject("RESEARCH_ESCAPE_MAPPING_MISMATCH");
+    }
+    const acceptedRole = row => row && row.qualified !== false && row.isAdopted !== false &&
+      !/不成立|除外|非採用|見送り/.test(String(row.status || "")) &&
+      numeric(row.score, 0) > 0 && String(row.reason || row.flowReason || "").trim();
+    const headClaim = claims.find(row => row.position === 1 && row.boatNo === head);
+    const headTarget = headClaim && context.targetsById.get(headClaim.evaluationId);
+    const formalAttack = arrayify(context.raceFlow?.attackBoats)
+      .find(row => boatNo(row) === head && acceptedRole(row));
+    const alternateAttack = headTarget?.source === "displaced-legacy-mark"
+      ? arrayify(context.raceFlow?.alternateScenarioRoles?.attackBoats)
+        .find(row => boatNo(row) === head && acceptedRole(row)) : null;
+    const liveAttack = formalAttack || alternateAttack;
+    if (!headTarget || !arrayify(headTarget.defaultRoleIntents)
+        .some(role => role === "head" || role === "alternate-head") ||
+        !liveAttack || numeric(liveAttack.score, 0) < 65 ||
+        boatNo(phase.attack) !== head || numeric(phase.attack?.score, 0) !== numeric(liveAttack.score, 0) ||
+        numeric(phase.attack?.course, 0) !== 1) return reject("RESEARCH_ESCAPE_HEAD_NOT_QUALIFIED");
+    const validPartner = (position, role, rows, snapshot) => {
+      const targetBoatNo = boats[position - 1];
+      const id = `${scenarioId}:${role}:${targetBoatNo}`;
+      const target = context.targetsById.get(id);
+      const roleRows = arrayify(rows).filter(row => boatNo(row) === targetBoatNo && acceptedRole(row) &&
+        numeric(row.score, 0) >= 65 && row.source === source && row.qualificationSource === source &&
+        row.scenarioId === scenarioId && row.scenarioType === "escape" && row.attackerBoatNo === head &&
+        row.course === courseOf(context, targetBoatNo));
+      const evidence = roleRows.length === 1 ? roleRows[0] : null;
+      return evidence && target && target.source === source && target.scenarioId === scenarioId &&
+        target.attackerBoatNo === head && target.boatNo === targetBoatNo &&
+        JSON.stringify(target.roleIntents) === JSON.stringify([role]) &&
+        JSON.stringify(target.eligiblePositions) === JSON.stringify([position]) &&
+        numeric(target.roleEvidence?.[role]?.score, 0) === numeric(evidence.score, 0) &&
+        target.roleEvidence?.[role]?.source === source &&
+        claims.some(claim => claim.evaluationId === id && claim.position === position && claim.role === role) &&
+        boatNo(snapshot) === targetBoatNo && snapshot.source === source &&
+        numeric(snapshot.score, 0) === numeric(evidence.score, 0) &&
+        snapshot.course === evidence.course && snapshot.reason === evidence.reason;
+    };
+    if (claims.length !== 3 || !validPartner(2, "hold", profile.secondCandidates, phase.partners?.second) ||
+        !validPartner(3, "pickup", profile.thirdCandidates, phase.partners?.third)) {
+      return reject("RESEARCH_ESCAPE_PARTNER_MISMATCH");
+    }
+    const checks = arrayify(branch.evidenceChecks);
+    if (!checks.length || checks.some(check => !check || typeof check !== "object" ||
+        (check.required !== false && check.matched !== true)) ||
+        !checks.some(check => check.key === "same-escape-partner-roles" && check.required === true &&
+          check.matched === true && check.source === source)) return reject("RESEARCH_ESCAPE_CHECK_MISMATCH");
+    return { purchaseEligible: branch.purchaseEligible === true,
+      reasonCode: branch.purchaseEligible === true ? "" : "BUILDER_PURCHASE_REJECTED", exactGoalOrder: false };
+  }
+
   /*
     独立枝の schema 読み取りはここへ隔離する。
     object check・phaseEvidence が欠ける旧枝は購入不可。
@@ -1366,6 +1459,9 @@
     boats,
     claims
   ) {
+    if (branch?.source === "research-alternate-escape-partner-roles-v1") {
+      return validateResearchAlternateEscapeBranch(branch, context, boats, claims);
+    }
     const phaseEvidence =
       branch?.phaseEvidence;
     const checks =
@@ -2480,7 +2576,8 @@
       evidenceOf(prediction);
     const validationContext =
       createValidationContext(
-        evidence
+        evidence,
+        options
       );
     const selected = [];
     const used = new Set();
@@ -5796,3 +5893,4 @@
     ? window
     : globalThis
 );
+

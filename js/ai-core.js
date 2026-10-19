@@ -10131,7 +10131,7 @@ function buildRaceTrendEvaluation(data) {
     フォーメーション生成
   =============================== */
 
-  function buildFormations(analyses, raceScenarios, sourceEntries = [], sourceData = {}) {
+  function buildFormations(analyses, raceScenarios, sourceEntries = [], sourceData = {}, options = {}) {
   const list = Array.isArray(analyses)
     ? [...analyses]
     : [];
@@ -10196,6 +10196,7 @@ function buildRaceTrendEvaluation(data) {
   const flowTickets = [];
   const flowFormations = [];
   const longshot = [];
+  const researchAlternateEscapePartnerRoles = [];
 
   function boatNo(boat) {
     return Number(boat?.boatNo || 0);
@@ -10852,6 +10853,55 @@ function buildRaceTrendEvaluation(data) {
         preservations: []
       }
     );
+    /*
+      Research only: keep the exact head-specific calculation already used by
+      safety tickets. Never borrow the main attack's partners for an escape.
+      No property is emitted when the explicit research option is absent.
+    */
+    if (
+      options.researchAlternateEscapePartnerRoles === true &&
+      ["threeAttack", "fourAttack"].includes(raceScenarios.mainScenario?.type) &&
+      scenario.type === "escape" &&
+      Number(scenario.attackerCourse) === 1 &&
+      courseMapping.formal === true &&
+      courseMapping.boatAtCourse(1) === headNo &&
+      Number(scenario.attackerBoatNo ?? scenario.headBoatNo) === headNo &&
+      scenarioHoldPickup.mappingFormal === true &&
+      scenarioHoldPickup.isFormal === true &&
+      scenarioHoldPickup.isProvisional === false &&
+      sourceEntries.length === 6 &&
+      list.length === 6
+    ) {
+      const scenarioId = `independent:escape:${headNo}`;
+      const source = "research-alternate-escape-partner-roles-v1";
+      const copyRole = (row) => ({
+        ...row,
+        components: { ...row.components },
+        scenarioId,
+        scenarioType: "escape",
+        attackerBoatNo: headNo,
+        source,
+        qualificationSource: source
+      });
+      researchAlternateEscapePartnerRoles.push({
+        scenarioId,
+        scenarioType: "escape",
+        attackerBoatNo: headNo,
+        attackerCourse: 1,
+        mainScenarioType: raceScenarios.mainScenario.type,
+        source,
+        theorySource: scenarioHoldPickup.source,
+        mappingFormal: true,
+        isFormal: true,
+        isProvisional: false,
+        courses: sourceEntries.map((row) => ({
+          boatNo: getBoatNo(row),
+          course: courseMapping.courseOfBoat(getBoatNo(row))
+        })),
+        secondCandidates: scenarioHoldPickup.secondCandidates.map(copyRole),
+        thirdCandidates: scenarioHoldPickup.thirdCandidates.map(copyRole)
+      });
+    }
     const byNo = new Map(
       list.map((boat) => [boatNo(boat), boat])
     );
@@ -11000,6 +11050,9 @@ function buildRaceTrendEvaluation(data) {
   return {
     main,
     safety,
+    ...(options.researchAlternateEscapePartnerRoles === true
+      ? { researchAlternateEscapePartnerRoles }
+      : {}),
     flow: flowTickets,
     flowFormations,
     longshot,
@@ -13388,7 +13441,8 @@ const slit =
         analyses,
         raceScenarios,
         entries,
-        data
+        data,
+        options
       );
 
     const lightManshuScenario =
@@ -14598,7 +14652,7 @@ return {
     評価済み展開は専用モジュールで全物理枝へ展開し、通常買い目と
     8〜10点候補の双方へ同じ枝ID・艇・着順・理由を渡す。
   */
-  function mergeWithPrediction(prediction, data) {
+  function mergeWithPrediction(prediction, data, options = {}) {
     const basePrediction =
       prediction &&
       typeof prediction === "object"
@@ -14613,7 +14667,7 @@ return {
       );
     }
 
-    const aiCore = buildPredictionData(data);
+    const aiCore = buildPredictionData(data, options);
     const analysisRaceScenarios = aiCore.raceScenarios || {};
     const formalMainScenario =
       analysisRaceScenarios.mainScenario || null;
@@ -14846,6 +14900,10 @@ return {
     );
     const alignedFormation = {
       ...originalFormation,
+      ...(options.researchAlternateEscapePartnerRoles === true
+        ? { researchAlternateEscapePartnerRoles:
+            formalFormation.researchAlternateEscapePartnerRoles || [] }
+        : {}),
       main: formalMainTickets,
       cover: alignedCoverTickets,
       safety: alignedCoverTickets,
@@ -15138,7 +15196,7 @@ return {
       formations: alignedFormation
     };
     const decision =
-      candidateApi.build(alignedPrediction);
+      candidateApi.build(alignedPrediction, options);
     let lightManshuScenario = null;
     let lightManshuTicketBoard = null;
     const oldMainSheet =
@@ -16624,3 +16682,4 @@ return {
   }
 
 })();
+

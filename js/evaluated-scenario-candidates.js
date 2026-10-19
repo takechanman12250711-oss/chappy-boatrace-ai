@@ -371,7 +371,7 @@
       return { key: "main", label: SCENARIO_CATEGORY_LABELS.main, reason: "中心の成立展開" };
     }
 
-    function build(basePrediction) {
+    function build(basePrediction, options = {}) {
       const base =
         basePrediction &&
         typeof basePrediction === "object"
@@ -979,7 +979,9 @@
         phaseEvidence = null,
         qualificationSource = "",
         purchaseEligible = false,
-        branchAttackerBoatNo = 0
+        branchAttackerBoatNo = 0,
+        branchScenarioId = "",
+        partnerRoles = []
       }) {
         const boats =
           exactTicket(ticket);
@@ -1097,6 +1099,7 @@
           type,
           source,
           scenarioId:
+            branchScenarioId ||
             (
               isIndependent
                 ? "independent:"
@@ -1115,7 +1118,8 @@
             resolvedAttackerBoatNo,
           ticket,
           sourceEvaluationIds: [
-            target.id
+            target.id,
+            ...partnerRoles.map((role) => role.evaluationId)
           ],
           roles: [{
             evaluationId:
@@ -1126,7 +1130,7 @@
             eligiblePositions: [
               targetPosition
             ]
-          }],
+          }, ...partnerRoles],
           requirement,
           purchaseRequired: false,
           requirementPurpose:
@@ -1469,6 +1473,63 @@
           pickupByBoat,
           "raceFlow.pickupBoats"
         );
+      const researchRoleTargets = new Map();
+      function researchPartnerClaim(row, role, position, profile) {
+        const targetBoatNo = boatNo(row);
+        const id = `${profile.scenarioId}:${role}:${targetBoatNo}`;
+        if (!researchRoleTargets.has(id)) researchRoleTargets.set(id, {
+          id,
+          markKey: "scenario-role",
+          symbol: "",
+          boatNo: targetBoatNo,
+          roleIntents: [role],
+          defaultRoleIntents: [role],
+          eligiblePositions: [position],
+          evaluation: evaluationByBoat.get(targetBoatNo) || row,
+          roleEvidence: { [role]: evidenceSnapshot(row, profile.source) },
+          source: profile.source,
+          scenarioId: profile.scenarioId,
+          attackerBoatNo: profile.attackerBoatNo,
+          candidateTickets: [],
+          qualifiedCandidateTickets: []
+        });
+        return { evaluationId: id, boatNo: targetBoatNo, role, eligiblePositions: [position] };
+      }
+      function researchEscapePartnersFor(target) {
+        if (options.researchAlternateEscapePartnerRoles !== true ||
+            target.boatNo === mainHeadBoatNo ||
+            courseByBoat.get(target.boatNo) !== 1) return null;
+        const source = "research-alternate-escape-partner-roles-v1";
+        const scenarioId = `independent:escape:${target.boatNo}`;
+        const profiles = base.formation?.researchAlternateEscapePartnerRoles;
+        if (!Array.isArray(profiles)) return null;
+        const profile = profiles.find((row) =>
+          row?.scenarioId === scenarioId && row.source === source &&
+          row.theorySource === "ai-core-hold-pickup-theory-v2" &&
+          row.scenarioType === "escape" &&
+          row.attackerBoatNo === target.boatNo && row.attackerCourse === 1 &&
+          ["threeAttack", "fourAttack"].includes(row.mainScenarioType) &&
+          row.mappingFormal === true && row.isFormal === true &&
+          row.isProvisional === false);
+        if (!profile || !Array.isArray(profile.courses) || profile.courses.length !== 6 ||
+            boatNumbers.length !== 6 ||
+            new Set(profile.courses.map(boatNo)).size !== 6 ||
+            new Set(profile.courses.map((row) => row.course)).size !== 6 ||
+            !profile.courses.every((row) => row.course >= 1 && row.course <= 6 &&
+              courseByBoat.get(boatNo(row)) === row.course)) return null;
+        const roleRows = (rows) => (Array.isArray(rows) ? rows : []).filter((row) =>
+          isRoleEvidence(row) && number(row.score) >= PURCHASE_ROLE_SCORE_MINIMUM &&
+          boatNo(row) !== target.boatNo &&
+          row.course === courseByBoat.get(boatNo(row)) &&
+          row.scenarioId === scenarioId && row.scenarioType === "escape" &&
+          row.attackerBoatNo === target.boatNo && row.source === source &&
+          row.qualificationSource === source);
+        const second = roleRows(profile.secondCandidates);
+        const third = roleRows(profile.thirdCandidates);
+        return second.length && third.length
+          ? { ...profile, second, third }
+          : null;
+      }
       const primaryAttackEvidence =
         roleEvidenceByType.attack.get(
           primaryAttackerBoatNo
@@ -1952,18 +2013,19 @@
         const structuredAttack =
           formalAttack ||
           preservedAlternateAttack;
+        const researchEscape = researchEscapePartnersFor(target);
         const secondPartners =
-          canonicalHoldPartners
+          (researchEscape ? researchEscape.second : canonicalHoldPartners)
             .filter(
               (row) =>
                 boatNo(row) !==
                 target.boatNo
             );
         const thirdPartners =
-          uniqueEvidenceRows([
+          (researchEscape ? researchEscape.third : uniqueEvidenceRows([
             ...canonicalPickupPartners,
             ...canonicalHoldPartners
-          ]).filter(
+          ])).filter(
             (row) =>
               boatNo(row) !==
               target.boatNo
@@ -1987,7 +2049,7 @@
                 }
 
                 const exactGoalOrder =
-                  exactGoalOrderFor(
+                  !researchEscape && exactGoalOrderFor(
                     ticket
                   );
                 const checks = [
@@ -2044,7 +2106,7 @@
                     row:
                       thirdPartner,
                     role:
-                      pickupByBoat.has(
+                      researchEscape || pickupByBoat.has(
                         thirdBoatNo
                       )
                         ? "pickup"
@@ -2123,6 +2185,14 @@
                     role: "goal"
                   })
                 ];
+                if (researchEscape) checks.push(evidenceCheck({
+                  key: "same-escape-partner-roles",
+                  label: "同じ正式1コース逃げ展開の2・3着根拠",
+                  matched: true,
+                  source: researchEscape.source,
+                  row: attackEvidence,
+                  role: "alternate-head"
+                }));
                 const purchaseEligible =
                   structuredAttack &&
                   target.defaultRoleIntents
@@ -2164,10 +2234,16 @@
                     secondPartner,
                     thirdPartner
                   ],
+                  branchScenarioId: researchEscape?.scenarioId || "",
+                  partnerRoles: researchEscape ? [
+                    researchPartnerClaim(secondPartner, "hold", 2, researchEscape),
+                    researchPartnerClaim(thirdPartner, "pickup", 3, researchEscape)
+                  ] : [],
                   title:
-                    `${target.boatNo}号艇の別攻め`,
+                    researchEscape ? `${target.boatNo}号艇の1コース逃げ` :
+                      `${target.boatNo}号艇の別攻め`,
                   summary:
-                    `${target.boatNo}号艇が攻め切り、` +
+                    `${target.boatNo}号艇が${researchEscape ? "1コースから逃げ" : "攻め切り"}、` +
                     `${secondBoatNo}号艇が2着に残り、` +
                     `${thirdBoatNo}号艇が3着を拾う筋。`,
                   requirement:
@@ -2176,7 +2252,7 @@
                     `audit:${target.id}:` +
                     `alternate-head:${ticket}`,
                   source:
-                    formalAttack
+                    researchEscape ? researchEscape.source : formalAttack
                       ? "race-flow-attack-scenario"
                       : preservedAlternateAttack
                         ? "preserved-alternate-attack-scenario"
@@ -2184,7 +2260,7 @@
                   branchAttackerBoatNo:
                     target.boatNo,
                   qualificationSource:
-                    formalAttack
+                    researchEscape ? researchEscape.source : formalAttack
                       ? "raceFlow.attackBoats"
                       : preservedAlternateAttack
                         ? "raceFlow.alternateScenarioRoles.attackBoats"
@@ -2222,7 +2298,7 @@
                         )
                     },
                     goalOrder: [
-                      ...goalOrder
+                      ...(researchEscape ? [] : goalOrder)
                     ],
                     exactGoalOrder
                   }
@@ -2474,6 +2550,7 @@
         }
       });
 
+      targets.push(...researchRoleTargets.values());
       const branchesByTicket =
         new Map();
 
@@ -2504,6 +2581,10 @@
             const physicalCoverage =
               targets
                 .map((target) => {
+                  if (target.source === "research-alternate-escape-partner-roles-v1" &&
+                      !(branchesByTicket.get(ticket) || []).some((branch) =>
+                        branch.source === target.source && branch.scenarioId === target.scenarioId &&
+                        branch.roles.some((role) => role.evaluationId === target.id))) return null;
                   const position =
                     boats.indexOf(
                       target.boatNo
@@ -2920,3 +3001,4 @@
     });
   }
 );
+
