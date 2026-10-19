@@ -17,17 +17,43 @@ function load(filePath, fallback = {}) {
   }
 }
 
-function collectRecords() {
-  if (!fs.existsSync(predictionDir)) return [];
+// Retain only this report's saved comparison fields across dates. Do not keep
+// the unrelated full prediction snapshots alive while parsing the next day.
+function compactRecord(record) {
+  const shadow = record?.theoryShadowAb;
+  const tickets = shadow?.b?.tickets;
+  return {
+    raceKey: record?.raceKey,
+    jcd: record?.jcd,
+    place: record?.place,
+    result: record?.result && {
+      settled: record.result.settled,
+      resultTicket: record.result.resultTicket
+    },
+    theoryShadowAb: shadow && { b: {
+      tickets: Array.isArray(tickets) ? tickets.map(row => row && typeof row === 'object' ? {
+        ticket: row.ticket,
+        changed: row.changed,
+        adjustmentPoints: row.adjustmentPoints,
+        theories: Array.isArray(row.theories) ? row.theories.map(item => item && typeof item === 'object' ? {
+          theoryKey: item.theoryKey
+        } : item) : row.theories
+      } : row) : tickets
+    } }
+  };
+}
+
+function collectRecords(directory = predictionDir) {
+  if (!fs.existsSync(directory)) return [];
   const map = new Map();
-  fs.readdirSync(predictionDir)
+  fs.readdirSync(directory)
     .filter(name => /^\d{8}\.json$/.test(name))
     .sort()
     .forEach(name => {
-      const data = load(path.join(predictionDir, name), {});
+      const data = load(path.join(directory, name), {});
       [...(Array.isArray(data.predictions) ? data.predictions : []), ...(Array.isArray(data.verificationPredictions) ? data.verificationPredictions : [])]
         .forEach(record => {
-          if (record?.raceKey) map.set(record.raceKey, record);
+          if (record?.raceKey) map.set(record.raceKey, compactRecord(record));
         });
     });
   return [...map.values()];
@@ -86,4 +112,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { collectRecords, build };
+module.exports = { collectRecords, compactRecord, build };

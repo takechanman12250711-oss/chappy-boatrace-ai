@@ -50,6 +50,20 @@ const archive = require('../scripts/daily-prediction-source-archive');
 const ledgerHelpers = require('../scripts/build-continuous-performance-ledger.cjs');
 const frozenSource = require('../scripts/eight-ticket-promotion-report-source.cjs');
 const DATE = '20300925';
+function withSavedDiagnostic(f) {
+ for (const r of f.records) {
+  r.prediction.candidate24Tickets = [...r.prediction.practicalTickets, '3-4-2'];
+  r.reviewEvidence = { version: 'race-review-evidence-v1', method: 'a'.repeat(64),
+   predictionMode: 'server_pre_deadline', officialResultUsedForPrediction: false };
+  r.practicalSelectionEvidence = { version: 'practical-selection-evidence-v1', status: 'captured',
+   productionChanged: false, resultUsedForGeneration: false, raceKey: r.raceKey,
+   selectedAt: r.selectedAt, deadlineAt: r.deadlineAt, reviewEvidence: structuredClone(r.reviewEvidence),
+   practicalTickets: [...r.prediction.practicalTickets],
+   candidateDecisions: [{ ticket: '2-4-3', selected: false, reasonCode: 'CANDIDATE_ONLY_EVALUATION' }],
+   excludedCandidates: [], targetDecisions: [] };
+ }
+ f.save(); return f;
+}
 function writeFixture(root, file, value) {
  const full = path.join(root, file); fs.mkdirSync(path.dirname(full), { recursive: true });
  fs.writeFileSync(full, Buffer.isBuffer(value) || typeof value === 'string' ? value : JSON.stringify(value));
@@ -98,6 +112,180 @@ function assertComplete(report, ledger) {
  assert.equal(report.productionChanged, false); assert.equal(report.automaticApplication, false);
  assert.equal(report.adoptionStatus, 'NOT_APPROVED');
 }
+function withoutSavedDiagnostic(report) {
+ const out = structuredClone(report); delete out.generatedAt; delete out.savedSelectionDiagnostics;
+ out.details.forEach(r => { delete r.savedSelectionDiagnostic; }); return out;
+}
+test('saved diagnostics preserve the identical 100R baseline, seals and original inputs', t => {
+ const f = withSavedDiagnostic(frozenFixture(t)), before = JSON.stringify(f.daily);
+ const disabled = m.build(f.root, { selectionDiagnostics: false }), enabled = m.build(f.root);
+ assertComplete(enabled, f.ledger);
+ assert.deepEqual(withoutSavedDiagnostic(enabled), withoutSavedDiagnostic(disabled));
+ assert.equal(JSON.stringify(f.daily), before);
+ assert.deepEqual(enabled.savedSelectionDiagnostics.counts, { available: 100, partial: 0, unknown: 0, conflict: 0 });
+ const d = enabled.details[0].savedSelectionDiagnostic;
+ assert.match(d.input.sha256, /^[a-f0-9]{64}$/);
+ assert.equal(d.candidate24.actualIncluded, true);
+ assert.equal(d.selectionEvidence.actualFinalDisposition, 'selected');
+ assert.equal(d.selectionEvidence.actualDecisionHistory[0].decision.selected, false);
+ assert.equal(d.selectionEvidence.actualDecisionHistory[0].decision.reasonCode, 'CANDIDATE_ONLY_EVALUATION');
+ assert.equal('actualInCandidatePool' in d.selectionEvidence, false);
+ assert.equal(enabled.savedSelectionDiagnostics.usableForPrediction, false);
+});
+test('missing saved diagnostic evidence stays unknown without changing the legacy field', t => {
+ const f = frozenFixture(t), out = m.build(f.root); assertComplete(out, f.ledger);
+ const d = out.details[0].savedSelectionDiagnostic;
+ assert.equal(d.status, 'unknown'); assert.equal(d.candidate24.status, 'unknown');
+ assert.equal(d.selectionEvidence.status, 'unknown');
+ assert.equal(out.details[0].candidatePoolHasActual, true);
+ assert.equal('actualIncluded' in d.candidate24, false);
+});
+test('candidate24 coverage is separate from generation and from missing selection history', t => {
+ const f = frozenFixture(t); f.records[0].prediction.candidate24Tickets = ['1-2-3', '2-1-3']; f.save();
+ const out = m.build(f.root), d = out.details[0].savedSelectionDiagnostic; assertComplete(out, f.ledger);
+ assert.equal(d.status, 'partial'); assert.equal(d.candidate24.actualIncluded, false);
+ assert.equal(d.candidate24.winningHeadIncluded, true); assert.equal(d.candidate24.firstSecondIncluded, false);
+ assert.equal(d.selectionEvidence.status, 'unknown'); assert.equal('generationMissing' in d, false);
+});
+test('an explicitly empty saved display pool is available zero coverage', t => {
+ const f = frozenFixture(t); f.records[0].prediction.candidate24Tickets = []; f.save();
+ const out = m.build(f.root); assertComplete(out, f.ledger);
+ assert.deepEqual(out.details[0].savedSelectionDiagnostic.candidate24,
+  { status: 'available', count: 0, actualIncluded: false, winningHeadIncluded: false, firstSecondIncluded: false });
+});
+for (const [name, change] of [
+ ['sidecar version', r => { r.practicalSelectionEvidence.version = 'other'; }],
+ ['sidecar capture status', r => { r.practicalSelectionEvidence.status = 'rejected'; }],
+ ['production changed flag', r => { r.practicalSelectionEvidence.productionChanged = true; }],
+ ['result-use flag', r => { r.practicalSelectionEvidence.resultUsedForGeneration = true; }],
+ ['sidecar race', r => { r.practicalSelectionEvidence.raceKey = '20300925-24-12'; }],
+ ['sidecar capture time', r => { r.practicalSelectionEvidence.selectedAt = '2030-09-25T00:01:00.000Z'; }],
+ ['sidecar deadline', r => { r.practicalSelectionEvidence.deadlineAt = '2030-09-25T00:09:00.000Z'; }],
+ ['missing review evidence', r => { delete r.practicalSelectionEvidence.reviewEvidence; }],
+ ['missing original review evidence', r => { delete r.reviewEvidence; }],
+ ['review version', r => { r.practicalSelectionEvidence.reviewEvidence.version = 'other'; }],
+ ['review prediction mode', r => { r.practicalSelectionEvidence.reviewEvidence.predictionMode = 'replay'; }],
+ ['review result use', r => { r.practicalSelectionEvidence.reviewEvidence.officialResultUsedForPrediction = true; }],
+ ['malformed method', r => { r.practicalSelectionEvidence.reviewEvidence.method = 'x'; }],
+ ['different method', r => { r.practicalSelectionEvidence.reviewEvidence.method = 'b'.repeat(64); }],
+ ['original method', r => { r.reviewEvidence.method = 'b'.repeat(64); }],
+ ['missing final tickets', r => { delete r.practicalSelectionEvidence.practicalTickets; }],
+ ['different final tickets', r => { r.practicalSelectionEvidence.practicalTickets[0] = '4-2-3'; }],
+ ['duplicate final tickets', r => { r.practicalSelectionEvidence.practicalTickets[0] = r.practicalSelectionEvidence.practicalTickets[1]; }],
+ ['wrong final count', r => { r.practicalSelectionEvidence.practicalTickets.pop(); }],
+ ['invalid final ticket', r => { r.practicalSelectionEvidence.practicalTickets[0] = '2-2-3'; }],
+ ['missing candidate history', r => { delete r.practicalSelectionEvidence.candidateDecisions; }],
+ ['missing exclusions', r => { delete r.practicalSelectionEvidence.excludedCandidates; }],
+ ['missing target history', r => { delete r.practicalSelectionEvidence.targetDecisions; }],
+ ['null target', r => { r.practicalSelectionEvidence.targetDecisions = [null]; }],
+ ['target without candidate history', r => { r.practicalSelectionEvidence.targetDecisions = [{}]; }],
+ ['candidate24 null', r => { r.prediction.candidate24Tickets = null; }],
+ ['candidate24 nonarray', r => { r.prediction.candidate24Tickets = '2-4-3'; }],
+ ['candidate24 overflow', r => { r.prediction.candidate24Tickets = Array(25).fill('2-4-3'); }],
+ ['candidate24 invalid ticket', r => { r.prediction.candidate24Tickets = ['2-2-3']; }],
+ ['candidate24 duplicate ticket', r => { r.prediction.candidate24Tickets = ['2-4-3', '2-4-3']; }],
+ ['candidate24 non-ticket object', r => { r.prediction.candidate24Tickets = [{ combination: '2-4-3' }]; }],
+ ['non-array history', r => { r.practicalSelectionEvidence.candidateDecisions = {}; }]
+]) test(`diagnostic-only conflict: ${name}`, t => {
+ const f = withSavedDiagnostic(frozenFixture(t)); change(f.records[0]); f.save();
+ const old = m.build(f.root, { selectionDiagnostics: false }), out = m.build(f.root); assertComplete(out, f.ledger);
+ assert.deepEqual(withoutSavedDiagnostic(out), withoutSavedDiagnostic(old));
+ assert.equal(out.details[0].savedSelectionDiagnostic.status, 'conflict');
+ assert.equal(out.savedSelectionDiagnostics.counts.conflict, 1);
+});
+for (const [name, change] of [
+ ['candidate24', r => { r.prediction.candidate24Tickets[8] = '3-2-4'; }],
+ ['selection history', r => { r.practicalSelectionEvidence.candidateDecisions[0].reasonCode = 'OTHER'; }],
+ ['review evidence', r => { r.reviewEvidence.method = 'b'.repeat(64); }],
+ ['missing sidecar', r => { delete r.practicalSelectionEvidence; }]
+]) test(`same-capture ${name} disagreement conflicts only the new diagnostic`, t => {
+ const f = withSavedDiagnostic(frozenFixture(t)), newer = structuredClone(f.daily);
+ change(newer.verificationPredictions[0]); archiveFixture(f.root, newer);
+ const old = m.build(f.root, { selectionDiagnostics: false }), out = m.build(f.root); assertComplete(out, f.ledger);
+ assert.deepEqual(withoutSavedDiagnostic(out), withoutSavedDiagnostic(old));
+ const d = out.details[0].savedSelectionDiagnostic;
+ assert.equal(d.status, 'conflict'); assert.equal(d.reason, 'conflicting-saved-diagnostic-input');
+ assert.equal(d.input.matches.length, 2);
+ assert.equal(new Set(d.input.matches.map(m => m.verifierEvidenceSha256)).size, 1);
+ assert.equal(new Set(d.input.matches.map(m => m.diagnosticInputSha256)).size, 2);
+});
+test('diagnostic inputs are never borrowed from a different capture time', t => {
+ const f = frozenFixture(t), later = nextCapture(f.records[0]);
+ later.prediction.candidate24Tickets = ['2-4-3']; f.daily.predictions.push(later); f.save();
+ const out = m.build(f.root); assertComplete(out, f.ledger);
+ assert.equal(out.details[0].savedSelectionDiagnostic.status, 'unknown');
+ assert.equal(out.details[0].savedSelectionDiagnostic.input.matches.length, 1);
+});
+test('source loader default is byte-identical with opt-in diagnostic members removed', t => {
+ const f = withSavedDiagnostic(frozenFixture(t)), diagnostic = require('../scripts/hit-first-selection-diagnostics.cjs');
+ const old = frozenSource.readFrozenDay(f.root, DATE, f.ledger.rows);
+ const enabled = frozenSource.readFrozenDay(f.root, DATE, f.ledger.rows, { diagnosticProjection: diagnostic.project });
+ for (const capture of enabled.captures.values()) delete capture.diagnostic;
+ assert.equal(JSON.stringify([...enabled.captures]), JSON.stringify([...old.captures]));
+ assert.equal(JSON.stringify(enabled.sources), JSON.stringify(old.sources));
+ const failed = frozenSource.readFrozenDay(f.root, DATE, f.ledger.rows, { diagnosticProjection() { throw Error('fixture'); } });
+ assert.equal(failed.captures.get(f.records[0].raceKey).conflict, false);
+ assert.equal(failed.captures.get(f.records[0].raceKey).diagnostic.conflict, true);
+});
+for (const [name, change] of [
+ ['derived-only race identity', r => { r.date = DATE; r.jcd = '01'; r.raceNo = 1; delete r.raceKey; delete r.practicalSelectionEvidence.raceKey; }],
+ ['capture-time fallback', r => { r.capturedAt = r.selectedAt; delete r.selectedAt; delete r.practicalSelectionEvidence.selectedAt; }],
+ ['deadline fallback', r => { r.deadline = r.deadlineAt; delete r.deadlineAt; delete r.practicalSelectionEvidence.deadlineAt; }]
+]) test(`missing explicit ${name} conflicts only the selection diagnostic`, t => {
+ const f = withSavedDiagnostic(frozenFixture(t)); change(f.records[0]); f.save();
+ const old = m.build(f.root, { selectionDiagnostics: false }), out = m.build(f.root); assertComplete(out, f.ledger);
+ assert.deepEqual(withoutSavedDiagnostic(out), withoutSavedDiagnostic(old));
+ assert.equal(out.details[0].savedSelectionDiagnostic.selectionEvidence.reason, 'diagnostic-capture-identity-mismatch');
+});
+test('impossible calendar timestamp is not accepted by the diagnostic adapter', () => {
+ const d = require('../scripts/hit-first-selection-diagnostics.cjs'), r = {
+  raceKey: '20300925-01-1', selectedAt: '2030-02-30T00:00:00.000Z', deadlineAt: '2030-03-03T00:00:00.000Z',
+  practicalSelectionEvidence: { status: 'captured' } };
+ const result = d.diagnose(r, { raceKey: r.raceKey, selectedAt: r.selectedAt, actual: '1-2-3', base: ['1-2-3'] }, { inputSha256: 'a'.repeat(64), matches: [] });
+ assert.equal(result.selectionEvidence.reason, 'diagnostic-capture-identity-mismatch');
+});
+test('unread validation snapshots and generation stay outside the separate diagnostic seal', t => {
+ const f = withSavedDiagnostic(frozenFixture(t)), newer = structuredClone(f.daily);
+ newer.verificationPredictions[0].practicalSelectionEvidence.candidateValidationEvidence = { originalGeneratorSnapshot: 'x'.repeat(1000000) };
+ newer.verificationPredictions[0].practicalSelectionEvidence.generation = { unread: 'different' };
+ newer.verificationPredictions[0].reviewEvidence.unreadMetadata = 'different';
+ archiveFixture(f.root, newer); const out = m.build(f.root); assertComplete(out, f.ledger);
+ const result = out.details[0].savedSelectionDiagnostic;
+ assert.equal(result.status, 'available');
+ assert.equal(new Set(result.input.matches.map(m => m.diagnosticInputSha256)).size, 1);
+ const projection = require('../scripts/hit-first-selection-diagnostics.cjs').project(newer.verificationPredictions[0]);
+ assert.equal('candidateValidationEvidence' in projection.practicalSelectionEvidence, false);
+ assert.equal('generation' in projection.practicalSelectionEvidence, false);
+ assert.equal('unreadMetadata' in projection.reviewEvidence, false);
+});
+test('same-capture explicit versus derived identity is a diagnostic-only seal conflict', t => {
+ const f = withSavedDiagnostic(frozenFixture(t));
+ Object.assign(f.records[0], { date: DATE, jcd: '01', raceNo: 1 }); f.save();
+ const newer = structuredClone(f.daily); delete newer.verificationPredictions[0].raceKey;
+ archiveFixture(f.root, newer);
+ const old = m.build(f.root, { selectionDiagnostics: false }), out = m.build(f.root); assertComplete(out, f.ledger);
+ assert.deepEqual(withoutSavedDiagnostic(out), withoutSavedDiagnostic(old));
+ const d = out.details[0].savedSelectionDiagnostic;
+ assert.equal(d.status, 'conflict'); assert.equal(d.reason, 'conflicting-saved-diagnostic-input');
+ assert.equal(new Set(d.input.matches.map(m => m.verifierEvidenceSha256)).size, 1);
+ assert.equal(new Set(d.input.matches.map(m => m.diagnosticInputSha256)).size, 2);
+});
+test('missing diagnostic seal is unknown rather than conflicting or independently reconstructed', () => {
+ const diagnostic = require('../scripts/hit-first-selection-diagnostics.cjs');
+ const result = diagnostic.diagnose({ prediction: { candidate24Tickets: ['1-2-3'] } }, row(), undefined);
+ assert.equal(result.status, 'unknown'); assert.equal(result.reason, 'diagnostic-seal-missing');
+ assert.equal(result.candidate24.status, 'unknown'); assert.equal(result.selectionEvidence.status, 'unknown');
+ assert.equal(result.input, null);
+});
+test('candidate24 display metadata differs without changing ticket coverage or the diagnostic seal', t => {
+ const f = withSavedDiagnostic(frozenFixture(t)), newer = structuredClone(f.daily);
+ newer.verificationPredictions[0].prediction.candidate24Tickets = newer.verificationPredictions[0].prediction.candidate24Tickets
+  .map(ticket => ({ ticket, odds: 99, amount: 100, comment: 'display only', category: 'display', roleLabels: ['display'] }));
+ archiveFixture(f.root, newer); const out = m.build(f.root); assertComplete(out, f.ledger);
+ const result = out.details[0].savedSelectionDiagnostic;
+ assert.equal(result.status, 'available'); assert.equal(result.candidate24.actualIncluded, true);
+ assert.equal(new Set(result.input.matches.map(m => m.diagnosticInputSha256)).size, 1);
+});
 test('frozen original survives a newer archive capture without changing latest-source discovery', t => {
  const f = frozenFixture(t), original = structuredClone(f.records[0]);
  const newer = structuredClone(f.daily); newer.updatedAt = '2030-09-25T00:06:00.000Z';

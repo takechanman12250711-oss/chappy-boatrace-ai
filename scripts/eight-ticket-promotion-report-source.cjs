@@ -100,7 +100,7 @@ function frozenEvidence(record) {
     candidatePool: Array.isArray(pool) ? pool.map(withoutOdds) : null
   };
 }
-function readFrozenDay(root, date, frozenRows) {
+function readFrozenDay(root, date, frozenRows, options = {}) {
   const wanted = new Map(frozenRows.map(row => [row.raceKey, row.selectedAt]));
   const captures = new Map(), sources = [];
   function consume(bytes, source, archiveSha256 = null) {
@@ -118,12 +118,30 @@ function readFrozenDay(root, date, frozenRows) {
         const hash = valueSha256(frozenEvidence(record));
         const evidence = { source, sourceSha256, sourceArray, index,
           recordSha256: valueSha256(record), verifierEvidenceSha256: hash };
+        // Optional report-only inputs have a separate seal. They must never
+        // change the existing verifier hash, record precedence or population.
+        let diagnostic;
+        if (typeof options.diagnosticProjection === 'function') {
+          try {
+            const diagnosticInputSha256 = valueSha256(options.diagnosticProjection(record));
+            diagnostic = { inputSha256: diagnosticInputSha256, conflict: false,
+              matches: [{ ...evidence, diagnosticInputSha256 }] };
+          } catch {
+            diagnostic = { inputSha256: null, conflict: true,
+              reason: 'diagnostic-projection-failed', matches: [{ ...evidence, diagnosticInputSha256: null }] };
+          }
+        }
         const current = captures.get(key);
-        if (!current) captures.set(key, { record, verifierEvidenceSha256: hash, conflict: false, evidence: [evidence] });
+        if (!current) captures.set(key, { record, verifierEvidenceSha256: hash, conflict: false, evidence: [evidence],
+          ...(diagnostic ? { diagnostic } : {}) });
         else {
           // Do not choose among conflicting versions of the same frozen capture.
           current.conflict ||= current.verifierEvidenceSha256 !== hash;
           current.evidence.push(evidence);
+          if (diagnostic) {
+            current.diagnostic.conflict ||= diagnostic.conflict || current.diagnostic.inputSha256 !== diagnostic.inputSha256;
+            current.diagnostic.matches.push(...diagnostic.matches);
+          }
         }
       });
     }

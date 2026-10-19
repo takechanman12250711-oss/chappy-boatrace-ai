@@ -13,13 +13,36 @@ function load(filePath, fallback = {}) {
   catch (error) { if (error?.code === "ENOENT") return fallback; throw error; }
 }
 
-function collectRecords() {
-  if (!fs.existsSync(predictionDir)) return [];
+// This gate reads only settled/resultTicket and B's saved adjustments. Project
+// each day's records before retaining them across dates; full saved predictions
+// include large unrelated snapshots. Preserve the existing overwrite order.
+function compactRecord(record) {
+  const shadow = record?.theoryShadowAb;
+  const tickets = shadow?.b?.tickets;
+  return {
+    raceKey: record?.raceKey,
+    jcd: record?.jcd,
+    result: record?.result && {
+      settled: record.result.settled,
+      resultTicket: record.result.resultTicket
+    },
+    theoryShadowAb: shadow && { b: {
+      tickets: Array.isArray(tickets) ? tickets.map(row => row && typeof row === 'object' ? {
+        ticket: row.ticket,
+        changed: row.changed,
+        adjustmentPoints: row.adjustmentPoints
+      } : row) : tickets
+    } }
+  };
+}
+
+function collectRecords(directory = predictionDir) {
+  if (!fs.existsSync(directory)) return [];
   const map = new Map();
-  fs.readdirSync(predictionDir).filter(name => /^\d{8}\.json$/.test(name)).sort().forEach(name => {
-    const data = load(path.join(predictionDir, name), {});
+  fs.readdirSync(directory).filter(name => /^\d{8}\.json$/.test(name)).sort().forEach(name => {
+    const data = load(path.join(directory, name), {});
     [...(Array.isArray(data.predictions) ? data.predictions : []), ...(Array.isArray(data.verificationPredictions) ? data.verificationPredictions : [])]
-      .forEach(record => { if (record?.raceKey) map.set(record.raceKey, record); });
+      .forEach(record => { if (record?.raceKey) map.set(record.raceKey, compactRecord(record)); });
   });
   return [...map.values()];
 }
@@ -36,4 +59,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { collectRecords };
+module.exports = { collectRecords, compactRecord };

@@ -205,4 +205,5 @@ function main(root = process.cwd()) {
   return report;
 }
 if (require.main === module) main();
-module.exports = { assess, buildProgress, classify, summarizeLosses, main };
+module.exports = { assess, buildProgress, classify, summarizeLosses, main,
+  selectionEvidence, actualSelectionDiagnostic };
