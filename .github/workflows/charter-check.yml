@@ -60,6 +60,7 @@ on:
       - "scripts/test-shadow-selection-v2.js"
       - "scripts/test-race-parser.js"
       - "scripts/test-original-exhibition.js"
+      - "scripts/test-original-foot-metrics.cjs"
       - "scripts/test-theory-integration.js"
       - "scripts/test-collector-theory-support-wiring.js"
       - "scripts/test-boat-identity.js"
@@ -191,6 +192,7 @@ on:
       - "scripts/test-shadow-selection-v2.js"
       - "scripts/test-race-parser.js"
       - "scripts/test-original-exhibition.js"
+      - "scripts/test-original-foot-metrics.cjs"
       - "scripts/test-theory-integration.js"
       - "scripts/test-collector-theory-support-wiring.js"
       - "scripts/test-boat-identity.js"
@@ -332,6 +334,7 @@ jobs:
           node --check scripts/test-shadow-selection-v2.js
           node --check scripts/test-race-parser.js
           node --check scripts/test-original-exhibition.js
+          node --check scripts/test-original-foot-metrics.cjs
           node --check scripts/test-theory-integration.js
           node --check scripts/test-collector-theory-support-wiring.js
           node --check scripts/test-boat-identity.js
@@ -406,6 +409,7 @@ jobs:
           node scripts/test-shadow-selection-v2.js
           node scripts/test-race-parser.js
           node scripts/test-original-exhibition.js
+          node scripts/test-original-foot-metrics.cjs
           node scripts/test-theory-integration.js
           node scripts/test-collector-theory-support-wiring.js
           node scripts/test-boat-identity.js

@@ -134,6 +134,31 @@
     };
   }
 
+  const ORIGINAL_FOOT_METRICS = [
+    ["lapTime", "一周"],
+    ["mawariTime", "まわり足"],
+    ["straightTime", "直線"]
+  ];
+
+  function originalFootNumber(value) {
+    if (value === null || value === undefined || value === "" ||
+        !/^(?:\d+(?:\.\d+)?)$/.test(String(value))) return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }
+
+  function captureOriginalMetric(entry, before, metric) {
+    // Resolve value and metadata from the same row. A missing/null venue
+    // measurement must not inherit a different row's source or another metric.
+    const containers = [before, before?.exhibition, entry, entry?.exhibition];
+    const row = containers.find(value => value && Object.hasOwn(value, metric));
+    return {
+      [metric]: originalFootNumber(row?.[metric]),
+      ...Object.fromEntries(["Source", "SourceUrl", "Unit", "MeasurementLabel", "SourceRef"].map(suffix =>
+        [metric + suffix, text(row?.[metric + suffix])]))
+    };
+  }
+
   function captureBoat(raceData, prediction, boatNo) {
     const entry = findBoat(findEntries(raceData), boatNo) || {};
     const before = findBoat(raceData?.beforeInfo, boatNo) || {};
@@ -198,6 +223,12 @@
         before?.lapTimeSourceUrl ?? exhibition?.lapTimeSourceUrl ??
         entry?.lapTimeSourceUrl ?? entry?.exhibition?.lapTimeSourceUrl
       ),
+      ...Object.fromEntries(["Unit", "MeasurementLabel", "SourceRef"].map(suffix =>
+        ["lapTime" + suffix, text(before?.["lapTime" + suffix] ??
+          exhibition?.["lapTime" + suffix] ?? entry?.["lapTime" + suffix] ??
+          entry?.exhibition?.["lapTime" + suffix])])),
+      ...captureOriginalMetric(entry, before, "mawariTime"),
+      ...captureOriginalMetric(entry, before, "straightTime"),
       officialStartRank: entry?.officialStartRank
         ? JSON.parse(JSON.stringify(entry.officialStartRank)) : null,
       localWinRate: numberOrNull(
@@ -292,6 +323,112 @@
     return boats.filter(boat => keys.some(key => boat[key] !== null)).length;
   }
 
+  function captureOriginalFootEvidence(raceData = {}, capturedBoats) {
+    const boats = capturedBoats || Array.from({ length: 6 }, (_, index) =>
+      captureBoat(raceData, {}, index + 1));
+    const original = raceData?.originalExhibition || null;
+    const clone = value => value == null ? null : JSON.parse(JSON.stringify(value));
+    const entries = findEntries(raceData);
+    const beforeRows = raceData?.beforeInfo;
+    const starts = raceData?.startExhibition;
+    const date = text(raceData?.date).replace(/-/g, "");
+    const jcd = text(raceData?.stadiumCode ?? raceData?.jcd).padStart(2, "0");
+    const rno = Number(raceData?.raceNo ?? raceData?.rno);
+    const sourceFetchedAt = text(original?.sourceFetchedAt);
+    const sourceSha256 = text(original?.sourceSha256);
+    const sourceTime = Date.parse(sourceFetchedAt);
+    const fetchedTime = Date.parse(text(raceData?.fetchedAt));
+    const isoTimestamp = value => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(value) &&
+      Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 19) === value.slice(0, 19);
+    let reasonCode = "";
+    if (!original || original.status !== "available" || !text(original.source) || !text(original.sourceUrl) ||
+        original.rowCount !== 6 || original.identityMatched !== true || original.exhibitionMatched !== true) {
+      reasonCode = "SOURCE_METADATA_UNAVAILABLE";
+    } else if (!/^[a-f0-9]{64}$/i.test(sourceSha256) || !isoTimestamp(sourceFetchedAt) ||
+        !isoTimestamp(text(raceData?.fetchedAt)) || sourceTime > fetchedTime) {
+      reasonCode = "SOURCE_INTEGRITY_METADATA_INVALID";
+    } else if (!/^\d{8}$/.test(date) || !/^\d{2}$/.test(jcd) || !Number.isInteger(rno) || rno < 1 || rno > 12 ||
+        original.date !== date || text(original.jcd) !== jcd || original.rno !== rno) {
+      reasonCode = "SOURCE_RACE_IDENTITY_MISMATCH";
+    } else if (entries.length !== 6 || new Set(entries.map(row => boatNoOf(row))).size !== 6 ||
+        !Array.isArray(beforeRows) || beforeRows.length !== 6 || new Set(beforeRows.map(row => boatNoOf(row))).size !== 6 ||
+        beforeRows.some(row => boatNoOf(row) < 1) ||
+        !Array.isArray(original.boatIdentities) || original.boatIdentities.length !== 6 ||
+        new Set(original.boatIdentities.map(row => boatNoOf(row))).size !== 6 ||
+        !entries.every(entry => {
+          const identity = original.boatIdentities.find(row => boatNoOf(row) === boatNoOf(entry));
+          const registerNo = text(entry?.registerNo ?? entry?.registrationNo ?? entry?.racerNo);
+          return boatNoOf(entry) >= 1 && /^\d{4}$/.test(registerNo) && identity &&
+            text(identity.registerNo) === registerNo;
+        })) {
+      reasonCode = "SOURCE_BOAT_IDENTITY_MISMATCH";
+    } else if (!Array.isArray(starts) || starts.length !== 6 || new Set(starts.map(row => boatNoOf(row))).size !== 6 ||
+        new Set(starts.map(row => Number(row?.course))).size !== 6 || !starts.every(row =>
+          boatNoOf(row) >= 1 && Number.isInteger(Number(row.course)) && Number(row.course) >= 1 && Number(row.course) <= 6 &&
+          (row.isOfficialCourse === true || row.mappingSource === "official-start-image"))) {
+      reasonCode = "OFFICIAL_COURSE_MAPPING_UNAVAILABLE";
+    }
+    const metrics = Object.fromEntries(ORIGINAL_FOOT_METRICS.map(([metric, label]) => {
+      const definition = original?.metricDefinitions?.[metric];
+      let metricReason = reasonCode;
+      if (!metricReason && (!Number.isInteger(original?.metricCounts?.[metric]) ||
+          original.metricCounts[metric] < 0 || original.metricCounts[metric] > 6)) {
+        metricReason = "METRIC_MEASUREMENT_COUNT_UNAVAILABLE";
+      }
+      if (!metricReason && (original.metricCounts[metric] !== 6 ||
+          (metric === "lapTime" && original.lapComplete !== true))) {
+        // Existing raw lap values may remain for engine compatibility. The
+        // current source must independently attest six measurements before
+        // those values can enter this source's reference comparison.
+        metricReason = "METRIC_VALUES_INCOMPLETE";
+      }
+      if (!metricReason && (definition?.unit !== "seconds" || definition?.measurementLabel !== label ||
+          definition?.venueCode !== jcd ||
+          !boats.every(row => row[metric + "Source"] === original.source &&
+            row[metric + "SourceUrl"] === original.sourceUrl && row[metric + "Unit"] === definition.unit &&
+            row[metric + "MeasurementLabel"] === definition.measurementLabel &&
+            row[metric + "SourceRef"] === "originalExhibition" &&
+            captureOriginalMetric(findBoat(entries, row.boatNo), findBoat(beforeRows, row.boatNo), metric)[metric] ===
+              originalFootNumber(row[metric])))) {
+        metricReason = "METRIC_DEFINITION_OR_SOURCE_MISMATCH";
+      }
+      const values = boats.map(row => originalFootNumber(row[metric]));
+      if (!metricReason && values.some(value => value === null)) metricReason = "METRIC_VALUES_INCOMPLETE";
+      const comparable = !metricReason;
+      const mean = comparable ? values.reduce((sum, value) => sum + value, 0) / 6 : null;
+      const rounded = value => Math.round(value * 1000000) / 1000000;
+      return [metric, {
+        measurementLabel: label,
+        unit: definition?.unit || null,
+        status: comparable ? "comparable" : metricReason === "METRIC_VALUES_INCOMPLETE" ? "incomplete" : "unknown",
+        comparable,
+        reasonCode: metricReason,
+        meanSeconds: mean === null ? null : rounded(mean),
+        boats: boats.map((row, index) => ({
+          boatNo: row.boatNo, registerNo: row.registerNo, value: values[index],
+          rank: comparable ? 1 + values.filter(value => value < values[index]).length : null,
+          differenceFromMeanSeconds: comparable ? rounded(values[index] - mean) : null
+        }))
+      }];
+    }));
+    const comparableCount = Object.values(metrics).filter(metric => metric.comparable).length;
+    return {
+      version: "original-foot-evidence-v1",
+      mode: "reference-only",
+      referenceOnly: true,
+      scoreApplied: false,
+      affectsPrediction: false,
+      affectsTickets: false,
+      usableForPrediction: false,
+      officialResultUsed: false,
+      status: comparableCount === 3 ? "comparable" : comparableCount ? "partial" : "unknown",
+      reasonCode,
+      sourceMetadata: clone(original),
+      rankingPolicy: "ascending-exact-ties-competition",
+      metrics
+    };
+  }
+
   function capture(raceData = {}, prediction = {}) {
     const boats = Array.from({ length: 6 }, (_, index) =>
       captureBoat(raceData, prediction, index + 1)
@@ -315,6 +452,9 @@
           : "",
       boats,
       weather,
+      originalExhibition: raceData?.originalExhibition
+        ? JSON.parse(JSON.stringify(raceData.originalExhibition)) : null,
+      originalFootEvidence: captureOriginalFootEvidence(raceData, boats),
       escapeEvaluationEvidence: captureEscapeEvaluation(raceData, prediction),
       // 計算時の判定をそのまま保存。過去レコードへの現行理論の後付けはしない。
       adjacentExhibitionEvidence: JSON.parse(JSON.stringify(
@@ -330,6 +470,8 @@
         exhibitionST: countAvailable(boats, ["exhibitionST"]),
         exhibitionTime: countAvailable(boats, ["exhibitionTime"]),
         lapTime: countAvailable(boats, ["lapTime"]),
+        mawariTime: countAvailable(boats, ["mawariTime"]),
+        straightTime: countAvailable(boats, ["straightTime"]),
         attackStrength: countAvailable(boats, ["attackStrength"]),
         raceFlowPower: countAvailable(boats, ["raceFlowPower"]),
         totalScore: countAvailable(boats, ["totalScore"]),
@@ -392,6 +534,7 @@
       beforeInfo: clone(raceData?.beforeInfo),
       startExhibition: clone(raceData?.startExhibition),
       raceInfo: clone(raceData?.raceInfo),
+      originalExhibition: clone(raceData?.originalExhibition),
       raceScenarios: core.raceScenarios ? {
         mainScenario: scenario(core.raceScenarios.mainScenario),
         subScenario: scenario(core.raceScenarios.subScenario),
@@ -408,6 +551,7 @@
     PRIORITY_STAGES,
     numberOrNull,
     boatNoOf,
+    captureOriginalFootEvidence,
     capture
   };
 });
