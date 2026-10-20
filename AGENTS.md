@@ -90,3 +90,11 @@
 Claude Codeが実装する開発では、同じ本書を共有し、作業開始時のbase SHAと実装後のhead SHAを固定してCodexの独立レビューへ渡す。手順は `docs/claude-codex-development.md` と共有 `claude-codex-review` スキルを使う。同一実行環境では `node scripts/claude-codex-review.cjs --base <作業開始時のSHA>` が読み取り専用レビューを実行し、結果と対象SHAの記録をGit管理領域へ返す。レビュー後の変更には新しいレビューを行う。
 
 Claude CodeのWeb/iOSと、この会話の実行環境は認証もファイルシステムも別である。別環境では同じGitHubリポジトリのPRで受け渡し、Claude側のログイン・実装、Codex側のレビュー、CI、main反映を別々に確認する。CLIの導入や接続設定だけで両モデルの実行完了とは扱わない。認証コード・トークンを会話、PR、コミットへ貼らず、既存契約で使える本人認証を用いる。新しい有料API・契約・定期監視・自動マージは追加しない。
+
+## 2026-10-20 開発変更の図示と本人による最終反映
+
+依頼範囲の調査・実装・fixture検査・レビュー・既存CI・PR作成まではAIが進め、計画ごとの承認待ちを増やさない。この会話・Claude Code・管理画面のいずれの入口でも、main反映前に対象変更・影響・フローチャート・PR番号とbase/head・検査状況を共通資料として示し、同じ対象PRへ「このPRをGitHubで確認」で案内する。全環境でのモデル起動や表示確認を新たな必須工程にせず、Claude Codeにも次回から適用する共有手順として渡す。ネイティブのChatGPT/Claude画面へ独自承認ボタンを設置したと説明しない。
+
+開発PRのmain反映は、本人がGitHubで確認して `Merge pull request` / `Confirm merge` など、表示されたマージ方式に応じた最終確定操作を行う。AIはその最終操作待ちで停止し、`gh pr merge`・API経由のマージ・自動マージを使わない。本手順を導入する最初のPRも本人のマージを待つ。自分が作成したPRを `Approve` する手順にせず、既存の権限・required reviews・required checksを緩めない。`completed`・CI成功・`Ready for review`・PRリンクのクリック・端末内の承認記録は本人の最終承認ではない。head変更時は必要なレビュー・CIをやり直して再提示する。
+
+管理画面は「成績」→「設定・開発確認」の折り畳みに置く。共有URLを開くだけではGitHubへ通信せず、本人が「対象PRを照合」を押して指定PRを読み取り、固定headと一致した場合だけ「このPRをGitHubで確認」を有効にする。入力不足・不一致・取得失敗時は無効にする。詳細は `docs/development-approval.md`。この手順は開発PRの最終反映に適用し、既に承認されたデータ更新・収集・note/X投稿などの自動処理や、予想方式の採用に必要な別の承認は変更しない。
