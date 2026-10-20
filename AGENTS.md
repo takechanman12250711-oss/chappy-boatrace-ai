@@ -84,3 +84,9 @@
 ## 2026-10-07 コロがし対象の明示
 
 新規記事はreadable-v3で4区分を維持し、有料末尾の「🔄 コロがし検証対象」に保存済み実戦厳選の完全一致部分集合を再掲する。原本・券・オッズ・区分別成績は変更しない。対象欄のsource hash・ticket hash・点数と有料本文hashを公開receiptへ固定し、初回・次段・結果照合で検査する。無料へ券を出さず、対象欄を新たな成績区分や参考へ数えない。既公開v1/v2を保持し、v2の本命を中心券と読み替えない。詳細と実証状況は `docs/note-korogashi-draft.md` を確認する。
+
+## Claude CodeとCodexの受け渡し
+
+Claude Codeが実装する開発では、同じ本書を共有し、作業開始時のbase SHAと実装後のhead SHAを固定してCodexの独立レビューへ渡す。手順は `docs/claude-codex-development.md` と共有 `claude-codex-review` スキルを使う。同一実行環境では `node scripts/claude-codex-review.cjs --base <作業開始時のSHA>` が読み取り専用レビューを実行し、結果と対象SHAの記録をGit管理領域へ返す。レビュー後の変更には新しいレビューを行う。
+
+Claude CodeのWeb/iOSと、この会話の実行環境は認証もファイルシステムも別である。別環境では同じGitHubリポジトリのPRで受け渡し、Claude側のログイン・実装、Codex側のレビュー、CI、main反映を別々に確認する。CLIの導入や接続設定だけで両モデルの実行完了とは扱わない。認証コード・トークンを会話、PR、コミットへ貼らず、既存契約で使える本人認証を用いる。新しい有料API・契約・定期監視・自動マージは追加しない。
