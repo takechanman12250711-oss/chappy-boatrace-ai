@@ -30,6 +30,8 @@ flowchart TD
 
 既存の両救済workflowを使い、4カド側へ新しい回帰検査と旧診断fixtureを接続する。必要なJS・scripts・configだけをcheckoutし、保存原本や全履歴を小fixtureのために展開しない。新しいworkflowやcronは作らない。
 
+既存のWebKit段階診断も、2つのheadの実行（run `39444763665`・`39446165573`）がフルcheckoutのGit取得中に15分の制限へ達し、診断開始前に中断したため、checkoutをnon-cone sparseへ限定する。入口HTML・全JS/CSS・診断script・package.json・ホーム起動用の派生summaryだけを保持し、raw予想・note原本・archiveは展開しない。外部APIからの同じ入力、WebKit、core/createの診断内容、runtime一致・完了mark・終了コードによる成功判定と15分の制限は維持する。
+
 ## 元のv1診断を保持する
 
 `test-independent-head-coverage-trace.cjs` は旧wrapperの正確なbytesを研究fixture内へ復元し、元SHA256の一致を必須とする。旧source manifest、候補fingerprint、元626件のreport、診断sidecar本体は変更しない。
