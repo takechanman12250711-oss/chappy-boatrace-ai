@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "analysisId": "outer-attack-gate-dropoff-v1",
-  "generatedAt": "2026-10-20T10:07:16.751Z",
+  "generatedAt": "2026-10-20T13:42:21.334Z",
   "productionChanged": false,
   "automaticApplication": false,
   "fixedSignal": {
@@ -16,15 +16,15 @@
     "requiresNegativeRaceFlowGap": true
   },
   "counts": {
-    "total": 3765,
-    "preDeadline": 3749,
+    "total": 3768,
+    "preDeadline": 3752,
     "basisInvalid": 1197,
     "topNot1": 367,
     "noChallengerPair": 0,
-    "noStAttackAdvantage": 1167,
+    "noStAttackAdvantage": 1168,
     "noFlowSuppression": 123,
-    "noExhibitionAdvantage": 712,
-    "active": 72,
+    "noExhibitionAdvantage": 713,
+    "active": 73,
     "ambiguous": 8,
     "inactiveOther": 103
   },
@@ -87270,6 +87270,42 @@
       ]
     },
     {
+      "raceKey": "20261020-01-10",
+      "selectedAt": "2026-10-20T10:35:28.447Z",
+      "gate": "active",
+      "status": "active",
+      "baselineTopBoatNo": 1,
+      "matchedBoatNos": [
+        4
+      ],
+      "pairs": [
+        {
+          "boatNo": 3,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": -1.35,
+            "roleAttack": -0.9130000000000013,
+            "exhibition": 3.3750000000000004,
+            "raceFlow": -5
+          }
+        },
+        {
+          "boatNo": 4,
+          "matched": true,
+          "attackSignal": true,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": 0.5799999999999997,
+            "roleAttack": 0.3629999999999997,
+            "exhibition": 2.934,
+            "raceFlow": -1.8500000000000014
+          }
+        }
+      ]
+    },
+    {
       "raceKey": "20261020-01-2",
       "selectedAt": "2026-10-20T06:35:09.566Z",
       "gate": "noExhibitionAdvantage",
@@ -87866,6 +87902,40 @@
       ]
     },
     {
+      "raceKey": "20261020-12-10",
+      "selectedAt": "2026-10-20T10:35:28.358Z",
+      "gate": "noExhibitionAdvantage",
+      "status": "inactive",
+      "baselineTopBoatNo": 1,
+      "matchedBoatNos": [],
+      "pairs": [
+        {
+          "boatNo": 3,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": -3.7700000000000005,
+            "roleAttack": -2.2439999999999998,
+            "exhibition": -1.2419999999999998,
+            "raceFlow": -4.875
+          }
+        },
+        {
+          "boatNo": 4,
+          "matched": false,
+          "attackSignal": true,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": 0.11999999999999958,
+            "roleAttack": 0.08799999999999969,
+            "exhibition": -1.052999999999999,
+            "raceFlow": -1.8000000000000007
+          }
+        }
+      ]
+    },
+    {
       "raceKey": "20261020-12-2",
       "selectedAt": "2026-10-20T06:35:10.629Z",
       "gate": "noExhibitionAdvantage",
@@ -88423,6 +88493,40 @@
             "roleAttack": -1.705,
             "exhibition": 0,
             "raceFlow": -6.074999999999999
+          }
+        }
+      ]
+    },
+    {
+      "raceKey": "20261020-19-6",
+      "selectedAt": "2026-10-20T10:35:28.083Z",
+      "gate": "noStAttackAdvantage",
+      "status": "inactive",
+      "baselineTopBoatNo": 1,
+      "matchedBoatNos": [],
+      "pairs": [
+        {
+          "boatNo": 3,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": -0.47999999999999976,
+            "roleAttack": -0.6929999999999997,
+            "exhibition": 0,
+            "raceFlow": -2.4250000000000007
+          }
+        },
+        {
+          "boatNo": 4,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": -3.08,
+            "roleAttack": -2.0569999999999995,
+            "exhibition": 0,
+            "raceFlow": -7.399999999999999
           }
         }
       ]
