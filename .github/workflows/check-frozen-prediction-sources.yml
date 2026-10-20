@@ -19,6 +19,7 @@ on:
       - 'js/three-course-escape-rescue-fixed5.js'
       - 'js/note-generator.js'
       - 'scripts/collect-predictions.js'
+      - 'scripts/test-candidate24-storage.cjs'
       - '.github/workflows/check-frozen-prediction-sources.yml'
       - '.github/workflows/build-continuous-performance-ledger.yml'
 permissions:
@@ -47,6 +48,7 @@ jobs:
           node scripts/test-three-course-escape-rescue-fixed5.js
           node scripts/test-practical-priority-shadow.js
           node scripts/test-shadow-predictions.js
+          node scripts/test-candidate24-storage.cjs
           node scripts/test-note-pipeline.js
           node tests/continuous-performance-ledger.test.cjs
       - name: Verify hit-first separation and frozen latest100

@@ -123,6 +123,22 @@ comes from final saved ticket membership. These observations are not causal
 explanations or proof of prediction improvement. Diagnostic availability and
 conflicts do not alter hit-rate/ROI accounting or any prediction/buying rule.
 
+The daily collector now also saves the existing `createDisplayCandidates`
+projection when it builds a new verification capture, and retains an already
+saved `candidate24Tickets` field when compacting that capture again. This uses
+the generated prediction and final practical tickets; it does not rerun scoring
+or practical selection. An unavailable or failed projection stays absent and
+does not block prediction collection. A successfully generated empty array
+remains an explicit empty array. Compaction never generates a pool for an old
+record, and previously missing pools remain missing.
+
+This addition supplies future display-pool coverage. It does not add the
+top-level selection/review sidecars required for validated stage history, so
+selection reasons remain `unknown` where those were not saved. Primary and
+verification copies keep their own generated pools; a difference is still a
+diagnostic conflict. The existing unknown/conflict counts cannot be rewritten
+as available evidence by this change.
+
 ## Unchanged safety checks
 
 After resolution, the existing report checks the selected record's pre-deadline

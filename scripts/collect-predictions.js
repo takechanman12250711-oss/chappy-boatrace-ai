@@ -850,6 +850,8 @@ function compactVerificationPayload(
     },
     ticketRanks: require("./stored-ticket-categories").storedTicketCategories(prediction),
     practicalTickets: Array.isArray(practicalTickets) ? practicalTickets : [],
+    ...(Object.prototype.hasOwnProperty.call(prediction || {}, "candidate24Tickets")
+      ? { candidate24Tickets: prediction.candidate24Tickets } : {}),
     ...(prediction.evaluatedScenarioCandidates ? { evaluatedScenarioCandidates: prediction.evaluatedScenarioCandidates } : {}),
     practicalSelection:
       compactPracticalSelection(
@@ -1444,6 +1446,19 @@ function buildActiveV2Selection(
   };
 }
 
+function safelyCaptureDisplayCandidates(prediction, practicalTickets, builder) {
+  if (typeof builder !== "function") return undefined;
+  try {
+    // This is the existing bounded display projection of generated plans;
+    // it does not evaluate the race or run the practical selector again.
+    const candidates = builder(prediction, practicalTickets);
+    return Array.isArray(candidates) ? structuredClone(candidates) : undefined;
+  } catch {
+    // A diagnostic failure must not stop the existing prediction collection.
+    return undefined;
+  }
+}
+
 function buildStoredPrediction(
   date,
   item,
@@ -1581,6 +1596,13 @@ function buildStoredPrediction(
     selection.selected
       ? "server_pre_deadline"
       : "server_pre_deadline_shadow";
+  const candidate24Tickets = safelyCaptureDisplayCandidates(
+    prediction,
+    practicalTickets,
+    Object.prototype.hasOwnProperty.call(dependencies, "createDisplayCandidates")
+      ? dependencies.createDisplayCandidates
+      : global.ChappyNoteGenerator?.createDisplayCandidates
+  );
 
   return {
     raceKey,
@@ -1609,7 +1631,9 @@ function buildStoredPrediction(
     practicalPriorityShadow:
       practicalPriorityShadowSnapshot,
     prediction: compactVerificationPayload(
-      { ...prediction, evaluatedScenarioCandidates: require("./outer-attack-research").compactPool(prediction) },
+      { ...prediction,
+        ...(candidate24Tickets !== undefined ? { candidate24Tickets } : {}),
+        evaluatedScenarioCandidates: require("./outer-attack-research").compactPool(prediction) },
       practicalTickets,
       legacyPreRaceConditions
     )
