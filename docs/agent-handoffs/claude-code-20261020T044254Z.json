@@ -1,0 +1,14 @@
+{
+  "version": "claude-codex-first-check-v1",
+  "sourceHeadSha": "b5ddebf99c2eb0e5c8b7db976065615624a7d865",
+  "implementationAgent": "claude-code",
+  "checks": [
+    { "command": "node --check scripts/claude-codex-review.cjs", "exitCode": 0 },
+    { "command": "node --test tests/claude-codex-review.test.cjs", "exitCode": 0 },
+    { "command": "cmp .agents/skills/claude-codex-review/SKILL.md .claude/skills/claude-codex-review/SKILL.md", "exitCode": 0 }
+  ],
+  "codexCliAvailable": false,
+  "codexChatgptAuthenticationConfirmed": false,
+  "handoff": "github-pr",
+  "automaticMerge": false
+}
