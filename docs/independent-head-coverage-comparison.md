@@ -29,3 +29,13 @@
 既存 `.github/workflows/compare-escape-frozen.yml` の明示的な `workflow_dispatch` だけで実行し、`data/stats/independent-head-coverage-comparison.json` と同名artifactを保存する。PRでは小fixtureのみ、実データ比較はGitHub Actionsで実行する。候補生成がskippedなら以前のレポートを新しいartifactやcommitへ含めない。元予想・公式結果はcommitせず、派生レポートだけ保存する。既存の旧世代比較の定期実行は維持し、新案の日次再計算・新しいcron・Work監視・有料APIは追加しない。
 
 過去の再計算と定義後の再計算を分けても、締切前に保存した候補や正式holdoutの成績とは扱わない。`productionChanged=false`、`automaticProductionChange=false`、`usableForPrediction=false`。正式gate未登録のため `INSUFFICIENT_EVIDENCE` を維持する。比較結果を見て同じ評価期間へ規則を調整せず、良い場合も次の未使用期間での検証と採用判断を別に行う。
+
+## 2026-10-20の固定試験結果
+
+[run 39377459439](https://github.com/takechanman12250711-oss/chappy-boatrace-ai/actions/runs/39377459439)で、固定source `92847c2b487568107084865cfc7df06270419ebe` を実行した。候補fingerprintは `c607ba387e1222048ec816cb6099a2e1f192df2c6226e4e9d7e3634175c49b8f`。artifact `12244097509` のZIP SHA256は `22ba39a5dd62ebbaefc639b0e76ea37841608373124360a7aa7708c8bf29fea6`、JSON SHA256は `57e973ea28aabedcf9270e9c921e585e28bb988809861258f90a3aaca2aa3831`。取得後、実行版・helper/JSのSHA・元ファイルpointer・各R点数・集計を独立に検査した。
+
+適格保存757Rのうち626R（82.69%）で保存予想を再現し、131Rは券不一致で比較対象外。626Rは確定588R・結果待ち8R・返還等30Rに分かれた。受理された券変更は**0R**で、全626Rが `NO_FINAL_TICKET_CHANGE` だった。確定分は現行・候補とも**136/588的中（23.13%）、追加0・喪失0・純増0**。各Rの買い目数は同じ。仮定の投資541,000円・払戻385,740円・回収率71.30%も同じだった。
+
+全て定義前入力の発見用再計算であり、直近100Rの18%的中とは母集団が異なる。変更成立0件なので、この仮説の改善効果を検証する材料は得られなかった。**今回の候補は採用しない**。結果を見て同期間の閾値や保護条件を調整し直さず、別頭を落とす原因だったと断定もしない。保存できていない候補一覧や選定根拠の記録を優先して整える。
+
+同じrunの旧4.8.6比較は、4Rで点数不一致があるため `POINT_BUDGET_MISMATCH`。従来の48→49的中という参考値は、同点数の改善として採用できない。旧世代の本命1艇の正誤とも分けて扱う。
