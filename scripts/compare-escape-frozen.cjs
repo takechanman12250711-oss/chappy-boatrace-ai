@@ -5,7 +5,9 @@ const input = require('./analysis-input-contract');
 const archive = require('./daily-prediction-source-archive');
 const audit = require('./audit-escape-main.cjs');
 const { decide } = require('./phase11-improvement-decision-gate.cjs');
+const { pointBudgetComparison, headAccuracyComparison } = require('./frozen-comparison-fairness.cjs');
 const DEFINED_AT = '2026-09-22T10:32:00.000Z';
+const LEGACY_CORE_VERSION = 'ai-core-v4.8.6-escape-skill-role';
 const MODULES = ['boat-identity','history-insights-base','motor-maintenance-insights','theory-input','evaluated-scenario-candidates','ai-core','ai-core-assignment-compat','local-water-v2-tiebreak','third-six-rescue-fixed5','escape-outer-second-rescue-fixed5','third-place-rescue-14-fixed5','third-place-rescue-12-4-fixed5','pair-31-rescue-fixed5','pair-32-rescue-fixed5','prediction','racer-skill-core-integration','main-cover-classification-fix','practical-selection','three-course-escape-rescue-fixed5','four-kado-escape-rescue-fixed5','prediction-flow-priority','prediction-st-exhibition-support','prediction-venue-water-support','prediction-skill-local-support','prediction-motor-engine-support','prediction-engine-integration','prediction-simple-evaluation'];
 const GUARD_MARKER = '  fourAttackScore += frameMovementAdjustment(fourNo);';
 const GUARD = `  // Diagnostic candidate: reuse only the existing three-attack inner-start penalties.
@@ -29,45 +31,78 @@ function transformCore(source, mode) {
   if (mode !== 'four-inner-guard' || source.split(GUARD_MARKER).length !== 2) throw Error('Candidate source contract changed');
   return source.replace(GUARD_MARKER, GUARD + GUARD_MARKER);
 }
-function runner(root, mode) {
+function runner(root, mode, { transformSelection, includeSelectionEvidence = false, freezeClock = false } = {}) {
   const context = { console: { log(){}, warn(){}, error(){} }, document: { addEventListener(){} }, addEventListener(){} };
   context.window = context; context.global = context;
   vm.createContext(context);
+  if (freezeClock) {
+    context.replayClock = Date.now();
+    vm.runInContext(`{
+      const OriginalDate = Date;
+      globalThis.Date = class extends OriginalDate {
+        constructor(...args) { super(...(args.length ? args : [globalThis.replayClock])); }
+        static now() { return globalThis.replayClock; }
+      };
+    }`, context);
+  }
   for (const name of MODULES) {
     const file = path.join(root,'js',name+'.js');
     let source = fs.readFileSync(file,'utf8');
     if (name === 'ai-core') source = transformCore(source,mode);
+    if (name === 'practical-selection' && transformSelection) source = transformSelection(source);
     vm.runInContext(source,context,{filename:file,timeout:10000});
   }
-  return row => {
+  return (row, selectionOptions = {}) => {
+    if (freezeClock) {
+      const selectedAt = Date.parse(row.selectedAt);
+      const deadline = Date.parse(row.deadlineAt);
+      if (!Number.isFinite(selectedAt) || !Number.isFinite(deadline) || selectedAt >= deadline) throw Error('Invalid frozen replay clock');
+      context.replayClock = selectedAt;
+    }
     const e = row.conditions.escapeEvaluationEvidence, [date,jcd,rno] = row.key.split('-');
     const data = {ok:true,source:row.conditions.source,stadiumCode:jcd,raceNo:Number(rno),date,
       fetchedAt:e.sourceFetchedAt,datasetVersion:e.datasetVersion,entries:clone(e.entries),
       beforeInfo:clone(e.beforeInfo),startExhibition:clone(e.startExhibition),historyContext:clone(e.historyContext),
       raceInfo:clone(e.raceInfo),weather:clone(row.conditions.weather),beforeInfoAvailable:e.beforeInfo.length===6,
-      newEngineMode:row.conditions.newEngineMode === true};
+      newEngineMode:row.conditions.newEngineMode === true,
+      ...(e.originalExhibition !== undefined ? {originalExhibition:clone(e.originalExhibition)} : {})};
     data.theoryInput = {version:context.ChappyTheoryInput.VERSION,normalized:true,prepared:true,
       boatIdentity:context.ChappyBoatIdentity.inspectEntries(data.entries,{allowBoatNoFallback:false})};
     context.replayData = data;
-    const result = vm.runInContext(`(() => {
-      const p = createPrediction(replayData), selection = ChappyPracticalSelection.select(p);
+    context.replaySelectionOptions = clone(selectionOptions);
+    context.includeReplaySelectionEvidence = includeSelectionEvidence;
+    let result;
+    try { result = vm.runInContext(`(() => {
+      const p = createPrediction(replayData), selection = ChappyPracticalSelection.select(p, replaySelectionOptions);
       return {head:p.mainSheet.honmei?.boatNo,tickets:selection.tickets.map(t=>t.ticket),
         mainTickets:selection.tickets.filter(t=>t.category==='本線'||t.displayCategory==='本命').map(t=>t.ticket),
         scenarios:p.aiCore.raceScenarios.scenarios.map(s=>({type:s.type,score:s.score})),
-        insideSkill:p.aiCore.racerSkillTheory.ranking.filter(s=>s.course===1).map(s=>({boatNo:s.boatNo,score:s.score,methodFit:s.components?.methodFit,role:s.role}))[0]||null};
+        insideSkill:p.aiCore.racerSkillTheory.ranking.filter(s=>s.course===1).map(s=>({boatNo:s.boatNo,score:s.score,methodFit:s.components?.methodFit,role:s.role}))[0]||null,
+        ...(includeReplaySelectionEvidence ? {
+          coreVersion:ChappyAICoreVersion,
+          selectionRows:selection.tickets,
+          candidateDecisions:selection.candidateDecisions || [],
+          expansionSummary:selection.expansionSummary || null,
+          selectionBranches:(selection.evidence?.branches || []).map(b=>({id:b.id,ticket:b.ticket,kind:b.kind,source:b.source,attackerBoatNo:b.attackerBoatNo,phaseKind:b.phaseEvidence?.kind})),
+          courseMapping:p.aiCore.courseMapping || null
+        } : {})};
     })()`,context,{timeout:10000});
-    delete context.replayData;
+    } finally {
+      delete context.replayData;
+      delete context.replaySelectionOptions;
+      delete context.includeReplaySelectionEvidence;
+    }
     return clone(result);
   };
 }
-function snapshot(record, source) {
+function snapshot(record, source, { requiredCoreVersion = LEGACY_CORE_VERSION } = {}) {
   const p = record.prediction || {}, c = p.preRaceConditions, e = c?.escapeEvaluationEvidence;
   if (!e || e.version !== 'escape-evaluation-evidence-v1' || e.historyStatus !== 'captured') return {reason:'frozen-history-unavailable'};
   if (input.preDeadlineReason(record)) return {reason:input.preDeadlineReason(record)};
   if (e.resultUsedForGeneration !== false || e.sourceFetchedAt !== c.sourceFetchedAt) return {reason:'invalid-frozen-timing'};
   if (![e.entries,e.beforeInfo,e.startExhibition].every(a=>Array.isArray(a)&&a.length===6)) return {reason:'incomplete-frozen-input'};
   if (!['officialCourses','exhibitionST','exhibitionTime'].every(k=>c.dataAvailability?.[k]===6)) return {reason:'official-exhibition-incomplete'};
-  if (e.aiCoreVersion !== 'ai-core-v4.8.6-escape-skill-role') return {reason:'different-core-generation'};
+  if (typeof requiredCoreVersion !== 'string' || !requiredCoreVersion || e.aiCoreVersion !== requiredCoreVersion) return {reason:'different-core-generation'};
   const selected = tickets(p.practicalTickets || p.practicalSelection?.tickets);
   if (!selected.length || selected.length > 10) return {reason:'invalid-practical-tickets'};
   const key = input.raceKey(record); if (!key) return {reason:'invalid-race-identity'};
@@ -93,11 +128,12 @@ function totals(rows, mode) {
   const returned = hits.reduce((n,r)=>n+r.result.payout,0);
   return {races:evaluated.length,hits:hits.length,stake,returned,hitRate:evaluated.length?100*hits.length/evaluated.length:null,recoveryRate:stake?100*returned/stake:null};
 }
-async function build(root, since='20260922', {refreshResults=false, fetchResult, maxRequests=24, now=Date.now()}={}) {
+async function loadFrozenInputs(root, since='20260922', {requiredCoreVersion=LEGACY_CORE_VERSION, refreshResults=false, fetchResult, maxRequests=24, now=Date.now()}={}) {
   if (!/^\d{8}$/.test(since)) throw Error('Invalid since date');
   const chosen = new Map(), exclusions = {}, files = [];
-  function add(record, source) {
-    const s=snapshot(record,source); if(s.reason){count(exclusions,s.reason);return;}
+  function add(record, source, sourcePointer) {
+    const s=snapshot(record,source,{requiredCoreVersion}); if(s.reason){count(exclusions,s.reason);return;}
+    s.row.sourcePointer = {...sourcePointer,recordJsonSha256:crypto.createHash('sha256').update(JSON.stringify(record)).digest('hex')};
     const old=chosen.get(s.row.key);
     if(!old||Date.parse(s.row.selectedAt)>Date.parse(old.selectedAt))chosen.set(s.row.key,s.row);
   }
@@ -105,15 +141,18 @@ async function build(root, since='20260922', {refreshResults=false, fetchResult,
   const dates=[...new Set([...archive.predictionSourceDates(root),...archive.archivedSourceDates(root)])].filter(d=>d>=since).sort();
   for(const date of dates){
     archive.restorePredictionSource({rootDirectory:root,date});
-    const d=read(path.join(root,'data/predictions',date+'.json'));
+    const d=read(path.join(root,'data/predictions',date+'.json')), descriptor=files[files.length-1];
     const primary=new Set((d.predictions||[]).map(input.raceKey));
-    for(const r of input.mergePredictionSources(d.predictions||[],d.verificationPredictions||[]))add(r,primary.has(input.raceKey(r))?'daily-primary':'daily-verification');
+    for(const r of input.mergePredictionSources(d.predictions||[],d.verificationPredictions||[])){
+      const array=primary.has(input.raceKey(r))?'predictions':'verificationPredictions';
+      add(r,array==='predictions'?'daily-primary':'daily-verification',{...descriptor,array,index:d[array].indexOf(r)});
+    }
   }
   const notes=path.join(root,'data/note-drafts');
   if(fs.existsSync(notes)){
     const {assess}=require('./build-race-review-progress');
     for(const date of fs.readdirSync(notes).filter(d=>/^\d{8}$/.test(d)&&d>=since).sort())for(const file of fs.readdirSync(path.join(notes,date)).filter(f=>f.endsWith('.json')).sort()){
-      const b=read(path.join(notes,date,file)),a=assess(b);if(a.reason){count(exclusions,'note:'+a.reason);continue;}add(b.record,'all-race-note');
+      const b=read(path.join(notes,date,file)),descriptor=files[files.length-1],a=assess(b);if(a.reason){count(exclusions,'note:'+a.reason);continue;}add(b.record,'all-race-note',{...descriptor,recordPath:'record'});
     }
   }
   const results=new Map();
@@ -138,6 +177,10 @@ async function build(root, since='20260922', {refreshResults=false, fetchResult,
       }catch(error){resultAttempts.push({key:row.key,status:'retry',error:String(error.message).slice(0,160)});}
     }}));
   }
+  return {chosen,exclusions,files,results,resultAttempts};
+}
+async function build(root, since='20260922', options={}) {
+  const {chosen,exclusions,files,results,resultAttempts} = await loadFrozenInputs(root,since,options);
   const run={current:runner(root,'current'),previous:runner(root,'previous-role'),candidate:runner(root,'four-inner-guard')},rows=[];
   for(const row of [...chosen.values()].sort((a,b)=>a.key.localeCompare(b.key))){
     try{
@@ -145,13 +188,14 @@ async function build(root, since='20260922', {refreshResults=false, fetchResult,
       if(reason){count(exclusions,reason);continue;}
       const previous=run.previous(row),candidate=run.candidate(row);
       if(![current,previous,candidate].every(p=>p.tickets.length>0&&p.tickets.length<=10))throw Error('Invalid compared tickets');
-      rows.push({key:row.key,source:row.source,sourceCommit:row.sourceCommit,selectedAt:row.selectedAt,
+      rows.push({key:row.key,source:row.source,sourcePointer:row.sourcePointer,sourceCommit:row.sourceCommit,selectedAt:row.selectedAt,
         period:Date.parse(row.selectedAt)>Date.parse(DEFINED_AT)?'post-definition':'discovery',
         current,previous,candidate,result:audit.resultOf(results.get(row.key)),
         roleFixChangedTickets:!same(current.tickets,previous.tickets),candidateChangedTickets:!same(current.tickets,candidate.tickets),candidateChangedHead:current.head!==candidate.head});
     }catch(error){count(exclusions,'replay-error:'+error.message);}
   }
   const summarize=rs=>({current:totals(rs,'current'),previous:totals(rs,'previous'),candidate:totals(rs,'candidate'),
+    ticketComparison:pointBudgetComparison(rs),headComparison:headAccuracyComparison(rs),
     replayed:rs.length,pending:rs.filter(r=>!r.result).length,excludedResults:rs.filter(r=>r.result?.excluded).length,
     candidateChangedHead:rs.filter(r=>r.candidateChangedHead).length,candidateChangedTickets:rs.filter(r=>r.candidateChangedTickets).length,
     roleFixChangedTickets:rs.filter(r=>r.roleFixChangedTickets).length});
@@ -173,4 +217,4 @@ function saveReport(file,report){
   archive.atomicWrite(file,JSON.stringify(report)+'\n');return true;
 }
 if(require.main===module)build(process.cwd(),process.argv[2]||'20260922',{refreshResults:true}).then(report=>{const changed=saveReport(path.join(process.cwd(),'data/stats/escape-frozen-comparison.json'),report);console.log(JSON.stringify({summary:report.summary,eligibleFrozen:report.eligibleFrozen,exclusions:report.exclusions,gate:report.candidate.adoptionGate,changed}));if(report.eligibleFrozen>0&&report.summary.replayed===0)throw Error('All eligible frozen baselines failed reproduction');}).catch(error=>{console.error(error);process.exitCode=1;});
-module.exports={DEFINED_AT,MODULES,GUARD,transformCore,runner,snapshot,chooseResult,checkReplay,totals,build,meaningful,saveReport};
+module.exports={DEFINED_AT,LEGACY_CORE_VERSION,MODULES,GUARD,transformCore,runner,snapshot,chooseResult,checkReplay,totals,loadFrozenInputs,build,meaningful,saveReport};
