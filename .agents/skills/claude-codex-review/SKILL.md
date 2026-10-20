@@ -3,16 +3,19 @@ name: claude-codex-review
 description: Claude Codeが実装したチャッピーのコミット済み差分を、Codexの読み取り専用レビューへ引き渡す。別環境のClaude Code Web/iOSではGitHub PRで受け渡す。実装後のレビューや両エージェントの協業に使う。
 ---
 
-最初にリポジトリの `AGENTS.md`、`docs/claude-codex-development.md`、`docs/development-approval.md` を読む。
+最初にリポジトリの `AGENTS.md`、`docs/claude-codex-development.md`、`docs/development-approval.md` を読む。別環境での公式自動連携を使う場合は `docs/claude-codex-auto-handoff.md` も読む。
 
 1. 依頼範囲、作業開始時のbase SHA、実装後のhead SHAを固定する。自動更新されるmainの現在値を、開始時のbaseへ読み替えない。
 2. 同じ実行環境にChatGPT認証済みのCodex CLIがある場合、変更を作業ブランチへコミットした後に `node scripts/claude-codex-review.cjs --base <base SHA>` を実行する。レビュー対象はコミット済みの差分で、未コミット変更がある場合は開始しない。
 3. 出力されたレビュー本文とreceiptを読み、対象SHAと完了状態を確認する。completedはレビュー実行完了であり、指摘なし・検証合格・マージ許可ではない。失敗やstaleを成功へ読み替えない。
 4. 指摘を依頼範囲で修正したら、新しいheadで必要な検査・レビュー・既存CIを行う。headが変わったら提示内容も更新し、以前の確認を転用しない。
-5. Web/iOSなど別環境でCodex CLIやその認証が利用できない場合は、実装差分を同じGitHubリポジトリのDraft PRへ保存し、そのPR番号・base/head SHA・実行済み検査・未解決点をCodex側へ渡す。認証を複製したり、有料APIで代用しない。
+5. Web/iOSなど別環境では、実装差分を同じGitHubリポジトリのPRへ保存し、PR番号・固定base/head・検査・未解決点を共有する。Codexの対象リポジトリのAutomatic review/Review triggerと、Claudeの対象PRのAuto-fixが実際に設定された場合は、公式サービス間でレビュー結果とCI失敗を受け渡す。Draftのレビュー開始条件は実際の設定で確認し、必要なReady for reviewは本人承認と扱わない。進行中の自動レビューへ同じheadの手動依頼を重ねない。修正は依頼範囲内で最大3回という指示上の上限とし、不明・範囲外・認証失敗・同じ原因の再失敗では早く停止する。サービスがこの回数を強制すると説明しない。未設定ならその状態を報告し、従来の手動PR経路と区別する。認証を複製したり、有料APIやbotメンションworkflowで代用しない。
 6. この会話・Claude Code・管理画面のいずれの入口でも、main反映前に対象変更・影響・フローチャート・同じPRの番号とbase/head・検査状況を共通資料として示す。共通導線は「このPRをGitHubで確認」とする。管理画面は「成績」→「設定・開発確認」の折り畳みに置く。共有URLを開くだけではGitHubへ通信せず、本人が「対象PRを照合」を押し、読み取り結果が固定headと一致した場合だけ共通導線を有効にする。入力不足・不一致・取得失敗時は無効にする。
-7. 本人がGitHubの `Merge pull request` / `Confirm merge` など表示に応じた最終確定操作を行うまで、AIはマージせず停止する。`gh pr merge`・API経由のマージ・自動マージは使わない。自分のPRの `Approve` を前提にせず、権限・required reviews・required checksを緩めない。`completed`・CI成功・`Ready for review`・リンクのクリック・端末内の記録を最終承認と扱わない。本人のマージ後にmain反映を別途確認する。
+7. Auto-fixを利用した場合は、本人へ提示する前に対象PRのAuto-fixを停止し、進行中の修正が終了したことを確認してからPRを再取得する。現在headとレビュー対象commit・必要なCIを照合し、不一致なら必要な確認と表示を更新する。停止状態を確認できなければ固定headで本人承認できる状態と報告しない。人の転記やbotの受付表示だけでレビュー完了にしない。
+8. 本人がGitHubの `Merge pull request` / `Confirm merge` など表示に応じた最終確定操作を行うまで、AIはマージせず停止する。`gh pr merge`・API経由のマージ・自動マージは使わない。自分のPRの `Approve` を前提にせず、権限・required reviews・required checksを緩めない。`completed`・CI成功・`Ready for review`・リンクのクリック・端末内の記録を最終承認と扱わない。本人のマージ後にmain反映を別途確認する。
 
 依頼範囲の調査・実装・fixture検査・レビュー・CI・PR作成に計画ごとの承認待ちを増やさない。本手順を導入する最初のPRも本人のマージを待つ。全環境でのモデル起動や表示確認を新たな必須工程にせず、Claude Codeにも次回から適用する共有手順として渡す。ChatGPT/Claudeのネイティブ画面へ独自承認ボタンを設置したと説明しない。既に承認されたデータ更新・収集・note/X投稿などの自動処理や、予想方式採用の別承認は変更しない。
 
-このスキルは本人ログインや常時実行機能ではない。起動できるCLI、実モデル応答、レビュー結果の返却、CI合格、本番反映を区別する。通常の会話へ認証コードやトークンを要求しない。
+PR #1343と`[連携確認・マージ不要]`のPRはAuto-fix対象から除き、確認済みheadを変更せずDraft・未マージで残す。自動受け渡しは対象PRのClaudeセッションとGitHubの機能であり、このChatGPT会話を自動起動したりここへの返信を保証したりしない。
+
+このスキルは本人ログインや常時実行機能ではない。起動できるCLI、実モデル応答、レビュー結果の返却、CI合格、本番反映を区別する。設定と実証を未確認のまま自動連携完了と報告しない。通常の会話へ認証コードやトークンを要求しない。

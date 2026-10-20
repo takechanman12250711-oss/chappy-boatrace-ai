@@ -32,19 +32,19 @@ Codexはリポジトリ外の一時フォルダから起動し、ユーザー・
 
 ## iPhoneのClaude Codeから使う
 
-Claude CodeのWeb/iOSはAnthropic側の別実行環境で動く。この会話のClaude CLIやCodex認証は共有されない。次のGitHub経由で受け渡す。
+Claude CodeのWeb/iOSはAnthropic側の別実行環境で動く。この会話のClaude CLIやCodex認証は共有されない。次のGitHub経由で受け渡す。公式サービスの設定後は、[自動受け渡し](claude-codex-auto-handoff.md)のCodex Automatic reviewと、対象PRのClaude Auto-fixを使い、通常のPR URL転送・レビュー本文の手動コピーを省く。リポジトリ側の手順追加だけで両サービスを有効化したとは扱わない。
 
 1. iPhoneで [Claude Code](https://claude.ai/code/new) を開き、本人の既存Claudeアカウントへログインする。Code機能が利用できる既存契約であることを確認する。未契約なら自動で追加契約しない。
 2. 初回はGitHubの接続で `takechanman12250711-oss/chappy-boatrace-ai` を選択する。対象リポジトリへのアクセスを本人が許可する。
 3. Claude Codeへ、依頼範囲・開始base・作業ブランチ・守る検査・完了条件を渡す。実装後はCreate PRでDraft PRを作る。
-4. Codex側でそのPRとbase/headを照合し、独立レビューと必要なテストを行う。CLIが同じ環境にあれば前節のスクリプトを使い、なければ接続済みGitHubから同じ差分をレビューする。
-5. 指摘修正後のSHAを再確認して既存CIへ渡す。Claude Codeの応答にも対象変更・影響・フローチャートと「このPRをGitHubで確認」リンクを含め、本人のGitHub操作までマージしない。headが変わったら必要なレビュー・CIと提示内容を更新する。Web側のログイン成功を、このクラウド環境のCLI認証成功と説明しない。
+4. 設定済みなら、同じPRに対するCodexの実レビューと既存CIを、PRごとに開始したClaude Auto-fixへ渡す。Draftでのレビュー開始条件は実際の設定で確認する。進行中の自動レビューへ同じheadの手動依頼を重ねない。未設定・利用不可の場合はその状態を報告し、接続済みGitHubから同じ差分を独立レビューする従来経路と区別する。CLIが同じ環境にあれば前節のスクリプトも使えるが、認証を複製しない。
+5. 指摘修正は依頼範囲内で最大3回までという指示を守り、不明・範囲外・認証失敗・同じ原因の再失敗では早く停止する。この回数は手順上の上限であり、サービスが強制する上限ではない。各新headに対応するレビューと必要なCIを確認する。本人へ渡す前にAuto-fixを停止し、進行中修正の終了後にPRのheadを再取得・照合する。Claude Codeの応答にも対象変更・影響・フローチャートと「このPRをGitHubで確認」リンクを含め、本人のGitHub操作までマージしない。headが変わったら必要なレビュー・CIと提示内容を更新する。Web側のログイン成功を、このクラウド環境のCLI認証成功と説明しない。
 
 両エージェントの初回受け渡しには `docs/claude-codex-first-check.md` の限定された確認タスクを使う。この `[連携確認・マージ不要]` PRは接続確認用でmainへ反映せず、通常の開発変更の本人マージ手順とは区別する。結果のDraft PRをCodex側で確認できてから、両者の受け渡し確認済みとして扱う。
 
 公式の事前入力リンクは `https://claude.ai/code?repositories=owner%2Frepo&prompt=...` を使える。これはフォームへの入力であり、本人の送信操作で初めて開始する。ブランチ指定の未確認パラメータは追加せず、フォームと作業指示で指定する。
 
-GitHubのCodexレビュー機能は [Code review設定](https://chatgpt.com/settings/code-review) の対象リポジトリ設定が別途必要である。設定済みの場合だけ自動レビューを利用できる。通常のGitHubレビューに加え、メモリ・保存時刻・原本・会計など変更に必要な実データ検証を行う。この手順の追加だけで自動レビュー設定済みとは扱わない。
+GitHubのCodexレビュー機能は [Code review設定](https://chatgpt.com/settings/code-review) の対象リポジトリの `Automatic review` と `Review trigger` を別途確認する。Claude側のAuto-fixは対象PRごとに開始する。両者の設定範囲・停止条件・本人承認前の固定head再照合・実証条件は [自動受け渡し](claude-codex-auto-handoff.md) に従う。通常のGitHubレビューに加え、メモリ・保存時刻・原本・会計など変更に必要な実データ検証を行う。この手順の追加だけで自動レビュー設定済みとは扱わない。
 
 ## 認証と実行の境界
 
@@ -69,3 +69,5 @@ GitHubのCodexレビュー機能は [Code review設定](https://chatgpt.com/sett
 - [Claudeの共有ルール](https://code.claude.com/docs/en/memory#share-one-file-with-other-coding-tools)
 - [Claude Webの事前入力](https://code.claude.com/docs/en/web-quickstart#pre-fill-sessions)
 - [Claude iOS](https://code.claude.com/docs/en/mobile)
+- [Codex GitHub integration](https://developers.openai.com/codex/third-party/github)
+- [Claude WebのPR Auto-fix](https://code.claude.com/docs/en/claude-code-on-the-web#auto-fix-pull-requests)
