@@ -23,6 +23,6 @@
 
 `.github/workflows/compare-escape-frozen.yml` が変更時・結果照合workflow成功後・日次fallbackに実行し、`data/stats/escape-frozen-comparison.json` を書き戻す。main SHA、入力ハッシュ、読み込んだJSハッシュ、公式結果証拠、除外理由を確認する。大きな日次JSONをWorkへ転送し続けない。
 
-同じ既存workflowで新案の `data/stats/independent-head-coverage-comparison.json` も別に生成・保存する。PRでは小さな合成入力の検査のみ、実データの比較はmainまたは明示dispatchでGitHub Actions上で行う。新しいcronは追加しない。checkoutはrunのSHAへ固定し、復元に必要な日次archive・note・公式結果は取得範囲から外さない。
+同じ既存workflowの明示dispatchだけで、新案の `data/stats/independent-head-coverage-comparison.json` も別に生成・保存する。PRでは小さな合成入力の検査のみ、新案の実データ比較はGitHub Actions上の手動実行に限定する。新しいcronは追加しない。checkoutはrunのSHAへ固定し、復元に必要な日次archive・note・公式結果は取得範囲から外さない。
 
 元予想を守るため復元用JSONは保存前に作業ツリーから戻す。ゼロ件は改善成功ではない。結果取得失敗・入力欠損・再現不一致・母数不足を区別する。

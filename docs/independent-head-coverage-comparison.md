@@ -26,6 +26,6 @@
 
 ## 実行と判断
 
-既存 `.github/workflows/compare-escape-frozen.yml` で実行し、`data/stats/independent-head-coverage-comparison.json` と同名artifactを保存する。PRでは小fixtureのみ、実データ比較はGitHub Actionsで実行する。元予想・公式結果はcommitせず、派生レポートだけ保存する。新しいcron・Work監視・有料APIは追加しない。
+既存 `.github/workflows/compare-escape-frozen.yml` の明示的な `workflow_dispatch` だけで実行し、`data/stats/independent-head-coverage-comparison.json` と同名artifactを保存する。PRでは小fixtureのみ、実データ比較はGitHub Actionsで実行する。候補生成がskippedなら以前のレポートを新しいartifactやcommitへ含めない。元予想・公式結果はcommitせず、派生レポートだけ保存する。既存の旧世代比較の定期実行は維持し、新案の日次再計算・新しいcron・Work監視・有料APIは追加しない。
 
 過去の再計算と定義後の再計算を分けても、締切前に保存した候補や正式holdoutの成績とは扱わない。`productionChanged=false`、`automaticProductionChange=false`、`usableForPrediction=false`。正式gate未登録のため `INSUFFICIENT_EVIDENCE` を維持する。比較結果を見て同じ評価期間へ規則を調整せず、良い場合も次の未使用期間での検証と採用判断を別に行う。

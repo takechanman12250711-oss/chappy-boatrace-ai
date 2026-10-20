@@ -91,13 +91,15 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=6144
         run: node scripts/compare-escape-frozen.cjs
       - name: Compare one qualified new head with the same ticket budget
+        id: independent_head
+        if: github.event_name == 'workflow_dispatch'
         env:
           NODE_OPTIONS: --max-old-space-size=6144
         run: |
           rm -f data/stats/independent-head-coverage-comparison.json
           node scripts/compare-independent-head-coverage.cjs
       - uses: actions/upload-artifact@v4
-        if: always() && github.event_name != 'pull_request'
+        if: always() && github.event_name == 'workflow_dispatch' && steps.independent_head.outcome != 'skipped'
         with:
           name: independent-head-coverage-comparison
           path: data/stats/independent-head-coverage-comparison.json
@@ -109,11 +111,15 @@ jobs:
       - name: Save derived comparison only
         env:
           TARGET_BRANCH: ${{ github.ref_name }}
+          SAVE_INDEPENDENT_HEAD: ${{ github.event_name == 'workflow_dispatch' && steps.independent_head.outcome == 'success' }}
         run: |
           git restore --worktree -- data/predictions
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/stats/escape-frozen-comparison.json data/stats/independent-head-coverage-comparison.json
+          git add data/stats/escape-frozen-comparison.json
+          if [ "$SAVE_INDEPENDENT_HEAD" = 'true' ]; then
+            git add data/stats/independent-head-coverage-comparison.json
+          fi
           if git diff --cached --quiet; then exit 0; fi
           git commit -m 'Update frozen escape comparison'
           for attempt in 1 2 3; do
