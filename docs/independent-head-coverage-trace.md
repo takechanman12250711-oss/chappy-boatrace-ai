@@ -26,6 +26,8 @@ flowchart TD
 
 `trace-independent-head-coverage.cjs` が元record hashと保存予想を照合し、隔離VM内のsource変換だけで選定途中を観測する。研究用fieldを既存のexpansionSummaryに一時的に追加し、それを除いた全出力を観測なしの実行と照合する。候補本体と本番JSは編集しない。元の626件は、欠落・record変更・再現不能があっても診断の母数から落とさない。原本file hashが変わっていてrecord hashだけ同じ場合は区別して記録する。
 
+候補へ研究用optionsが届いたかと、候補の条件ブロックが実行されたかを別に記録する。optionsが届かなかった場合を「資格のある候補なし」と混同しない。8段階の最後は内側selectorの最終券で、外側の既存救済処理が確定した公開APIの券は `publicFinalTickets` として別に照合する。
+
 この診断は、選定経路を説明するための事後解析である。元の131件の再現不一致を修復したり、同じ評価期間で候補規則を調整したりしない。`productionChanged=false`、`automaticProductionChange=false`、`usableForPrediction=false` を維持する。診断で見つかった経路は改善仮説の材料とし、精度向上の証拠とは扱わない。
 
 ## 実行方法

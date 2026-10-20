@@ -25,9 +25,14 @@ function replaceOnce(source, marker, replacement) {
 // Insert only local, primitive snapshots. The selector never reads these values.
 // The candidate's own injection and its predicates are still supplied unchanged
 // by its original module; only its local firstNewHead value is observed.
-const INIT = `    const __hct = {version:1,normalCount:normalTicketCount,actualFirstNewHead:null,stages:[]};
+const INIT = `    const __hct = {version:1,normalCount:normalTicketCount,injectionEntered:false,actualFirstNewHead:null,stages:[]};
     const __hctHeadsValid = Array.isArray(options.researchBaselineHeads) && options.researchBaselineHeads.length > 0 &&
       options.researchBaselineHeads.every(head => Number.isInteger(head) && head >= 1 && head <= 6);
+    __hct.baselineHeadOptionsState = !Object.prototype.hasOwnProperty.call(options,'researchBaselineHeads') ? 'missing' :
+      Array.isArray(options.researchBaselineHeads) && options.researchBaselineHeads.length === 0 ? 'empty' : __hctHeadsValid ? 'valid' : 'invalid';
+    __hct.baselineHeadOptions = __hctHeadsValid ? [...options.researchBaselineHeads] : null;
+    __hct.baselineHeadOptionsValid = __hctHeadsValid;
+    __hct.receivedBaselineHeadCount = Array.isArray(options.researchBaselineHeads) ? options.researchBaselineHeads.length : null;
     const __hctRepresented = new Set(__hctHeadsValid ? options.researchBaselineHeads : []);
     const __hctReason = row => {
       const head = ticketBoats(row.ticket)[0], course = courseOf(validationContext, head);
@@ -81,7 +86,7 @@ function transformObservedSelection(source,{mode='current'}={}) {
   if (mode==='candidate') {
     source=replaceOnce(source,candidate.INJECTION,POOL+candidate.INJECTION);
     const firstMarker='      if (firstNewHead > 0) expansionCandidates.unshift(expansionCandidates.splice(firstNewHead, 1)[0]);';
-    source=replaceOnce(source,firstMarker,'      __hct.actualFirstNewHead = firstNewHead;\n'+firstMarker);
+    source=replaceOnce(source,firstMarker,'      __hct.injectionEntered = true;\n      __hct.actualFirstNewHead = firstNewHead;\n'+firstMarker);
   } else source=replaceOnce(source,candidate.MARKER,POOL+candidate.MARKER);
   source=replaceOnce(source,candidate.MARKER,'    __hct.sortedPoolAfter = expansionCandidates.map(row=>row.ticket);\n'+candidate.MARKER);
   const stages=[
@@ -175,13 +180,26 @@ function resolveReferenceRow(root,referenceRow,loadedFile) {
     ...(sha256!==pointer.sha256?{warning:'FILE_CHANGED_RECORD_IDENTICAL'}:{})}};
 }
 
-function validateTrace(trace,mode) {
+function validateTrace(trace,mode,key='') {
+  const label=mode+(key?' '+key:'');
   if(!trace || !isDeepStrictEqual(trace.stages?.map(stage=>stage.name),STAGES) || !Array.isArray(trace.sortedPoolBefore) || !Array.isArray(trace.sortedPoolAfter))
-    throw Error('Missing or incomplete selector trace: '+mode);
-  if(mode==='candidate' && trace.actualFirstNewHead!==trace.observedFirstNewHead) throw Error('Observed candidate predicate disagrees with original firstNewHead');
+    throw Error('Missing or incomplete selector trace: '+label);
+  if(!['missing','empty','invalid','valid'].includes(trace.baselineHeadOptionsState) || trace.baselineHeadOptionsValid!==(trace.baselineHeadOptionsState==='valid'))
+    throw Error('Invalid selector option observation: '+label);
+  if(mode==='candidate') {
+    if(trace.baselineHeadOptionsValid) {
+      if(trace.injectionEntered!==true || trace.actualFirstNewHead!==trace.observedFirstNewHead)
+        throw Error('Observed candidate predicate disagrees with original firstNewHead: '+label+' actual='+trace.actualFirstNewHead+' observed='+trace.observedFirstNewHead);
+    } else if(trace.injectionEntered!==false || trace.actualFirstNewHead!==null || trace.observedFirstNewHead!==-1) {
+      throw Error('Inactive candidate injection observation disagrees with original option gate: '+label);
+    }
+  }
 }
 
 function traceClassification(current,candidateTrace,guard) {
+  if(candidateTrace.baselineHeadOptionsState!=='valid') return {
+    missing:'CANDIDATE_OPTIONS_NOT_RECEIVED_BY_SELECTOR',empty:'CANDIDATE_OPTIONS_EMPTY_AT_SELECTOR',invalid:'CANDIDATE_OPTIONS_INVALID_AT_SELECTOR'
+  }[candidateTrace.baselineHeadOptionsState];
   if(candidateTrace.observedFirstNewHead<0) return 'NO_QUALIFIED_UNREPRESENTED_HEAD_IN_SORTED_POOL';
   const first=candidateTrace.stages.findIndex(stage=>stage.targetSelected);
   if(first<0) return candidateTrace.observedFirstNewHead===0?'TARGET_ALREADY_FIRST_BUT_NEVER_SELECTED':'TARGET_MOVED_BUT_NEVER_SELECTED';
@@ -239,14 +257,23 @@ async function build(root,{referenceReport,sourceCommit='',run,generatedAt=new D
       if(!isDeepStrictEqual(current,stripTrace(observedCurrent))) throw Error('Trace parity failed for baseline '+reference.key);
       if(!isDeepStrictEqual(attempt,stripTrace(observedCandidate))) throw Error('Trace parity failed for candidate '+reference.key);
       const baselineTrace=observedCurrent.expansionSummary?.[TRACE_FIELD],candidateTrace=observedCandidate.expansionSummary?.[TRACE_FIELD];
-      validateTrace(baselineTrace,'current');validateTrace(candidateTrace,'candidate');
+      validateTrace(baselineTrace,'current',reference.key);validateTrace(candidateTrace,'candidate',reference.key);
+      for(const [trace,result] of [[baselineTrace,current],[candidateTrace,attempt]]) {
+        trace.publicFinalTickets=[...result.tickets];
+        trace.postSelectorRescues=['threeCourseEscapeRescueFixed5','fourKadoEscapeRescueFixed5'].flatMap(id=>{
+          const meta=result.expansionSummary?.[id];
+          return meta?[{id,...Object.fromEntries(['applied','version','ticket','replacedTicket','index'].filter(key=>meta[key]!==undefined).map(key=>[key,meta[key]]))}]:[];
+        });
+      }
       const guard=candidate.guardCandidate(current,attempt);
       if(guard.changed!==reference.changed || guard.reason!==reference.changeReason || !isDeepStrictEqual(compact(guard.candidate),reference.candidate))
         throw Error('Fixed candidate guard differs from reference '+reference.key);
       const classification=traceClassification(baselineTrace,candidateTrace,guard);count(classifications,classification);
       rows.push({index,key:reference.key,source:reference.source,sourcePointer:clone(reference.sourcePointer),status:'traced',
         fileEvidence:resolved.fileEvidence,baselineParity:true,candidateParity:true,classification,
-        fixedGuard:{changed:guard.changed,reason:guard.reason},baseline:baselineTrace,candidate:candidateTrace});
+        requestedBaselineHeads:[...options.researchBaselineHeads],
+        fixedGuard:{changed:guard.changed,reason:guard.reason},
+        baseline:baselineTrace,candidate:candidateTrace});
     }
     files.push({path:file,referenceRows:group.length,...(loadedFile?{actualSha256:loadedFile.sha256}:{})});
   }
@@ -259,6 +286,8 @@ async function build(root,{referenceReport,sourceCommit='',run,generatedAt=new D
       predictionSourcesVerified:sources.predictionSourceCount,comparisonSourcesVerified:sources.comparisonSourceCount},
     summary:{referenceRows:referenceReport.rows.length,traced:rows.filter(row=>row.status==='traced').length,
       untraced:rows.filter(row=>row.status==='untraced').length,untracedReasons:reasons,classifications,
+      candidateInjectionEntered:rows.filter(row=>row.candidate?.injectionEntered===true).length,
+      candidateSelectorOptions:Object.fromEntries(['missing','empty','invalid','valid'].map(state=>[state,rows.filter(row=>row.candidate?.baselineHeadOptionsState===state).length])),
       filesChangedWithIdenticalRecord:rows.filter(row=>row.fileEvidence?.warning==='FILE_CHANGED_RECORD_IDENTICAL').length},
     files,rows,limitation:'Source-stage diagnosis of the fixed reference cohort only. No new candidate, performance estimate, outcome join, source substitution or production adoption. Missing or changed records remain untraced in the reference denominator. Entire diagnostic fails if either full replay output changes under observation.'};
 }

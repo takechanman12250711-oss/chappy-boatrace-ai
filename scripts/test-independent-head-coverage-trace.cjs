@@ -18,7 +18,7 @@ const first=fixtureSource.indexOf('const MAIN = ['),last=fixtureSource.indexOf('
 assert(first>=0&&last>first);
 const builders=fixtureSource.slice(first,last);
 
-function fixtureSetup({altScore=80,altTicket='4-2-3',strongScore=0,rankReplacement=false}={}) {
+function fixtureSetup({altScore=80,altTicket='4-2-3',strongScore=0,rankReplacement=false,rescueLabel=''}={}) {
   return `${builders}
     const branches=[
       holdBranch({id:'hold:a',ticket:'1-4-2',partnerBoatNo:2,priorityScore:86}),
@@ -27,14 +27,18 @@ function fixtureSetup({altScore=80,altTicket='4-2-3',strongScore=0,rankReplaceme
       alternateHeadBranch({id:'alt:four',ticket:${JSON.stringify(altTicket)},priorityScore:${altScore}})];
     ${rankReplacement?`const hole=canonicalBranch({id:'formation:hole:1-5-6:evaluation:ana:6:3',ticket:'1-5-6',group:'hole',roleBoatNo:6,position:3,role:'pickup',priorityScore:92}); branches.push(hole);`:''}
     const prediction=createFixture({flow:true,independent:branches});
+    ${rescueLabel?`prediction.raceFlow.title=${JSON.stringify(rescueLabel)};`:''}
     prediction.aiCore.courseMapping={formal:true,byBoat:{1:1,2:2,3:3,4:4,5:5,6:6}};
     ${rankReplacement?`prediction.aiCore.formations.evidence.branches.filter(b=>b.id.startsWith('cover:')).forEach(b=>b.priorityScore=90);`:''}
     ${strongScore?`const escape={type:'escape',score:${strongScore}};prediction.aiCore.raceScenarios={mainScenario:escape,scenarios:[escape,{type:'sashi',score:60}]};`:''}
     globalThis.fixture=prediction;`;
 }
-function select(inputSource,setup,options={}) {
+function select(inputSource,setup,options={}, {wrappers=false}={}) {
   const context={console};context.window=context;context.globalThis=context;vm.createContext(context);
-  vm.runInContext(inputSource,context);vm.runInContext(setup,context);context.options=clone(options);
+  vm.runInContext(inputSource,context);
+  if(wrappers) for(const name of ['three-course-escape-rescue-fixed5','four-kado-escape-rescue-fixed5'])
+    vm.runInContext(fs.readFileSync(path.join(ROOT,'js',name+'.js'),'utf8'),context);
+  vm.runInContext(setup,context);context.options=clone(options);
   return JSON.parse(vm.runInContext('JSON.stringify(ChappyPracticalSelection.select(fixture,options))',context));
 }
 function describe(selection) {
@@ -45,12 +49,12 @@ function describe(selection) {
       ticket:branch.ticket,kind:branch.kind,source:branch.source,attackerBoatNo:branch.attackerBoatNo,phaseKind:branch.phaseEvidence?.kind})),
     courseMapping:{formal:true,byBoat:{1:1,2:2,3:3,4:4,5:5,6:6}}};
 }
-function runFixture(config={}) {
-  const setup=fixtureSetup(config),plainCurrent=describe(select(source,setup));
+function runFixture({wrappers=false,...config}={}) {
+  const setup=fixtureSetup(config),plainCurrent=describe(select(source,setup,{}, {wrappers}));
   const options={researchBaselineHeads:candidate.heads(plainCurrent.tickets)};
-  const plainCandidate=describe(select(candidate.transformSelection(source),setup,options));
-  const observedCurrent=describe(select(trace.transformObservedSelection(source,{mode:'current'}),setup,options));
-  const observedCandidate=describe(select(trace.transformObservedSelection(source,{mode:'candidate'}),setup,options));
+  const plainCandidate=describe(select(candidate.transformSelection(source),setup,options,{wrappers}));
+  const observedCurrent=describe(select(trace.transformObservedSelection(source,{mode:'current'}),setup,options,{wrappers}));
+  const observedCandidate=describe(select(trace.transformObservedSelection(source,{mode:'candidate'}),setup,options,{wrappers}));
   return {plainCurrent,plainCandidate,observedCurrent,observedCandidate};
 }
 const traceOf=value=>value.expansionSummary[trace.TRACE_FIELD];
@@ -105,6 +109,55 @@ test('a target can be qualified, moved, selected then rank-replaced despite unch
   assert.equal(candidate.guardCandidate(result.plainCurrent,result.plainCandidate).reason,'NO_FINAL_TICKET_CHANGE');
   assert.deepEqual(trace.stripTrace(result.observedCurrent),result.plainCurrent);
   assert.deepEqual(trace.stripTrace(result.observedCandidate),result.plainCandidate);
+});
+
+test('missing, empty and invalid inner options are inactive injection states, separate from a valid no-target pool',()=>{
+  const setup=fixtureSetup(),observed=trace.transformObservedSelection(source,{mode:'candidate'});
+  for(const [options,state] of [[{},'missing'],[{researchBaselineHeads:[]},'empty'],[{researchBaselineHeads:[0]},'invalid'],[{researchBaselineHeads:'1,2'},'invalid']]) {
+    const result=describe(select(observed,setup,options)),captured=traceOf(result);
+    assert.equal(captured.baselineHeadOptionsState,state);assert.equal(captured.baselineHeadOptionsValid,false);
+    assert.equal(captured.injectionEntered,false);assert.equal(captured.actualFirstNewHead,null);assert.equal(captured.observedFirstNewHead,-1);
+    assert.deepEqual(trace.stripTrace(result),describe(select(candidate.transformSelection(source),setup,options)));
+  }
+  const noTarget=traceOf(runFixture({altTicket:'5-2-3',altScore:79}).observedCandidate);
+  assert.equal(noTarget.baselineHeadOptionsState,'valid');assert.equal(noTarget.injectionEntered,true);assert.equal(noTarget.actualFirstNewHead,-1);
+});
+
+test('the original rescue wrappers discard supplied options, leaving the original candidate inactive with exact parity',async()=>{
+  const fixture=makeEnvironment({wrappers:true});
+  try {
+    assert.deepEqual(fixture.results.plainCandidate,fixture.results.plainCurrent);
+    const observed=traceOf(fixture.results.observedCandidate);
+    assert.equal(observed.baselineHeadOptionsState,'missing');assert.equal(observed.baselineHeadOptions,null);
+    assert.equal(observed.actualFirstNewHead,null);assert.equal(observed.injectionEntered,false);
+    assert.deepEqual(trace.stripTrace(fixture.results.observedCurrent),fixture.results.plainCurrent);
+    assert.deepEqual(trace.stripTrace(fixture.results.observedCandidate),fixture.results.plainCandidate);
+    const guarded=candidate.guardCandidate(fixture.results.plainCurrent,fixture.results.plainCandidate);
+    assert.equal(guarded.changed,false);assert.equal(guarded.reason,'NO_FINAL_TICKET_CHANGE');
+    const report=await trace.build(fixture.root,{referenceReport:fixture.reference,run:fixture.run});
+    assert.equal(report.summary.traced,2);assert.equal(report.summary.candidateInjectionEntered,0);
+    assert.equal(report.summary.classifications.CANDIDATE_OPTIONS_NOT_RECEIVED_BY_SELECTOR,2);
+    assert.deepEqual(report.summary.candidateSelectorOptions,{missing:2,empty:0,invalid:0,valid:0});
+    assert(report.rows.every(row=>row.requestedBaselineHeads.length>0));
+    assert(!Object.hasOwn(report.summary.classifications,'NO_QUALIFIED_UNREPRESENTED_HEAD_IN_SORTED_POOL'));
+  } finally {fixture.cleanup();}
+});
+
+test('public final tickets and compact rescue metadata distinguish the wrapped return from the inner final stage',async()=>{
+  const fixture=makeEnvironment({wrappers:true,rescueLabel:'3コース攻め'});
+  try {
+    const report=await trace.build(fixture.root,{referenceReport:fixture.reference,run:fixture.run});
+    for(const row of report.rows) for(const mode of ['baseline','candidate']) {
+      const captured=row[mode];
+      assert(captured.publicFinalTickets.includes('1-3-4'));
+      assert.equal(captured.stages.at(-1).selected.some(ticket=>ticket.ticket==='1-3-4'),false);
+      assert.equal(captured.postSelectorRescues.length,1);
+      assert.equal(captured.postSelectorRescues[0].id,'threeCourseEscapeRescueFixed5');
+      assert.equal(captured.postSelectorRescues[0].ticket,'1-3-4');
+      assert.equal(captured.postSelectorRescues[0].applied,true);
+      assert(!captured.publicFinalTickets.includes(captured.postSelectorRescues[0].replacedTicket));
+    }
+  } finally {fixture.cleanup();}
 });
 
 function sourceManifest() {
