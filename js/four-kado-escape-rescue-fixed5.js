@@ -114,8 +114,8 @@
     const wrapped = {
       ...api,
       __fourKadoEscapeRescueFixed5Installed: true,
-      select(prediction){
-        return apply(prediction,originalSelect(prediction));
+      select(prediction, options){
+        return apply(prediction,originalSelect(prediction, options));
       }
     };
     wrapped.createPracticalSelection = function(prediction){

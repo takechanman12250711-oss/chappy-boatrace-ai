@@ -10,6 +10,10 @@ on:
       - "js/prediction-runtime-loader.js"
       - "scripts/collect-predictions.js"
       - "scripts/test-four-kado-escape-rescue-fixed5.js"
+      - "scripts/test-practical-selector-options.cjs"
+      - "scripts/test-independent-head-coverage-trace.cjs"
+      - "scripts/test-practical-selection.js"
+      - "scripts/compare-independent-head-coverage.cjs"
       - ".github/workflows/check-four-kado-escape-rescue-fixed5.yml"
   push:
     branches: [main]
@@ -20,6 +24,10 @@ on:
       - "js/prediction-runtime-loader.js"
       - "scripts/collect-predictions.js"
       - "scripts/test-four-kado-escape-rescue-fixed5.js"
+      - "scripts/test-practical-selector-options.cjs"
+      - "scripts/test-independent-head-coverage-trace.cjs"
+      - "scripts/test-practical-selection.js"
+      - "scripts/compare-independent-head-coverage.cjs"
       - ".github/workflows/check-four-kado-escape-rescue-fixed5.yml"
 
 jobs:
@@ -28,6 +36,12 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            js
+            scripts
+            config
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -37,5 +51,7 @@ jobs:
           node --check scripts/collect-predictions.js
           node scripts/test-three-course-escape-rescue-fixed5.js
           node scripts/test-four-kado-escape-rescue-fixed5.js
+          node scripts/test-practical-selector-options.cjs
+          node scripts/test-independent-head-coverage-trace.cjs
           node scripts/check-charter.js
           git diff --check

@@ -12,6 +12,27 @@ const trace = require('./trace-independent-head-coverage.cjs');
 const ROOT=path.resolve(__dirname,'..');
 const hash=value=>crypto.createHash('sha256').update(value).digest('hex');
 const clone=value=>JSON.parse(JSON.stringify(value));
+// These bytes belong to the frozen v1 trial, not the current production API.
+// Undo only the later options forwarder and require the complete original hash.
+const FROZEN_WRAPPERS = {
+  'js/three-course-escape-rescue-fixed5.js':'bc0f0934c5661b618bcb27911afaf6fea49b4b18c73dbbec649cd908a5cdf284',
+  'js/four-kado-escape-rescue-fixed5.js':'a92e4f3b5b407654cbf3e56e1d0d09561a9c1d59b30896e70d5d4fd7a66a0374'
+};
+const ORIGINAL_FORWARDER='      select(prediction){\n        return apply(prediction,originalSelect(prediction));';
+const OPTIONS_FORWARDER='      select(prediction, options){\n        return apply(prediction,originalSelect(prediction, options));';
+function frozenWrapperBytes(file,bytes) {
+  const expected=FROZEN_WRAPPERS[file];
+  if(hash(bytes)===expected) return bytes;
+  const source=bytes.toString('utf8');
+  if(source.split(OPTIONS_FORWARDER).length!==2) throw Error('Frozen v1 wrapper snapshot changed: '+file);
+  const original=Buffer.from(source.replace(OPTIONS_FORWARDER,ORIGINAL_FORWARDER));
+  if(hash(original)!==expected) throw Error('Frozen v1 wrapper snapshot changed: '+file);
+  return original;
+}
+function frozenSourceBytes(file) {
+  const bytes=fs.readFileSync(path.join(ROOT,file));
+  return Object.hasOwn(FROZEN_WRAPPERS,file)?frozenWrapperBytes(file,bytes):bytes;
+}
 const source=fs.readFileSync(path.join(ROOT,'js/practical-selection.js'),'utf8');
 const fixtureSource=fs.readFileSync(path.join(__dirname,'test-practical-selection.js'),'utf8');
 const first=fixtureSource.indexOf('const MAIN = ['),last=fixtureSource.indexOf('const standard =');
@@ -37,7 +58,7 @@ function select(inputSource,setup,options={}, {wrappers=false}={}) {
   const context={console};context.window=context;context.globalThis=context;vm.createContext(context);
   vm.runInContext(inputSource,context);
   if(wrappers) for(const name of ['three-course-escape-rescue-fixed5','four-kado-escape-rescue-fixed5'])
-    vm.runInContext(fs.readFileSync(path.join(ROOT,'js',name+'.js'),'utf8'),context);
+    vm.runInContext(frozenSourceBytes('js/'+name+'.js').toString('utf8'),context);
   vm.runInContext(setup,context);context.options=clone(options);
   return JSON.parse(vm.runInContext('JSON.stringify(ChappyPracticalSelection.select(fixture,options))',context));
 }
@@ -161,7 +182,7 @@ test('public final tickets and compact rescue metadata distinguish the wrapped r
 });
 
 function sourceManifest() {
-  const predictionSources=frozen.MODULES.map(name=>({path:'js/'+name+'.js',sha256:hash(fs.readFileSync(path.join(ROOT,'js',name+'.js')))}));
+  const predictionSources=frozen.MODULES.map(name=>({path:'js/'+name+'.js',sha256:hash(frozenSourceBytes('js/'+name+'.js'))}));
   const comparisonSources=['compare-escape-frozen.cjs','analysis-input-contract.js','audit-escape-main.cjs','daily-prediction-source-archive.js','phase11-improvement-decision-gate.cjs']
     .map(name=>({path:'scripts/'+name,sha256:hash(fs.readFileSync(path.join(ROOT,'scripts',name)))}));
   const scriptSha256=hash(fs.readFileSync(path.join(ROOT,'scripts/compare-independent-head-coverage.cjs')));
@@ -173,7 +194,7 @@ function makeEnvironment(config={rankReplacement:true}) {
   const root=fs.mkdtempSync(path.join(os.tmpdir(),'chappy-trace-')),results=runFixture(config);
   const sources=sourceManifest();
   for(const item of [...sources.predictionSources,...sources.comparisonSources,{path:'scripts/compare-independent-head-coverage.cjs'}]) {
-    const target=path.join(root,item.path);fs.mkdirSync(path.dirname(target),{recursive:true});fs.copyFileSync(path.join(ROOT,item.path),target);
+    const target=path.join(root,item.path);fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,frozenSourceBytes(item.path));
   }
   const selectedAt='2026-10-19T00:01:00Z',deadlineAt='2026-10-19T00:20:00Z',sourceFetchedAt='2026-10-19T00:00:00Z';
   const makeRecord=raceNo=>({raceKey:'20261019-01-'+raceNo,selectedAt,deadlineAt,prediction:{
@@ -208,6 +229,27 @@ test('fixed source manifests and original candidate fingerprint fail closed on c
     assert.throws(()=>trace.verifyReferenceSources(fixture.root,reordered),/source manifest/);
     fs.appendFileSync(path.join(fixture.root,'js/practical-selection.js'),'\n// changed');
     assert.throws(()=>trace.verifyReferenceSources(fixture.root,fixture.reference),/source hash mismatch/);
+  } finally {fixture.cleanup();}
+});
+
+test('the old wrapper snapshot rejects unrelated changes and current production wrappers cannot enter the fixed v1 trial',()=>{
+  const fixture=makeEnvironment();
+  try {
+    assert.throws(()=>trace.verifyReferenceSources(ROOT,fixture.reference),
+      /Reference source hash mismatch: js\/three-course-escape-rescue-fixed5\.js/);
+    for(const [file,expected] of Object.entries(FROZEN_WRAPPERS)) {
+      const current=fs.readFileSync(path.join(ROOT,file)),original=frozenSourceBytes(file);
+      assert.notEqual(hash(current),expected);assert.equal(hash(original),expected);
+      assert.equal(hash(frozenWrapperBytes(file,original)),expected);
+      assert.throws(()=>frozenWrapperBytes(file,Buffer.concat([current,Buffer.from('\n// unrelated change')])),/Frozen v1 wrapper snapshot changed/);
+      const target=path.join(fixture.root,file);
+      fs.writeFileSync(target,current);
+      try {
+        assert.throws(()=>trace.verifyReferenceSources(fixture.root,fixture.reference),
+          error=>error.message==='Reference source hash mismatch: '+file);
+      } finally {fs.writeFileSync(target,original);}
+    }
+    assert.equal(trace.verifyReferenceSources(fixture.root,fixture.reference).fingerprint,trace.REFERENCE_FINGERPRINT);
   } finally {fixture.cleanup();}
 });
 
