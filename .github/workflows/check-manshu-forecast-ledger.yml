@@ -41,18 +41,32 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /js/
+            /scripts/
+            /tests/
+            /data/stats/local-water-v2-post-adoption-input-cache.json
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Check separate-account forecast ledger
+      - name: Check syntax and complete historical input
         run: |
           node --check js/manshu-forecast-ledger.js
           node --check js/frame-rise-fall-replay-preload.js
           node --check scripts/test-manshu-forecast-ledger.js
           node --check tests/outer-attack-ticket-storage-integration.test.cjs
-          node scripts/test-manshu-forecast-ledger.js
-          node scripts/test-light-manshu-ticket-board.js
-          node tests/outer-attack-ticket-storage-integration.test.cjs
+          test "$(git hash-object data/stats/local-water-v2-post-adoption-input-cache.json)" = "$(git rev-parse HEAD:data/stats/local-water-v2-post-adoption-input-cache.json)"
+
+      - name: Check separate-account forecast ledger
+        run: node scripts/test-manshu-forecast-ledger.js
+
+      - name: Check light manshu board with all historical input
+        run: node scripts/test-light-manshu-ticket-board.js
+
+      - name: Check outer attack ticket storage integration
+        run: node tests/outer-attack-ticket-storage-integration.test.cjs
