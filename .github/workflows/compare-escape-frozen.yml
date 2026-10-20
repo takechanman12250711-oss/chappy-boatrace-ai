@@ -9,6 +9,10 @@ on:
       - 'scripts/test-frozen-comparison-fairness.cjs'
       - 'scripts/compare-independent-head-coverage.cjs'
       - 'scripts/test-independent-head-coverage.cjs'
+      - 'scripts/trace-independent-head-coverage.cjs'
+      - 'scripts/test-independent-head-coverage-trace.cjs'
+      - 'scripts/run-independent-head-trace.cjs'
+      - 'scripts/test-run-independent-head-trace.cjs'
       - '.github/workflows/compare-escape-frozen.yml'
   push:
     branches: [main, analysis/escape-frozen-comparison]
@@ -26,6 +30,11 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
+    inputs:
+      independent_head_trace:
+        description: 'Diagnose the fixed 626-row trial only (read-only; no new candidate comparison)'
+        type: boolean
+        default: false
   schedule:
     - cron: '45 21 * * *'
 permissions:
@@ -55,10 +64,12 @@ jobs:
           node scripts/test-compare-escape-frozen.cjs
           node scripts/test-frozen-comparison-fairness.cjs
           node scripts/test-independent-head-coverage.cjs
+          node scripts/test-independent-head-coverage-trace.cjs
+          node scripts/test-run-independent-head-trace.cjs
           node scripts/test-escape-main-audit.cjs
           node scripts/check-charter.js
   compare:
-    if: github.event_name != 'pull_request' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+    if: github.event_name != 'pull_request' && inputs.independent_head_trace != true && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -128,3 +139,37 @@ jobs:
             if git push origin "HEAD:$TARGET_BRANCH"; then exit 0; fi
           done
           exit 1
+  independent-head-trace:
+    if: github.event_name == 'workflow_dispatch' && inputs.independent_head_trace == true
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/
+            /scripts/
+            /js/
+            /config/
+            /data/stats/independent-head-coverage-comparison.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify the observer and immutable input restoration with small fixtures
+        run: |
+          node scripts/test-independent-head-coverage.cjs
+          node scripts/test-independent-head-coverage-trace.cjs
+          node scripts/test-run-independent-head-trace.cjs
+      - name: Trace the original trial without changing selection or fetching results
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: node scripts/run-independent-head-trace.cjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: independent-head-coverage-trace
+          path: data/stats/independent-head-coverage-trace.json
+          if-no-files-found: error
