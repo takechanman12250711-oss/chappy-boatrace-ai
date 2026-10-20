@@ -38,8 +38,8 @@ function wrap(api) {
   const originalCompactAudit = api.compactAudit.bind(api);
   const wrapped = { ...api };
 
-  wrapped.select = function selectWithFrameReplayBasis(prediction) {
-    const selection = originalSelect(prediction);
+  wrapped.select = function selectWithFrameReplayBasis(prediction, options) {
+    const selection = originalSelect(prediction, options);
     const basis = captureBasis(prediction);
     return basis ? { ...selection, frameRiseFallReplayBasis: basis } : selection;
   };

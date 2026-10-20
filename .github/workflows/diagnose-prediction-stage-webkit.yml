@@ -20,6 +20,16 @@ jobs:
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /index.html
+            /style.css
+            /js/
+            /css/
+            /scripts/diagnose-prediction-stage-webkit.mjs
+            /package.json
+            /data/predictions/summaries/
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
