@@ -6,6 +6,7 @@ on:
     paths:
       - "js/four-kado-escape-rescue-fixed5.js"
       - "js/three-course-escape-rescue-fixed5.js"
+      - "js/frame-rise-fall-replay-preload.js"
       - "js/practical-selection.js"
       - "js/prediction-runtime-loader.js"
       - "scripts/collect-predictions.js"
@@ -14,12 +15,14 @@ on:
       - "scripts/test-independent-head-coverage-trace.cjs"
       - "scripts/test-practical-selection.js"
       - "scripts/compare-independent-head-coverage.cjs"
+      - "scripts/test-frame-rise-fall-replay-preload.js"
       - ".github/workflows/check-four-kado-escape-rescue-fixed5.yml"
   push:
     branches: [main]
     paths:
       - "js/four-kado-escape-rescue-fixed5.js"
       - "js/three-course-escape-rescue-fixed5.js"
+      - "js/frame-rise-fall-replay-preload.js"
       - "js/practical-selection.js"
       - "js/prediction-runtime-loader.js"
       - "scripts/collect-predictions.js"
@@ -28,6 +31,7 @@ on:
       - "scripts/test-independent-head-coverage-trace.cjs"
       - "scripts/test-practical-selection.js"
       - "scripts/compare-independent-head-coverage.cjs"
+      - "scripts/test-frame-rise-fall-replay-preload.js"
       - ".github/workflows/check-four-kado-escape-rescue-fixed5.yml"
 
 jobs:
@@ -52,6 +56,7 @@ jobs:
           node scripts/test-three-course-escape-rescue-fixed5.js
           node scripts/test-four-kado-escape-rescue-fixed5.js
           node scripts/test-practical-selector-options.cjs
+          node scripts/test-frame-rise-fall-replay-preload.js
           node scripts/test-independent-head-coverage-trace.cjs
           node scripts/check-charter.js
           git diff --check
