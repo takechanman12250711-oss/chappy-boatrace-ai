@@ -139,16 +139,21 @@ function evaluateEntries(state, entriesByBoat, params = DEFAULT_PARAMS) {
   if (!one.registerNo) {
     return { status: "boat1-unknown", boats, unknownBoats };
   }
+  // 選手不明の艇を「弱い相手」とみなすと、完走したか（レース後の情報）で対象が変わるため判定しない。
+  if (unknownBoats.length) {
+    return { status: "other-boat-unknown", boats, unknownBoats };
+  }
   if (one.frameSamples < params.boatOneMinFrameSamples) {
     return { status: "boat1-insufficient-history", boats, unknownBoats };
   }
 
   const boatOneStrong = one.frameWins >= params.boatOneMinWins;
-  const othersWeak = others.every((boat) => !boat.registerNo || boat.frameWins <= params.othersMaxWins);
+  const othersWeak = others.every((boat) => boat.frameWins <= params.othersMaxWins);
   const filter1 = boatOneStrong && othersWeak;
 
-  const otherSts = others.map((boat) => boat.avgSt).filter((value) => value !== null);
-  const boatOneStTop = one.avgSt !== null && otherSts.every((value) => one.avgSt <= value);
+  // 5艇すべての平均STがそろわなければ「最速」とは判定しない。
+  const stComparable = one.avgSt !== null && others.every((boat) => boat.avgSt !== null);
+  const boatOneStTop = stComparable && others.every((boat) => one.avgSt <= boat.avgSt);
   const wallBoats = [boats[1], boats[2]];
   const wallHolds = one.avgSt !== null &&
     wallBoats.every((boat) => boat.avgSt !== null && boat.avgSt <= one.avgSt + params.wallMarginSec);
@@ -157,7 +162,7 @@ function evaluateEntries(state, entriesByBoat, params = DEFAULT_PARAMS) {
     status: "evaluated",
     boats,
     unknownBoats,
-    checks: { boatOneStrong, othersWeak, boatOneStTop, wallHolds },
+    checks: { boatOneStrong, othersWeak, stComparable, boatOneStTop, wallHolds },
     filter1,
     filter12: filter1 && boatOneStTop,
     filter12wall: filter1 && boatOneStTop && wallHolds
@@ -278,6 +283,8 @@ function evaluateExhibition(apiRace, params = DEFAULT_PARAMS) {
   const exStByBoat = new Map();
   const exCourseByBoat = new Map();
   for (const row of startRows) {
+    // 公式のスタート展示画像から読めた進入だけを使う（legacy-course-order の仮の枠なり行は使わない）。
+    if (row?.isOfficialCourse !== true) continue;
     if (!Number.isInteger(row?.boat) || typeof row.st !== "number") continue;
     const early = String(row.marker || "").toUpperCase().includes("F");
     exStByBoat.set(row.boat, early ? -row.st : row.st);
@@ -289,10 +296,13 @@ function evaluateExhibition(apiRace, params = DEFAULT_PARAMS) {
     if (Number.isInteger(entry?.boat) && typeof time === "number" && time > 0) displayByBoat.set(entry.boat, time);
   }
 
-  const result = { available: exStByBoat.size === 6 && displayByBoat.size === 6, checks: {} };
+  const courses = new Set(exCourseByBoat.values());
+  const officialCourses = exCourseByBoat.size === 6 && courses.size === 6 && [...courses].every((course) => course >= 1 && course <= 6);
+  const result = { available: exStByBoat.size === 6 && officialCourses && displayByBoat.size === 6, checks: {} };
   if (!result.available) return { ...result, pass: null };
 
-  result.checks.boatOneInCourseOne = exCourseByBoat.size === 0 || exCourseByBoat.get(1) === 1;
+  // 過去のコース別STは枠なり前提で作っているため、6艇すべてが枠なり進入のときだけ通過させる。
+  result.checks.frameOrderEntry = [1, 2, 3, 4, 5, 6].every((boat) => exCourseByBoat.get(boat) === boat);
   const neighborBest = Math.min(exStByBoat.get(2), exStByBoat.get(3));
   result.checks.noStartDent = exStByBoat.get(1) - neighborBest < params.exhibitionDentSec;
   const outerBest = Math.min(displayByBoat.get(4), displayByBoat.get(5), displayByBoat.get(6));

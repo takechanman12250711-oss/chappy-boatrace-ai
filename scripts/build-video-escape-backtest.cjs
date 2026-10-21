@@ -69,7 +69,6 @@ function build({ from, results, out }, params = filter.DEFAULT_PARAMS) {
   const boatOneUnknown = { refundedForBoatOne: 0, boatOneStartedButNotFinished: 0 };
   let evaluatedRaces = 0;
   let racesWithUnknownOtherBoat = 0;
-  let filter1WithUnknownOtherBoat = 0;
   let settledRacesRead = 0;
 
   for (const { date, file } of files) {
@@ -89,13 +88,10 @@ function build({ from, results, out }, params = filter.DEFAULT_PARAMS) {
           else boatOneUnknown.boatOneStartedButNotFinished += 1;
           continue;
         }
+        if (evaluation.status === "other-boat-unknown") racesWithUnknownOtherBoat += 1;
         if (evaluation.status !== "evaluated") continue;
         evaluatedRaces += 1;
-        if (evaluation.unknownBoats.length) racesWithUnknownOtherBoat += 1;
-        if (evaluation.filter1) {
-          addToCohortSet(cohorts.filter1, race);
-          if (evaluation.unknownBoats.length) filter1WithUnknownOtherBoat += 1;
-        }
+        if (evaluation.filter1) addToCohortSet(cohorts.filter1, race);
         if (evaluation.filter12) addToCohortSet(cohorts.filter12, race);
         if (evaluation.filter12wall) addToCohortSet(cohorts.filter12wall, race);
       }
@@ -127,7 +123,7 @@ function build({ from, results, out }, params = filter.DEFAULT_PARAMS) {
       params,
       rules: {
         filter1: "1号艇の選手が1枠の直近10走で1着7回以上、かつ2〜6号艇の選手が各自の枠の直近10走で1着3回以下",
-        filter12: "filter1 かつ 1号艇の1コース平均ST（直近10回）が他5艇の各自コース平均ST以下（枠なり前提）",
+        filter12: "filter1 かつ 6艇すべての平均STがそろい、1号艇の1コース平均ST（直近10回）が他5艇の各自コース平均ST以下（枠なり前提）",
         filter12wall: "filter12 かつ 2・3号艇の平均STが1号艇+wallMarginSec以内（壁の数値は動画になく仮置き）"
       },
       notBacktested: [
@@ -136,15 +132,14 @@ function build({ from, results, out }, params = filter.DEFAULT_PARAMS) {
       ],
       knownBiases: [
         "完走しなかった選手は登録番号が結果原本にないため、その走は履歴に入らない（転覆・F等の回が欠ける）",
-        "完走しなかった2〜6号艇は選手不明のため、その艇の『1着3回以下』判定を省略して通過扱い",
+        "完走しなかった2〜6号艇がいるレースは選手不明のため判定対象外（other-boat-unknown）。除外自体も完走の有無というレース後の情報に依存する",
         "1号艇が完走しなかったレースは選手不明で判定できず除外。内訳をboatOneUnknownに記録",
         "フライング・出遅れ・欠場艇を含む舟券は返還として購入額・払戻から除外。それ以外の返還（不成立）はレース単位で除外済み"
       ],
       statusCounts,
       boatOneUnknown,
       evaluatedRaces,
-      racesWithUnknownOtherBoat,
-      filter1WithUnknownOtherBoat
+      racesWithUnknownOtherBoat
     },
     cohorts: Object.fromEntries(Object.entries(cohorts).map(([key, set]) => [key, summarizeSet(set)]))
   };

@@ -64,6 +64,28 @@ assert.deepStrictEqual(
   assert.strictEqual(result.filter1, false, "他艇4勝で不通過");
 }
 
+// 選手不明の2〜6号艇がいれば判定しない（完走したかはレース後の情報）
+{
+  const state = filter.createState();
+  for (let i = 0; i < 10; i += 1) filter.updateStateWithRace(state, race({ order: [1, 2, 3, 4, 5, 6], sts: { 1: 0.10 } }));
+  assert.strictEqual(filter.evaluateEntries(state, REG).filter1, true);
+  const result = filter.evaluateEntries(state, { ...REG, 4: null });
+  assert.strictEqual(result.status, "other-boat-unknown");
+  assert.strictEqual(result.filter1, undefined, "弱い相手として通過させない");
+}
+
+// 5艇すべての平均STがそろわなければ「1号艇が最速」にしない
+{
+  const state = filter.createState();
+  for (let i = 0; i < 10; i += 1) filter.updateStateWithRace(state, race({ order: [1, 2, 3, 4, 5, 6], sts: { 1: 0.10 } }));
+  state.get("4005").courseSt[5] = [0.05, 0.05];
+  const result = filter.evaluateEntries(state, REG);
+  assert.strictEqual(result.boats[4].avgSt, null, "5号艇は2回だけで平均なし");
+  assert.strictEqual(result.checks.stComparable, false);
+  assert.strictEqual(result.filter1, true);
+  assert.strictEqual(result.filter12, false, "比較できない艇がいれば最速と判定しない");
+}
+
 // 1号艇の10走不足は判定しない
 {
   const state = filter.createState();
@@ -96,7 +118,7 @@ assert.deepStrictEqual(
 // 当日展示: へこみと外の伸び
 {
   const base = {
-    startExhibition: [1, 2, 3, 4, 5, 6].map((boat) => ({ course: boat, boat, st: 0.12, marker: "" })),
+    startExhibition: [1, 2, 3, 4, 5, 6].map((boat) => ({ course: boat, boat, st: 0.12, marker: "", isOfficialCourse: true })),
     entries: [1, 2, 3, 4, 5, 6].map((boat) => ({ boat, exhibition: { displayTime: 6.80 } }))
   };
   assert.strictEqual(filter.evaluateExhibition(base).pass, true);
@@ -107,9 +129,21 @@ assert.deepStrictEqual(
   nobi.entries[4].exhibition.displayTime = 6.72;
   assert.strictEqual(filter.evaluateExhibition(nobi).checks.noOuterNobi, false, "5号艇が0.08速い");
   const flying = JSON.parse(JSON.stringify(base));
-  flying.startExhibition[1] = { course: 2, boat: 2, st: 0.03, marker: "F" };
+  flying.startExhibition[1] = { course: 2, boat: 2, st: 0.03, marker: "F", isOfficialCourse: true };
   assert.strictEqual(filter.evaluateExhibition(flying).checks.noStartDent, false, "展示F.03は-0.03扱いで、1号艇は0.15遅れ");
   assert.strictEqual(filter.evaluateExhibition({ entries: [] }).pass, null, "展示前は判定なし");
+  const legacy = JSON.parse(JSON.stringify(base));
+  legacy.startExhibition.forEach((row) => { row.isOfficialCourse = false; row.mappingSource = "legacy-course-order"; });
+  assert.strictEqual(filter.evaluateExhibition(legacy).available, false, "仮の枠なり行は進入が不明なので判定なし");
+  assert.strictEqual(filter.evaluateExhibition(legacy).pass, null);
+  const swapped = JSON.parse(JSON.stringify(base));
+  swapped.startExhibition[3].course = 5;
+  swapped.startExhibition[4].course = 4;
+  assert.strictEqual(filter.evaluateExhibition(swapped).checks.frameOrderEntry, false, "4・5号艇の入れ替えは枠なりでない");
+  assert.strictEqual(filter.evaluateExhibition(swapped).pass, false);
+  const duplicated = JSON.parse(JSON.stringify(base));
+  duplicated.startExhibition[5].course = 5;
+  assert.strictEqual(filter.evaluateExhibition(duplicated).available, false, "コースが重複すれば判定なし");
 }
 
 // オッズ見送り
