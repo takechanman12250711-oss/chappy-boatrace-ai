@@ -59,6 +59,8 @@ f.withArchive(root => {
   assert.deepEqual(h, { starts: 1, wins: 1, winningMethods: [{ key: 'まくり差し', count: 1 }] });
   assert.equal(pit.historyAsOf(index, '9999', 4, '20231001').starts, 2);
   assert.equal(pit.historyAsOf(index, '8888', 4, '20261003').wins, 0);
+  fs.writeFileSync(path.join(resultsDir, '20240101.json'), '{"source":"boatrace-official","races":[');
+  assert.throws(() => pit.buildIndex(resultsDir), /results file unreadable/, '壊れた結果ファイルは失敗させる');
 });
 
 // --- レポート ---

@@ -24,8 +24,11 @@ function buildIndex(resultsDir) {
   if (!fs.existsSync(resultsDir)) return { byRacer, races, firstDay: NaN, lastDay: NaN };
   let firstDay = NaN, lastDay = NaN;
   for (const name of fs.readdirSync(resultsDir).filter(n => DATE_FILE.test(n)).sort()) {
+    // 壊れた日次ファイルを黙って飛ばすと3年履歴が過少になり判定が変わるため、読めなければ失敗させる。
+    const filePath = path.join(resultsDir, name);
     let file;
-    try { file = JSON.parse(fs.readFileSync(path.join(resultsDir, name), 'utf8')); } catch { continue; }
+    try { file = JSON.parse(fs.readFileSync(filePath, 'utf8')); }
+    catch (error) { throw new Error(`results file unreadable: ${filePath}: ${error.message}`); }
     if (file?.source !== 'boatrace-official') continue;
     for (const race of Array.isArray(file.races) ? file.races : []) {
       if (!race?.resultAvailable || race.source !== 'boatrace-official') continue;
