@@ -146,6 +146,10 @@ function evaluateEntries(state, entriesByBoat, params = DEFAULT_PARAMS) {
   if (one.frameSamples < params.boatOneMinFrameSamples) {
     return { status: "boat1-insufficient-history", boats, unknownBoats };
   }
+  // 「各自の枠の過去10走」がそろわない相手は、勝ち数が少なく見えるだけなので判定しない。
+  if (others.some((boat) => boat.frameSamples < params.windowSize)) {
+    return { status: "other-boat-insufficient-history", boats, unknownBoats };
+  }
 
   const boatOneStrong = one.frameWins >= params.boatOneMinWins;
   const othersWeak = others.every((boat) => boat.frameWins <= params.othersMaxWins);
@@ -156,7 +160,7 @@ function evaluateEntries(state, entriesByBoat, params = DEFAULT_PARAMS) {
   const boatOneStTop = stComparable && others.every((boat) => one.avgSt <= boat.avgSt);
   const wallBoats = [boats[1], boats[2]];
   const wallHolds = one.avgSt !== null &&
-    wallBoats.every((boat) => boat.avgSt !== null && boat.avgSt <= one.avgSt + params.wallMarginSec);
+    wallBoats.every((boat) => boat.avgSt !== null && round(boat.avgSt - one.avgSt) <= params.wallMarginSec);
 
   return {
     status: "evaluated",
@@ -278,6 +282,11 @@ function summarizeCohort(cohort) {
 
 // 直前情報（当日運用向け）。公式APIの startExhibition / entries[].exhibition.displayTime を使う。
 // 閾値は動画に数値がないため仮置きで、過去原本では未検証。
+// 0.01秒単位の値を整数で比べ、境界（ちょうど0.05秒など）を浮動小数点の誤差で外さない。
+function hundredths(value) {
+  return Math.round(value * 100);
+}
+
 function evaluateExhibition(apiRace, params = DEFAULT_PARAMS) {
   const startRows = Array.isArray(apiRace?.startExhibition) ? apiRace.startExhibition : [];
   const exStByBoat = new Map();
@@ -304,9 +313,9 @@ function evaluateExhibition(apiRace, params = DEFAULT_PARAMS) {
   // 過去のコース別STは枠なり前提で作っているため、6艇すべてが枠なり進入のときだけ通過させる。
   result.checks.frameOrderEntry = [1, 2, 3, 4, 5, 6].every((boat) => exCourseByBoat.get(boat) === boat);
   const neighborBest = Math.min(exStByBoat.get(2), exStByBoat.get(3));
-  result.checks.noStartDent = exStByBoat.get(1) - neighborBest < params.exhibitionDentSec;
+  result.checks.noStartDent = hundredths(exStByBoat.get(1)) - hundredths(neighborBest) < hundredths(params.exhibitionDentSec);
   const outerBest = Math.min(displayByBoat.get(4), displayByBoat.get(5), displayByBoat.get(6));
-  result.checks.noOuterNobi = displayByBoat.get(1) - outerBest < params.outerNobiSec;
+  result.checks.noOuterNobi = hundredths(displayByBoat.get(1)) - hundredths(outerBest) < hundredths(params.outerNobiSec);
   result.pass = Object.values(result.checks).every(Boolean);
   return result;
 }

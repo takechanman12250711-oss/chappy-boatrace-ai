@@ -74,6 +74,14 @@ assert.deepStrictEqual(
   assert.strictEqual(result.filter1, undefined, "弱い相手として通過させない");
 }
 
+// 相手が自分の枠で10走そろわなければ判定しない
+{
+  const state = filter.createState();
+  for (let i = 0; i < 10; i += 1) filter.updateStateWithRace(state, race({ order: [1, 2, 3, 4, 5, 6], sts: { 1: 0.10 } }));
+  state.get("4003").frames[3] = [2, 2, 2, 2, 2, 2, 2, 2, 2];
+  assert.strictEqual(filter.evaluateEntries(state, REG).status, "other-boat-insufficient-history", "3号艇は3枠9走");
+}
+
 // 5艇すべての平均STがそろわなければ「1号艇が最速」にしない
 {
   const state = filter.createState();
@@ -128,6 +136,12 @@ assert.deepStrictEqual(
   const nobi = JSON.parse(JSON.stringify(base));
   nobi.entries[4].exhibition.displayTime = 6.72;
   assert.strictEqual(filter.evaluateExhibition(nobi).checks.noOuterNobi, false, "5号艇が0.08速い");
+  const nobiEdge = JSON.parse(JSON.stringify(base));
+  nobiEdge.entries[4].exhibition.displayTime = 6.75;
+  assert.strictEqual(filter.evaluateExhibition(nobiEdge).checks.noOuterNobi, false, "ちょうど0.05速い（6.80-6.75）も伸びとして扱う");
+  const dentEdge = JSON.parse(JSON.stringify(base));
+  dentEdge.startExhibition[0].st = 0.17;
+  assert.strictEqual(filter.evaluateExhibition(dentEdge).checks.noStartDent, false, "ちょうど0.05遅れ（0.17-0.12）もへこみ");
   const flying = JSON.parse(JSON.stringify(base));
   flying.startExhibition[1] = { course: 2, boat: 2, st: 0.03, marker: "F", isOfficialCourse: true };
   assert.strictEqual(filter.evaluateExhibition(flying).checks.noStartDent, false, "展示F.03は-0.03扱いで、1号艇は0.15遅れ");
@@ -171,7 +185,14 @@ assert.deepStrictEqual(
     race({ date: "20240111", raceNo: 1, order: [2, 1, 3, 4, 5, 6], payout: 3000 }),
     race({ date: "20240111", raceNo: 2, order: [1, 3, 2, 4, 5, 6], payout: 800 })
   ]);
+  // 収集途中の日は判定しないが、確定済みレースは翌日以降の履歴に積む
+  fs.writeFileSync(path.join(results, "20240112.json"), JSON.stringify({
+    complete: false,
+    races: [race({ date: "20240112", raceNo: 1, order: [1, 2, 3, 4, 5, 6], payout: 500 })]
+  }));
   const { report, snapshot } = build({ from: "20240111", results, out });
+  assert.strictEqual(report.evaluation.incompleteDaysSkipped, 1);
+  assert.deepStrictEqual(report.evaluation.incompleteDays, ["20240112"]);
   const f1 = report.cohorts.filter1.all;
   assert.strictEqual(report.cohorts.baseline.all.races, 2);
   assert.strictEqual(f1.races, 2, "同日の2Rとも前日までの履歴で判定");
@@ -181,7 +202,7 @@ assert.deepStrictEqual(
   assert.strictEqual(f1.formations.f12.returnedYen, 800, "2-1-3は12点に含まれない");
   assert.strictEqual(report.usableForPrediction, false);
   assert.strictEqual(snapshot.racers["4001"].frames["1"].length, 10, "スナップショットは最新までの10走");
-  assert.strictEqual(snapshot.racers["4001"].frames["1"].filter((r) => r === 1).length, 9);
+  assert.strictEqual(snapshot.racers["4001"].frames["1"].filter((r) => r === 1).length, 9, "収集途中の日の1着も履歴に入る");
   fs.rmSync(dir, { recursive: true, force: true });
 }
 

@@ -70,6 +70,8 @@ function build({ from, results, out }, params = filter.DEFAULT_PARAMS) {
   let evaluatedRaces = 0;
   let racesWithUnknownOtherBoat = 0;
   let settledRacesRead = 0;
+  const incompleteDays = [];
+  let lastEvaluatedDate = null;
 
   for (const { date, file } of files) {
     const day = JSON.parse(fs.readFileSync(file, "utf8"));
@@ -78,7 +80,11 @@ function build({ from, results, out }, params = filter.DEFAULT_PARAMS) {
       .map((race) => ({ ...race, date: race.date || date }));
     settledRacesRead += races.length;
 
-    if (date >= from) {
+    // 収集途中の日は確定済みレースだけが偏って残るため判定・集計しない（履歴には積む）。
+    const evaluateDay = date >= from && day.complete !== false;
+    if (date >= from && day.complete === false) incompleteDays.push(date);
+    if (evaluateDay) {
+      lastEvaluatedDate = date;
       for (const race of races) {
         addToCohortSet(cohorts.baseline, race);
         const evaluation = filter.evaluateEntries(state, filter.entriesFromResult(race), params);
@@ -118,11 +124,11 @@ function build({ from, results, out }, params = filter.DEFAULT_PARAMS) {
     usableForPrediction: false,
     evaluation: {
       from,
-      to: lastDate,
+      to: lastEvaluatedDate,
       noLookahead: "各日のレースはその日より前の公式結果だけで判定し、判定後にその日の結果を履歴へ積む",
       params,
       rules: {
-        filter1: "1号艇の選手が1枠の直近10走で1着7回以上、かつ2〜6号艇の選手が各自の枠の直近10走で1着3回以下",
+        filter1: "1号艇の選手が1枠の直近10走で1着7回以上、かつ2〜6号艇の選手が各自の枠の直近10走（10走そろう選手のみ）で1着3回以下",
         filter12: "filter1 かつ 6艇すべての平均STがそろい、1号艇の1コース平均ST（直近10回）が他5艇の各自コース平均ST以下（枠なり前提）",
         filter12wall: "filter12 かつ 2・3号艇の平均STが1号艇+wallMarginSec以内（壁の数値は動画になく仮置き）"
       },
@@ -133,13 +139,17 @@ function build({ from, results, out }, params = filter.DEFAULT_PARAMS) {
       knownBiases: [
         "完走しなかった選手は登録番号が結果原本にないため、その走は履歴に入らない（転覆・F等の回が欠ける）",
         "完走しなかった2〜6号艇がいるレースは選手不明のため判定対象外（other-boat-unknown）。除外自体も完走の有無というレース後の情報に依存する",
+        "2〜6号艇のいずれかが自分の枠で10走そろわないレースは判定対象外（other-boat-insufficient-history）",
+        "収集途中（complete: false）の日は判定・集計せず、確定済みレースは履歴にだけ積む。2025年3月は結果原本がなく、その間の走は履歴にない",
         "1号艇が完走しなかったレースは選手不明で判定できず除外。内訳をboatOneUnknownに記録",
         "フライング・出遅れ・欠場艇を含む舟券は返還として購入額・払戻から除外。それ以外の返還（不成立）はレース単位で除外済み"
       ],
       statusCounts,
       boatOneUnknown,
       evaluatedRaces,
-      racesWithUnknownOtherBoat
+      racesWithUnknownOtherBoat,
+      incompleteDaysSkipped: incompleteDays.length,
+      incompleteDays
     },
     cohorts: Object.fromEntries(Object.entries(cohorts).map(([key, set]) => [key, summarizeSet(set)]))
   };
