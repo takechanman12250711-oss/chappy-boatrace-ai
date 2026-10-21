@@ -10,8 +10,9 @@ const { build } = require("./build-trifecta-popularity-roi.cjs");
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "popularity-roi-"));
 const results = path.join(dir, "results");
 fs.mkdirSync(results);
+const STARTS = [1, 2, 3, 4, 5, 6].map((boat) => ({ boat, course: boat, st: 0.15, falseStart: false, lateStart: false }));
 const race = (popularity, payout, extra = {}) => ({
-  status: "finished", void: false, trifecta: { boats: [1, 2, 3], popularity, payout }, ...extra
+  status: "finished", void: false, starts: STARTS, trifecta: { boats: [1, 2, 3], popularity, payout }, ...extra
 });
 fs.writeFileSync(path.join(results, "20231231.json"), JSON.stringify({ races: [race(1, 99999)] }));
 fs.writeFileSync(path.join(results, "20240101.json"), JSON.stringify({
@@ -22,6 +23,8 @@ fs.writeFileSync(path.join(results, "20240101.json"), JSON.stringify({
     race(80, 30000),
     race(3, 7000, { finishers: [{ rank: 1, boat: 1 }, { rank: 1, boat: 4 }, { rank: 3, boat: 2 }] }),
     race(1, 400, { finishers: [{ rank: 1, boat: 1 }, { rank: 2, boat: 2 }, { rank: 3, boat: 3 }, { rank: 4, boat: 4 }, { rank: 4, boat: 5 }] }),
+    race(4, 50000, { starts: STARTS.map((start) => (start.boat === 6 ? { ...start, falseStart: true } : start)) }),
+    race(6, 60000, { starts: STARTS.filter((start) => start.boat !== 5) }),
     { status: "void", void: true, trifecta: null },
     { status: "finished", void: false, trifecta: { boats: [1, 2, 3], popularity: null, payout: 700 } }
   ]
@@ -34,6 +37,7 @@ const band = (key) => report.all.find((row) => row.band === key);
 assert.strictEqual(report.racesCounted, 5, "開始日前・不成立・人気なし・3着以内の同着を除く（4着の同着は数える）");
 assert.strictEqual(report.finishedRacesWithoutPopularity, 1);
 assert.strictEqual(report.topThreeDeadHeatsExcluded, 1);
+assert.strictEqual(report.refundOrMissingStartExcluded, 2, "F艇のいるレースと欠場のあるレースを除外");
 assert.strictEqual(report.incompleteDaysExcluded, 1, "収集途中の日は日ごと除外");
 assert.deepStrictEqual(report.incompleteDays, ["20240102"]);
 assert.strictEqual(report.to, "20240101", "集計した最後の日");

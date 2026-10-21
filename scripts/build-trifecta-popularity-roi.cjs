@@ -46,6 +46,13 @@ function hasTopThreeDeadHeat(race) {
   return new Set(ranks).size !== ranks.length;
 }
 
+// 6艇がそろって正常にスタートしなかったレースは、存在しない券や返還券が出て帯の点数どおりに買えないため外す。
+function hasRefundOrMissingStart(race) {
+  const starts = Array.isArray(race?.starts) ? race.starts : [];
+  const boats = new Set(starts.map((start) => Number(start?.boat)).filter((boat) => boat >= 1 && boat <= 6));
+  return boats.size !== 6 || starts.some((start) => start?.falseStart || start?.lateStart);
+}
+
 function emptyTally() {
   return { races: 0, hits: Object.fromEntries(BANDS.map(([lo, hi]) => [`${lo}-${hi}`, { hits: 0, payout: 0 }])) };
 }
@@ -83,6 +90,7 @@ function build({ from, results, out }) {
   const byYear = {};
   let skipped = 0;
   let deadHeats = 0;
+  let refundRaces = 0;
   const incompleteDays = [];
   let lastCountedDate = null;
   for (const name of files) {
@@ -98,6 +106,10 @@ function build({ from, results, out }) {
     for (const race of day.races || []) {
       if (isCountable(race) && hasTopThreeDeadHeat(race)) {
         deadHeats += 1;
+        continue;
+      }
+      if (isCountable(race) && hasRefundOrMissingStart(race)) {
+        refundRaces += 1;
         continue;
       }
       if (!isCountable(race)) {
@@ -123,8 +135,9 @@ function build({ from, results, out }) {
     usableForPrediction: false,
     caveats: [
       "人気は締切後の確定オッズ基準。締切前に同じ人気順で買えるとは限らない",
-      "返還（F・出遅れ・欠場）は考慮しない。不成立レースは除外",
+      "不成立レースは除外",
       "3着以内の同着レースは払戻が1組しか保存されていないため除外",
+      "6艇がそろって正常にスタートしなかったレース（欠場・F・出遅れ）は返還券・存在しない券が出るため除外",
       "収集途中（complete: false）の日は確定済みレースだけが残る偏りがあるため日ごと除外",
       "回収率は各帯の全点を毎レース買う前提。帯内の一部だけを選ぶ買い方の成績ではない"
     ],
@@ -135,6 +148,7 @@ function build({ from, results, out }) {
     racesCounted: all.races,
     finishedRacesWithoutPopularity: skipped,
     topThreeDeadHeatsExcluded: deadHeats,
+    refundOrMissingStartExcluded: refundRaces,
     all: summarize(all),
     byYear: Object.fromEntries(Object.keys(byYear).sort().map((year) => [year, { races: byYear[year].races, bands: summarize(byYear[year]) }]))
   };
@@ -153,4 +167,4 @@ if (require.main === module) {
   console.log(`保存: ${args.out}`);
 }
 
-module.exports = { build, BANDS, isCountable, hasTopThreeDeadHeat };
+module.exports = { build, BANDS, isCountable, hasTopThreeDeadHeat, hasRefundOrMissingStart };

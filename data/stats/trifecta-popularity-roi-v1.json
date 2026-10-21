@@ -11,8 +11,9 @@
   "usableForPrediction": false,
   "caveats": [
     "人気は締切後の確定オッズ基準。締切前に同じ人気順で買えるとは限らない",
-    "返還（F・出遅れ・欠場）は考慮しない。不成立レースは除外",
+    "不成立レースは除外",
     "3着以内の同着レースは払戻が1組しか保存されていないため除外",
+    "6艇がそろって正常にスタートしなかったレース（欠場・F・出遅れ）は返還券・存在しない券が出るため除外",
     "収集途中（complete: false）の日は確定済みレースだけが残る偏りがあるため日ごと除外",
     "回収率は各帯の全点を毎レース買う前提。帯内の一部だけを選ぶ買い方の成績ではない"
   ],
@@ -258,239 +259,240 @@
     "20260914",
     "20261021"
   ],
-  "racesCounted": 116260,
+  "racesCounted": 112944,
   "finishedRacesWithoutPopularity": 0,
   "topThreeDeadHeatsExcluded": 30,
+  "refundOrMissingStartExcluded": 3316,
   "all": [
     {
       "band": "1-1",
       "ticketsPerRace": 1,
-      "hitRatePct": 10.7,
-      "roiPct": 77.6,
-      "hitRaces": 12432,
-      "stakeYen": 11626000,
-      "returnedYen": 9018570
+      "hitRatePct": 10.6,
+      "roiPct": 77.8,
+      "hitRaces": 11972,
+      "stakeYen": 11294400,
+      "returnedYen": 8785240
     },
     {
       "band": "2-3",
       "ticketsPerRace": 2,
-      "hitRatePct": 15.3,
-      "roiPct": 76.9,
-      "hitRaces": 17783,
-      "stakeYen": 23252000,
-      "returnedYen": 17877750
+      "hitRatePct": 15.2,
+      "roiPct": 77,
+      "hitRaces": 17149,
+      "stakeYen": 22588800,
+      "returnedYen": 17388800
     },
     {
       "band": "4-10",
       "ticketsPerRace": 7,
-      "hitRatePct": 28.4,
-      "roiPct": 77.7,
-      "hitRaces": 32977,
-      "stakeYen": 81382000,
-      "returnedYen": 63272480
+      "hitRatePct": 28.3,
+      "roiPct": 77.9,
+      "hitRaces": 31958,
+      "stakeYen": 79060800,
+      "returnedYen": 61563870
     },
     {
       "band": "11-30",
       "ticketsPerRace": 20,
       "hitRatePct": 27.3,
       "roiPct": 72.7,
-      "hitRaces": 31701,
-      "stakeYen": 232520000,
-      "returnedYen": 169031800
+      "hitRaces": 30822,
+      "stakeYen": 225888000,
+      "returnedYen": 164168290
     },
     {
       "band": "31-60",
       "ticketsPerRace": 30,
-      "hitRatePct": 12.6,
-      "roiPct": 66.8,
-      "hitRaces": 14685,
-      "stakeYen": 348780000,
-      "returnedYen": 233139690
+      "hitRatePct": 12.7,
+      "roiPct": 66.7,
+      "hitRaces": 14361,
+      "stakeYen": 338832000,
+      "returnedYen": 225862900
     },
     {
       "band": "61-120",
       "ticketsPerRace": 60,
-      "hitRatePct": 5.7,
-      "roiPct": 49.3,
+      "hitRatePct": 5.9,
+      "roiPct": 50.8,
       "hitRaces": 6682,
-      "stakeYen": 697560000,
+      "stakeYen": 677664000,
       "returnedYen": 344027480
     }
   ],
   "byYear": {
     "2024": {
-      "races": 41610,
+      "races": 40308,
       "bands": [
         {
           "band": "1-1",
           "ticketsPerRace": 1,
           "hitRatePct": 10.5,
-          "roiPct": 78.6,
-          "hitRaces": 4379,
-          "stakeYen": 4161000,
-          "returnedYen": 3268550
-        },
-        {
-          "band": "2-3",
-          "ticketsPerRace": 2,
-          "hitRatePct": 15.2,
-          "roiPct": 77.1,
-          "hitRaces": 6305,
-          "stakeYen": 8322000,
-          "returnedYen": 6415680
-        },
-        {
-          "band": "4-10",
-          "ticketsPerRace": 7,
-          "hitRatePct": 28.1,
-          "roiPct": 77.5,
-          "hitRaces": 11708,
-          "stakeYen": 29127000,
-          "returnedYen": 22559650
-        },
-        {
-          "band": "11-30",
-          "ticketsPerRace": 20,
-          "hitRatePct": 27.6,
-          "roiPct": 73.8,
-          "hitRaces": 11496,
-          "stakeYen": 83220000,
-          "returnedYen": 61457560
-        },
-        {
-          "band": "31-60",
-          "ticketsPerRace": 30,
-          "hitRatePct": 12.5,
-          "roiPct": 65.9,
-          "hitRaces": 5222,
-          "stakeYen": 124830000,
-          "returnedYen": 82297560
-        },
-        {
-          "band": "61-120",
-          "ticketsPerRace": 60,
-          "hitRatePct": 6,
-          "roiPct": 50.4,
-          "hitRaces": 2500,
-          "stakeYen": 249660000,
-          "returnedYen": 125919180
-        }
-      ]
-    },
-    "2025": {
-      "races": 38974,
-      "bands": [
-        {
-          "band": "1-1",
-          "ticketsPerRace": 1,
-          "hitRatePct": 10.6,
-          "roiPct": 77.1,
-          "hitRaces": 4136,
-          "stakeYen": 3897400,
-          "returnedYen": 3003020
+          "roiPct": 79,
+          "hitRaces": 4214,
+          "stakeYen": 4030800,
+          "returnedYen": 3184380
         },
         {
           "band": "2-3",
           "ticketsPerRace": 2,
           "hitRatePct": 15,
-          "roiPct": 75.9,
-          "hitRaces": 5858,
-          "stakeYen": 7794800,
-          "returnedYen": 5917870
+          "roiPct": 77.1,
+          "hitRaces": 6043,
+          "stakeYen": 8061600,
+          "returnedYen": 6213490
+        },
+        {
+          "band": "4-10",
+          "ticketsPerRace": 7,
+          "hitRatePct": 28,
+          "roiPct": 77.6,
+          "hitRaces": 11306,
+          "stakeYen": 28215600,
+          "returnedYen": 21897140
+        },
+        {
+          "band": "11-30",
+          "ticketsPerRace": 20,
+          "hitRatePct": 27.6,
+          "roiPct": 73.7,
+          "hitRaces": 11136,
+          "stakeYen": 80616000,
+          "returnedYen": 59405300
+        },
+        {
+          "band": "31-60",
+          "ticketsPerRace": 30,
+          "hitRatePct": 12.7,
+          "roiPct": 66,
+          "hitRaces": 5109,
+          "stakeYen": 120924000,
+          "returnedYen": 79804300
+        },
+        {
+          "band": "61-120",
+          "ticketsPerRace": 60,
+          "hitRatePct": 6.2,
+          "roiPct": 52.1,
+          "hitRaces": 2500,
+          "stakeYen": 241848000,
+          "returnedYen": 125919180
+        }
+      ]
+    },
+    "2025": {
+      "races": 37922,
+      "bands": [
+        {
+          "band": "1-1",
+          "ticketsPerRace": 1,
+          "hitRatePct": 10.5,
+          "roiPct": 77.1,
+          "hitRaces": 3986,
+          "stakeYen": 3792200,
+          "returnedYen": 2925430
+        },
+        {
+          "band": "2-3",
+          "ticketsPerRace": 2,
+          "hitRatePct": 14.9,
+          "roiPct": 76,
+          "hitRaces": 5664,
+          "stakeYen": 7584400,
+          "returnedYen": 5764810
         },
         {
           "band": "4-10",
           "ticketsPerRace": 7,
           "hitRatePct": 28.3,
-          "roiPct": 77.7,
-          "hitRaces": 11045,
-          "stakeYen": 27281800,
-          "returnedYen": 21201610
+          "roiPct": 77.8,
+          "hitRaces": 10721,
+          "stakeYen": 26545400,
+          "returnedYen": 20651980
         },
         {
           "band": "11-30",
           "ticketsPerRace": 20,
           "hitRatePct": 27.4,
-          "roiPct": 72.7,
-          "hitRaces": 10669,
-          "stakeYen": 77948000,
-          "returnedYen": 56675810
+          "roiPct": 72.8,
+          "hitRaces": 10392,
+          "stakeYen": 75844000,
+          "returnedYen": 55248510
         },
         {
           "band": "31-60",
           "ticketsPerRace": 30,
-          "hitRatePct": 12.9,
+          "hitRatePct": 13,
           "roiPct": 68,
-          "hitRaces": 5045,
-          "stakeYen": 116922000,
-          "returnedYen": 79529050
+          "hitRaces": 4938,
+          "stakeYen": 113766000,
+          "returnedYen": 77400790
         },
         {
           "band": "61-120",
           "ticketsPerRace": 60,
-          "hitRatePct": 5.7,
-          "roiPct": 49,
+          "hitRatePct": 5.9,
+          "roiPct": 50.3,
           "hitRaces": 2221,
-          "stakeYen": 233844000,
+          "stakeYen": 227532000,
           "returnedYen": 114501560
         }
       ]
     },
     "2026": {
-      "races": 35676,
+      "races": 34714,
       "bands": [
         {
           "band": "1-1",
           "ticketsPerRace": 1,
-          "hitRatePct": 11,
-          "roiPct": 77,
-          "hitRaces": 3917,
-          "stakeYen": 3567600,
-          "returnedYen": 2747000
+          "hitRatePct": 10.9,
+          "roiPct": 77.1,
+          "hitRaces": 3772,
+          "stakeYen": 3471400,
+          "returnedYen": 2675430
         },
         {
           "band": "2-3",
           "ticketsPerRace": 2,
-          "hitRatePct": 15.8,
-          "roiPct": 77.7,
-          "hitRaces": 5620,
-          "stakeYen": 7135200,
-          "returnedYen": 5544200
+          "hitRatePct": 15.7,
+          "roiPct": 77.9,
+          "hitRaces": 5442,
+          "stakeYen": 6942800,
+          "returnedYen": 5410500
         },
         {
           "band": "4-10",
           "ticketsPerRace": 7,
-          "hitRatePct": 28.7,
-          "roiPct": 78.1,
-          "hitRaces": 10224,
-          "stakeYen": 24973200,
-          "returnedYen": 19511220
+          "hitRatePct": 28.6,
+          "roiPct": 78.3,
+          "hitRaces": 9931,
+          "stakeYen": 24299800,
+          "returnedYen": 19014750
         },
         {
           "band": "11-30",
           "ticketsPerRace": 20,
-          "hitRatePct": 26.7,
+          "hitRatePct": 26.8,
           "roiPct": 71.3,
-          "hitRaces": 9536,
-          "stakeYen": 71352000,
-          "returnedYen": 50898430
+          "hitRaces": 9294,
+          "stakeYen": 69428000,
+          "returnedYen": 49514480
         },
         {
           "band": "31-60",
           "ticketsPerRace": 30,
           "hitRatePct": 12.4,
-          "roiPct": 66.6,
-          "hitRaces": 4418,
-          "stakeYen": 107028000,
-          "returnedYen": 71313080
+          "roiPct": 65.9,
+          "hitRaces": 4314,
+          "stakeYen": 104142000,
+          "returnedYen": 68657810
         },
         {
           "band": "61-120",
           "ticketsPerRace": 60,
-          "hitRatePct": 5.5,
-          "roiPct": 48.4,
+          "hitRatePct": 5.6,
+          "roiPct": 49.7,
           "hitRaces": 1961,
-          "stakeYen": 214056000,
+          "stakeYen": 208284000,
           "returnedYen": 103606740
         }
       ]
