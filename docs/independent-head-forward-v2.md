@@ -36,6 +36,7 @@ captureは登録PRのマージcommitから設定の生bytes・blob SHAを照合�
 ## 入力と中断の扱い
 
 - 対象は当日の `data/note-drafts/YYYYMMDD/` にある不変原本。登録時刻以後に選択され、capture開始時点で締切前のものだけを候補にする。filenameのSHA256と実bytes、race ID、日付、選択時刻、締切を検査する。
+- 時刻は実原本の `+09:00` を含む厳密なISO表記を受理し、epochで締切を比較する。原本・attempt・snapshotの表記やbytesは書き換えない。不正日・不正zone・zoneなし時刻は拒否し、締切と同時刻はclosed/lateとする。
 - 同一Rは最も早い `selectedAt`、同時刻ならsource SHA256の順で固定する。一度開始したRは失敗・未完了でも後の原本へ差し替えない。
 - 生成前にstartedを保存し、完了時はそのhashを参照するcompletedを追加保存する。途中停止は未完了として母数へ残す。生成失敗、入力不足、未封印、締切超過を的中・不的中に置き換えない。
 - Aは元の実戦厳選の順序・head・展開を再現する必要がある。Bは同一点数で、元のmain head・main券・展開・旧headを保持し、条件を満たす新headの1券交換のみを認める。未変更の場合はA/B全体一致を要求する。

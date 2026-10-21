@@ -3,6 +3,34 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const contract=require('./head-forward-contract.cjs'),capture=require('./head-forward-capture.cjs');
 const f=require('./fixtures/head-forward-v2.cjs');
 
+test('strict ISO instants accept source offsets and reject normalized dates, invalid zones and ambiguous local times',()=>{
+  for(const [value,utc] of [
+    ['2026-10-21T09:53:00+09:00','2026-10-21T00:53:00.000Z'],
+    ['2030-10-21T09:20:00+09:00','2030-10-21T00:20:00.000Z'],
+    ['2030-10-20T19:20:00-05:00','2030-10-21T00:20:00.000Z'],
+    ['2030-10-21T00:20:00Z','2030-10-21T00:20:00.000Z'],
+    ['2030-10-21T09:20:00.1+09:00','2030-10-21T00:20:00.100Z'],
+    ['2030-10-21T09:20:00.12+09:00','2030-10-21T00:20:00.120Z'],
+    ['2030-10-21T09:20:00.123+09:00','2030-10-21T00:20:00.123Z'],
+    ['2000-02-29T00:00:00+00:00','2000-02-29T00:00:00.000Z'],
+    ['0000-02-29T00:00:00Z','0000-02-29T00:00:00.000Z'],
+    ['0099-10-21T09:20:00+09:00','0099-10-21T00:20:00.000Z'],
+    ['9999-12-31T23:59:59.999Z','9999-12-31T23:59:59.999Z'],
+    ['2030-10-21T14:00:00+14:00','2030-10-21T00:00:00.000Z'],
+    ['2030-10-20T10:00:00-14:00','2030-10-21T00:00:00.000Z'],
+    ['2030-10-21T23:59:00+23:59','2030-10-21T00:00:00.000Z'],
+    ['2030-10-21T00:00:00-23:59','2030-10-21T23:59:00.000Z']
+  ])assert.equal(contract.instant(value),Date.parse(utc),value);
+  for(const value of [null,0,'2030-10-21','2030-10-21T09:20:00','2030-10-21T09:20:00+0900',
+    '2030-10-21T09:20:00+9:00','2030-10-21T09:20:00+24:00','2030-10-21T09:20:00-24:00',
+    '2030-10-21T09:20:00+09:60','2030-10-21T09:20:00-00:60','2030-00-21T00:00:00Z',
+    '2030-13-21T00:00:00Z','2030-10-00T00:00:00Z','2030-04-31T09:20:00+09:00',
+    '2030-02-29T00:00:00Z','1900-02-29T09:20:00+09:00','2030-10-21T24:00:00+09:00',
+    '2030-10-21T23:60:00Z','2030-10-21T23:59:60Z','2030-10-21T09:20:00.1234+09:00',
+    '2030-10-21T09:20:00+09:00 ','2030-10-21t09:20:00z'])
+    assert(Number.isNaN(contract.instant(value)),String(value));
+});
+
 test('protocol pins generation, wrapper and evidence code and rejects missing registration or any source change',t=>{
   const {root,p}=f.setup(t);assert.equal(p.value.candidateId,'qualified-unrepresented-head-one-swap-v2-options-forwarded');
   assert.equal(p.value.adoptionGate,null);assert(p.value.sourceManifest.some(x=>x.path==='scripts/head-forward-artifact.cjs'));
@@ -61,7 +89,7 @@ test('a real four-VM generated attempt is bound to its stored claim, source, run
     v=>{v.startedHash='0'.repeat(64);},v=>{v.source.recordJsonSha256='0'.repeat(64);},
     v=>{v.outcome.snapshot.runnerMode='injected-test';},v=>{v.outcome.snapshot.observations.candidateInjectionEntered=false;},
     v=>{v.outcome.snapshot.protocolFingerprint='0'.repeat(64);},v=>{v.outcome.snapshot.candidate.tickets.pop();},
-    v=>{v.startedAt='2029-01-01T00:00:00.000Z';}
+    v=>{v.startedAt='2029-01-01T00:00:00.000Z';},v=>{v.deadlineAt='2030-10-21T09:20:00+24:00';}
   ]){const changed=f.clone(a);change(changed);assert.equal(contract.validAttempt(changed,p),false);}
 });
 
@@ -74,6 +102,8 @@ test('late remote confirmation is stored as late and never treated as eligible f
   assert.equal(result.statuses.late,1);
   const receipt=contract.recordFiles(root).map(p=>JSON.parse(fs.readFileSync(path.join(root,p)))).find(r=>r.version==='independent-head-forward-seal-v2');
   assert.equal(contract.validSeal(receipt,p),true);assert.equal(receipt.forwardEligible,false);
+  const boundary=f.clone(receipt);boundary.artifact.confirmedAt=f.DEADLINE;
+  assert.equal(contract.validSeal(boundary,p),true);assert.equal(contract.sealStatus(boundary.attempt,boundary.artifact),'late');
   const forged=f.clone(receipt);forged.status='eligible';forged.forwardEligible=true;assert.equal(contract.validSeal(forged,p),false);
   const future=f.clone(receipt);future.attempt.registration.verifiedAt='2031-01-01T00:00:00.000Z';
   future.attemptHash=contract.hash(contract.json(future.attempt));assert.equal(contract.validSeal(future,p),false);

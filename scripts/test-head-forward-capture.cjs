@@ -6,14 +6,21 @@ const f=require('./fixtures/head-forward-v2.cjs');
 function options(root,p,env,extra={}){return {env,now:()=>f.NOW,fetcher:f.githubFixture(root,p).fetcher,identityFor:()=>f.identity,...extra};}
 const records=root=>contract.recordFiles(root).map(file=>JSON.parse(fs.readFileSync(path.join(root,file))));
 
-test('same original bytes pass capture, real four VMs, ZIP verification, receipt and offline equal-budget report',async t=>{
+test('original JST-offset deadline bytes pass noteSource, capture, four VMs, seal and offline equal-budget report unchanged',async t=>{
   const {root,p,env}=f.setup(t),record=f.syntheticRecord(root),source=f.saveNote(root,record),out=path.join(f.temporary(t),'out');
+  assert.equal(record.deadlineAt,'2030-10-21T09:20:00+09:00');
+  assert.equal(capture.noteSource(root,source.relative,p).record.deadlineAt,record.deadlineAt);
   const {batch}=await capture.capture(root,out,options(root,p,env));
   assert.equal(batch.attempts.length,1);assert.equal(batch.attempts[0].outcome.status,'generated');
+  assert.equal(batch.attempts[0].deadlineAt,record.deadlineAt);
+  assert.equal(batch.attempts[0].outcome.snapshot.clocks.deadlineAt,record.deadlineAt);
+  assert.equal(contract.validAttempt(batch.attempts[0],p),true);
   assert.equal(records(root).length,2);assert.equal(fs.readFileSync(path.join(root,source.relative),'utf8'),source.bytes);
   const artifact=f.artifactFixture(fs.readFileSync(path.join(out,'batch.json')));
   const sealed=await capture.seal(root,out,{env:{...env,HEAD_FORWARD_ARTIFACT_ID:'987',HEAD_FORWARD_ARTIFACT_DIGEST:artifact.digest},fetcher:artifact.fetcher});
   assert.equal(sealed.statuses.eligible,1);assert.equal(records(root).length,3);
+  const receipt=records(root).find(r=>r.version==='independent-head-forward-seal-v2');
+  assert.equal(receipt.attempt.deadlineAt,record.deadlineAt);assert.equal(contract.validSeal(receipt,p),true);
   const actual=batch.attempts[0].outcome.snapshot.baseline.tickets[0],resultFile=path.join(root,'data/results/20301021.json');
   fs.mkdirSync(path.dirname(resultFile),{recursive:true});fs.writeFileSync(resultFile,JSON.stringify({races:[{raceKey:record.raceKey,
     resultSource:'boatrace-official',resultAvailable:true,actualTicket:actual,trifecta:{combination:actual,payout:1000}}]}));
@@ -21,6 +28,16 @@ test('same original bytes pass capture, real four VMs, ZIP verification, receipt
   assert.equal(data.comparison.evaluatedRaces,1);assert.equal(data.comparison.netHits,0);
   assert.equal(data.stats.baseline.stake,data.stats.candidate.stake);assert.equal(data.usableForPrediction,false);
   assert.equal(fs.readFileSync(path.join(root,source.relative),'utf8'),source.bytes);
+});
+
+test('an offset deadline at the capture instant is closed and invalid calendar or zone sources are excluded',async t=>{
+  const {root,p,env}=f.setup(t);
+  f.saveNote(root,f.syntheticRecord(root,{deadlineAt:'2030-10-21T09:02:00+09:00'}));
+  f.saveNote(root,{...f.syntheticRecord(root,{raceNo:2}),deadlineAt:'2030-10-21T09:20:00+24:00'});
+  f.saveNote(root,{...f.syntheticRecord(root,{raceNo:3}),deadlineAt:'2030-02-30T09:20:00+09:00'});
+  const value=await capture.capture(root,path.join(f.temporary(t),'out'),options(root,p,env));
+  assert.equal(value.batch.attempts.length,0);assert.equal(value.batch.coverage.skips.closed,1);
+  assert.equal(value.batch.coverage.excludedSources.length,2);assert.equal(records(root).length,0);
 });
 
 test('earliest eligible source is fixed, and a later source never replaces a failed first attempt',async t=>{

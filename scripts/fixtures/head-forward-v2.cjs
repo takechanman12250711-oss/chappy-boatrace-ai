@@ -6,7 +6,7 @@ const contract=require('../head-forward-contract.cjs');
 const frozen=require('../compare-escape-frozen.cjs');
 const candidate=require('../compare-independent-head-coverage.cjs');
 const ROOT=path.resolve(__dirname,'../..');
-const DEFINED='2030-10-21T00:00:00Z',SELECTED='2030-10-21T00:01:00.000Z',DEADLINE='2030-10-21T00:20:00.000Z',NOW=Date.parse('2030-10-21T00:02:00.000Z');
+const DEFINED='2030-10-21T00:00:00Z',SELECTED='2030-10-21T00:01:00.000Z',DEADLINE='2030-10-21T09:20:00+09:00',NOW=Date.parse('2030-10-21T00:02:00.000Z');
 const env={GITHUB_REPOSITORY:contract.REPOSITORY,GITHUB_REF:'refs/heads/main',GITHUB_RUN_ID:'123',GITHUB_RUN_ATTEMPT:'1',GITHUB_SHA:'b'.repeat(40),GH_TOKEN:'synthetic-token'};
 const identity={codeCommit:'a'.repeat(40),workflowHead:env.GITHUB_SHA,runId:'123',runAttempt:'1'};
 const clone=value=>JSON.parse(JSON.stringify(value));

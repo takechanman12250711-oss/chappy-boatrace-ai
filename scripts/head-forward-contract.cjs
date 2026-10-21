@@ -17,9 +17,16 @@ const hex=(value,size)=>typeof value==='string'&&new RegExp('^[a-f0-9]{'+size+'}
 const digits=value=>typeof value==='string'&&/^[1-9]\d*$/.test(value);
 const fail=reason=>{throw Error('head_forward_'+reason);};
 function instant(value){
-  if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(value))return NaN;
-  const n=Date.parse(value),normalized=value.replace(/(?:\.(\d{1,3}))?Z$/,(_,f)=>'.'+(f||'').padEnd(3,'0')+'Z');
-  return Number.isFinite(n)&&new Date(n).toISOString()===normalized?n:NaN;
+  const match=typeof value==='string'&&value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,3})?(Z|[+-]\d{2}:\d{2})$/);
+  if(!match)return NaN;
+  const [year,month,day,hour,minute,second]=match.slice(1,7).map(Number);
+  const leap=year%4===0&&(year%100!==0||year%400===0);
+  const days=[31,leap?29:28,31,30,31,30,31,31,30,31,30,31];
+  const zone=match[7]==='Z'?[0,0]:match[7].slice(1).split(':').map(Number);
+  // Validate local calendar fields before Date.parse can normalize an invalid
+  // day. Accept the generator's ISO offset grammar without rewriting evidence.
+  if(month<1||month>12||day<1||day>days[month-1]||hour>23||minute>59||second>59||zone[0]>23||zone[1]>59)return NaN;
+  const n=Date.parse(value);return Number.isFinite(n)?n:NaN;
 }
 function sourceManifest(root){
   engine.freezeSourceManifest(root); // Includes the immutable original candidate SHA contract.
