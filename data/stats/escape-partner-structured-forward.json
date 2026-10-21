@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "reportId": "escape-partner-structured-forward-v1",
-  "generatedAt": "2026-10-20T00:37:44.567Z",
-  "sourceCommit": "9f151f4c5c38f17b59020f01cb5aa0dff6833a01",
+  "generatedAt": "2026-10-21T00:07:55.436Z",
+  "sourceCommit": "e12f38657c4c2cc61933c6527b952adfdd137418",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
@@ -25,8 +25,8 @@
   "integrity": {
     "configSha256": "5651e35144a33327d7341445bf13c5e1b2f4e80f34b57d1ce1625a9cc64c51ab",
     "scriptSha256": "ddfc18ad176aad1948a6d925f7f5188fe44aa9989e46d46d23853e1a912bcd3f",
-    "inputFileCount": 8,
-    "inputSha256": "fe730057afd117f0190441e764e42c45136573ad8d8331a67391f32625f3442a"
+    "inputFileCount": 10,
+    "inputSha256": "913b13d4daa0b93447cf3bfffd244de2d9efca8f6db34a6af52536fde165059d"
   },
   "groups": {
     "discovery": {
@@ -136,31 +136,31 @@
     },
     "forward": {
       "total": {
-        "records": 112,
-        "settled": 100,
-        "pending": 12,
-        "changed": 3,
+        "records": 160,
+        "settled": 147,
+        "pending": 13,
+        "changed": 8,
         "reasons": {
-          "EVIDENCE_NOT_CAPTURED": 34,
-          "NO_STRICTLY_BETTER_DIVERSIFIER": 38,
-          "MAIN_HEAD_NOT_ELIGIBLE": 37,
-          "REPLACE_DUPLICATE_SECOND": 3
+          "EVIDENCE_NOT_CAPTURED": 49,
+          "NO_STRICTLY_BETTER_DIVERSIFIER": 49,
+          "MAIN_HEAD_NOT_ELIGIBLE": 54,
+          "REPLACE_DUPLICATE_SECOND": 8
         },
         "baseline": {
-          "races": 100,
-          "hits": 21,
-          "hitRate": 21,
-          "stakeYen": 86700,
-          "returnYen": 75390,
-          "recoveryRate": 86.96
+          "races": 147,
+          "hits": 37,
+          "hitRate": 25.17,
+          "stakeYen": 126600,
+          "returnYen": 95370,
+          "recoveryRate": 75.33
         },
         "candidate": {
-          "races": 100,
-          "hits": 21,
-          "hitRate": 21,
-          "stakeYen": 86700,
-          "returnYen": 75390,
-          "recoveryRate": 86.96
+          "races": 147,
+          "hits": 37,
+          "hitRate": 25.17,
+          "stakeYen": 126600,
+          "returnYen": 95370,
+          "recoveryRate": 75.33
         },
         "gainedHits": 0,
         "lostHits": 0,
@@ -169,30 +169,30 @@
         "lostRaceKeys": []
       },
       "primary": {
-        "records": 12,
-        "settled": 12,
+        "records": 16,
+        "settled": 16,
         "pending": 0,
         "changed": 0,
         "reasons": {
-          "EVIDENCE_NOT_CAPTURED": 3,
+          "EVIDENCE_NOT_CAPTURED": 4,
           "NO_STRICTLY_BETTER_DIVERSIFIER": 7,
-          "MAIN_HEAD_NOT_ELIGIBLE": 2
+          "MAIN_HEAD_NOT_ELIGIBLE": 5
         },
         "baseline": {
-          "races": 12,
-          "hits": 1,
-          "hitRate": 8.33,
-          "stakeYen": 10800,
-          "returnYen": 4540,
-          "recoveryRate": 42.04
+          "races": 16,
+          "hits": 3,
+          "hitRate": 18.75,
+          "stakeYen": 14500,
+          "returnYen": 5850,
+          "recoveryRate": 40.34
         },
         "candidate": {
-          "races": 12,
-          "hits": 1,
-          "hitRate": 8.33,
-          "stakeYen": 10800,
-          "returnYen": 4540,
-          "recoveryRate": 42.04
+          "races": 16,
+          "hits": 3,
+          "hitRate": 18.75,
+          "stakeYen": 14500,
+          "returnYen": 5850,
+          "recoveryRate": 40.34
         },
         "gainedHits": 0,
         "lostHits": 0,
@@ -201,31 +201,31 @@
         "lostRaceKeys": []
       },
       "verificationOnly": {
-        "records": 100,
-        "settled": 88,
-        "pending": 12,
-        "changed": 3,
+        "records": 144,
+        "settled": 131,
+        "pending": 13,
+        "changed": 8,
         "reasons": {
-          "EVIDENCE_NOT_CAPTURED": 31,
-          "NO_STRICTLY_BETTER_DIVERSIFIER": 31,
-          "MAIN_HEAD_NOT_ELIGIBLE": 35,
-          "REPLACE_DUPLICATE_SECOND": 3
+          "EVIDENCE_NOT_CAPTURED": 45,
+          "NO_STRICTLY_BETTER_DIVERSIFIER": 42,
+          "MAIN_HEAD_NOT_ELIGIBLE": 49,
+          "REPLACE_DUPLICATE_SECOND": 8
         },
         "baseline": {
-          "races": 88,
-          "hits": 20,
-          "hitRate": 22.73,
-          "stakeYen": 75900,
-          "returnYen": 70850,
-          "recoveryRate": 93.35
+          "races": 131,
+          "hits": 34,
+          "hitRate": 25.95,
+          "stakeYen": 112100,
+          "returnYen": 89520,
+          "recoveryRate": 79.86
         },
         "candidate": {
-          "races": 88,
-          "hits": 20,
-          "hitRate": 22.73,
-          "stakeYen": 75900,
-          "returnYen": 70850,
-          "recoveryRate": 93.35
+          "races": 131,
+          "hits": 34,
+          "hitRate": 25.95,
+          "stakeYen": 112100,
+          "returnYen": 89520,
+          "recoveryRate": 79.86
         },
         "gainedHits": 0,
         "lostHits": 0,
@@ -9003,7 +9003,7 @@
       "date": "20261020",
       "period": "forward",
       "source": "verificationPredictions",
-      "selectedAt": "2026-10-19T22:50:16.113Z",
+      "selectedAt": "2026-10-20T05:36:51.894Z",
       "deadlineAt": "2026-10-20T15:26:00+09:00",
       "baselineTickets": [
         "2-1-3",
@@ -9013,6 +9013,7 @@
         "1-2-4",
         "2-1-4",
         "2-1-5",
+        "2-1-6",
         "1-4-3"
       ],
       "candidateTickets": [
@@ -9023,6 +9024,7 @@
         "1-2-4",
         "2-1-4",
         "2-1-5",
+        "2-1-6",
         "1-4-3"
       ],
       "selection": {
@@ -9036,18 +9038,23 @@
           "1-2-4",
           "2-1-4",
           "2-1-5",
+          "2-1-6",
           "1-4-3"
         ]
       },
-      "outcome": null
+      "outcome": {
+        "ticket": "4-5-1",
+        "payout": 1360,
+        "source": "boatrace-official"
+      }
     },
     {
-      "raceKey": "20261020-03-1",
+      "raceKey": "20261020-01-10",
       "date": "20261020",
       "period": "forward",
-      "source": "verificationPredictions",
-      "selectedAt": "2026-10-19T22:50:16.136Z",
-      "deadlineAt": "2026-10-20T11:14:00+09:00",
+      "source": "predictions",
+      "selectedAt": "2026-10-20T10:35:28.447Z",
+      "deadlineAt": "2026-10-20T19:47:00+09:00",
       "baselineTickets": [
         "1-2-3",
         "1-4-3",
@@ -9056,7 +9063,9 @@
         "2-1-4",
         "1-2-4",
         "1-2-5",
-        "1-2-6"
+        "1-2-6",
+        "1-3-2",
+        "1-4-2"
       ],
       "candidateTickets": [
         "1-2-3",
@@ -9066,7 +9075,9 @@
         "2-1-4",
         "1-2-4",
         "1-2-5",
-        "1-2-6"
+        "1-2-6",
+        "1-3-2",
+        "1-4-2"
       ],
       "selection": {
         "changed": false,
@@ -9079,17 +9090,329 @@
           "2-1-4",
           "1-2-4",
           "1-2-5",
+          "1-2-6",
+          "1-3-2",
+          "1-4-2"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-2-4",
+        "payout": 740,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-01-2",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T06:35:09.566Z",
+      "deadlineAt": "2026-10-20T15:55:00+09:00",
+      "baselineTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-4",
+        "2-1-4",
+        "2-1-5",
+        "6-1-3",
+        "2-1-6",
+        "1-4-3"
+      ],
+      "candidateTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-4",
+        "2-1-4",
+        "2-1-5",
+        "6-1-3",
+        "2-1-6",
+        "1-4-3"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "NO_STRICTLY_BETTER_DIVERSIFIER",
+        "tickets": [
+          "2-1-3",
+          "2-4-3",
+          "2-3-4",
+          "1-2-3",
+          "1-2-4",
+          "2-1-4",
+          "2-1-5",
+          "6-1-3",
+          "2-1-6",
+          "1-4-3"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-4-3",
+        "payout": 2050,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-01-5",
+      "date": "20261020",
+      "period": "forward",
+      "source": "predictions",
+      "selectedAt": "2026-10-20T08:06:33.397Z",
+      "deadlineAt": "2026-10-20T17:15:00+09:00",
+      "baselineTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "1-2-4",
+        "1-2-5",
+        "1-4-2",
+        "1-3-2",
+        "1-3-5"
+      ],
+      "candidateTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "1-2-4",
+        "1-2-5",
+        "1-4-2",
+        "1-3-2",
+        "1-3-5"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "MAIN_HEAD_NOT_ELIGIBLE",
+        "tickets": [
+          "1-2-3",
+          "1-4-3",
+          "1-3-4",
+          "2-1-3",
+          "1-2-4",
+          "1-2-5",
+          "1-4-2",
+          "1-3-2",
+          "1-3-5"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-2-5",
+        "payout": 570,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-03-1",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T01:09:59.869Z",
+      "deadlineAt": "2026-10-20T11:14:00+09:00",
+      "baselineTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-5",
+        "2-1-6",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6"
+      ],
+      "candidateTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-5",
+        "2-1-6",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "MAIN_HEAD_NOT_ELIGIBLE",
+        "tickets": [
+          "1-2-3",
+          "1-4-3",
+          "1-3-4",
+          "2-1-5",
+          "2-1-6",
+          "1-2-4",
+          "1-2-5",
           "1-2-6"
         ]
       },
-      "outcome": null
+      "outcome": {
+        "ticket": "1-2-6",
+        "payout": 1870,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-03-11",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T06:35:09.878Z",
+      "deadlineAt": "2026-10-20T15:53:00+09:00",
+      "baselineTickets": [
+        "4-3-5",
+        "4-1-5",
+        "4-5-6",
+        "3-1-5",
+        "3-1-6",
+        "4-3-1",
+        "4-3-6",
+        "4-1-3",
+        "1-2-4"
+      ],
+      "candidateTickets": [
+        "4-3-5",
+        "4-1-5",
+        "4-5-6",
+        "3-1-5",
+        "3-1-6",
+        "4-3-1",
+        "4-3-6",
+        "4-1-3",
+        "1-2-4"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "EVIDENCE_NOT_CAPTURED",
+        "tickets": [
+          "4-3-5",
+          "4-1-5",
+          "4-5-6",
+          "3-1-5",
+          "3-1-6",
+          "4-3-1",
+          "4-3-6",
+          "4-1-3",
+          "1-2-4"
+        ]
+      },
+      "outcome": {
+        "ticket": "5-1-6",
+        "payout": 5580,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-03-3",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T02:42:11.078Z",
+      "deadlineAt": "2026-10-20T12:08:00+09:00",
+      "baselineTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-6",
+        "2-1-4",
+        "2-1-6",
+        "1-4-3",
+        "1-4-6",
+        "3-1-6"
+      ],
+      "candidateTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-6",
+        "2-1-4",
+        "2-1-6",
+        "1-4-3",
+        "1-4-6",
+        "3-1-6"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "NO_STRICTLY_BETTER_DIVERSIFIER",
+        "tickets": [
+          "2-1-3",
+          "2-4-3",
+          "2-3-4",
+          "1-2-3",
+          "1-2-6",
+          "2-1-4",
+          "2-1-6",
+          "1-4-3",
+          "1-4-6",
+          "3-1-6"
+        ]
+      },
+      "outcome": {
+        "ticket": "2-1-6",
+        "payout": 780,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-03-9",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T05:36:51.928Z",
+      "deadlineAt": "2026-10-20T14:52:00+09:00",
+      "baselineTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "4-1-2",
+        "3-1-2",
+        "1-3-4"
+      ],
+      "candidateTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "4-1-2",
+        "3-1-2",
+        "1-3-4"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "EVIDENCE_NOT_CAPTURED",
+        "tickets": [
+          "3-1-5",
+          "3-2-5",
+          "3-1-6",
+          "1-2-3",
+          "1-2-4",
+          "3-2-1",
+          "3-2-6",
+          "4-1-2",
+          "3-1-2",
+          "1-3-4"
+        ]
+      },
+      "outcome": {
+        "ticket": "4-1-5",
+        "payout": 2090,
+        "source": "boatrace-official"
+      }
     },
     {
       "raceKey": "20261020-08-1",
       "date": "20261020",
       "period": "forward",
       "source": "verificationPredictions",
-      "selectedAt": "2026-10-19T22:50:16.163Z",
+      "selectedAt": "2026-10-20T01:10:00.125Z",
       "deadlineAt": "2026-10-20T10:24:00+09:00",
       "baselineTickets": [
         "1-2-3",
@@ -9125,14 +9448,159 @@
           "1-2-6"
         ]
       },
-      "outcome": null
+      "outcome": {
+        "ticket": "1-3-6",
+        "payout": 850,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-08-10",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T05:36:51.946Z",
+      "deadlineAt": "2026-10-20T14:56:00+09:00",
+      "baselineTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-5",
+        "1-3-5"
+      ],
+      "candidateTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-5",
+        "1-3-5"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "MAIN_HEAD_NOT_ELIGIBLE",
+        "tickets": [
+          "1-2-3",
+          "1-4-3",
+          "1-3-4",
+          "1-2-4",
+          "1-2-5",
+          "1-3-5"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-2-3",
+        "payout": 470,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-08-12",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T06:35:09.612Z",
+      "deadlineAt": "2026-10-20T16:11:00+09:00",
+      "baselineTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6",
+        "1-3-5",
+        "1-4-5"
+      ],
+      "candidateTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6",
+        "1-3-5",
+        "1-4-5"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "MAIN_HEAD_NOT_ELIGIBLE",
+        "tickets": [
+          "1-2-3",
+          "1-4-3",
+          "1-3-4",
+          "2-1-3",
+          "2-1-4",
+          "1-2-4",
+          "1-2-5",
+          "1-2-6",
+          "1-3-5",
+          "1-4-5"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-3-6",
+        "payout": 2730,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-08-4",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T02:42:11.467Z",
+      "deadlineAt": "2026-10-20T11:53:00+09:00",
+      "baselineTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-4",
+        "2-1-4",
+        "2-1-5",
+        "1-4-3"
+      ],
+      "candidateTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-4",
+        "2-1-4",
+        "2-1-5",
+        "1-4-3"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "NO_STRICTLY_BETTER_DIVERSIFIER",
+        "tickets": [
+          "2-1-3",
+          "2-4-3",
+          "2-3-4",
+          "1-2-3",
+          "1-2-4",
+          "2-1-4",
+          "2-1-5",
+          "1-4-3"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-2-5",
+        "payout": 970,
+        "source": "boatrace-official"
+      }
     },
     {
       "raceKey": "20261020-09-1",
       "date": "20261020",
       "period": "forward",
       "source": "verificationPredictions",
-      "selectedAt": "2026-10-19T22:50:16.623Z",
+      "selectedAt": "2026-10-20T01:10:00.387Z",
       "deadlineAt": "2026-10-20T10:33:00+09:00",
       "baselineTickets": [
         "1-2-3",
@@ -9162,7 +9630,155 @@
           "1-3-2"
         ]
       },
-      "outcome": null
+      "outcome": {
+        "ticket": "1-4-3",
+        "payout": 1550,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-09-10",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T05:36:52.447Z",
+      "deadlineAt": "2026-10-20T15:07:00+09:00",
+      "baselineTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-4",
+        "2-1-4",
+        "2-1-6",
+        "1-4-3"
+      ],
+      "candidateTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-4",
+        "2-1-4",
+        "2-1-6",
+        "1-4-3"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "NO_STRICTLY_BETTER_DIVERSIFIER",
+        "tickets": [
+          "2-1-3",
+          "2-4-3",
+          "2-3-4",
+          "1-2-3",
+          "1-2-4",
+          "2-1-4",
+          "2-1-6",
+          "1-4-3"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-2-6",
+        "payout": 1790,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-09-11",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T06:35:10.295Z",
+      "deadlineAt": "2026-10-20T15:36:00+09:00",
+      "baselineTickets": [
+        "4-1-5",
+        "4-5-6",
+        "4-3-5",
+        "1-2-3",
+        "1-2-4",
+        "4-1-6",
+        "4-1-2",
+        "4-1-3",
+        "1-3-4"
+      ],
+      "candidateTickets": [
+        "4-1-5",
+        "4-5-6",
+        "4-3-5",
+        "1-2-3",
+        "1-2-4",
+        "4-1-6",
+        "4-1-2",
+        "4-1-3",
+        "1-3-4"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "NO_STRICTLY_BETTER_DIVERSIFIER",
+        "tickets": [
+          "4-1-5",
+          "4-5-6",
+          "4-3-5",
+          "1-2-3",
+          "1-2-4",
+          "4-1-6",
+          "4-1-2",
+          "4-1-3",
+          "1-3-4"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-5-3",
+        "payout": 3940,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-09-4",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T02:42:11.305Z",
+      "deadlineAt": "2026-10-20T11:59:00+09:00",
+      "baselineTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "1-3-4"
+      ],
+      "candidateTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "1-3-4"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "EVIDENCE_NOT_CAPTURED",
+        "tickets": [
+          "3-1-5",
+          "3-2-5",
+          "3-1-6",
+          "1-2-3",
+          "1-2-4",
+          "3-2-1",
+          "3-2-6",
+          "1-3-4"
+        ]
+      },
+      "outcome": {
+        "ticket": "5-1-4",
+        "payout": 4460,
+        "source": "boatrace-official"
+      }
     },
     {
       "raceKey": "20261020-10-1",
@@ -9199,14 +9815,167 @@
           "1-2-6"
         ]
       },
-      "outcome": null
+      "outcome": {
+        "ticket": "3-1-5",
+        "payout": 13870,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-10-4",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T00:50:22.148Z",
+      "deadlineAt": "2026-10-20T10:05:00+09:00",
+      "baselineTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6",
+        "1-3-5",
+        "1-4-5"
+      ],
+      "candidateTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6",
+        "1-3-5",
+        "1-4-5"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "MAIN_HEAD_NOT_ELIGIBLE",
+        "tickets": [
+          "1-2-3",
+          "1-4-3",
+          "1-3-4",
+          "2-1-3",
+          "2-1-4",
+          "1-2-4",
+          "1-2-5",
+          "1-2-6",
+          "1-3-5",
+          "1-4-5"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-5-3",
+        "payout": 1770,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-10-5",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T01:10:00.397Z",
+      "deadlineAt": "2026-10-20T10:31:00+09:00",
+      "baselineTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "1-2-4",
+        "1-2-5",
+        "1-3-2"
+      ],
+      "candidateTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "1-2-4",
+        "1-2-5",
+        "1-3-2"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "MAIN_HEAD_NOT_ELIGIBLE",
+        "tickets": [
+          "1-2-3",
+          "1-4-3",
+          "1-3-4",
+          "2-1-3",
+          "1-2-4",
+          "1-2-5",
+          "1-3-2"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-3-5",
+        "payout": 830,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-10-8",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T02:42:11.558Z",
+      "deadlineAt": "2026-10-20T12:10:00+09:00",
+      "baselineTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-6",
+        "2-1-4",
+        "2-1-6",
+        "1-4-3"
+      ],
+      "candidateTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-3-4",
+        "2-1-4",
+        "2-1-6",
+        "1-4-3"
+      ],
+      "selection": {
+        "changed": true,
+        "reason": "REPLACE_DUPLICATE_SECOND",
+        "tickets": [
+          "2-1-3",
+          "2-4-3",
+          "2-3-4",
+          "1-2-3",
+          "1-3-4",
+          "2-1-4",
+          "2-1-6",
+          "1-4-3"
+        ],
+        "added": "1-3-4",
+        "removed": "1-2-6",
+        "candidatePriority": 83,
+        "donorPriority": 72,
+        "scenarioId": "canonical:2"
+      },
+      "outcome": {
+        "ticket": "1-2-3",
+        "payout": 800,
+        "source": "boatrace-official"
+      }
     },
     {
       "raceKey": "20261020-12-1",
       "date": "20261020",
       "period": "forward",
       "source": "verificationPredictions",
-      "selectedAt": "2026-10-19T22:50:16.675Z",
+      "selectedAt": "2026-10-20T05:36:52.473Z",
       "deadlineAt": "2026-10-20T15:16:00+09:00",
       "baselineTickets": [
         "1-2-3",
@@ -9236,14 +10005,179 @@
           "1-3-2"
         ]
       },
-      "outcome": null
+      "outcome": {
+        "ticket": "3-1-4",
+        "payout": 2040,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-12-10",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T10:35:28.358Z",
+      "deadlineAt": "2026-10-20T19:38:00+09:00",
+      "baselineTickets": [
+        "4-1-5",
+        "4-5-6",
+        "4-3-5",
+        "1-2-3",
+        "1-2-4",
+        "4-1-6",
+        "4-1-2",
+        "4-1-3",
+        "4-2-1",
+        "4-2-3"
+      ],
+      "candidateTickets": [
+        "4-1-5",
+        "4-5-6",
+        "4-3-5",
+        "1-2-3",
+        "1-2-4",
+        "4-1-6",
+        "4-1-2",
+        "4-1-3",
+        "4-2-1",
+        "4-2-3"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "NO_STRICTLY_BETTER_DIVERSIFIER",
+        "tickets": [
+          "4-1-5",
+          "4-5-6",
+          "4-3-5",
+          "1-2-3",
+          "1-2-4",
+          "4-1-6",
+          "4-1-2",
+          "4-1-3",
+          "4-2-1",
+          "4-2-3"
+        ]
+      },
+      "outcome": {
+        "ticket": "5-3-1",
+        "payout": 92690,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-12-2",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T06:35:10.629Z",
+      "deadlineAt": "2026-10-20T15:40:00+09:00",
+      "baselineTickets": [
+        "4-1-5",
+        "4-5-6",
+        "4-3-5",
+        "1-2-3",
+        "1-2-4",
+        "4-1-6",
+        "4-1-2",
+        "2-1-3",
+        "4-2-1",
+        "4-2-3"
+      ],
+      "candidateTickets": [
+        "4-1-5",
+        "4-5-6",
+        "4-3-5",
+        "1-2-3",
+        "1-2-4",
+        "4-1-6",
+        "4-1-2",
+        "2-1-3",
+        "4-2-1",
+        "4-2-3"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "NO_STRICTLY_BETTER_DIVERSIFIER",
+        "tickets": [
+          "4-1-5",
+          "4-5-6",
+          "4-3-5",
+          "1-2-3",
+          "1-2-4",
+          "4-1-6",
+          "4-1-2",
+          "2-1-3",
+          "4-2-1",
+          "4-2-3"
+        ]
+      },
+      "outcome": {
+        "ticket": "5-1-4",
+        "payout": 19950,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-12-6",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T08:06:33.029Z",
+      "deadlineAt": "2026-10-20T17:29:00+09:00",
+      "baselineTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-5",
+        "1-2-6",
+        "2-1-4",
+        "2-1-5",
+        "3-1-2",
+        "3-1-4"
+      ],
+      "candidateTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-5",
+        "1-4-3",
+        "2-1-4",
+        "2-1-5",
+        "3-1-2",
+        "3-1-4"
+      ],
+      "selection": {
+        "changed": true,
+        "reason": "REPLACE_DUPLICATE_SECOND",
+        "tickets": [
+          "2-1-3",
+          "2-4-3",
+          "2-3-4",
+          "1-2-5",
+          "1-4-3",
+          "2-1-4",
+          "2-1-5",
+          "3-1-2",
+          "3-1-4"
+        ],
+        "added": "1-4-3",
+        "removed": "1-2-6",
+        "candidatePriority": 92,
+        "donorPriority": 84,
+        "scenarioId": "canonical:2"
+      },
+      "outcome": {
+        "ticket": "2-3-1",
+        "payout": 940,
+        "source": "boatrace-official"
+      }
     },
     {
       "raceKey": "20261020-13-1",
       "date": "20261020",
       "period": "forward",
       "source": "verificationPredictions",
-      "selectedAt": "2026-10-19T22:50:17.134Z",
+      "selectedAt": "2026-10-20T01:10:00.897Z",
       "deadlineAt": "2026-10-20T10:36:00+09:00",
       "baselineTickets": [
         "3-1-5",
@@ -9276,14 +10210,169 @@
           "1-3-4"
         ]
       },
-      "outcome": null
+      "outcome": {
+        "ticket": "3-1-6",
+        "payout": 1400,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-13-11",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T06:35:10.903Z",
+      "deadlineAt": "2026-10-20T15:45:00+09:00",
+      "baselineTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-6",
+        "2-1-4",
+        "2-1-5",
+        "1-4-3"
+      ],
+      "candidateTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-3-4",
+        "2-1-4",
+        "2-1-5",
+        "1-4-3"
+      ],
+      "selection": {
+        "changed": true,
+        "reason": "REPLACE_DUPLICATE_SECOND",
+        "tickets": [
+          "2-1-3",
+          "2-4-3",
+          "2-3-4",
+          "1-2-3",
+          "1-3-4",
+          "2-1-4",
+          "2-1-5",
+          "1-4-3"
+        ],
+        "added": "1-3-4",
+        "removed": "1-2-6",
+        "candidatePriority": 88,
+        "donorPriority": 83,
+        "scenarioId": "canonical:2"
+      },
+      "outcome": {
+        "ticket": "3-2-5",
+        "payout": 14430,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-13-4",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T02:42:12.416Z",
+      "deadlineAt": "2026-10-20T11:51:00+09:00",
+      "baselineTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-5",
+        "1-2-4",
+        "1-2-5",
+        "1-3-5"
+      ],
+      "candidateTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-5",
+        "1-2-4",
+        "1-2-5",
+        "1-3-5"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "MAIN_HEAD_NOT_ELIGIBLE",
+        "tickets": [
+          "1-2-3",
+          "1-4-3",
+          "1-3-4",
+          "2-1-5",
+          "1-2-4",
+          "1-2-5",
+          "1-3-5"
+        ]
+      },
+      "outcome": {
+        "ticket": "6-1-3",
+        "payout": 324080,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-13-9",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T05:36:52.961Z",
+      "deadlineAt": "2026-10-20T14:39:00+09:00",
+      "baselineTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-6",
+        "2-1-4",
+        "2-1-5",
+        "2-1-6",
+        "1-4-3"
+      ],
+      "candidateTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-3-4",
+        "2-1-4",
+        "2-1-5",
+        "2-1-6",
+        "1-4-3"
+      ],
+      "selection": {
+        "changed": true,
+        "reason": "REPLACE_DUPLICATE_SECOND",
+        "tickets": [
+          "2-1-3",
+          "2-4-3",
+          "2-3-4",
+          "1-2-3",
+          "1-3-4",
+          "2-1-4",
+          "2-1-5",
+          "2-1-6",
+          "1-4-3"
+        ],
+        "added": "1-3-4",
+        "removed": "1-2-6",
+        "candidatePriority": 88,
+        "donorPriority": 72,
+        "scenarioId": "canonical:2"
+      },
+      "outcome": {
+        "ticket": "1-4-2",
+        "payout": 2240,
+        "source": "boatrace-official"
+      }
     },
     {
       "raceKey": "20261020-16-1",
       "date": "20261020",
       "period": "forward",
       "source": "verificationPredictions",
-      "selectedAt": "2026-10-19T22:50:17.188Z",
+      "selectedAt": "2026-10-20T01:10:00.908Z",
       "deadlineAt": "2026-10-20T10:56:00+09:00",
       "baselineTickets": [
         "4-1-5",
@@ -9325,19 +10414,171 @@
           "1-2-4"
         ]
       },
-      "outcome": null
+      "outcome": {
+        "ticket": "1-5-2",
+        "payout": 1460,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-16-11",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T06:35:10.816Z",
+      "deadlineAt": "2026-10-20T16:04:00+09:00",
+      "baselineTickets": [
+        "4-3-5",
+        "4-1-5",
+        "4-5-6",
+        "3-1-5",
+        "3-1-6",
+        "4-3-1",
+        "4-3-6",
+        "4-1-3",
+        "4-3-2",
+        "1-2-4"
+      ],
+      "candidateTickets": [
+        "4-3-5",
+        "4-1-5",
+        "4-5-6",
+        "3-1-5",
+        "3-1-6",
+        "4-3-1",
+        "4-3-6",
+        "4-1-3",
+        "4-3-2",
+        "1-2-4"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "EVIDENCE_NOT_CAPTURED",
+        "tickets": [
+          "4-3-5",
+          "4-1-5",
+          "4-5-6",
+          "3-1-5",
+          "3-1-6",
+          "4-3-1",
+          "4-3-6",
+          "4-1-3",
+          "4-3-2",
+          "1-2-4"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-5-4",
+        "payout": 3670,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-16-3",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T02:42:12.610Z",
+      "deadlineAt": "2026-10-20T11:53:00+09:00",
+      "baselineTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-5",
+        "1-2-6",
+        "3-2-1",
+        "3-2-6",
+        "3-6-1",
+        "3-6-2",
+        "1-3-4"
+      ],
+      "candidateTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-5",
+        "1-2-6",
+        "3-2-1",
+        "3-2-6",
+        "3-6-1",
+        "3-6-2",
+        "1-3-4"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "EVIDENCE_NOT_CAPTURED",
+        "tickets": [
+          "3-1-5",
+          "3-2-5",
+          "3-1-6",
+          "1-2-5",
+          "1-2-6",
+          "3-2-1",
+          "3-2-6",
+          "3-6-1",
+          "3-6-2",
+          "1-3-4"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-4-5",
+        "payout": 6280,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-16-9",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T05:36:52.976Z",
+      "deadlineAt": "2026-10-20T15:05:00+09:00",
+      "baselineTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-5",
+        "1-3-2"
+      ],
+      "candidateTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-5",
+        "1-3-2"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "MAIN_HEAD_NOT_ELIGIBLE",
+        "tickets": [
+          "1-2-3",
+          "1-4-3",
+          "1-3-4",
+          "1-2-4",
+          "1-2-5",
+          "1-3-2"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-3-6",
+        "payout": 910,
+        "source": "boatrace-official"
+      }
     },
     {
       "raceKey": "20261020-17-1",
       "date": "20261020",
       "period": "forward",
       "source": "verificationPredictions",
-      "selectedAt": "2026-10-19T22:50:17.209Z",
+      "selectedAt": "2026-10-20T01:10:01.507Z",
       "deadlineAt": "2026-10-20T10:17:00+09:00",
       "baselineTickets": [
         "1-2-3",
         "1-4-3",
         "1-3-4",
+        "2-1-3",
         "1-2-4",
         "1-2-5",
         "1-3-5"
@@ -9346,6 +10587,7 @@
         "1-2-3",
         "1-4-3",
         "1-3-4",
+        "2-1-3",
         "1-2-4",
         "1-2-5",
         "1-3-5"
@@ -9357,12 +10599,114 @@
           "1-2-3",
           "1-4-3",
           "1-3-4",
+          "2-1-3",
           "1-2-4",
           "1-2-5",
           "1-3-5"
         ]
       },
-      "outcome": null
+      "outcome": {
+        "ticket": "1-5-3",
+        "payout": 1120,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-17-11",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T05:36:53.253Z",
+      "deadlineAt": "2026-10-20T14:53:00+09:00",
+      "baselineTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "4-1-2",
+        "1-3-4"
+      ],
+      "candidateTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "4-1-2",
+        "1-3-4"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "EVIDENCE_NOT_CAPTURED",
+        "tickets": [
+          "3-1-5",
+          "3-2-5",
+          "3-1-6",
+          "1-2-3",
+          "1-2-4",
+          "3-2-1",
+          "3-2-6",
+          "4-1-2",
+          "1-3-4"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-3-5",
+        "payout": 1620,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-17-4",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T02:42:12.572Z",
+      "deadlineAt": "2026-10-20T11:45:00+09:00",
+      "baselineTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6"
+      ],
+      "candidateTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "MAIN_HEAD_NOT_ELIGIBLE",
+        "tickets": [
+          "1-2-3",
+          "1-4-3",
+          "1-3-4",
+          "2-1-3",
+          "2-1-4",
+          "1-2-4",
+          "1-2-5",
+          "1-2-6"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-2-4",
+        "payout": 590,
+        "source": "boatrace-official"
+      }
     },
     {
       "raceKey": "20261020-18-1",
@@ -9399,20 +10743,181 @@
           "1-3-2"
         ]
       },
-      "outcome": null
+      "outcome": {
+        "ticket": "1-2-5",
+        "payout": 1020,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-18-4",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T00:50:23.589Z",
+      "deadlineAt": "2026-10-20T09:53:00+09:00",
+      "baselineTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "4-1-2",
+        "3-1-2",
+        "1-3-4"
+      ],
+      "candidateTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "4-1-2",
+        "3-1-2",
+        "1-3-4"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "EVIDENCE_NOT_CAPTURED",
+        "tickets": [
+          "3-1-5",
+          "3-2-5",
+          "3-1-6",
+          "1-2-3",
+          "1-2-4",
+          "3-2-1",
+          "3-2-6",
+          "4-1-2",
+          "3-1-2",
+          "1-3-4"
+        ]
+      },
+      "outcome": {
+        "ticket": "3-5-2",
+        "payout": 25100,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-18-5",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T01:10:01.634Z",
+      "deadlineAt": "2026-10-20T10:20:00+09:00",
+      "baselineTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-5",
+        "1-2-6",
+        "2-1-4",
+        "2-1-5",
+        "1-2-3",
+        "1-4-3"
+      ],
+      "candidateTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-5",
+        "1-2-6",
+        "2-1-4",
+        "2-1-5",
+        "1-2-3",
+        "1-4-3"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "NO_STRICTLY_BETTER_DIVERSIFIER",
+        "tickets": [
+          "2-1-3",
+          "2-4-3",
+          "2-3-4",
+          "1-2-5",
+          "1-2-6",
+          "2-1-4",
+          "2-1-5",
+          "1-2-3",
+          "1-4-3"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-2-6",
+        "payout": 710,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-18-8",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T02:42:13.374Z",
+      "deadlineAt": "2026-10-20T11:55:00+09:00",
+      "baselineTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-5",
+        "1-2-6",
+        "2-1-4",
+        "2-1-5",
+        "2-1-6",
+        "1-4-3"
+      ],
+      "candidateTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-5",
+        "1-3-4",
+        "2-1-4",
+        "2-1-5",
+        "2-1-6",
+        "1-4-3"
+      ],
+      "selection": {
+        "changed": true,
+        "reason": "REPLACE_DUPLICATE_SECOND",
+        "tickets": [
+          "2-1-3",
+          "2-4-3",
+          "2-3-4",
+          "1-2-5",
+          "1-3-4",
+          "2-1-4",
+          "2-1-5",
+          "2-1-6",
+          "1-4-3"
+        ],
+        "added": "1-3-4",
+        "removed": "1-2-6",
+        "candidatePriority": 88,
+        "donorPriority": 83,
+        "scenarioId": "canonical:2"
+      },
+      "outcome": {
+        "ticket": "1-4-2",
+        "payout": 1010,
+        "source": "boatrace-official"
+      }
     },
     {
       "raceKey": "20261020-19-1",
       "date": "20261020",
       "period": "forward",
       "source": "verificationPredictions",
-      "selectedAt": "2026-10-19T22:50:17.703Z",
+      "selectedAt": "2026-10-20T08:06:33.288Z",
       "deadlineAt": "2026-10-20T17:41:00+09:00",
       "baselineTickets": [
         "1-2-3",
         "1-4-3",
         "1-3-4",
-        "2-1-3",
         "1-2-4",
         "1-2-6",
         "1-3-6"
@@ -9421,7 +10926,6 @@
         "1-2-3",
         "1-4-3",
         "1-3-4",
-        "2-1-3",
         "1-2-4",
         "1-2-6",
         "1-3-6"
@@ -9433,20 +10937,176 @@
           "1-2-3",
           "1-4-3",
           "1-3-4",
-          "2-1-3",
           "1-2-4",
           "1-2-6",
           "1-3-6"
         ]
       },
-      "outcome": null
+      "outcome": {
+        "ticket": "1-2-6",
+        "payout": 650,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-19-11",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T13:17:51.468Z",
+      "deadlineAt": "2026-10-20T22:20:00+09:00",
+      "baselineTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-5",
+        "2-1-6",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6",
+        "1-3-2",
+        "1-3-6"
+      ],
+      "candidateTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-5",
+        "2-1-6",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6",
+        "1-3-2",
+        "1-3-6"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "MAIN_HEAD_NOT_ELIGIBLE",
+        "tickets": [
+          "1-2-3",
+          "1-4-3",
+          "1-3-4",
+          "2-1-5",
+          "2-1-6",
+          "1-2-4",
+          "1-2-5",
+          "1-2-6",
+          "1-3-2",
+          "1-3-6"
+        ]
+      },
+      "outcome": {
+        "ticket": "6-5-1",
+        "payout": 33620,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-19-6",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T10:35:28.083Z",
+      "deadlineAt": "2026-10-20T19:56:00+09:00",
+      "baselineTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-5",
+        "1-4-2",
+        "1-3-2",
+        "1-3-5"
+      ],
+      "candidateTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-5",
+        "1-4-2",
+        "1-3-2",
+        "1-3-5"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "MAIN_HEAD_NOT_ELIGIBLE",
+        "tickets": [
+          "1-2-3",
+          "1-4-3",
+          "1-3-4",
+          "1-2-4",
+          "1-2-5",
+          "1-4-2",
+          "1-3-2",
+          "1-3-5"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-2-3",
+        "payout": 540,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-19-8",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T11:46:46.462Z",
+      "deadlineAt": "2026-10-20T20:59:00+09:00",
+      "baselineTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6",
+        "1-3-2",
+        "1-4-2"
+      ],
+      "candidateTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6",
+        "1-3-2",
+        "1-4-2"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "MAIN_HEAD_NOT_ELIGIBLE",
+        "tickets": [
+          "1-2-3",
+          "1-4-3",
+          "1-3-4",
+          "2-1-3",
+          "2-1-4",
+          "1-2-4",
+          "1-2-5",
+          "1-2-6",
+          "1-3-2",
+          "1-4-2"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-3-2",
+        "payout": 590,
+        "source": "boatrace-official"
+      }
     },
     {
       "raceKey": "20261020-23-1",
       "date": "20261020",
       "period": "forward",
       "source": "verificationPredictions",
-      "selectedAt": "2026-10-19T22:50:17.691Z",
+      "selectedAt": "2026-10-20T01:10:01.935Z",
       "deadlineAt": "2026-10-20T10:38:00+09:00",
       "baselineTickets": [
         "1-2-3",
@@ -9480,6 +11140,731 @@
           "1-4-2",
           "1-3-2",
           "1-3-6"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-3-5",
+        "payout": 990,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-23-11",
+      "date": "20261020",
+      "period": "forward",
+      "source": "predictions",
+      "selectedAt": "2026-10-20T06:35:11.491Z",
+      "deadlineAt": "2026-10-20T15:57:00+09:00",
+      "baselineTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "3-1-4",
+        "3-4-1",
+        "1-3-4"
+      ],
+      "candidateTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "3-1-4",
+        "3-4-1",
+        "1-3-4"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "EVIDENCE_NOT_CAPTURED",
+        "tickets": [
+          "3-1-5",
+          "3-2-5",
+          "3-1-6",
+          "1-2-3",
+          "1-2-4",
+          "3-2-1",
+          "3-2-6",
+          "3-1-4",
+          "3-4-1",
+          "1-3-4"
+        ]
+      },
+      "outcome": {
+        "ticket": "1-5-6",
+        "payout": 4950,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-23-4",
+      "date": "20261020",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T02:42:13.074Z",
+      "deadlineAt": "2026-10-20T12:05:00+09:00",
+      "baselineTickets": [
+        "4-3-5",
+        "4-1-5",
+        "4-5-6",
+        "3-1-5",
+        "3-1-6",
+        "4-3-6",
+        "4-3-1",
+        "2-1-3",
+        "1-2-3",
+        "1-2-4"
+      ],
+      "candidateTickets": [
+        "4-3-5",
+        "4-1-5",
+        "4-5-6",
+        "3-1-5",
+        "3-1-6",
+        "4-3-6",
+        "4-3-1",
+        "2-1-3",
+        "1-2-3",
+        "1-2-4"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "EVIDENCE_NOT_CAPTURED",
+        "tickets": [
+          "4-3-5",
+          "4-1-5",
+          "4-5-6",
+          "3-1-5",
+          "3-1-6",
+          "4-3-6",
+          "4-3-1",
+          "2-1-3",
+          "1-2-3",
+          "1-2-4"
+        ]
+      },
+      "outcome": {
+        "ticket": "2-1-3",
+        "payout": 5650,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261020-23-9",
+      "date": "20261020",
+      "period": "forward",
+      "source": "predictions",
+      "selectedAt": "2026-10-20T05:36:53.659Z",
+      "deadlineAt": "2026-10-20T14:45:00+09:00",
+      "baselineTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-6",
+        "1-3-2",
+        "1-3-6",
+        "1-4-6"
+      ],
+      "candidateTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-6",
+        "1-3-2",
+        "1-3-6",
+        "1-4-6"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "MAIN_HEAD_NOT_ELIGIBLE",
+        "tickets": [
+          "1-2-3",
+          "1-4-3",
+          "1-3-4",
+          "1-2-4",
+          "1-2-6",
+          "1-3-2",
+          "1-3-6",
+          "1-4-6"
+        ]
+      },
+      "outcome": {
+        "ticket": "2-1-4",
+        "payout": 4630,
+        "source": "boatrace-official"
+      }
+    },
+    {
+      "raceKey": "20261021-01-1",
+      "date": "20261021",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T22:47:20.968Z",
+      "deadlineAt": "2026-10-21T15:26:00+09:00",
+      "baselineTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "3-1-2",
+        "1-3-4"
+      ],
+      "candidateTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "3-1-2",
+        "1-3-4"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "EVIDENCE_NOT_CAPTURED",
+        "tickets": [
+          "3-1-5",
+          "3-2-5",
+          "3-1-6",
+          "1-2-3",
+          "1-2-4",
+          "3-2-1",
+          "3-2-6",
+          "3-1-2",
+          "1-3-4"
+        ]
+      },
+      "outcome": null
+    },
+    {
+      "raceKey": "20261021-03-1",
+      "date": "20261021",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T22:47:20.939Z",
+      "deadlineAt": "2026-10-21T11:14:00+09:00",
+      "baselineTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-4",
+        "2-1-4",
+        "2-1-5",
+        "3-1-4",
+        "3-1-5",
+        "3-4-5"
+      ],
+      "candidateTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-4",
+        "2-1-4",
+        "2-1-5",
+        "3-1-4",
+        "3-1-5",
+        "3-4-5"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "NO_STRICTLY_BETTER_DIVERSIFIER",
+        "tickets": [
+          "2-1-3",
+          "2-4-3",
+          "2-3-4",
+          "1-2-3",
+          "1-2-4",
+          "2-1-4",
+          "2-1-5",
+          "3-1-4",
+          "3-1-5",
+          "3-4-5"
+        ]
+      },
+      "outcome": null
+    },
+    {
+      "raceKey": "20261021-06-1",
+      "date": "20261021",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T22:47:23.775Z",
+      "deadlineAt": "2026-10-21T10:46:00+09:00",
+      "baselineTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "1-3-4"
+      ],
+      "candidateTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "1-3-4"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "EVIDENCE_NOT_CAPTURED",
+        "tickets": [
+          "3-1-5",
+          "3-2-5",
+          "3-1-6",
+          "1-2-3",
+          "1-2-4",
+          "3-2-1",
+          "3-2-6",
+          "1-3-4"
+        ]
+      },
+      "outcome": null
+    },
+    {
+      "raceKey": "20261021-09-1",
+      "date": "20261021",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T22:47:21.377Z",
+      "deadlineAt": "2026-10-21T10:33:00+09:00",
+      "baselineTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6"
+      ],
+      "candidateTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "MAIN_HEAD_NOT_ELIGIBLE",
+        "tickets": [
+          "1-2-3",
+          "1-4-3",
+          "1-3-4",
+          "2-1-3",
+          "2-1-4",
+          "1-2-4",
+          "1-2-5",
+          "1-2-6"
+        ]
+      },
+      "outcome": null
+    },
+    {
+      "raceKey": "20261021-11-1",
+      "date": "20261021",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T22:47:21.442Z",
+      "deadlineAt": "2026-10-21T10:28:00+09:00",
+      "baselineTickets": [
+        "4-1-5",
+        "4-5-6",
+        "4-3-5",
+        "1-2-3",
+        "1-2-4",
+        "4-1-6",
+        "4-1-3",
+        "4-6-1",
+        "4-6-2",
+        "4-6-3"
+      ],
+      "candidateTickets": [
+        "4-1-5",
+        "4-5-6",
+        "4-3-5",
+        "1-2-3",
+        "1-2-4",
+        "4-1-6",
+        "4-1-3",
+        "4-6-1",
+        "4-6-2",
+        "4-6-3"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "NO_STRICTLY_BETTER_DIVERSIFIER",
+        "tickets": [
+          "4-1-5",
+          "4-5-6",
+          "4-3-5",
+          "1-2-3",
+          "1-2-4",
+          "4-1-6",
+          "4-1-3",
+          "4-6-1",
+          "4-6-2",
+          "4-6-3"
+        ]
+      },
+      "outcome": null
+    },
+    {
+      "raceKey": "20261021-12-1",
+      "date": "20261021",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T22:47:21.804Z",
+      "deadlineAt": "2026-10-21T15:16:00+09:00",
+      "baselineTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6"
+      ],
+      "candidateTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "MAIN_HEAD_NOT_ELIGIBLE",
+        "tickets": [
+          "1-2-3",
+          "1-4-3",
+          "1-3-4",
+          "1-2-4",
+          "1-2-5",
+          "1-2-6"
+        ]
+      },
+      "outcome": null
+    },
+    {
+      "raceKey": "20261021-13-1",
+      "date": "20261021",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T22:47:21.927Z",
+      "deadlineAt": "2026-10-21T10:36:00+09:00",
+      "baselineTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "1-3-4"
+      ],
+      "candidateTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "1-3-4"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "EVIDENCE_NOT_CAPTURED",
+        "tickets": [
+          "3-1-5",
+          "3-2-5",
+          "3-1-6",
+          "1-2-3",
+          "1-2-4",
+          "3-2-1",
+          "1-3-4"
+        ]
+      },
+      "outcome": null
+    },
+    {
+      "raceKey": "20261021-14-1",
+      "date": "20261021",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T22:47:22.279Z",
+      "deadlineAt": "2026-10-21T08:35:00+09:00",
+      "baselineTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-6",
+        "1-3-6"
+      ],
+      "candidateTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-6",
+        "1-3-6"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "MAIN_HEAD_NOT_ELIGIBLE",
+        "tickets": [
+          "1-2-3",
+          "1-4-3",
+          "1-3-4",
+          "1-2-4",
+          "1-2-6",
+          "1-3-6"
+        ]
+      },
+      "outcome": null
+    },
+    {
+      "raceKey": "20261021-16-1",
+      "date": "20261021",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T22:47:22.358Z",
+      "deadlineAt": "2026-10-21T10:50:00+09:00",
+      "baselineTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "1-2-4",
+        "1-2-5",
+        "1-3-2"
+      ],
+      "candidateTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "1-2-4",
+        "1-2-5",
+        "1-3-2"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "MAIN_HEAD_NOT_ELIGIBLE",
+        "tickets": [
+          "1-2-3",
+          "1-4-3",
+          "1-3-4",
+          "2-1-3",
+          "1-2-4",
+          "1-2-5",
+          "1-3-2"
+        ]
+      },
+      "outcome": null
+    },
+    {
+      "raceKey": "20261021-17-1",
+      "date": "20261021",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T22:47:22.736Z",
+      "deadlineAt": "2026-10-21T10:18:00+09:00",
+      "baselineTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-5",
+        "1-2-6",
+        "3-2-1",
+        "3-2-6",
+        "3-1-2",
+        "1-2-3",
+        "1-3-4"
+      ],
+      "candidateTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-5",
+        "1-2-6",
+        "3-2-1",
+        "3-2-6",
+        "3-1-2",
+        "1-2-3",
+        "1-3-4"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "EVIDENCE_NOT_CAPTURED",
+        "tickets": [
+          "3-1-5",
+          "3-2-5",
+          "3-1-6",
+          "1-2-5",
+          "1-2-6",
+          "3-2-1",
+          "3-2-6",
+          "3-1-2",
+          "1-2-3",
+          "1-3-4"
+        ]
+      },
+      "outcome": null
+    },
+    {
+      "raceKey": "20261021-18-1",
+      "date": "20261021",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T22:47:22.834Z",
+      "deadlineAt": "2026-10-21T08:47:00+09:00",
+      "baselineTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-5",
+        "1-2-6",
+        "3-2-1",
+        "3-2-6",
+        "1-2-4",
+        "1-3-4"
+      ],
+      "candidateTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-5",
+        "1-2-6",
+        "3-2-1",
+        "3-2-6",
+        "1-2-4",
+        "1-3-4"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "EVIDENCE_NOT_CAPTURED",
+        "tickets": [
+          "3-1-5",
+          "3-2-5",
+          "3-1-6",
+          "1-2-5",
+          "1-2-6",
+          "3-2-1",
+          "3-2-6",
+          "1-2-4",
+          "1-3-4"
+        ]
+      },
+      "outcome": null
+    },
+    {
+      "raceKey": "20261021-20-1",
+      "date": "20261021",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T22:47:23.316Z",
+      "deadlineAt": "2026-10-21T18:08:00+09:00",
+      "baselineTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-4-3",
+        "2-1-4",
+        "2-1-5"
+      ],
+      "candidateTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-4-3",
+        "2-1-4",
+        "2-1-5"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "NO_STRICTLY_BETTER_DIVERSIFIER",
+        "tickets": [
+          "2-1-3",
+          "2-4-3",
+          "2-3-4",
+          "1-2-3",
+          "1-4-3",
+          "2-1-4",
+          "2-1-5"
+        ]
+      },
+      "outcome": null
+    },
+    {
+      "raceKey": "20261021-23-1",
+      "date": "20261021",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-10-20T22:47:23.285Z",
+      "deadlineAt": "2026-10-21T10:38:00+09:00",
+      "baselineTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "4-1-2",
+        "3-1-2",
+        "1-3-4"
+      ],
+      "candidateTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "4-1-2",
+        "3-1-2",
+        "1-3-4"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "EVIDENCE_NOT_CAPTURED",
+        "tickets": [
+          "3-1-5",
+          "3-2-5",
+          "3-1-6",
+          "1-2-3",
+          "1-2-4",
+          "3-2-1",
+          "3-2-6",
+          "4-1-2",
+          "3-1-2",
+          "1-3-4"
         ]
       },
       "outcome": null
