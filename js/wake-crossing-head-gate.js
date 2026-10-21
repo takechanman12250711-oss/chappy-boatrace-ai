@@ -128,8 +128,9 @@
     for (const ticket of tickets) {
       if (!demoted.has(Number(ticket.split("-")[0]))) continue;
       const swapped = swapToSecond(ticket);
-      // 入れ替え後の頭が別の降格艇なら追加しない（降格艇を頭に戻さない）。
-      if (demoted.has(Number(swapped.split("-")[0]))) continue;
+      // 入れ替え後の頭が降格判定の艇なら追加しない。元の券で頭でなかった艇も6艇の判定で確認する。
+      const newHead = Number(swapped.split("-")[0]);
+      if (demoted.has(newHead) || byBoat.get(newHead)?.status === "demote") continue;
       if (!cTickets.includes(swapped)) cTickets.push(swapped);
     }
     return {
