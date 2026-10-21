@@ -39,10 +39,11 @@ const CALIBRATION_REPORTS = new Set([
   'data/predictions/calibration.json',
   'data/predictions/improvement-review.json',
 ]);
-// This standalone report also belongs to the live prediction writer. Preserve
-// its newer generation; interdependent diagnostic reports must fail as a batch.
+// These standalone reports belong to independent writers. Preserve a newer
+// generation; interdependent diagnostic reports must still fail as a batch.
 const KEEP_NEWER = new Set([
   'data/stats/practical-priority-shadow-report.json',
+  'data/analysis/reference-tag-effectiveness.json',
 ]);
 const CODE_PATHS = ['scripts', 'js', 'api', 'config', '.github/workflows/collect-results.yml'];
 const sha256 = value => createHash('sha256').update(value).digest('hex');
