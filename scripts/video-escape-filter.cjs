@@ -295,7 +295,10 @@ function evaluateExhibition(apiRace, params = DEFAULT_PARAMS) {
     // 公式のスタート展示画像から読めた進入だけを使う（legacy-course-order の仮の枠なり行は使わない）。
     if (row?.isOfficialCourse !== true) continue;
     if (!Number.isInteger(row?.boat) || typeof row.st !== "number") continue;
-    const early = String(row.marker || "").toUpperCase().includes("F");
+    const marker = String(row.marker || "").toUpperCase();
+    // 展示の出遅れ（L）は表示値が実際のSTではないため、その行を使わず判定なしにする。
+    if (marker.includes("L")) continue;
+    const early = marker.includes("F");
     exStByBoat.set(row.boat, early ? -row.st : row.st);
     if (Number.isInteger(row.course)) exCourseByBoat.set(row.boat, row.course);
   }

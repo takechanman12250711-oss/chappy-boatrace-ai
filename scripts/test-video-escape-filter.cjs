@@ -146,6 +146,10 @@ assert.deepStrictEqual(
   flying.startExhibition[1] = { course: 2, boat: 2, st: 0.03, marker: "F", isOfficialCourse: true };
   assert.strictEqual(filter.evaluateExhibition(flying).checks.noStartDent, false, "展示F.03は-0.03扱いで、1号艇は0.15遅れ");
   assert.strictEqual(filter.evaluateExhibition({ entries: [] }).pass, null, "展示前は判定なし");
+  const late = JSON.parse(JSON.stringify(base));
+  late.startExhibition[0] = { course: 1, boat: 1, st: 0.01, marker: "L", isOfficialCourse: true };
+  assert.strictEqual(filter.evaluateExhibition(late).available, false, "展示の出遅れL.01を速いSTとして扱わない");
+  assert.strictEqual(filter.evaluateExhibition(late).pass, null);
   const legacy = JSON.parse(JSON.stringify(base));
   legacy.startExhibition.forEach((row) => { row.isOfficialCourse = false; row.mappingSource = "legacy-course-order"; });
   assert.strictEqual(filter.evaluateExhibition(legacy).available, false, "仮の枠なり行は進入が不明なので判定なし");

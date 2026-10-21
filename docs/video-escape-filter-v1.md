@@ -66,7 +66,7 @@ flowchart LR
 
 ## 未検証・既知の偏り
 
-- ③当日展示（展示ST・展示タイム）と最低オッズ見送りは、結果原本に含まれないため未検証。`evaluateExhibition` と `evaluateOdds` は当日のAPI応答（`/api/race` の `startExhibition`・`entries[].exhibition.displayTime`、`/api/odds`）に使える形だが、閾値は仮置き。展示は公式のスタート展示画像から読めた進入（`isOfficialCourse: true`）が6艇分そろい、全艇が枠なり進入のときだけ判定する。
+- ③当日展示（展示ST・展示タイム）と最低オッズ見送りは、結果原本に含まれないため未検証。`evaluateExhibition` と `evaluateOdds` は当日のAPI応答（`/api/race` の `startExhibition`・`entries[].exhibition.displayTime`、`/api/odds`）に使える形だが、閾値は仮置き。展示は公式のスタート展示画像から読めた進入（`isOfficialCourse: true`）が6艇分そろい、全艇が枠なり進入のときだけ判定する。展示で出遅れ（L）の艇がいれば判定しない。
 - 完走しなかった選手は結果原本に登録番号がないため、その走は履歴に入らない。完走しなかった2〜6号艇がいる6,406Rは選手不明として判定対象外（other-boat-unknown）。この除外も完走の有無というレース後の情報に依存するため、選手を締切前に確定できる入力（保存予想は2026-07-22〜）での確認が残る。
 - 1号艇が完走しなかった1,509Rは選手不明で判定対象外（うちF・出遅れ・欠場による返還905R、転覆等604R）。
 - 2〜6号艇のいずれかが自分の枠で10走そろわない7,009Rは判定対象外。
