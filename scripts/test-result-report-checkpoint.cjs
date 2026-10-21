@@ -9,6 +9,7 @@ const git = (cwd, args) => execFileSync('git', args, { cwd, encoding: 'utf8', st
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'result-checkpoint-test-'));
 const report = 'data/stats/example-report.json';
 const priority = 'data/stats/practical-priority-shadow-report.json';
+const referenceTag = 'data/analysis/reference-tag-effectiveness.json';
 function write(cwd, file, value) {
   fs.mkdirSync(path.dirname(path.join(cwd, file)), { recursive: true });
   fs.writeFileSync(path.join(cwd, file), JSON.stringify(value) + '\n');
@@ -18,12 +19,12 @@ function fixture(name) {
   const work = path.join(root, name), remote = path.join(root, name + '.git');
   fs.mkdirSync(work); git(work, ['init', '-b', 'main']);
   git(work, ['config', 'user.name', 'test']); git(work, ['config', 'user.email', 'test@example.invalid']);
-  write(work, report, { old: true }); write(work, priority, { old: true });
+  write(work, report, { old: true }); write(work, priority, { old: true }); write(work, referenceTag, { old: true });
   write(work, 'data/predictions/20261005.json', { original: true });
   write(work, 'scripts/builder.js', { code: 1 });
   const baseSha = commit(work, 'base');
   git(root, ['clone', '--bare', work, remote]); git(work, ['remote', 'add', 'origin', 'file://' + remote]);
-  write(work, report, { built: true }); write(work, priority, { built: true });
+  write(work, report, { built: true }); write(work, priority, { built: true }); write(work, referenceTag, { built: true });
   const output = path.join(root, name + '.json');
   pack({ root: work, stage: 'diagnostics', output });
   const bundle = JSON.parse(fs.readFileSync(output));
@@ -79,6 +80,13 @@ try {
   assert.equal(preserved.preservedNewer[0].path, priority);
   assert.equal(JSON.parse(fs.readFileSync(path.join(preserve.work, priority))).newer, true);
   assert.equal(JSON.parse(fs.readFileSync(path.join(preserve.work, report))).built, true);
+
+  const preserveReferenceTag = fixture('preserve-reference-tag');
+  write(preserveReferenceTag.work, referenceTag, { newer: true }); commit(preserveReferenceTag.work, 'newer reference-tag report');
+  const preservedReferenceTag = apply({ ...preserveReferenceTag, root: preserveReferenceTag.work });
+  assert.deepEqual(preservedReferenceTag.preservedNewer.map(file => file.path), [referenceTag]);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(preserveReferenceTag.work, referenceTag))).newer, true);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(preserveReferenceTag.work, report))).built, true);
 
   const code = fixture('code');
   write(code.work, 'scripts/builder.js', { code: 2 }); commit(code.work, 'new builder');
