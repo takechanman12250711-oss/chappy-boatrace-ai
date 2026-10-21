@@ -16,6 +16,12 @@ on:
       - 'scripts/save-live-verification-sources.js'
       - 'scripts/partner-forward.cjs'
       - 'scripts/test-partner-forward.cjs'
+      - 'scripts/independent-head-forward-v2.cjs'
+      - 'scripts/test-independent-head-forward-v2.cjs'
+      - 'scripts/fixtures/head-forward-v2.cjs'
+      - 'scripts/head-forward-*.cjs'
+      - 'scripts/test-head-forward-*.cjs'
+      - 'config/independent-head-forward-v2.json'
       - 'config/partner-forward.json'
       - 'config/partner-forward-cohorts.json'
       - 'config/independent-autonomous-forward.json'
@@ -75,6 +81,12 @@ on:
       - 'scripts/save-live-verification-sources.js'
       - 'scripts/partner-forward.cjs'
       - 'scripts/test-partner-forward.cjs'
+      - 'scripts/independent-head-forward-v2.cjs'
+      - 'scripts/test-independent-head-forward-v2.cjs'
+      - 'scripts/fixtures/head-forward-v2.cjs'
+      - 'scripts/head-forward-*.cjs'
+      - 'scripts/test-head-forward-*.cjs'
+      - 'config/independent-head-forward-v2.json'
       - 'config/partner-forward.json'
       - 'config/partner-forward-cohorts.json'
       - 'config/independent-autonomous-forward.json'
@@ -172,6 +184,7 @@ jobs:
             data/partner-forward
             data/independent-autonomous-forward
             data/independent-rule-forward
+            data/independent-head-forward-v2
             data/outer-attack-sources
             data/verification-coverage
             data/note-publish
@@ -183,6 +196,7 @@ jobs:
           node scripts/test-note-source-concurrency.js
           node --test scripts/official-start-rank-cache.test.cjs
           node --test scripts/test-partner-forward.cjs scripts/independent-role-selector.test.cjs scripts/independent-rule-forward.test.cjs scripts/independent-autonomous.test.cjs
+          node --test scripts/test-independent-head-forward-v2.cjs scripts/test-head-forward-contract.cjs scripts/test-head-forward-artifact.cjs scripts/test-head-forward-capture.cjs scripts/test-head-forward-report.cjs
           node --test scripts/independent-flow-roles.test.cjs scripts/independent-partner-selector.test.cjs scripts/independent-route-water.test.cjs scripts/independent-pair-route.test.cjs scripts/independent-weather.test.cjs scripts/independent-weather-v2.test.cjs
           node --test scripts/test-omura-reference.cjs
           node scripts/test-note-pipeline.js
@@ -321,3 +335,46 @@ jobs:
         run: |
           node scripts/official-start-rank-cache.cjs /tmp/official-start-rank-cache.json
           test ! -s /tmp/official-start-rank-cache.json.errors
+
+      - name: Capture paired head coverage and preserve failed attempts
+        id: head-forward-capture
+        if: always() && github.event_name != 'pull_request'
+        continue-on-error: true
+        timeout-minutes: 1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/head-forward-capture.cjs capture /tmp/independent-head-forward-v2
+      - name: Save immutable head coverage attempts before artifact upload
+        id: head-forward-attempt-save
+        if: always() && github.event_name != 'pull_request'
+        continue-on-error: true
+        run: node scripts/save-live-verification-sources.js
+      - name: Seal paired head coverage batch on GitHub
+        id: head-forward-artifact
+        if: always() && github.event_name != 'pull_request' && steps.head-forward-capture.outcome == 'success' && steps.head-forward-attempt-save.outcome == 'success' && steps.head-forward-capture.outputs.count != '' && steps.head-forward-capture.outputs.count != '0'
+        continue-on-error: true
+        timeout-minutes: 1
+        uses: actions/upload-artifact@v4
+        with:
+          name: independent-head-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/independent-head-forward-v2/batch.json
+          retention-days: 90
+          if-no-files-found: error
+      - name: Verify remote paired batch contents and deadline
+        id: head-forward-confirm
+        if: always() && github.event_name != 'pull_request' && steps.head-forward-artifact.outputs.artifact-id != ''
+        continue-on-error: true
+        timeout-minutes: 1
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_FORWARD_ARTIFACT_ID: ${{ steps.head-forward-artifact.outputs.artifact-id }}
+          HEAD_FORWARD_ARTIFACT_DIGEST: ${{ steps.head-forward-artifact.outputs.artifact-digest }}
+        run: node scripts/head-forward-capture.cjs seal /tmp/independent-head-forward-v2
+      - name: Save immutable paired head coverage receipts
+        id: head-forward-receipt-save
+        if: always() && github.event_name != 'pull_request'
+        continue-on-error: true
+        run: node scripts/save-live-verification-sources.js
+      - name: Surface paired head coverage failures after preserving notes and attempts
+        if: always() && github.event_name != 'pull_request' && (steps.head-forward-capture.outcome == 'failure' || steps.head-forward-attempt-save.outcome == 'failure' || steps.head-forward-artifact.outcome == 'failure' || steps.head-forward-confirm.outcome == 'failure' || steps.head-forward-receipt-save.outcome == 'failure')
+        run: exit 1
