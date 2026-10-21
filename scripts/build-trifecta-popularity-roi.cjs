@@ -38,6 +38,14 @@ function isCountable(race) {
     Number.isFinite(trifecta?.payout) && trifecta.payout > 0;
 }
 
+// 3着以内に同着があると公式の3連単払戻は複数組になるが、結果原本は1組しか持たないため集計から外す。
+function hasTopThreeDeadHeat(race) {
+  const ranks = (Array.isArray(race?.finishers) ? race.finishers : [])
+    .map((finisher) => Number(finisher?.rank))
+    .filter((rank) => rank >= 1 && rank <= 3);
+  return new Set(ranks).size !== ranks.length;
+}
+
 function emptyTally() {
   return { races: 0, hits: Object.fromEntries(BANDS.map(([lo, hi]) => [`${lo}-${hi}`, { hits: 0, payout: 0 }])) };
 }
@@ -74,11 +82,16 @@ function build({ from, results, out }) {
   const all = emptyTally();
   const byYear = {};
   let skipped = 0;
+  let deadHeats = 0;
   for (const name of files) {
     const date = name.slice(0, 8);
     if (date < from) continue;
     const day = JSON.parse(fs.readFileSync(path.join(results, name), "utf8"));
     for (const race of day.races || []) {
+      if (isCountable(race) && hasTopThreeDeadHeat(race)) {
+        deadHeats += 1;
+        continue;
+      }
       if (!isCountable(race)) {
         if (race?.status === "finished" && race.void !== true) skipped += 1;
         continue;
@@ -103,12 +116,14 @@ function build({ from, results, out }) {
     caveats: [
       "人気は締切後の確定オッズ基準。締切前に同じ人気順で買えるとは限らない",
       "返還（F・出遅れ・欠場）は考慮しない。不成立レースは除外",
+      "3着以内の同着レースは払戻が1組しか保存されていないため除外",
       "回収率は各帯の全点を毎レース買う前提。帯内の一部だけを選ぶ買い方の成績ではない"
     ],
     from,
     to: files.length ? files[files.length - 1].slice(0, 8) : null,
     racesCounted: all.races,
     finishedRacesWithoutPopularity: skipped,
+    topThreeDeadHeatsExcluded: deadHeats,
     all: summarize(all),
     byYear: Object.fromEntries(Object.keys(byYear).sort().map((year) => [year, { races: byYear[year].races, bands: summarize(byYear[year]) }]))
   };
@@ -127,4 +142,4 @@ if (require.main === module) {
   console.log(`保存: ${args.out}`);
 }
 
-module.exports = { build, BANDS, isCountable };
+module.exports = { build, BANDS, isCountable, hasTopThreeDeadHeat };
