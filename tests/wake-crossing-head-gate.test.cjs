@@ -37,6 +37,8 @@ assert.equal(gate.swapToSecond('4-1-2'), '1-4-2');
 const c = gate.evaluateRecord(withRoles(f.prediction(1), baseRoles(), ['4-1-2', '1-4-2', '4-2-1', '2-1-3']));
 assert.deepEqual(c.bTickets, ['1-4-2', '2-1-3']);
 assert.deepEqual(c.cTickets, ['1-4-2', '2-1-3', '2-4-1'], 'C案は2着へ回した券を重複なしで追加');
+const c2 = gate.evaluateRecord(withRoles(f.prediction(1), baseRoles(), ['4-6-1', '6-4-2', '1-2-3']));
+assert.deepEqual(c2.cTickets, ['1-2-3'], '入れ替え後の頭が別の降格艇なら追加しない');
 
 // --- 当日以前の結果だけで再構築する ---
 function histRace(date, raceNo, entries, winningMethod) {

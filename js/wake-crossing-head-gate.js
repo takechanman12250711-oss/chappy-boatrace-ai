@@ -21,7 +21,7 @@
     exemptCourses: Object.freeze([1]),
     evidenceReadyDemotedHeads: 30,
     // C案（v2で固定）: 降格艇が頭の券 h-x-y を x-h-y に置き換え、降格艇を2着へ回す。
-    // 3着は元の券のまま。B案に残る券と重複する券は追加しない。
+    // 3着は元の券のまま。B案に残る券と重複する券、入れ替え後の頭も降格艇になる券は追加しない。
     cVariant: "swap-demoted-head-to-second"
   });
 
@@ -128,6 +128,8 @@
     for (const ticket of tickets) {
       if (!demoted.has(Number(ticket.split("-")[0]))) continue;
       const swapped = swapToSecond(ticket);
+      // 入れ替え後の頭が別の降格艇なら追加しない（降格艇を頭に戻さない）。
+      if (demoted.has(Number(swapped.split("-")[0]))) continue;
       if (!cTickets.includes(swapped)) cTickets.push(swapped);
     }
     return {
