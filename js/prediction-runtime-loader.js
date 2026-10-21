@@ -46,6 +46,7 @@
     "js/manshu-display-reliability.js"
   ];
   const SCRIPT_VERSIONS = Object.freeze({
+    "js/formation-odds-display.js": "20261021-exact-formation1",
     "js/note-generator.js": "20260923-wall-purchase1",
     "js/practical-selection.js": "20261003-escape-partner-v13",
     "js/skip-ai-display.js": "20260923-wall-purchase1&bright=20261007-1",
