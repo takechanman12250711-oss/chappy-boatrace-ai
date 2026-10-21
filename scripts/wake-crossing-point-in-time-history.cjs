@@ -20,8 +20,10 @@ function dayNumber(yyyymmdd) {
 function buildIndex(resultsDir) {
   const byRacer = new Map();
   const seen = new Set();
+  const coveredDays = new Set();
+  const unavailableByDay = new Map();
   let races = 0;
-  if (!fs.existsSync(resultsDir)) return { byRacer, races, firstDay: NaN, lastDay: NaN };
+  if (!fs.existsSync(resultsDir)) return { byRacer, races, firstDay: NaN, lastDay: NaN, coveredDays, unavailableByDay };
   let firstDay = NaN, lastDay = NaN;
   for (const name of fs.readdirSync(resultsDir).filter(n => DATE_FILE.test(n)).sort()) {
     // 壊れた日次ファイルを黙って飛ばすと3年履歴が過少になり判定が変わるため、読めなければ失敗させる。
@@ -30,8 +32,13 @@ function buildIndex(resultsDir) {
     try { file = JSON.parse(fs.readFileSync(filePath, 'utf8')); }
     catch (error) { throw new Error(`results file unreadable: ${filePath}: ${error.message}`); }
     if (file?.source !== 'boatrace-official') continue;
+    const fileDay = dayNumber(String(file.date || name.slice(0, 8)).replace(/\D/g, ''));
+    if (Number.isFinite(fileDay)) coveredDays.add(fileDay);
     for (const race of Array.isArray(file.races) ? file.races : []) {
-      if (!race?.resultAvailable || race.source !== 'boatrace-official') continue;
+      if (!race?.resultAvailable || race.source !== 'boatrace-official') {
+        if (Number.isFinite(fileDay)) unavailableByDay.set(fileDay, (unavailableByDay.get(fileDay) || 0) + 1);
+        continue;
+      }
       const date = String(race.date || file.date || name.slice(0, 8)).replace(/\D/g, '');
       const id = `${date}-${race.jcd}-${race.raceNo}`;
       if (seen.has(id)) continue;
@@ -55,15 +62,38 @@ function buildIndex(resultsDir) {
       }
     }
   }
-  return { byRacer, races, firstDay, lastDay };
+  return { byRacer, races, firstDay, lastDay, coveredDays, unavailableByDay };
 }
 
 // Window: [raceDay - 1095, raceDay - 1]  (latest = previous day, inclusive 1095 days)
-function historyAsOf(index, registerNo, course, raceDate) {
+// options.gapFree: 窓内で結果ファイルが丸ごと欠けた日がある場合、最後の欠け日の翌日から始める。
+function windowBounds(index, raceDate, options = {}) {
   const raceDay = dayNumber(raceDate);
+  if (!Number.isFinite(raceDay)) return null;
+  const end = raceDay - 1;
+  let start = end - (THREE_YEAR_DAYS - 1);
+  if (options.gapFree) {
+    for (let day = end; day >= start; day--) {
+      if (!index.coveredDays.has(day)) { start = day + 1; break; }
+    }
+  }
+  return { start, end };
+}
+function windowCoverage(index, raceDate, options = {}) {
+  const bounds = windowBounds(index, raceDate, options);
+  if (!bounds) return null;
+  let missingDays = 0, unavailableRaces = 0;
+  for (let day = bounds.start; day <= bounds.end; day++) {
+    if (!index.coveredDays.has(day)) missingDays++;
+    unavailableRaces += index.unavailableByDay.get(day) || 0;
+  }
+  return { days: bounds.end - bounds.start + 1, missingDays, unavailableRaces };
+}
+function historyAsOf(index, registerNo, course, raceDate, options = {}) {
   const rows = index.byRacer.get(String(registerNo || '').trim());
-  if (!rows || !Number.isFinite(raceDay)) return null;
-  const end = raceDay - 1, start = end - (THREE_YEAR_DAYS - 1);
+  const bounds = windowBounds(index, raceDate, options);
+  if (!rows || !bounds) return null;
+  const { start, end } = bounds;
   let starts = 0, wins = 0;
   const counts = new Map();
   for (let i = 0; i < rows.length; i += 4) {
@@ -86,7 +116,7 @@ function historyAsOf(index, registerNo, course, raceDate) {
 
 // 締切前保存の出走情報（preRaceConditions.boats）から判定用rolesを作る。
 // 公式展示の進入（courseOfficial）がある場合だけその進入、なければ枠番をコースとする（ai-coreと同じ扱い）。
-function pointInTimeRoles(index, record, raceDate) {
+function pointInTimeRoles(index, record, raceDate, options = {}) {
   const prediction = record?.prediction || record || {};
   const conditions = prediction?.preRaceConditions || record?.preRaceConditions || {};
   const boats = Array.isArray(conditions.boats) ? conditions.boats : [];
@@ -96,10 +126,10 @@ function pointInTimeRoles(index, record, raceDate) {
   const roles = boats.map(b => {
     const boatNo = Number(b?.boatNo);
     const course = formal ? Number(b.course) : boatNo;
-    const history = b?.registerNo ? historyAsOf(index, b.registerNo, course, raceDate) : null;
+    const history = b?.registerNo ? historyAsOf(index, b.registerNo, course, raceDate, options) : null;
     return { boatNo, course, courseHistory: history ? { all3Years: history } : null };
   });
   return { roles, mapping: formal ? 'official-exhibition-course' : 'boat-number' };
 }
 
-module.exports = { THREE_YEAR_DAYS, dayNumber, buildIndex, historyAsOf, pointInTimeRoles };
+module.exports = { THREE_YEAR_DAYS, dayNumber, buildIndex, historyAsOf, pointInTimeRoles, windowBounds, windowCoverage };

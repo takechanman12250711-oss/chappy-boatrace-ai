@@ -67,6 +67,24 @@ f.withArchive(root => {
   assert.throws(() => pit.buildIndex(resultsDir), /results file unreadable/, '壊れた結果ファイルは失敗させる');
 });
 
+// --- 欠け日の扱い（感度分析用の窓） ---
+f.withArchive(root => {
+  const resultsDir = path.join(root, 'data/results');
+  for (let d = 1; d <= 10; d++) {
+    if (d === 5) continue; // 2026-01-05 は結果ファイルなし
+    const date = `202601${String(d).padStart(2, '0')}`;
+    const races = [histRace(date, 1, [{ boat: 2, course: 2, registerNo: '5555', rank: 1 }], '差し')];
+    if (d === 8) races.push({ source: 'boatrace-official', resultAvailable: false, date, jcd: '02', raceNo: 1 });
+    fs.writeFileSync(path.join(resultsDir, `${date}.json`), JSON.stringify({ source: 'boatrace-official', date, races }));
+  }
+  const index = pit.buildIndex(resultsDir);
+  assert.equal(pit.historyAsOf(index, '5555', 2, '20260111').wins, 9);
+  assert.equal(pit.historyAsOf(index, '5555', 2, '20260111', { gapFree: true }).wins, 5, '欠け日の翌日(01-06)以降だけ');
+  const full = pit.windowCoverage(index, '20260111');
+  assert.equal(full.days, 1095); assert.equal(full.missingDays, 1095 - 9); assert.equal(full.unavailableRaces, 1);
+  assert.deepEqual(pit.windowCoverage(index, '20260111', { gapFree: true }), { days: 5, missingDays: 0, unavailableRaces: 1 });
+});
+
 // --- レポート ---
 f.withArchive(root => {
   const resultsDir = path.join(root, 'data/results');
@@ -118,6 +136,8 @@ f.withArchive(root => {
   assert.equal(ho.ledgers.allC.returnYen, 800);
   assert.equal(r.readiness, 'collecting');
   assert.ok(r.pointInTimeAgreement.total >= 0);
+  assert.ok(r.sensitivity.gapFreeWindow.periods.holdout.counts.races <= 1);
+  assert.equal(r.historyCoverage.fullWindow.races, 5);
 });
 
 console.log('wake crossing head gate v2: fixed rule, point-in-time history, A/B/C by period, projection parity passed');

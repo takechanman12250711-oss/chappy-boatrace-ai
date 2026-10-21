@@ -120,6 +120,32 @@ function finishPeriod(period) {
   };
 }
 
+function accumulate(period, result, actual, payout, order) {
+  period.counts.races++;
+  if (result.heads.some(h => h.course >= 2)) period.counts.outerHeadRaces++;
+  const variants = { A: result.aTickets, B: result.bTickets, C: result.cTickets };
+  for (const v of VARIANTS) addLedger(period.ledgers[`all${v}`], variants[v], actual, payout);
+  if (result.changed) {
+    period.counts.changed++;
+    for (const v of VARIANTS) addLedger(period.ledgers[`changed${v}`], variants[v], actual, payout);
+  }
+  for (const head of result.heads) addOutcome(period.headOutcomes[head.status] || (period.headOutcomes[head.status] = emptyOutcome()), head.boatNo, order);
+}
+function emptyCoverage() { return { races: 0, racesWithMissingDays: 0, maxMissingDays: 0, minWindowDays: null, unavailableRaces: 0 }; }
+function addCoverage(target, cov) {
+  if (!cov) return;
+  target.races++;
+  if (cov.missingDays > 0) target.racesWithMissingDays++;
+  target.maxMissingDays = Math.max(target.maxMissingDays, cov.missingDays);
+  target.minWindowDays = target.minWindowDays === null ? cov.days : Math.min(target.minWindowDays, cov.days);
+  target.unavailableRaces += cov.unavailableRaces;
+}
+
+function finishCoverage(c) {
+  const { unavailableRaces, ...rest } = c;
+  return { ...rest, averageUnavailableRacesPerWindow: c.races ? round(unavailableRaces / c.races) : null };
+}
+
 function build(options = {}) {
   const root = options.root || ROOT;
   const projector = options.compactPredictionRecord === undefined ? compactPredictionRecord : options.compactPredictionRecord;
@@ -134,6 +160,9 @@ function build(options = {}) {
 
   const counts = { settled: 0, basisValid: 0, basisInvalid: {}, refundedOrNoPayout: 0, rolesSource: { saved: 0, pointInTime: 0 }, pointInTimeCourseMapping: {} };
   const periods = Object.fromEntries(PERIODS.map(name => [name, emptyPeriod()]));
+  // 感度分析: 窓内の欠け日以降だけで作り直した判定（両期間とも再構築）
+  const gapFree = Object.fromEntries(PERIODS.map(name => [name, emptyPeriod()]));
+  const coverage = { fullWindow: emptyCoverage(), gapFreeWindow: emptyCoverage() };
   const agreement = {};
   const rows = [];
 
@@ -171,16 +200,13 @@ function build(options = {}) {
       }
     }
 
-    const period = periods[periodName];
-    period.counts.races++;
-    if (result.heads.some(h => h.course >= 2)) period.counts.outerHeadRaces++;
-    const variants = { A: result.aTickets, B: result.bTickets, C: result.cTickets };
-    for (const v of VARIANTS) addLedger(period.ledgers[`all${v}`], variants[v], actual, payout);
-    if (result.changed) {
-      period.counts.changed++;
-      for (const v of VARIANTS) addLedger(period.ledgers[`changed${v}`], variants[v], actual, payout);
-    }
-    for (const head of result.heads) addOutcome(period.headOutcomes[head.status] || (period.headOutcomes[head.status] = emptyOutcome()), head.boatNo, order);
+    accumulate(periods[periodName], result, actual, payout, order);
+    const raceDate = key.slice(0, 8);
+    addCoverage(coverage.fullWindow, pit.windowCoverage(index, raceDate));
+    addCoverage(coverage.gapFreeWindow, pit.windowCoverage(index, raceDate, { gapFree: true }));
+    const gapFreeRoles = pit.pointInTimeRoles(index, record, raceDate, { gapFree: true }).roles;
+    const gapFreeResult = gate.evaluateRecord(record, { roles: gapFreeRoles });
+    if (gapFreeResult.basisValid) accumulate(gapFree[periodName], gapFreeResult, actual, payout, order);
 
     if (result.changed) {
       rows.push({
@@ -224,6 +250,17 @@ function build(options = {}) {
     counts,
     pointInTimeAgreement: { total: agreeTotal, sameStatusRate: agreeTotal ? round(agreeSame / agreeTotal * 100) : null, matrix: agreement },
     periods: Object.fromEntries(Object.entries(periods).map(([k, v]) => [k, finishPeriod(v)])),
+    historyCoverage: {
+      note: '公式結果原本には丸ごと欠けた日（2025-03など）と一部未取得の日がある。本番の統計も同じ原本から作るため、主集計は予想時にAIが見ていた情報と同じ欠けを含む（保存済み判定との一致率で確認）。',
+      fullWindow: finishCoverage(coverage.fullWindow),
+      gapFreeWindow: finishCoverage(coverage.gapFreeWindow)
+    },
+    sensitivity: {
+      gapFreeWindow: {
+        definition: '窓内で最後に丸ごと欠けた日の翌日からレース前日までだけで、両期間とも結果原本から判定を作り直す。閾値は同じ（12走・2勝）。',
+        periods: Object.fromEntries(Object.entries(gapFree).map(([k, v]) => [k, finishPeriod(v)]))
+      }
+    },
     rows
   };
 }
