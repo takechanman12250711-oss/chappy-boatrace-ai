@@ -26,6 +26,7 @@ fs.writeFileSync(path.join(results, "20240101.json"), JSON.stringify({
     { status: "finished", void: false, trifecta: { boats: [1, 2, 3], popularity: null, payout: 700 } }
   ]
 }));
+fs.writeFileSync(path.join(results, "20240102.json"), JSON.stringify({ complete: false, races: [race(1, 99999)] }));
 const out = path.join(dir, "report.json");
 const report = build({ from: "20240101", results, out });
 const band = (key) => report.all.find((row) => row.band === key);
@@ -33,6 +34,9 @@ const band = (key) => report.all.find((row) => row.band === key);
 assert.strictEqual(report.racesCounted, 5, "開始日前・不成立・人気なし・3着以内の同着を除く（4着の同着は数える）");
 assert.strictEqual(report.finishedRacesWithoutPopularity, 1);
 assert.strictEqual(report.topThreeDeadHeatsExcluded, 1);
+assert.strictEqual(report.incompleteDaysExcluded, 1, "収集途中の日は日ごと除外");
+assert.deepStrictEqual(report.incompleteDays, ["20240102"]);
+assert.strictEqual(report.to, "20240101", "集計した最後の日");
 assert.strictEqual(band("1-1").hitRaces, 2);
 assert.strictEqual(band("1-1").roiPct, 180, "(500+400) / (5R×1点×100)");
 assert.strictEqual(band("2-3").roiPct, 90, "900 / (5R×2点×100)、同着の7000は含めない");

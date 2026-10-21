@@ -83,10 +83,18 @@ function build({ from, results, out }) {
   const byYear = {};
   let skipped = 0;
   let deadHeats = 0;
+  const incompleteDays = [];
+  let lastCountedDate = null;
   for (const name of files) {
     const date = name.slice(0, 8);
     if (date < from) continue;
     const day = JSON.parse(fs.readFileSync(path.join(results, name), "utf8"));
+    // 収集途中の日は確定済みレースだけが偏って残るため、日ごと集計から外す。
+    if (day.complete === false) {
+      incompleteDays.push(date);
+      continue;
+    }
+    lastCountedDate = date;
     for (const race of day.races || []) {
       if (isCountable(race) && hasTopThreeDeadHeat(race)) {
         deadHeats += 1;
@@ -117,10 +125,13 @@ function build({ from, results, out }) {
       "人気は締切後の確定オッズ基準。締切前に同じ人気順で買えるとは限らない",
       "返還（F・出遅れ・欠場）は考慮しない。不成立レースは除外",
       "3着以内の同着レースは払戻が1組しか保存されていないため除外",
+      "収集途中（complete: false）の日は確定済みレースだけが残る偏りがあるため日ごと除外",
       "回収率は各帯の全点を毎レース買う前提。帯内の一部だけを選ぶ買い方の成績ではない"
     ],
     from,
-    to: files.length ? files[files.length - 1].slice(0, 8) : null,
+    to: lastCountedDate,
+    incompleteDaysExcluded: incompleteDays.length,
+    incompleteDays,
     racesCounted: all.races,
     finishedRacesWithoutPopularity: skipped,
     topThreeDeadHeatsExcluded: deadHeats,
