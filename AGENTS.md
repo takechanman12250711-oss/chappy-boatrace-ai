@@ -95,6 +95,6 @@ Claude CodeのWeb/iOSと、この会話の実行環境は認証もファイル�
 
 依頼範囲の調査・実装・fixture検査・レビュー・既存CI・PR作成まではAIが進め、計画ごとの承認待ちを増やさない。この会話・Claude Code・管理画面のいずれの入口でも、main反映前に対象変更・影響・フローチャート・PR番号とbase/head・検査状況を共通資料として示し、同じ対象PRへ「このPRをGitHubで確認」で案内する。全環境でのモデル起動や表示確認を新たな必須工程にせず、Claude Codeにも次回から適用する共有手順として渡す。ネイティブのChatGPT/Claude画面へ独自承認ボタンを設置したと説明しない。
 
-開発PRのmain反映は、本人がGitHubで確認して `Merge pull request` / `Confirm merge` など、表示されたマージ方式に応じた最終確定操作を行う。AIはその最終操作待ちで停止し、`gh pr merge`・API経由のマージ・自動マージを使わない。本手順を導入する最初のPRも本人のマージを待つ。自分が作成したPRを `Approve` する手順にせず、既存の権限・required reviews・required checksを緩めない。`completed`・CI成功・`Ready for review`・PRリンクのクリック・端末内の承認記録は本人の最終承認ではない。head変更時は必要なレビュー・CIをやり直して再提示する。
+開発PRのmain反映は、本人がGitHubで最終確定操作を行うか、会話のマージ承認ボタンで「マージする」を押す。ボタン承認の場合だけ、AIは固定headを再照合して `sha` 固定のREST APIでマージする。条件は `docs/development-approval.md` の「会話のボタンでマージを承認する」（2026-10-21 本人承認）に従う。AIは本人の承認なしにマージ・自動マージを行わない。自分が作成したPRを `Approve` する手順にせず、既存の権限・required reviews・required checksを緩めない。`completed`・CI成功・`Ready for review`・PRリンクのクリック・端末内の承認記録は本人の最終承認ではない。head変更時は必要なレビュー・CIをやり直して再提示する。
 
 管理画面は「成績」→「設定・開発確認」の折り畳みに置く。共有URLを開くだけではGitHubへ通信せず、本人が「対象PRを照合」を押して指定PRを読み取り、固定headと一致した場合だけ「このPRをGitHubで確認」を有効にする。入力不足・不一致・取得失敗時は無効にする。詳細は `docs/development-approval.md`。この手順は開発PRの最終反映に適用し、既に承認されたデータ更新・収集・note/X投稿などの自動処理や、予想方式の採用に必要な別の承認は変更しない。
