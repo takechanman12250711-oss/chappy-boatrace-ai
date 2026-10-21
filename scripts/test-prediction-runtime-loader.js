@@ -207,6 +207,12 @@ function createRuntime({
     ),
     "内隣展示比較を含むai-coreを専用キャッシュ世代で読み込む"
   );
+  assert.ok(failedOptional.appended.includes(
+    "js/formation-odds-display.js?v=20261021-exact-formation1"
+  ), "元券保持の表示修正を新しいURLで読み込む");
+  assert.match(fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8"),
+    /prediction-runtime-loader\.js\?[^"']*&formation=20261021-exact-formation1/,
+    "既存キャッシュから新表示へ到達するloaderも更新する");
   assert.ok(
     failedOptional.appended.includes(
       "js/render.js?v=20260908-comment-dedup1&bright=20261007-1"

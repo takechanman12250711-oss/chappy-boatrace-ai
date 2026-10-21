@@ -16,7 +16,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function (root) {
   "use strict";
 
-  const VERSION = "formation-odds-display-v2";
+  const VERSION = "formation-odds-display-v3-exact-set";
   const STYLE_ID = "chappy-formation-odds-display-style";
   const BOATS = Object.freeze([1, 2, 3, 4, 5, 6]);
   const FORMATION_PATHS = Object.freeze([
@@ -63,19 +63,21 @@
   }
 
   function parseFormationNotation(value) {
-    const match = String(value || "").replace(/\s+/g, "").match(/^([1-6]+)-([1-6]+)-(?:全|ALL)$/i);
+    const match = String(value || "").replace(/\s+/g, "").match(/^([1-6]+)-([1-6]+)-([1-6]+|全|ALL)$/i);
     if (!match) return null;
     const firstBoatNos = normalizeBoatNos(match[1]);
     const secondBoatNos = normalizeBoatNos(match[2]);
-    return firstBoatNos.length && secondBoatNos.length ? { firstBoatNos, secondBoatNos } : null;
+    const thirdBoatNos = /^(?:全|ALL)$/i.test(match[3]) ? [...BOATS] : normalizeBoatNos(match[3]);
+    return firstBoatNos.length && secondBoatNos.length && thirdBoatNos.length
+      ? { firstBoatNos, secondBoatNos, thirdBoatNos } : null;
   }
 
-  function expandFormation(firstBoatNos, secondBoatNos) {
+  function expandFormation(firstBoatNos, secondBoatNos, thirdBoatNos = BOATS) {
     const tickets = [];
     for (const first of normalizeBoatNos(firstBoatNos)) {
       for (const second of normalizeBoatNos(secondBoatNos)) {
         if (first === second) continue;
-        for (const third of BOATS) {
+        for (const third of normalizeBoatNos(thirdBoatNos)) {
           if (third !== first && third !== second) tickets.push(`${first}-${second}-${third}`);
         }
       }
@@ -84,6 +86,46 @@
   }
 
   const notationFor = (firsts, seconds) => `${normalizeBoatNos(firsts).join("")}-${normalizeBoatNos(seconds).join("")}-全`;
+
+  function sameTickets(first, second) {
+    const expected = new Set(second);
+    return first.length === expected.size && first.every(ticket => expected.has(ticket));
+  }
+
+  // A compact row may represent only its source tickets, including for mixed heads.
+  function compactTicketGroups(source) {
+    const tickets = [...new Set(source.map(ticketOf).filter(parseTicket))];
+    const pairs = new Map();
+    for (const ticket of tickets) {
+      const pair = ticket.slice(0, 3);
+      if (!pairs.has(pair)) pairs.set(pair, []);
+      pairs.get(pair).push(ticket);
+    }
+    // Equal first/second axes already form an exact set, with at most 30 legal pairs.
+    const groups = [...pairs.values()];
+    const axes = group => [0, 1, 2].map(position => normalizeBoatNos(group.map(ticket => parseTicket(ticket)[position])));
+    let changed = true;
+    while (changed) {
+      changed = false;
+      outer: for (let i = 0; i < groups.length; i += 1) {
+        for (let j = i + 1; j < groups.length; j += 1) {
+          const union = [...new Set([...groups[i], ...groups[j]])];
+          if (!sameTickets(expandFormation(...axes(union)), union)) continue;
+          groups[i] = tickets.filter(ticket => union.includes(ticket));
+          groups.splice(j, 1);
+          changed = true;
+          break outer;
+        }
+      }
+    }
+    return groups.map(group => {
+      const [firstBoatNos, secondBoatNos, thirdBoatNos] = axes(group);
+      const notation = sameTickets(expandFormation(firstBoatNos, secondBoatNos), group)
+        ? notationFor(firstBoatNos, secondBoatNos)
+        : `${firstBoatNos.join("")}-${secondBoatNos.join("")}-${thirdBoatNos.join("")}`;
+      return { firstBoatNos, secondBoatNos, thirdBoatNos, tickets: group, pointCount: group.length, notation };
+    });
+  }
 
   function cleanDisplayText(value) {
     const text = String(value || "")
@@ -132,15 +174,33 @@
     let secondBoatNos = normalizeBoatNos(row.secondBoatNos ?? row.seconds ?? row.secondCandidates);
     if (!firstBoatNos.length) firstBoatNos = parsed?.firstBoatNos || [];
     if (!secondBoatNos.length) secondBoatNos = parsed?.secondBoatNos || [];
-    if (!firstBoatNos.length || !secondBoatNos.length) {
-      const inferred = inferCompleteFormationRows(row.expandedTickets || row.tickets);
-      if (inferred.length === 1) ({ firstBoatNos, secondBoatNos } = inferred[0]);
+    const thirdSource = row.thirdBoatNos ?? row.thirds ?? row.thirdCandidates;
+    let thirdBoatNos = thirdSource != null ? normalizeBoatNos(thirdSource) : parsed?.thirdBoatNos || [...BOATS];
+    if (parsed) {
+      firstBoatNos = firstBoatNos.filter(no => parsed.firstBoatNos.includes(no));
+      secondBoatNos = secondBoatNos.filter(no => parsed.secondBoatNos.includes(no));
+      thirdBoatNos = thirdBoatNos.filter(no => parsed.thirdBoatNos.includes(no));
+      if (!firstBoatNos.length || !secondBoatNos.length || !thirdBoatNos.length) return null;
     }
-    const tickets = expandFormation(firstBoatNos, secondBoatNos);
+    const hasExpandedTickets = Object.prototype.hasOwnProperty.call(row, "expandedTickets");
+    const hasTickets = Object.prototype.hasOwnProperty.call(row, "tickets");
+    const explicit = hasExpandedTickets || hasTickets;
+    const tickets = explicit
+      ? [...new Set(arrayify(hasExpandedTickets ? row.expandedTickets : row.tickets).map(ticketOf).filter(parseTicket))]
+        .filter(ticket => {
+          const [first, second, third] = parseTicket(ticket);
+          return (!firstBoatNos.length || firstBoatNos.includes(first)) &&
+            (!secondBoatNos.length || secondBoatNos.includes(second)) && thirdBoatNos.includes(third);
+        })
+      : expandFormation(firstBoatNos, secondBoatNos, thirdBoatNos);
     if (!tickets.length) return null;
+    const groups = compactTicketGroups(tickets);
     return {
-      firstBoatNos, secondBoatNos, tickets, pointCount: tickets.length,
-      notation: notationFor(firstBoatNos, secondBoatNos),
+      firstBoatNos: normalizeBoatNos(tickets.map(ticket => parseTicket(ticket)[0])),
+      secondBoatNos: normalizeBoatNos(tickets.map(ticket => parseTicket(ticket)[1])),
+      thirdBoatNos: normalizeBoatNos(tickets.map(ticket => parseTicket(ticket)[2])),
+      tickets, pointCount: tickets.length,
+      notation: groups.map(group => group.notation).join(" / "),
       reason: cleanDisplayText(row.reason || row.scenarioSummary || row.flowCommonReason || row.comment || ""),
       scenarioType: cleanDisplayText(row.scenarioType || row.label || ""),
       scenarioId: String(row.scenarioId || row.id || "").trim()
@@ -152,12 +212,11 @@
     for (const row of rows) {
       const key = [row.secondBoatNos.join(""), row.scenarioId, row.reason, row.scenarioType].join("|");
       const previous = grouped.get(key);
-      if (!previous) { grouped.set(key, { ...row }); continue; }
-      const firstBoatNos = normalizeBoatNos([...previous.firstBoatNos, ...row.firstBoatNos]);
-      const tickets = expandFormation(firstBoatNos, previous.secondBoatNos);
-      grouped.set(key, { ...previous, firstBoatNos, tickets, pointCount: tickets.length, notation: notationFor(firstBoatNos, previous.secondBoatNos) });
+      if (!previous) { grouped.set(key, { ...row, tickets: [...row.tickets] }); continue; }
+      previous.tickets = [...new Set([...previous.tickets, ...row.tickets])];
     }
-    return [...grouped.values()].sort((a, b) => b.pointCount - a.pointCount || a.notation.localeCompare(b.notation));
+    return [...grouped.values()].flatMap(row => compactTicketGroups(row.tickets).map(group => ({ ...row, ...group })))
+      .sort((a, b) => b.pointCount - a.pointCount || a.notation.localeCompare(b.notation));
   }
 
   function collectCoverHeadCandidates(prediction) {
@@ -166,21 +225,14 @@
   }
 
   function augmentInnerHeadRows(prediction, rows) {
-    const coverHeads = new Set(collectCoverHeadCandidates(prediction));
-    return rows.map(row => {
-      if (row.firstBoatNos.length !== 1 || ![1, 2].includes(row.firstBoatNos[0])) return row;
-      const alternate = row.firstBoatNos[0] === 1 ? 2 : 1;
-      if (!coverHeads.has(alternate) || row.secondBoatNos.includes(alternate)) return row;
-      const firstBoatNos = [1, 2];
-      const tickets = expandFormation(firstBoatNos, row.secondBoatNos);
-      return { ...row, firstBoatNos, tickets, pointCount: tickets.length, notation: notationFor(firstBoatNos, row.secondBoatNos) };
-    });
+    // Kept for API compatibility; a cover ticket is not evidence for another full flow head.
+    return rows;
   }
 
   function collectFormationRows(prediction) {
-    const explicit = FORMATION_PATHS.flatMap(path => arrayify(getAtPath(prediction, path))).map(normalizeFormationRow).filter(Boolean);
-    const source = explicit.length ? explicit : FULL_FLOW_PATHS.flatMap(path => inferCompleteFormationRows(getAtPath(prediction, path))).map(normalizeFormationRow).filter(Boolean);
-    return mergeCompatibleRows(augmentInnerHeadRows(prediction, source));
+    const explicit = FORMATION_PATHS.flatMap(path => arrayify(getAtPath(prediction, path)));
+    const source = explicit.length ? explicit : FULL_FLOW_PATHS.map(path => ({ expandedTickets: getAtPath(prediction, path) }));
+    return mergeCompatibleRows(source.map(normalizeFormationRow).filter(Boolean));
   }
 
   function raceParamsOf(prediction) {
