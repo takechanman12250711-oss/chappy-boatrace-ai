@@ -1,0 +1,639 @@
+{
+  "version": "video-escape-filter-v1",
+  "purpose": "外部動画のイン逃げ選定ルールを公式結果原本で前向きに再現した研究集計",
+  "source": {
+    "video": "https://www.youtube.com/watch?v=MbNrZ4cx3aQ",
+    "videoTitle": "初心者でも的中率8割を狙う3連単の買い方とレースの選び方（フナフェッショナル／あべけん, 2026-10-20）",
+    "rulesFrom": "ユーザーがGeminiで作成した動画要約（動画本体は未視聴）",
+    "results": "data/results/*.json",
+    "resultDateRange": [
+      "20230722",
+      "20261021"
+    ],
+    "settledRacesRead": 175215
+  },
+  "productionChanged": false,
+  "automaticApplication": false,
+  "usableForPrediction": false,
+  "evaluation": {
+    "from": "20240101",
+    "to": "20261021",
+    "noLookahead": "各日のレースはその日より前の公式結果だけで判定し、判定後にその日の結果を履歴へ積む",
+    "params": {
+      "windowSize": 10,
+      "boatOneMinFrameSamples": 10,
+      "boatOneMinWins": 7,
+      "othersMaxWins": 3,
+      "stWindowSize": 10,
+      "minStSamples": 3,
+      "wallMarginSec": 0.03,
+      "exhibitionDentSec": 0.05,
+      "outerNobiSec": 0.05
+    },
+    "rules": {
+      "filter1": "1号艇の選手が1枠の直近10走で1着7回以上、かつ2〜6号艇の選手が各自の枠の直近10走で1着3回以下",
+      "filter12": "filter1 かつ 1号艇の1コース平均ST（直近10回）が他5艇の各自コース平均ST以下（枠なり前提）",
+      "filter12wall": "filter12 かつ 2・3号艇の平均STが1号艇+wallMarginSec以内（壁の数値は動画になく仮置き）"
+    },
+    "notBacktested": [
+      "③当日展示（展示ST・展示タイム）: 結果原本に含まれないため未検証。evaluateExhibitionは当日運用向けの仮置き閾値",
+      "最低オッズによる見送り: 締切前の全120通りオッズが結果原本にないため未検証。evaluateOddsは当日運用向け"
+    ],
+    "knownBiases": [
+      "完走しなかった選手は登録番号が結果原本にないため、その走は履歴に入らない（転覆・F等の回が欠ける）",
+      "完走しなかった2〜6号艇は選手不明のため、その艇の『1着3回以下』判定を省略して通過扱い",
+      "1号艇が完走しなかったレースは選手不明で判定できず除外。内訳をboatOneUnknownに記録",
+      "フライング・出遅れ・欠場艇を含む舟券は返還として購入額・払戻から除外。それ以外の返還（不成立）はレース単位で除外済み"
+    ],
+    "statusCounts": {
+      "evaluated": 146765,
+      "boat1-insufficient-history": 2335,
+      "boat1-unknown": 1948
+    },
+    "boatOneUnknown": {
+      "refundedForBoatOne": 1163,
+      "boatOneStartedButNotFinished": 785
+    },
+    "evaluatedRaces": 146765,
+    "racesWithUnknownOtherBoat": 8210,
+    "filter1WithUnknownOtherBoat": 2616
+  },
+  "cohorts": {
+    "baseline": {
+      "all": {
+        "races": 151048,
+        "boatOneWinRatePct": 54.6,
+        "secondPlaceWhenBoatOneWinsPct": {
+          "2": 33.6,
+          "3": 28.7,
+          "4": 18.8,
+          "5": 11.8,
+          "6": 7.1
+        },
+        "formations": {
+          "f12": {
+            "label": "1-234-全（12点）",
+            "playedRaces": 149880,
+            "fullyRefundedRaces": 1168,
+            "hitRaces": 66857,
+            "hitRatePct": 44.6,
+            "stakeYen": 178242700,
+            "returnedYen": 130009010,
+            "roiPct": 72.9,
+            "torigamiHitSharePct": 46.3
+          },
+          "f4": {
+            "label": "1-23-234（4点）",
+            "playedRaces": 149755,
+            "fullyRefundedRaces": 1293,
+            "hitRaces": 33272,
+            "hitRatePct": 22.2,
+            "stakeYen": 59447700,
+            "returnedYen": 45688620,
+            "roiPct": 76.9,
+            "torigamiHitSharePct": 2.8
+          }
+        }
+      },
+      "byYear": {
+        "2024": {
+          "races": 55341,
+          "boatOneWinRatePct": 54.6,
+          "secondPlaceWhenBoatOneWinsPct": {
+            "2": 33.3,
+            "3": 29,
+            "4": 19,
+            "5": 11.6,
+            "6": 7.1
+          },
+          "formations": {
+            "f12": {
+              "label": "1-234-全（12点）",
+              "playedRaces": 54852,
+              "fullyRefundedRaces": 489,
+              "hitRaces": 24574,
+              "hitRatePct": 44.8,
+              "stakeYen": 65174400,
+              "returnedYen": 48315200,
+              "roiPct": 74.1,
+              "torigamiHitSharePct": 44.7
+            },
+            "f4": {
+              "label": "1-23-234（4点）",
+              "playedRaces": 54808,
+              "fullyRefundedRaces": 533,
+              "hitRaces": 12179,
+              "hitRatePct": 22.2,
+              "stakeYen": 21733400,
+              "returnedYen": 17060580,
+              "roiPct": 78.5,
+              "torigamiHitSharePct": 2.4
+            }
+          }
+        },
+        "2025": {
+          "races": 50618,
+          "boatOneWinRatePct": 54.2,
+          "secondPlaceWhenBoatOneWinsPct": {
+            "2": 33.4,
+            "3": 28.8,
+            "4": 18.9,
+            "5": 11.8,
+            "6": 7
+          },
+          "formations": {
+            "f12": {
+              "label": "1-234-全（12点）",
+              "playedRaces": 50281,
+              "fullyRefundedRaces": 337,
+              "hitRaces": 22264,
+              "hitRatePct": 44.3,
+              "stakeYen": 59804700,
+              "returnedYen": 43735740,
+              "roiPct": 73.1,
+              "torigamiHitSharePct": 46
+            },
+            "f4": {
+              "label": "1-23-234（4点）",
+              "playedRaces": 50235,
+              "fullyRefundedRaces": 383,
+              "hitRaces": 11080,
+              "hitRatePct": 22.1,
+              "stakeYen": 19945800,
+              "returnedYen": 15314750,
+              "roiPct": 76.8,
+              "torigamiHitSharePct": 2.9
+            }
+          }
+        },
+        "2026": {
+          "races": 45089,
+          "boatOneWinRatePct": 55,
+          "secondPlaceWhenBoatOneWinsPct": {
+            "2": 34.3,
+            "3": 28.3,
+            "4": 18.3,
+            "5": 12.1,
+            "6": 7.1
+          },
+          "formations": {
+            "f12": {
+              "label": "1-234-全（12点）",
+              "playedRaces": 44747,
+              "fullyRefundedRaces": 342,
+              "hitRaces": 20019,
+              "hitRatePct": 44.7,
+              "stakeYen": 53263600,
+              "returnedYen": 37958070,
+              "roiPct": 71.3,
+              "torigamiHitSharePct": 48.6
+            },
+            "f4": {
+              "label": "1-23-234（4点）",
+              "playedRaces": 44712,
+              "fullyRefundedRaces": 377,
+              "hitRaces": 10013,
+              "hitRatePct": 22.4,
+              "stakeYen": 17768500,
+              "returnedYen": 13313290,
+              "roiPct": 74.9,
+              "torigamiHitSharePct": 3.2
+            }
+          }
+        }
+      }
+    },
+    "filter1": {
+      "all": {
+        "races": 44559,
+        "boatOneWinRatePct": 68.3,
+        "secondPlaceWhenBoatOneWinsPct": {
+          "2": 34.3,
+          "3": 28.5,
+          "4": 18.8,
+          "5": 11.8,
+          "6": 6.6
+        },
+        "formations": {
+          "f12": {
+            "label": "1-234-全（12点）",
+            "playedRaces": 44559,
+            "fullyRefundedRaces": 0,
+            "hitRaces": 24839,
+            "hitRatePct": 55.7,
+            "stakeYen": 52951300,
+            "returnedYen": 38847220,
+            "roiPct": 73.4,
+            "torigamiHitSharePct": 54.1
+          },
+          "f4": {
+            "label": "1-23-234（4点）",
+            "playedRaces": 44526,
+            "fullyRefundedRaces": 33,
+            "hitRaces": 12467,
+            "hitRatePct": 28,
+            "stakeYen": 17660100,
+            "returnedYen": 13893000,
+            "roiPct": 78.7,
+            "torigamiHitSharePct": 4.1
+          }
+        }
+      },
+      "byYear": {
+        "2024": {
+          "races": 16069,
+          "boatOneWinRatePct": 68,
+          "secondPlaceWhenBoatOneWinsPct": {
+            "2": 34.4,
+            "3": 28.5,
+            "4": 18.9,
+            "5": 11.6,
+            "6": 6.5
+          },
+          "formations": {
+            "f12": {
+              "label": "1-234-全（12点）",
+              "playedRaces": 16069,
+              "fullyRefundedRaces": 0,
+              "hitRaces": 8952,
+              "hitRatePct": 55.7,
+              "stakeYen": 19082600,
+              "returnedYen": 14296800,
+              "roiPct": 74.9,
+              "torigamiHitSharePct": 52.2
+            },
+            "f4": {
+              "label": "1-23-234（4点）",
+              "playedRaces": 16057,
+              "fullyRefundedRaces": 12,
+              "hitRaces": 4462,
+              "hitRatePct": 27.8,
+              "stakeYen": 6362300,
+              "returnedYen": 5036680,
+              "roiPct": 79.2,
+              "torigamiHitSharePct": 3.5
+            }
+          }
+        },
+        "2025": {
+          "races": 14641,
+          "boatOneWinRatePct": 67.8,
+          "secondPlaceWhenBoatOneWinsPct": {
+            "2": 33.8,
+            "3": 28.6,
+            "4": 18.9,
+            "5": 11.8,
+            "6": 6.9
+          },
+          "formations": {
+            "f12": {
+              "label": "1-234-全（12点）",
+              "playedRaces": 14641,
+              "fullyRefundedRaces": 0,
+              "hitRaces": 8065,
+              "hitRatePct": 55.1,
+              "stakeYen": 17391800,
+              "returnedYen": 12611070,
+              "roiPct": 72.5,
+              "torigamiHitSharePct": 54.2
+            },
+            "f4": {
+              "label": "1-23-234（4点）",
+              "playedRaces": 14627,
+              "fullyRefundedRaces": 14,
+              "hitRaces": 4063,
+              "hitRatePct": 27.8,
+              "stakeYen": 5799400,
+              "returnedYen": 4518530,
+              "roiPct": 77.9,
+              "torigamiHitSharePct": 4.4
+            }
+          }
+        },
+        "2026": {
+          "races": 13849,
+          "boatOneWinRatePct": 69.2,
+          "secondPlaceWhenBoatOneWinsPct": {
+            "2": 34.7,
+            "3": 28.4,
+            "4": 18.5,
+            "5": 11.9,
+            "6": 6.6
+          },
+          "formations": {
+            "f12": {
+              "label": "1-234-全（12点）",
+              "playedRaces": 13849,
+              "fullyRefundedRaces": 0,
+              "hitRaces": 7822,
+              "hitRatePct": 56.5,
+              "stakeYen": 16476900,
+              "returnedYen": 11939350,
+              "roiPct": 72.5,
+              "torigamiHitSharePct": 56.2
+            },
+            "f4": {
+              "label": "1-23-234（4点）",
+              "playedRaces": 13842,
+              "fullyRefundedRaces": 7,
+              "hitRaces": 3942,
+              "hitRatePct": 28.5,
+              "stakeYen": 5498400,
+              "returnedYen": 4337790,
+              "roiPct": 78.9,
+              "torigamiHitSharePct": 4.6
+            }
+          }
+        }
+      }
+    },
+    "filter12": {
+      "all": {
+        "races": 17952,
+        "boatOneWinRatePct": 71.5,
+        "secondPlaceWhenBoatOneWinsPct": {
+          "2": 34.8,
+          "3": 28.3,
+          "4": 18.8,
+          "5": 11.5,
+          "6": 6.6
+        },
+        "formations": {
+          "f12": {
+            "label": "1-234-全（12点）",
+            "playedRaces": 17952,
+            "fullyRefundedRaces": 0,
+            "hitRaces": 10514,
+            "hitRatePct": 58.6,
+            "stakeYen": 21313100,
+            "returnedYen": 15693210,
+            "roiPct": 73.6,
+            "torigamiHitSharePct": 56.5
+          },
+          "f4": {
+            "label": "1-23-234（4点）",
+            "playedRaces": 17937,
+            "fullyRefundedRaces": 15,
+            "hitRaces": 5355,
+            "hitRatePct": 29.9,
+            "stakeYen": 7109300,
+            "returnedYen": 5756470,
+            "roiPct": 81,
+            "torigamiHitSharePct": 5.1
+          }
+        }
+      },
+      "byYear": {
+        "2024": {
+          "races": 6499,
+          "boatOneWinRatePct": 71.7,
+          "secondPlaceWhenBoatOneWinsPct": {
+            "2": 34.7,
+            "3": 28.9,
+            "4": 19,
+            "5": 11.4,
+            "6": 5.9
+          },
+          "formations": {
+            "f12": {
+              "label": "1-234-全（12点）",
+              "playedRaces": 6499,
+              "fullyRefundedRaces": 0,
+              "hitRaces": 3853,
+              "hitRatePct": 59.3,
+              "stakeYen": 7707600,
+              "returnedYen": 5882030,
+              "roiPct": 76.3,
+              "torigamiHitSharePct": 55.3
+            },
+            "f4": {
+              "label": "1-23-234（4点）",
+              "playedRaces": 6494,
+              "fullyRefundedRaces": 5,
+              "hitRaces": 1952,
+              "hitRatePct": 30.1,
+              "stakeYen": 2570300,
+              "returnedYen": 2114890,
+              "roiPct": 82.3,
+              "torigamiHitSharePct": 4
+            }
+          }
+        },
+        "2025": {
+          "races": 5783,
+          "boatOneWinRatePct": 70.5,
+          "secondPlaceWhenBoatOneWinsPct": {
+            "2": 34.4,
+            "3": 28.1,
+            "4": 19,
+            "5": 11.2,
+            "6": 7.4
+          },
+          "formations": {
+            "f12": {
+              "label": "1-234-全（12点）",
+              "playedRaces": 5783,
+              "fullyRefundedRaces": 0,
+              "hitRaces": 3322,
+              "hitRatePct": 57.4,
+              "stakeYen": 6862200,
+              "returnedYen": 4874740,
+              "roiPct": 71,
+              "torigamiHitSharePct": 57.1
+            },
+            "f4": {
+              "label": "1-23-234（4点）",
+              "playedRaces": 5775,
+              "fullyRefundedRaces": 8,
+              "hitRaces": 1693,
+              "hitRatePct": 29.3,
+              "stakeYen": 2288500,
+              "returnedYen": 1781060,
+              "roiPct": 77.8,
+              "torigamiHitSharePct": 5.3
+            }
+          }
+        },
+        "2026": {
+          "races": 5670,
+          "boatOneWinRatePct": 72.3,
+          "secondPlaceWhenBoatOneWinsPct": {
+            "2": 35.2,
+            "3": 27.9,
+            "4": 18.4,
+            "5": 12.1,
+            "6": 6.5
+          },
+          "formations": {
+            "f12": {
+              "label": "1-234-全（12点）",
+              "playedRaces": 5670,
+              "fullyRefundedRaces": 0,
+              "hitRaces": 3339,
+              "hitRatePct": 58.9,
+              "stakeYen": 6743300,
+              "returnedYen": 4936440,
+              "roiPct": 73.2,
+              "torigamiHitSharePct": 57.4
+            },
+            "f4": {
+              "label": "1-23-234（4点）",
+              "playedRaces": 5668,
+              "fullyRefundedRaces": 2,
+              "hitRaces": 1710,
+              "hitRatePct": 30.2,
+              "stakeYen": 2250500,
+              "returnedYen": 1860520,
+              "roiPct": 82.7,
+              "torigamiHitSharePct": 6.1
+            }
+          }
+        }
+      }
+    },
+    "filter12wall": {
+      "all": {
+        "races": 2720,
+        "boatOneWinRatePct": 70.1,
+        "secondPlaceWhenBoatOneWinsPct": {
+          "2": 39.9,
+          "3": 27.5,
+          "4": 17.1,
+          "5": 10.4,
+          "6": 5.1
+        },
+        "formations": {
+          "f12": {
+            "label": "1-234-全（12点）",
+            "playedRaces": 2720,
+            "fullyRefundedRaces": 0,
+            "hitRaces": 1612,
+            "hitRatePct": 59.3,
+            "stakeYen": 3246600,
+            "returnedYen": 2379120,
+            "roiPct": 73.3,
+            "torigamiHitSharePct": 57.4
+          },
+          "f4": {
+            "label": "1-23-234（4点）",
+            "playedRaces": 2720,
+            "fullyRefundedRaces": 0,
+            "hitRaces": 877,
+            "hitRatePct": 32.2,
+            "stakeYen": 1085000,
+            "returnedYen": 869850,
+            "roiPct": 80.2,
+            "torigamiHitSharePct": 5.6
+          }
+        }
+      },
+      "byYear": {
+        "2024": {
+          "races": 944,
+          "boatOneWinRatePct": 70.2,
+          "secondPlaceWhenBoatOneWinsPct": {
+            "2": 43.6,
+            "3": 26.4,
+            "4": 14.5,
+            "5": 9.5,
+            "6": 6
+          },
+          "formations": {
+            "f12": {
+              "label": "1-234-全（12点）",
+              "playedRaces": 944,
+              "fullyRefundedRaces": 0,
+              "hitRaces": 560,
+              "hitRatePct": 59.3,
+              "stakeYen": 1125400,
+              "returnedYen": 793830,
+              "roiPct": 70.5,
+              "torigamiHitSharePct": 59.6
+            },
+            "f4": {
+              "label": "1-23-234（4点）",
+              "playedRaces": 944,
+              "fullyRefundedRaces": 0,
+              "hitRaces": 324,
+              "hitRatePct": 34.3,
+              "stakeYen": 376400,
+              "returnedYen": 311690,
+              "roiPct": 82.8,
+              "torigamiHitSharePct": 4.3
+            }
+          }
+        },
+        "2025": {
+          "races": 865,
+          "boatOneWinRatePct": 68.7,
+          "secondPlaceWhenBoatOneWinsPct": {
+            "2": 39.1,
+            "3": 24.4,
+            "4": 18.7,
+            "5": 13.1,
+            "6": 4.7
+          },
+          "formations": {
+            "f12": {
+              "label": "1-234-全（12点）",
+              "playedRaces": 865,
+              "fullyRefundedRaces": 0,
+              "hitRaces": 488,
+              "hitRatePct": 56.4,
+              "stakeYen": 1032800,
+              "returnedYen": 723400,
+              "roiPct": 70,
+              "torigamiHitSharePct": 57.4
+            },
+            "f4": {
+              "label": "1-23-234（4点）",
+              "playedRaces": 865,
+              "fullyRefundedRaces": 0,
+              "hitRaces": 256,
+              "hitRatePct": 29.6,
+              "stakeYen": 345000,
+              "returnedYen": 245460,
+              "roiPct": 71.1,
+              "torigamiHitSharePct": 6.6
+            }
+          }
+        },
+        "2026": {
+          "races": 911,
+          "boatOneWinRatePct": 71.5,
+          "secondPlaceWhenBoatOneWinsPct": {
+            "2": 36.9,
+            "3": 31.5,
+            "4": 18.3,
+            "5": 8.9,
+            "6": 4.5
+          },
+          "formations": {
+            "f12": {
+              "label": "1-234-全（12点）",
+              "playedRaces": 911,
+              "fullyRefundedRaces": 0,
+              "hitRaces": 564,
+              "hitRatePct": 61.9,
+              "stakeYen": 1088400,
+              "returnedYen": 861890,
+              "roiPct": 79.2,
+              "torigamiHitSharePct": 55.1
+            },
+            "f4": {
+              "label": "1-23-234（4点）",
+              "playedRaces": 911,
+              "fullyRefundedRaces": 0,
+              "hitRaces": 297,
+              "hitRatePct": 32.6,
+              "stakeYen": 363600,
+              "returnedYen": 312700,
+              "roiPct": 86,
+              "torigamiHitSharePct": 6.1
+            }
+          }
+        }
+      }
+    }
+  }
+}
