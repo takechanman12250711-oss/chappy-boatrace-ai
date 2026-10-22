@@ -18,6 +18,7 @@ const {
 );
 const {
   preparePredictionGitSave,
+  cleanupRestoredPredictionSources,
   rawSaveLimitFromEnv
 } = require(
   "./prepare-daily-prediction-git-save"
@@ -316,6 +317,37 @@ try {
     "次回収集前に圧縮正本から最新日次原本を完全復元する"
   );
 
+  const cleanedTracked =
+    cleanupRestoredPredictionSources({
+      rootDirectory: temporaryRoot,
+      date,
+      argv: [],
+      env: {}
+    });
+  assert.equal(
+    cleanedTracked.cleanedCount,
+    1
+  );
+  assert.equal(
+    cleanedTracked.cleanupResults[0].status,
+    "tracked-restored"
+  );
+  assert.equal(
+    fs.readFileSync(
+      sourcePath,
+      "utf8"
+    ),
+    baseRaw,
+    "診断用に復元した追跡済み原本は再圧縮せずGit正本へ戻す"
+  );
+
+  restorePredictionSources({
+    rootDirectory: temporaryRoot,
+    date,
+    argv: [],
+    env: {}
+  });
+
   const archiveBeforeCorruption =
     fs.readFileSync(archivePath);
   const corrupted = Buffer.from(
@@ -338,6 +370,42 @@ try {
   fs.writeFileSync(
     archivePath,
     archiveBeforeCorruption
+  );
+
+  const untrackedDate = "20260817";
+  const untrackedSourcePath =
+    archiveApi.sourcePathFor(
+      temporaryRoot,
+      untrackedDate
+    );
+  fs.writeFileSync(
+    untrackedSourcePath,
+    `${JSON.stringify({
+      date: untrackedDate,
+      evidence: "untracked".repeat(2000)
+    })}\n`,
+    "utf8"
+  );
+  archiveApi.archivePredictionSource({
+    rootDirectory: temporaryRoot,
+    date: untrackedDate,
+    rawSaveLimitBytes: 1024
+  });
+  const cleanedUntracked =
+    cleanupRestoredPredictionSources({
+      rootDirectory: temporaryRoot,
+      date: untrackedDate,
+      argv: [],
+      env: {}
+    });
+  assert.equal(
+    cleanedUntracked.cleanupResults[0].status,
+    "untracked-removed"
+  );
+  assert.equal(
+    fs.existsSync(untrackedSourcePath),
+    false,
+    "診断用に復元した未追跡原本は既存archiveを再生成せず除去する"
   );
 
   const safeDate = "20260816";

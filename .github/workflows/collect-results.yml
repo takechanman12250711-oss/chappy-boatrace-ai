@@ -550,7 +550,6 @@ jobs:
           node scripts/test-theory-candidate-branch-analysis-phase9-artifact.js
           node scripts/build-phase3-learning-handoff.js
           node scripts/build-phase4-daily-cycle-gate.js
-          node scripts/restore-daily-prediction-source.js --all
           node scripts/build-practical-priority-shadow-report.js
           node scripts/test-practical-priority-shadow-artifact.js
           node scripts/build-prediction-index-shards.js
@@ -561,7 +560,7 @@ jobs:
 
       - name: Validate result prediction artifacts
         run: |
-          node scripts/prepare-daily-prediction-git-save.js --all
+          node scripts/prepare-daily-prediction-git-save.js --cleanup-restored --all
           node scripts/test-load-performance.js
           git diff --exit-code -- data/predictions/index.json
 
@@ -764,7 +763,7 @@ jobs:
 
       - name: Validate calibrated prediction artifacts
         run: |
-          node scripts/prepare-daily-prediction-git-save.js --all
+          node scripts/prepare-daily-prediction-git-save.js --cleanup-restored --all
           node scripts/test-load-performance.js
           git diff --exit-code -- data/predictions/index.json
 
