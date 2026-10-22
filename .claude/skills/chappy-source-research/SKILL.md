@@ -32,3 +32,16 @@ YouTube動画の要約などから理論を受け取ったら、次の順で検�
 5. **shadowとして実装する**：本番予想・買い目・UI・noteは変えず、`productionChanged: false`・`usableForPrediction: false`・`automaticApplication: false` を出力に含める。保存データは読み取りのみ。fixtureテストで判定・境界・締切後除外・projection parityを確認する。
 6. **PRで受け渡す**：Draft PR、Codexレビュー、既存CIを通し、`docs/development-approval.md` の手順でマージする。
 7. **本番採用は別承認**：検証で良化しても自動で採用しない。結果を示し、予想ロジック変更として本人の承認を別に得る。
+
+## YouTube動画の主張を検証する手順（2026-10-21確立）
+
+この節は、主張を公式結果原本（`data/results`）だけで判定できる場合の例外で、既存予想と比べない研究用集計に限る。現行の予想・買い目と比べる、または変更案として扱う場合は、上の手順3（締切前保存予想を `analysis-input-contract` で通した入力、`data/predictions` は2026-07-22〜）に従う。結果原本だけのコホートと保存予想のコホートは別に集計し、数値を混ぜない。
+
+1. **内容の入手**: YouTubeは自動取得がbot対策で止まり、取れるのはタイトル・概要欄だけ。本人にGeminiの要約かYouTubeの「文字起こし」を貼ってもらう。出典（動画URL・要約の作成元・動画本体は未視聴か）を成果物に書く。
+2. **条件の数値化**: 主張を判定できるルールにする。動画に数値がない閾値は「仮置き」と明記する。資金管理・心構えだけの主張は予想ロジックにせず、購入の歯止め（別リポジトリ chappy-boatrace-api の `js/purchase-guardrails-core.js`、2026-10-21時点でPR #47未マージ）や、このリポジトリの `docs/wall-purchase-policy.md`・`config/wall-purchase-approval.json` との対応で整理する。
+3. **データの確認**: `data/results/*.json`（2023-07-22〜）には選手登録番号・枠・着順・進入コース・ST（F/出遅れの印つき）・3連単の払戻と確定人気がある。締切前の展示と全120通りのオッズはないため、その条件は過去検証できない。当日用は `/api/race` の `startExhibition`・`entries[].exhibition.displayTime` と `/api/odds` で判定関数だけ用意する。
+4. **前向き再現**: 各日のレースは前日までの結果だけで判定し、判定後に当日分を履歴へ積む。F・出遅れ・欠場艇を含む券は返還として除く。完走しなかった選手は登録番号がないので、その扱いを既知の偏りとして書く。
+5. **評価**: 的中率だけでなく回収率を、全レースの基準値と比べて年別にも出す。主要な数値は別実装（Python等）で再計算して一致を確かめる。
+6. **成果物**: `scripts/build-*.cjs`・`scripts/test-*.cjs`・`docs/*-v1.md`・`data/stats/*-v1.json`・PR用CIを別PRにする。`productionChanged=false` / `automaticApplication=false` / `usableForPrediction=false` を固定し、新しい外部収集・cron・有料APIを追加しない。採用は前向きサンプルでの回収率を示してユーザー承認後に別PR。
+
+参考実装: `video-escape-filter-v1`（PR #1352）、`trifecta-popularity-roi-v1`（PR #1356）。基準値の目安（2024-01〜2026-10）は、1号艇1着率54.6%、3連単を人気帯で全点買いした回収率が1〜10番人気で約77%、61〜120番人気で約50%。動画のイン逃げ条件で1号艇1着率は71%台まで上がったが、回収率は73〜81%で100%を超えなかった。
