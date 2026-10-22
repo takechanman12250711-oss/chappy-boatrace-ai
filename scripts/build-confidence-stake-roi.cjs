@@ -178,11 +178,13 @@ function build({ root = path.resolve(__dirname, ".."), predictionsDir, resultsDi
   const { records, diagnostics } = contract.buildDefaultCohort({ root, predictionsDir, resultsDir, compactPredictionRecord });
   const incompleteDays = incompleteResultDays(resultsDir || path.join(root, "data", "results"));
   const raceExcludedReasons = {};
+  const excludedIncompleteDays = new Set();
   const races = [];
   for (const record of records) {
     const key = record.__analysisRaceKey || contract.raceKey(record);
     if (incompleteDays.has(key.slice(0, 8))) {
       raceExcludedReasons["incomplete-result-day"] = (raceExcludedReasons["incomplete-result-day"] || 0) + 1;
+      excludedIncompleteDays.add(key.slice(0, 8));
       continue;
     }
     const { race, reason } = extractRace(record);
@@ -209,7 +211,7 @@ function build({ root = path.resolve(__dirname, ".."), predictionsDir, resultsDi
       "欠場・F・出遅れのあるレース、3着以内の同着、収集途中（complete: false）の結果日は除外",
       "スコアの意味や算出方法は期間中に変わっている可能性がある"
     ],
-    cohort: { ...diagnostics, eligibleRaces: races.length, raceExcludedReasons, incompleteResultDays: [...incompleteDays].sort(), from: races[0]?.date || null, to: races[races.length - 1]?.date || null },
+    cohort: { ...diagnostics, eligibleRaces: races.length, raceExcludedReasons, incompleteResultDays: [...excludedIncompleteDays].sort(), from: races[0]?.date || null, to: races[races.length - 1]?.date || null },
     ...analyze(races)
   };
   if (out) {

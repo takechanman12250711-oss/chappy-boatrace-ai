@@ -76,9 +76,10 @@ function prediction(date, raceNo, tickets, confidence, selection) {
   // 収集途中の日は日ごと除外
   write(predictionsDir, "20261002", { predictions: [prediction("20261002", 1, ["1-2-3"], 99, 99)] });
   write(resultsDir, "20261002", { complete: false, races: [result("20261002", 1, [1, 2, 3], 9900)] });
+  write(resultsDir, "20230101", { complete: false, races: [] });
   const report = lib.build({ root: dir, predictionsDir, resultsDir });
   assert.strictEqual(report.cohort.raceExcludedReasons["incomplete-result-day"], 1);
-  assert.deepStrictEqual(report.cohort.incompleteResultDays, ["20261002"]);
+  assert.deepStrictEqual(report.cohort.incompleteResultDays, ["20261002"], "対象の予想がない収集途中の日は載せない");
   assert.strictEqual(report.cohort.eligibleRaces, 7, "締切後保存の1Rを除く");
   assert.strictEqual(report.cohort.excludedReasons["captured-at-or-after-deadline"], 1);
   const conf = report.byScore.confidenceScore;
