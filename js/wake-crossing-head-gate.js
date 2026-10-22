@@ -19,7 +19,10 @@
     wakeCrossingMethods: Object.freeze(["差し", "まくり差し"]),
     excludedMethods: Object.freeze(["まくり"]),
     exemptCourses: Object.freeze([1]),
-    evidenceReadyDemotedHeads: 30
+    evidenceReadyDemotedHeads: 30,
+    // C案（v2で固定）: 降格艇が頭の券 h-x-y を x-h-y に置き換え、降格艇を2着へ回す。
+    // 3着は元の券のまま。B案に残る券と重複する券、入れ替え後の頭も降格艇になる券は追加しない。
+    cVariant: "swap-demoted-head-to-second"
   });
 
   const STATUSES = Object.freeze([
@@ -91,9 +94,14 @@
     return tickets;
   }
 
-  function evaluateRecord(record) {
+  function swapToSecond(ticket) {
+    const [first, second, third] = ticket.split("-");
+    return [second, first, third].join("-");
+  }
+
+  function evaluateRecord(record, options = {}) {
     const tickets = practicalTickets(record);
-    const roles = skillRoles(record);
+    const roles = Array.isArray(options.roles) ? options.roles : skillRoles(record);
     const base = {
       version: FIXED.version,
       applicationMode: "shadow",
@@ -101,8 +109,8 @@
       automaticApplication: false,
       productionChanged: false
     };
-    if (!tickets.length) return { ...base, basisValid: false, reason: "practical-tickets-missing", tickets, aTickets: tickets, bTickets: tickets, boats: [], heads: [], demotedHeadBoatNos: [], changed: false };
-    if (!roles || !roles.length) return { ...base, basisValid: false, reason: "racer-skill-roles-missing", tickets, aTickets: tickets, bTickets: tickets, boats: [], heads: [], demotedHeadBoatNos: [], changed: false };
+    if (!tickets.length) return { ...base, basisValid: false, reason: "practical-tickets-missing", tickets, aTickets: tickets, bTickets: tickets, cTickets: tickets, boats: [], heads: [], demotedHeadBoatNos: [], changed: false };
+    if (!roles || !roles.length) return { ...base, basisValid: false, reason: "racer-skill-roles-missing", tickets, aTickets: tickets, bTickets: tickets, cTickets: tickets, boats: [], heads: [], demotedHeadBoatNos: [], changed: false };
 
     const boats = roles
       .map(evaluateBoat)
@@ -116,6 +124,15 @@
     });
     const demoted = new Set(heads.filter(h => h.status === "demote").map(h => h.boatNo));
     const bTickets = tickets.filter(t => !demoted.has(Number(t.split("-")[0])));
+    const cTickets = [...bTickets];
+    for (const ticket of tickets) {
+      if (!demoted.has(Number(ticket.split("-")[0]))) continue;
+      const swapped = swapToSecond(ticket);
+      // 入れ替え後の頭が降格判定の艇なら追加しない。元の券で頭でなかった艇も6艇の判定で確認する。
+      const newHead = Number(swapped.split("-")[0]);
+      if (demoted.has(newHead) || byBoat.get(newHead)?.status === "demote") continue;
+      if (!cTickets.includes(swapped)) cTickets.push(swapped);
+    }
     return {
       ...base,
       basisValid: true,
@@ -123,6 +140,7 @@
       tickets,
       aTickets: tickets,
       bTickets,
+      cTickets,
       boats,
       heads,
       demotedHeadBoatNos: [...demoted].sort((a, b) => a - b),
@@ -131,5 +149,5 @@
     };
   }
 
-  return Object.freeze({ FIXED, STATUSES, normalizeTicket, evaluateBoat, evaluateRecord, skillRoles, practicalTickets });
+  return Object.freeze({ FIXED, STATUSES, normalizeTicket, evaluateBoat, evaluateRecord, skillRoles, practicalTickets, swapToSecond });
 });

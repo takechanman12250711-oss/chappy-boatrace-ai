@@ -10,6 +10,7 @@ on:
       - js/wake-crossing-head-gate.js
       - scripts/build-wake-crossing-head-gate-report.cjs
       - tests/wake-crossing-head-gate.test.cjs
+      - scripts/wake-crossing-point-in-time-history.cjs
       - .github/workflows/build-wake-crossing-head-gate.yml
 permissions:
   contents: write
@@ -36,7 +37,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/stats/wake-crossing-head-gate-v1.json
+          git add data/stats/wake-crossing-head-gate-v2.json
           git diff --cached --quiet && exit 0
           git commit -m "Update wake crossing head gate report"
           git pull --rebase origin main
