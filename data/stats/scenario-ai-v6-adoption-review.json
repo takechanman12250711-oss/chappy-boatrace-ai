@@ -1,44 +1,44 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-19T09:51:29.242Z",
+  "generatedAt": "2026-10-22T20:24:58.848Z",
   "source": "scenario-ai-v6-ab-report + scenario-ai-v6-reproducibility-gate",
   "status": "collecting-evidence",
   "summary": {
-    "comparableCount": 16,
+    "comparableCount": 17,
     "aWins": 4,
-    "bWins": 10,
+    "bWins": 11,
     "ties": 2,
-    "bWinLead": 6,
+    "bWinLead": 7,
     "bExactLift": 1,
-    "bFirstHitLift": 6
+    "bFirstHitLift": 7
   },
   "firstHalf": {
-    "comparableCount": 8,
-    "changedComparableCount": 8,
-    "aWins": 2,
+    "comparableCount": 9,
+    "changedComparableCount": 9,
+    "aWins": 3,
     "bWins": 5,
     "ties": 1,
     "aExactCount": 0,
     "bExactCount": 0,
-    "aFirstHitCount": 2,
+    "aFirstHitCount": 3,
     "bFirstHitCount": 5,
-    "bWinRate": 62.5,
+    "bWinRate": 55.6,
     "bExactLift": 0,
-    "bFirstHitLift": 3
+    "bFirstHitLift": 2
   },
   "secondHalf": {
     "comparableCount": 8,
     "changedComparableCount": 8,
-    "aWins": 2,
-    "bWins": 5,
+    "aWins": 1,
+    "bWins": 6,
     "ties": 1,
     "aExactCount": 0,
     "bExactCount": 1,
-    "aFirstHitCount": 2,
-    "bFirstHitCount": 5,
-    "bWinRate": 62.5,
+    "aFirstHitCount": 1,
+    "bFirstHitCount": 6,
+    "bWinRate": 75,
     "bExactLift": 1,
-    "bFirstHitLift": 3
+    "bFirstHitLift": 5
   },
   "majorVenueRegression": [],
   "approvedAdjustments": [
@@ -69,31 +69,31 @@
       "key": "minimum-comparisons",
       "label": "比較可能100R以上",
       "passed": false,
-      "actual": 16
+      "actual": 17
     },
     {
       "key": "minimum-b-wins",
       "label": "B勝ち30R以上",
       "passed": false,
-      "actual": 10
+      "actual": 11
     },
     {
       "key": "b-win-lead",
       "label": "B勝ちがA勝ちを5勝以上上回る",
       "passed": true,
-      "actual": 6
+      "actual": 7
     },
     {
       "key": "first-half",
       "label": "前半でB優勢",
       "passed": true,
-      "actual": "2-5"
+      "actual": "3-5"
     },
     {
       "key": "second-half",
       "label": "後半でB優勢",
       "passed": true,
-      "actual": "2-5"
+      "actual": "1-6"
     },
     {
       "key": "venue-regression",
