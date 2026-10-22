@@ -140,7 +140,12 @@ assert.ok(
 
 const saveStep = central.slice(saveStart, calibrationStart);
 const validateStep = central.slice(validateStart, saveStart);
-assert.ok(validateStep.includes("node scripts/prepare-daily-prediction-git-save.js --all"));
+assert.ok(
+  validateStep.includes(
+    "node scripts/prepare-daily-prediction-git-save.js --cleanup-restored --all"
+  ),
+  "診断用の復元原本は既存archiveを再圧縮せず片付ける"
+);
 assert.ok(validateStep.includes("node scripts/test-load-performance.js"));
 assert.ok(validateStep.includes("result-report-checkpoint.cjs pack diagnostics"));
 assert.match(saveStep, /result-report-checkpoint.cjs publish diagnostics/);
