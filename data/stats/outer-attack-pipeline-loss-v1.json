@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "analysisId": "outer-attack-pipeline-loss-v1",
-  "generatedAt": "2026-10-22T02:12:42.798Z",
+  "generatedAt": "2026-10-22T03:26:04.334Z",
   "productionChanged": false,
   "automaticApplication": false,
-  "signalRaceCount": 81,
+  "signalRaceCount": 82,
   "stageCounts": {
     "archive-missed": 18,
     "not-comparable": 19,
-    "settled": 44
+    "settled": 45
   },
   "notComparableVariantStatus": {
     "cover:no-category-candidate": 13,
@@ -3982,6 +3982,110 @@
               "purchaseEligible": false,
               "evidenceQualified": true,
               "priorityScore": 100
+            }
+          },
+          {
+            "variant": "hole",
+            "status": "no-source-ticket",
+            "candidateCount": 0,
+            "sourceTicketPresent": false,
+            "replacement": null
+          }
+        ]
+      ]
+    },
+    {
+      "raceKey": "20261022-11-1",
+      "selectedAt": "2026-10-22T01:23:45.782Z",
+      "signalGate": "active",
+      "stage": "settled",
+      "archiveCount": 2,
+      "exclusionStatus": "",
+      "variantDiagnostics": [
+        [
+          {
+            "variant": "cover",
+            "status": "ready",
+            "candidateCount": 1,
+            "sourceTicketPresent": true,
+            "replacement": {
+              "sourceKey": "cover",
+              "validEntryIndex": 1,
+              "fromTicket": "1-2-6",
+              "toTicket": "1-4-3",
+              "carriedAmountYen": 100,
+              "targetPosition": 3,
+              "candidateId": "candidate:1-4-3",
+              "candidateKind": "canonical-formation",
+              "purchaseEligible": false,
+              "evidenceQualified": true,
+              "priorityScore": 68
+            }
+          },
+          {
+            "variant": "flow",
+            "status": "ready",
+            "candidateCount": 6,
+            "sourceTicketPresent": true,
+            "replacement": {
+              "sourceKey": "flow",
+              "validEntryIndex": 1,
+              "fromTicket": "3-2-6",
+              "toTicket": "1-3-2",
+              "carriedAmountYen": 100,
+              "targetPosition": 2,
+              "candidateId": "shadow-physical-1-3-2",
+              "candidateKind": "outer-attack-shadow-physical",
+              "purchaseEligible": true,
+              "evidenceQualified": true,
+              "priorityScore": 73.145
+            }
+          },
+          {
+            "variant": "hole",
+            "status": "no-source-ticket",
+            "candidateCount": 0,
+            "sourceTicketPresent": false,
+            "replacement": null
+          }
+        ],
+        [
+          {
+            "variant": "cover",
+            "status": "ready",
+            "candidateCount": 1,
+            "sourceTicketPresent": true,
+            "replacement": {
+              "sourceKey": "cover",
+              "validEntryIndex": 1,
+              "fromTicket": "1-2-6",
+              "toTicket": "1-4-3",
+              "carriedAmountYen": 100,
+              "targetPosition": 3,
+              "candidateId": "",
+              "candidateKind": "canonical-formation",
+              "purchaseEligible": false,
+              "evidenceQualified": true,
+              "priorityScore": 68
+            }
+          },
+          {
+            "variant": "flow",
+            "status": "ready",
+            "candidateCount": 6,
+            "sourceTicketPresent": true,
+            "replacement": {
+              "sourceKey": "flow",
+              "validEntryIndex": 1,
+              "fromTicket": "3-2-6",
+              "toTicket": "1-3-2",
+              "carriedAmountYen": 100,
+              "targetPosition": 2,
+              "candidateId": "shadow-physical-1-3-2",
+              "candidateKind": "outer-attack-shadow-physical",
+              "purchaseEligible": true,
+              "evidenceQualified": true,
+              "priorityScore": 73.145
             }
           },
           {
