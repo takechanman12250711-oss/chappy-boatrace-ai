@@ -54,6 +54,20 @@ function prediction(date, raceNo, tickets, confidence, selection) {
   assert.strictEqual(lib.extractRace({ ...prediction("20260801", 1, [], 80, 70), __officialResult: result("20260801", 1, [1, 2, 3], 500) }).reason, "no-practical-tickets", "見送りレースは買わない");
 }
 
+// 勝負所の判定は丸め前の金額で行う（99.95%は100%扱いにしない）
+{
+  const race = (date, score, stakeYen, returnYen) => ({ key: `${date}-01-1`, date, confidenceScore: score, selectionScore: score, tickets: stakeYen / 100, stakeYen, returnYen, hit: returnYen > 0 });
+  const races = [];
+  for (const date of ["20260801", "20261001"]) {
+    for (let i = 0; i < 100; i += 1) races.push(race(date, 10, 200, 0));
+    for (let i = 0; i < 100; i += 1) races.push(race(date, 50, 200, 0));
+    for (let i = 0; i < 100; i += 1) races.push(race(date, 90, 200, i === 0 ? 19990 : 0));
+  }
+  const result = lib.analyze(races).byScore.confidenceScore;
+  assert.strictEqual(result.periods.holdout.high.roiPct, 100, "表示は100.0%に丸まる");
+  assert.strictEqual(result.supportsConcentration, false, "実際は99.95%なので根拠なし");
+}
+
 // build: 境界は explored だけから作り、締切後保存は除外
 {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "confidence-stake-"));

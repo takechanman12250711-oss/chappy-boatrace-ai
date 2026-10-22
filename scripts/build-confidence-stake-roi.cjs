@@ -153,9 +153,13 @@ function analyze(races) {
       }
       result.periods[key] = { scoreMissing: missing, ...Object.fromEntries(Object.entries(bands).map(([name, items]) => [name, summarize(items)])) };
     }
+    // 丸めた roiPct ではなく金額で比べ、99.95% を100%扱いにしない。
+    const rawRoi = (summary) => (summary.stakeYen ? summary.returnYen / summary.stakeYen : null);
     const supported = ["explored", "holdout"].every((key) => {
       const p = result.periods[key];
-      return p.high.sufficient && p.low.sufficient && p.high.roiPct >= 100 && p.high.roiPct > p.low.roiPct;
+      const high = rawRoi(p.high);
+      const low = rawRoi(p.low);
+      return p.high.sufficient && p.low.sufficient && high !== null && low !== null && high >= 1 && high > low;
     });
     result.supportsConcentration = supported;
     out.byScore[score] = result;
