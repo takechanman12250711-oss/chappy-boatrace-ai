@@ -1,0 +1,20 @@
+name: Check confidence stake ROI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/build-confidence-stake-roi.cjs'
+      - 'scripts/test-confidence-stake-roi.cjs'
+      - 'scripts/analysis-input-contract.js'
+      - '.github/workflows/check-confidence-stake-roi.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/test-confidence-stake-roi.cjs
