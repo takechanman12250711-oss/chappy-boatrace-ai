@@ -1,0 +1,178 @@
+{
+  "version": "exhibition-time-pitfalls-v1",
+  "purpose": "展示タイムの落とし穴（引き波・荒れ水面・計測位置）を締切前保存予想と公式結果で検証する研究集計",
+  "source": {
+    "video": "https://youtube.com/watch?v=UH2qqLJoKOo",
+    "videoTitle": "【極秘】\"展示タイム\"を見るだけでは勝てません｜本当の使い方を完全公開",
+    "claimsFrom": "ユーザーが作成した動画要約（動画本体は未視聴）",
+    "inputs": "data/predictions（締切前保存・analysis-input-contract）+ data/results（公式結果）"
+  },
+  "productionChanged": false,
+  "automaticApplication": false,
+  "usableForPrediction": false,
+  "fixedBeforeResults": {
+    "exploredFrom": "20260722",
+    "exploredTo": "20260915",
+    "holdoutFrom": "20260916",
+    "exhibitionTimeRange": [
+      6,
+      7.5
+    ],
+    "roughWindSpeedMin": 5,
+    "roughWaveHeightMin": 5,
+    "differentMeasurementVenues": [
+      "13",
+      "18",
+      "22",
+      "24"
+    ],
+    "minRacesForConclusion": 100
+  },
+  "notTested": [
+    "目展示（スタート展示直後の行き足・周回展示のターン）: 映像を見た記録がない",
+    "周回展示バックストレッチの走行位置: 記録がない"
+  ],
+  "caveats": [
+    "1着率・順位相関には進入コースの有利不利が含まれる。courseOnlyRankCorrelation は進入コースだけで着順を説明した場合の参考値",
+    "艇番ごとの偏りの補正値は explored 期間だけから作り、holdout に当てはめる",
+    "完走しなかった艇は最下位タイとして扱う。欠場艇のいるレースは除外",
+    "計測位置が異なる4場は件数が少なく、差があっても場の水面特性と区別できない"
+  ],
+  "cohort": {
+    "canonicalPredictionCount": 3849,
+    "preDeadlinePredictionCount": 3833,
+    "excludedPredictionCount": 16,
+    "excludedReasons": {
+      "captured-at-or-after-deadline": 6,
+      "source-fetched-at-or-after-deadline": 3,
+      "timestamp-missing": 7
+    },
+    "officialResultCount": 3778,
+    "settledJoinCount": 3778,
+    "deduplication": "predictions-preferred-over-verificationPredictions",
+    "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json",
+    "eligibleRaces": 1792,
+    "raceExcludedReasons": {
+      "exhibition-time-missing": 1862,
+      "official-course-missing": 124
+    },
+    "from": "20260726",
+    "to": "20261022"
+  },
+  "adjustmentFromExplored": {
+    "1": -0.0169,
+    "2": -0.0042,
+    "3": 0.0037,
+    "4": 0.0039,
+    "5": 0.0082,
+    "6": 0.0053
+  },
+  "periods": {
+    "explored": {
+      "races": 1076,
+      "boatBiasSec": {
+        "1": -0.0169,
+        "2": -0.0042,
+        "3": 0.0037,
+        "4": 0.0039,
+        "5": 0.0082,
+        "6": 0.0053
+      },
+      "raw": {
+        "races": 1076,
+        "sufficient": true,
+        "fastestWinRatePct": 29.8,
+        "meanRankCorrelation": 0.191,
+        "courseOnlyRankCorrelation": 0.392
+      },
+      "boatBiasAdjusted": {
+        "races": 1076,
+        "sufficient": true,
+        "fastestWinRatePct": 22.3,
+        "meanRankCorrelation": 0.1,
+        "courseOnlyRankCorrelation": 0.392
+      },
+      "calm": {
+        "races": 896,
+        "sufficient": true,
+        "fastestWinRatePct": 30.5,
+        "meanRankCorrelation": 0.197,
+        "courseOnlyRankCorrelation": 0.394
+      },
+      "rough": {
+        "races": 180,
+        "sufficient": true,
+        "fastestWinRatePct": 26.4,
+        "meanRankCorrelation": 0.161,
+        "courseOnlyRankCorrelation": 0.379
+      },
+      "differentMeasurementVenues": {
+        "races": 206,
+        "sufficient": true,
+        "fastestWinRatePct": 34,
+        "meanRankCorrelation": 0.223,
+        "courseOnlyRankCorrelation": 0.454
+      },
+      "otherVenues": {
+        "races": 870,
+        "sufficient": true,
+        "fastestWinRatePct": 28.8,
+        "meanRankCorrelation": 0.183,
+        "courseOnlyRankCorrelation": 0.377
+      }
+    },
+    "holdout": {
+      "races": 716,
+      "boatBiasSec": {
+        "1": -0.0202,
+        "2": -0.0047,
+        "3": 0.0042,
+        "4": 0.0048,
+        "5": 0.0088,
+        "6": 0.0071
+      },
+      "raw": {
+        "races": 716,
+        "sufficient": true,
+        "fastestWinRatePct": 28.7,
+        "meanRankCorrelation": 0.173,
+        "courseOnlyRankCorrelation": 0.408
+      },
+      "boatBiasAdjusted": {
+        "races": 716,
+        "sufficient": true,
+        "fastestWinRatePct": 21.4,
+        "meanRankCorrelation": 0.097,
+        "courseOnlyRankCorrelation": 0.408
+      },
+      "calm": {
+        "races": 622,
+        "sufficient": true,
+        "fastestWinRatePct": 29.3,
+        "meanRankCorrelation": 0.179,
+        "courseOnlyRankCorrelation": 0.408
+      },
+      "rough": {
+        "races": 94,
+        "sufficient": false,
+        "fastestWinRatePct": 24.6,
+        "meanRankCorrelation": 0.129,
+        "courseOnlyRankCorrelation": 0.405
+      },
+      "differentMeasurementVenues": {
+        "races": 133,
+        "sufficient": true,
+        "fastestWinRatePct": 28.4,
+        "meanRankCorrelation": 0.178,
+        "courseOnlyRankCorrelation": 0.51
+      },
+      "otherVenues": {
+        "races": 583,
+        "sufficient": true,
+        "fastestWinRatePct": 28.7,
+        "meanRankCorrelation": 0.172,
+        "courseOnlyRankCorrelation": 0.384
+      }
+    }
+  }
+}
