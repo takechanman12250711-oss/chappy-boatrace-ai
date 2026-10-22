@@ -35,12 +35,12 @@
   "caveats": [
     "1着率・順位相関には進入コースの有利不利が含まれる。courseOnlyRankCorrelation は進入コースだけで着順を説明した場合の参考値",
     "艇番ごとの偏りの補正値は explored 期間だけから作り、holdout に当てはめる",
-    "完走しなかった艇は最下位タイとして扱う。欠場艇のいるレースは除外",
+    "完走しなかった艇は最下位タイとして扱う。欠場艇のいるレースと、収集途中（complete: false）の結果日は除外",
     "計測位置が異なる4場は件数が少なく、差があっても場の水面特性と区別できない"
   ],
   "cohort": {
-    "canonicalPredictionCount": 3849,
-    "preDeadlinePredictionCount": 3833,
+    "canonicalPredictionCount": 3860,
+    "preDeadlinePredictionCount": 3844,
     "excludedPredictionCount": 16,
     "excludedReasons": {
       "captured-at-or-after-deadline": 6,
@@ -51,102 +51,116 @@
     "settledJoinCount": 3778,
     "deduplication": "predictions-preferred-over-verificationPredictions",
     "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json",
-    "eligibleRaces": 1792,
+    "eligibleRaces": 1554,
     "raceExcludedReasons": {
-      "exhibition-time-missing": 1862,
-      "official-course-missing": 124
+      "incomplete-result-day": 457,
+      "exhibition-time-missing": 1651,
+      "official-course-missing": 116
     },
+    "incompleteResultDays": [
+      "20260722",
+      "20260728",
+      "20260729",
+      "20260730",
+      "20260731",
+      "20260801",
+      "20260808",
+      "20260811",
+      "20260904",
+      "20260914",
+      "20261022"
+    ],
     "from": "20260726",
-    "to": "20261022"
+    "to": "20261021"
   },
   "adjustmentFromExplored": {
-    "1": -0.0169,
-    "2": -0.0042,
-    "3": 0.0037,
-    "4": 0.0039,
-    "5": 0.0082,
-    "6": 0.0053
+    "1": -0.0173,
+    "2": -0.0056,
+    "3": 0.0033,
+    "4": 0.0036,
+    "5": 0.0097,
+    "6": 0.0063
   },
   "periods": {
     "explored": {
-      "races": 1076,
+      "races": 841,
       "boatBiasSec": {
-        "1": -0.0169,
-        "2": -0.0042,
-        "3": 0.0037,
-        "4": 0.0039,
-        "5": 0.0082,
-        "6": 0.0053
+        "1": -0.0173,
+        "2": -0.0056,
+        "3": 0.0033,
+        "4": 0.0036,
+        "5": 0.0097,
+        "6": 0.0063
       },
       "raw": {
-        "races": 1076,
+        "races": 841,
         "sufficient": true,
-        "fastestWinRatePct": 29.8,
-        "meanRankCorrelation": 0.191,
-        "courseOnlyRankCorrelation": 0.392
+        "fastestWinRatePct": 29.5,
+        "meanRankCorrelation": 0.189,
+        "courseOnlyRankCorrelation": 0.385
       },
       "boatBiasAdjusted": {
-        "races": 1076,
+        "races": 841,
         "sufficient": true,
-        "fastestWinRatePct": 22.3,
-        "meanRankCorrelation": 0.1,
-        "courseOnlyRankCorrelation": 0.392
+        "fastestWinRatePct": 21.9,
+        "meanRankCorrelation": 0.098,
+        "courseOnlyRankCorrelation": 0.385
       },
       "calm": {
-        "races": 896,
+        "races": 716,
         "sufficient": true,
-        "fastestWinRatePct": 30.5,
-        "meanRankCorrelation": 0.197,
-        "courseOnlyRankCorrelation": 0.394
+        "fastestWinRatePct": 30,
+        "meanRankCorrelation": 0.186,
+        "courseOnlyRankCorrelation": 0.386
       },
       "rough": {
-        "races": 180,
+        "races": 125,
         "sufficient": true,
-        "fastestWinRatePct": 26.4,
-        "meanRankCorrelation": 0.161,
-        "courseOnlyRankCorrelation": 0.379
+        "fastestWinRatePct": 26.8,
+        "meanRankCorrelation": 0.2,
+        "courseOnlyRankCorrelation": 0.38
       },
       "differentMeasurementVenues": {
-        "races": 206,
+        "races": 158,
         "sufficient": true,
-        "fastestWinRatePct": 34,
-        "meanRankCorrelation": 0.223,
-        "courseOnlyRankCorrelation": 0.454
+        "fastestWinRatePct": 33.9,
+        "meanRankCorrelation": 0.219,
+        "courseOnlyRankCorrelation": 0.448
       },
       "otherVenues": {
-        "races": 870,
+        "races": 683,
         "sufficient": true,
-        "fastestWinRatePct": 28.8,
-        "meanRankCorrelation": 0.183,
-        "courseOnlyRankCorrelation": 0.377
+        "fastestWinRatePct": 28.5,
+        "meanRankCorrelation": 0.182,
+        "courseOnlyRankCorrelation": 0.371
       }
     },
     "holdout": {
-      "races": 716,
+      "races": 713,
       "boatBiasSec": {
-        "1": -0.0202,
-        "2": -0.0047,
+        "1": -0.0201,
+        "2": -0.0046,
         "3": 0.0042,
-        "4": 0.0048,
-        "5": 0.0088,
+        "4": 0.0047,
+        "5": 0.0087,
         "6": 0.0071
       },
       "raw": {
-        "races": 716,
+        "races": 713,
         "sufficient": true,
         "fastestWinRatePct": 28.7,
         "meanRankCorrelation": 0.173,
-        "courseOnlyRankCorrelation": 0.408
+        "courseOnlyRankCorrelation": 0.407
       },
       "boatBiasAdjusted": {
-        "races": 716,
+        "races": 713,
         "sufficient": true,
-        "fastestWinRatePct": 21.4,
-        "meanRankCorrelation": 0.097,
-        "courseOnlyRankCorrelation": 0.408
+        "fastestWinRatePct": 21.3,
+        "meanRankCorrelation": 0.094,
+        "courseOnlyRankCorrelation": 0.407
       },
       "calm": {
-        "races": 622,
+        "races": 619,
         "sufficient": true,
         "fastestWinRatePct": 29.3,
         "meanRankCorrelation": 0.179,
@@ -160,16 +174,16 @@
         "courseOnlyRankCorrelation": 0.405
       },
       "differentMeasurementVenues": {
-        "races": 133,
+        "races": 131,
         "sufficient": true,
-        "fastestWinRatePct": 28.4,
-        "meanRankCorrelation": 0.178,
+        "fastestWinRatePct": 28.1,
+        "meanRankCorrelation": 0.177,
         "courseOnlyRankCorrelation": 0.51
       },
       "otherVenues": {
-        "races": 583,
+        "races": 582,
         "sufficient": true,
-        "fastestWinRatePct": 28.7,
+        "fastestWinRatePct": 28.8,
         "meanRankCorrelation": 0.172,
         "courseOnlyRankCorrelation": 0.384
       }
