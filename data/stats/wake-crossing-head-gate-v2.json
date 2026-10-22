@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "analysisId": "wake-crossing-head-gate-v2",
-  "generatedAt": "2026-10-22T08:26:37.204Z",
+  "generatedAt": "2026-10-22T13:59:05.513Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
@@ -25,9 +25,36 @@
   },
   "stakeYenPerTicket": 100,
   "readiness": "evidence-ready",
+  "forward": {
+    "fixed": {
+      "from": "20261023",
+      "minChangedRaces": 150,
+      "supportRule": "changed races >= 150, overall ROI B > A (unrounded), demoted-head win rate < qualified-head win rate",
+      "excludes": [
+        "saved-roles-missing",
+        "incomplete-result-day",
+        "refund-or-missing-start",
+        "top-three-dead-heat"
+      ]
+    },
+    "excluded": {
+      "reasons": {},
+      "incompleteResultDays": []
+    },
+    "verdict": {
+      "status": "collecting",
+      "changedRaces": 0,
+      "checks": {
+        "enoughChangedRaces": false,
+        "bBeatsA": false,
+        "demotedWeaker": false
+      }
+    }
+  },
   "periodDefinition": {
     "explored": "予想時に選手のコース別決まり手が保存されているレース。v1の結果とC案の試算を見た期間。",
-    "holdout": "保存がない過去レース。公式結果の原本からレース前日まで3年間だけで再構築して判定。C案はこの期間を見る前に固定した。"
+    "holdout": "保存がない過去レース。公式結果の原本からレース前日まで3年間だけで再構築して判定。C案はこの期間を見る前に固定した。",
+    "forward": "B案の判定基準を固定した翌日（2026-10-23）以降の保存済み判定があるレース。前向き検証で、支持判定は forward.verdict。"
   },
   "note": "B案は降格艇が頭の実戦厳選券を除外。C案は降格艇を2着へ回した券に置き換え（x-h-y）。いずれも採用には本人承認が必要。",
   "cohort": {
@@ -298,6 +325,117 @@
           "secondThirdRate": 38.5
         }
       }
+    },
+    "forward": {
+      "counts": {
+        "races": 0,
+        "outerHeadRaces": 0,
+        "changed": 0
+      },
+      "ledgers": {
+        "allA": {
+          "races": 0,
+          "tickets": 0,
+          "stakeYen": 0,
+          "hitRaces": 0,
+          "returnYen": 0,
+          "skippedRaces": 0,
+          "hitRate": null,
+          "recoveryRate": null
+        },
+        "allB": {
+          "races": 0,
+          "tickets": 0,
+          "stakeYen": 0,
+          "hitRaces": 0,
+          "returnYen": 0,
+          "skippedRaces": 0,
+          "hitRate": null,
+          "recoveryRate": null
+        },
+        "allC": {
+          "races": 0,
+          "tickets": 0,
+          "stakeYen": 0,
+          "hitRaces": 0,
+          "returnYen": 0,
+          "skippedRaces": 0,
+          "hitRate": null,
+          "recoveryRate": null
+        },
+        "changedA": {
+          "races": 0,
+          "tickets": 0,
+          "stakeYen": 0,
+          "hitRaces": 0,
+          "returnYen": 0,
+          "skippedRaces": 0,
+          "hitRate": null,
+          "recoveryRate": null
+        },
+        "changedB": {
+          "races": 0,
+          "tickets": 0,
+          "stakeYen": 0,
+          "hitRaces": 0,
+          "returnYen": 0,
+          "skippedRaces": 0,
+          "hitRate": null,
+          "recoveryRate": null
+        },
+        "changedC": {
+          "races": 0,
+          "tickets": 0,
+          "stakeYen": 0,
+          "hitRaces": 0,
+          "returnYen": 0,
+          "skippedRaces": 0,
+          "hitRate": null,
+          "recoveryRate": null
+        }
+      },
+      "headOutcomes": {
+        "exempt-inside": {
+          "count": 0,
+          "wins": 0,
+          "seconds": 0,
+          "thirds": 0,
+          "winRate": null,
+          "secondThirdRate": null
+        },
+        "qualified": {
+          "count": 0,
+          "wins": 0,
+          "seconds": 0,
+          "thirds": 0,
+          "winRate": null,
+          "secondThirdRate": null
+        },
+        "demote": {
+          "count": 0,
+          "wins": 0,
+          "seconds": 0,
+          "thirds": 0,
+          "winRate": null,
+          "secondThirdRate": null
+        },
+        "insufficient-samples": {
+          "count": 0,
+          "wins": 0,
+          "seconds": 0,
+          "thirds": 0,
+          "winRate": null,
+          "secondThirdRate": null
+        },
+        "history-missing": {
+          "count": 0,
+          "wins": 0,
+          "seconds": 0,
+          "thirds": 0,
+          "winRate": null,
+          "secondThirdRate": null
+        }
+      }
     }
   },
   "historyCoverage": {
@@ -540,6 +678,117 @@
               "thirds": 101,
               "winRate": 14.7,
               "secondThirdRate": 38.5
+            }
+          }
+        },
+        "forward": {
+          "counts": {
+            "races": 0,
+            "outerHeadRaces": 0,
+            "changed": 0
+          },
+          "ledgers": {
+            "allA": {
+              "races": 0,
+              "tickets": 0,
+              "stakeYen": 0,
+              "hitRaces": 0,
+              "returnYen": 0,
+              "skippedRaces": 0,
+              "hitRate": null,
+              "recoveryRate": null
+            },
+            "allB": {
+              "races": 0,
+              "tickets": 0,
+              "stakeYen": 0,
+              "hitRaces": 0,
+              "returnYen": 0,
+              "skippedRaces": 0,
+              "hitRate": null,
+              "recoveryRate": null
+            },
+            "allC": {
+              "races": 0,
+              "tickets": 0,
+              "stakeYen": 0,
+              "hitRaces": 0,
+              "returnYen": 0,
+              "skippedRaces": 0,
+              "hitRate": null,
+              "recoveryRate": null
+            },
+            "changedA": {
+              "races": 0,
+              "tickets": 0,
+              "stakeYen": 0,
+              "hitRaces": 0,
+              "returnYen": 0,
+              "skippedRaces": 0,
+              "hitRate": null,
+              "recoveryRate": null
+            },
+            "changedB": {
+              "races": 0,
+              "tickets": 0,
+              "stakeYen": 0,
+              "hitRaces": 0,
+              "returnYen": 0,
+              "skippedRaces": 0,
+              "hitRate": null,
+              "recoveryRate": null
+            },
+            "changedC": {
+              "races": 0,
+              "tickets": 0,
+              "stakeYen": 0,
+              "hitRaces": 0,
+              "returnYen": 0,
+              "skippedRaces": 0,
+              "hitRate": null,
+              "recoveryRate": null
+            }
+          },
+          "headOutcomes": {
+            "exempt-inside": {
+              "count": 0,
+              "wins": 0,
+              "seconds": 0,
+              "thirds": 0,
+              "winRate": null,
+              "secondThirdRate": null
+            },
+            "qualified": {
+              "count": 0,
+              "wins": 0,
+              "seconds": 0,
+              "thirds": 0,
+              "winRate": null,
+              "secondThirdRate": null
+            },
+            "demote": {
+              "count": 0,
+              "wins": 0,
+              "seconds": 0,
+              "thirds": 0,
+              "winRate": null,
+              "secondThirdRate": null
+            },
+            "insufficient-samples": {
+              "count": 0,
+              "wins": 0,
+              "seconds": 0,
+              "thirds": 0,
+              "winRate": null,
+              "secondThirdRate": null
+            },
+            "history-missing": {
+              "count": 0,
+              "wins": 0,
+              "seconds": 0,
+              "thirds": 0,
+              "winRate": null,
+              "secondThirdRate": null
             }
           }
         }
