@@ -106,6 +106,8 @@ function resultRace(date, jcd, raceNo, order, { absent = [] } = {}) {
   write(resultsDir, "20261001", { races: [resultRace("20261001", "22", 1, [6, 1, 2, 3, 4, 5]), resultRace("20261001", "01", 2, [1, 2, 3, 4, 5, 6])] });
   const report = lib.build({ root: dir, predictionsDir, resultsDir });
   assert.strictEqual(report.cohort.eligibleRaces, 2, "締切後に保存した予想は除外");
+  assert.strictEqual(report.cohort.excludedReasons["captured-at-or-after-deadline"], 1, "締切前判定の除外理由を残す");
+  assert.deepStrictEqual(report.cohort.raceExcludedReasons, {}, "レース除外理由は別項目");
   assert.strictEqual(report.periods.explored.races, 1);
   assert.strictEqual(report.periods.holdout.races, 1);
   assert.strictEqual(report.adjustmentFromExplored[1], -0.0833, "補正値は explored の1R目だけから");

@@ -230,7 +230,8 @@ function build({ root = path.resolve(__dirname, ".."), predictionsDir, resultsDi
       "完走しなかった艇は最下位タイとして扱う。欠場艇のいるレースは除外",
       "計測位置が異なる4場は件数が少なく、差があっても場の水面特性と区別できない"
     ],
-    cohort: { ...diagnostics, eligibleRaces: races.length, excludedReasons: excluded, from: races[0]?.date || null, to: races[races.length - 1]?.date || null },
+    // 締切前判定の除外理由（diagnostics.excludedReasons）は残し、展示データ不足などのレース除外理由は別に出す。
+    cohort: { ...diagnostics, eligibleRaces: races.length, raceExcludedReasons: excluded, from: races[0]?.date || null, to: races[races.length - 1]?.date || null },
     ...analyze(races)
   };
   if (out) {
