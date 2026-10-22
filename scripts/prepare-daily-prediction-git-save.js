@@ -151,6 +151,117 @@ function modifiedPredictionSourceDates(
   return datesFromPaths(paths);
 }
 
+function cleanupRestoredPredictionSources({
+  rootDirectory = process.cwd(),
+  all = false,
+  date = "",
+  argv = process.argv.slice(2),
+  env = process.env,
+  now = new Date()
+} = {}) {
+  const dates = all
+    ? archiveApi.archivedSourceDates(
+        rootDirectory
+      )
+    : [
+        date ||
+        archiveApi.resolveTargetDate({
+          argv,
+          env,
+          now
+        })
+      ];
+
+  const cleanupResults = dates.map(
+    targetDate => {
+      const sourcePath =
+        archiveApi.sourcePathFor(
+          rootDirectory,
+          targetDate
+        );
+      if (!fs.existsSync(sourcePath)) {
+        return {
+          date: targetDate,
+          status: "source-missing"
+        };
+      }
+
+      const archivePath =
+        archiveApi.archivePathFor(
+          rootDirectory,
+          targetDate
+        );
+      const metadataPath =
+        archiveApi.metadataPathFor(
+          rootDirectory,
+          targetDate
+        );
+      if (
+        !fs.existsSync(archivePath) ||
+        !fs.existsSync(metadataPath)
+      ) {
+        throw new Error(
+          `復元済み原本のarchiveが不足しています：${targetDate}`
+        );
+      }
+
+      const metadata =
+        archiveApi.validateMetadata(
+          JSON.parse(
+            fs.readFileSync(
+              metadataPath,
+              "utf8"
+            )
+          ),
+          targetDate
+        );
+      if (
+        fs.statSync(sourcePath).size !==
+          Number(metadata.sourceBytes)
+      ) {
+        throw new Error(
+          `復元後に日次予想原本の容量が変わりました：${targetDate}`
+        );
+      }
+
+      const rawPath = relativeGitPath(
+        rootDirectory,
+        sourcePath
+      );
+      if (isTracked(rootDirectory, rawPath)) {
+        git(
+          rootDirectory,
+          [
+            "restore",
+            "--worktree",
+            "--",
+            rawPath
+          ]
+        );
+        return {
+          date: targetDate,
+          status: "tracked-restored"
+        };
+      }
+
+      fs.unlinkSync(sourcePath);
+      return {
+        date: targetDate,
+        status: "untracked-removed"
+      };
+    }
+  );
+
+  return {
+    dates,
+    cleanupResults,
+    cleanedCount:
+      cleanupResults.filter(result =>
+        result.status !== "source-missing"
+      ).length
+  };
+}
+
 function preparePredictionGitSave({
   rootDirectory = process.cwd(),
   all = false,
@@ -260,6 +371,20 @@ function preparePredictionGitSave({
 
 function main() {
   const all = archiveApi.hasFlag("all");
+  if (
+    archiveApi.hasFlag(
+      "cleanup-restored"
+    )
+  ) {
+    const result =
+      cleanupRestoredPredictionSources({
+        all
+      });
+    console.log(
+      `復元済み日次予想原本を片付け：${result.cleanedCount}件`
+    );
+    return;
+  }
   const result = preparePredictionGitSave({
     all
   });
@@ -305,6 +430,7 @@ module.exports = {
   datesFromPaths,
   outputLines,
   modifiedPredictionSourceDates,
+  cleanupRestoredPredictionSources,
   preparePredictionGitSave,
   main
 };

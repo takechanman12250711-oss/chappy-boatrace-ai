@@ -9,6 +9,8 @@ const workflow = fs.readFileSync(
 );
 const prepare =
   "node scripts/prepare-daily-prediction-git-save.js --all";
+const cleanup =
+  "node scripts/prepare-daily-prediction-git-save.js --cleanup-restored --all";
 const performance = "node scripts/test-load-performance.js";
 
 function step(name, nextName) {
@@ -25,11 +27,11 @@ for (const [name, nextName] of [
   ["Validate calibrated prediction artifacts", "Save calibration and derived data"],
 ]) {
   const source = step(name, nextName);
-  assert.ok(source.includes(prepare), `${name}は最新正本をarchive化する`);
+  assert.ok(source.includes(cleanup), `${name}は診断用復元原本を片付ける`);
   assert.ok(source.includes(performance), `${name}は分割indexを検証する`);
   assert.ok(
-    source.indexOf(prepare) < source.indexOf(performance),
-    `${name}は最新正本のarchive化後に分割indexを照合する`,
+    source.indexOf(cleanup) < source.indexOf(performance),
+    `${name}は復元原本の片付け後に分割indexを照合する`,
   );
 }
 
@@ -68,7 +70,7 @@ assert.doesNotMatch(workflow, /git pull --rebase/, "検査後の再fetchで競�
 assert.equal((workflow.match(/result-report-checkpoint.cjs publish /g) || []).length, 2,
   "診断と校正は元blobの比較を通して保存する");
 const diagnostics = step(
-  "Build result diagnostics",
+  "Restore saved result sources",
   "Build Local Water V2 post-adoption monitor",
 );
 assert.ok(
@@ -82,12 +84,17 @@ const practicalShadow =
   "node scripts/build-practical-priority-shadow-report.js";
 assert.ok(
   diagnostics.includes(restoreCanonical),
-  "固定100Rシャドーは保存済みarchive正本を復元して再計算する",
+  "診断は保存済みarchive正本を復元して再計算する",
 );
 assert.ok(
   diagnostics.indexOf(restoreCanonical) <
     diagnostics.indexOf(practicalShadow),
   "固定100Rシャドー生成より先にarchive正本を復元する",
+);
+assert.equal(
+  (diagnostics.match(/restore-daily-prediction-source\.js --all/g) || []).length,
+  1,
+  "同じ診断job内で全期間原本を重複復元しない",
 );
 
 console.log("result source archive validation order: ok");
