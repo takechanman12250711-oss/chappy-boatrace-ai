@@ -1,0 +1,214 @@
+{
+  "version": "confidence-stake-roi-v1",
+  "purpose": "自信度・選定スコアが高いレースほど実戦厳選券の回収率が高いか（勝負所に資金を集める根拠があるか）を検証する研究集計",
+  "source": {
+    "video": "https://www.youtube.com/watch?v=7kS9-_UTS9I",
+    "claim": "7. 大勝負を仕掛ける瞬間を見極める（自信のあるレースに資金を集中する）",
+    "claimsFrom": "ユーザーが作成した動画要約（動画本体は未視聴）",
+    "inputs": "data/predictions（締切前保存・analysis-input-contract）の confidence.score / selection.score / practicalTickets + data/results（公式結果）"
+  },
+  "productionChanged": false,
+  "automaticApplication": false,
+  "usableForPrediction": false,
+  "fixedBeforeResults": {
+    "exploredFrom": "20260722",
+    "exploredTo": "20260915",
+    "holdoutFrom": "20260916",
+    "scores": [
+      "confidenceScore",
+      "selectionScore"
+    ],
+    "bands": 3,
+    "unitYen": 100,
+    "minRacesForConclusion": 100,
+    "supportRule": "high-band ROI >= 100% and > low-band ROI in both periods, each with >= 100 races"
+  },
+  "caveats": [
+    "券は保存済みの実戦厳選（practicalTickets）を各100円で買った場合。実購入とは別",
+    "三分位の境界は explored の値だけから作り、holdout に同じ境界を当てはめる",
+    "欠場・F・出遅れのあるレース、3着以内の同着は除外",
+    "スコアの意味や算出方法は期間中に変わっている可能性がある"
+  ],
+  "cohort": {
+    "canonicalPredictionCount": 3860,
+    "preDeadlinePredictionCount": 3844,
+    "excludedPredictionCount": 16,
+    "excludedReasons": {
+      "captured-at-or-after-deadline": 6,
+      "source-fetched-at-or-after-deadline": 3,
+      "timestamp-missing": 7
+    },
+    "officialResultCount": 3778,
+    "settledJoinCount": 3778,
+    "deduplication": "predictions-preferred-over-verificationPredictions",
+    "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json",
+    "eligibleRaces": 3677,
+    "raceExcludedReasons": {
+      "refund-or-missing-start": 98,
+      "no-practical-tickets": 2,
+      "top-three-dead-heat": 1
+    },
+    "from": "20260722",
+    "to": "20261022"
+  },
+  "overall": {
+    "explored": {
+      "races": 2197,
+      "sufficient": true,
+      "hitRatePct": 23.4,
+      "roiPct": 73.8,
+      "avgTickets": 8.5,
+      "stakeYen": 1866900,
+      "returnYen": 1377270
+    },
+    "holdout": {
+      "races": 1480,
+      "sufficient": true,
+      "hitRatePct": 25.1,
+      "roiPct": 82.6,
+      "avgTickets": 8.77,
+      "stakeYen": 1297500,
+      "returnYen": 1071960
+    }
+  },
+  "byScore": {
+    "confidenceScore": {
+      "cutsFromExplored": [
+        83,
+        92
+      ],
+      "periods": {
+        "explored": {
+          "scoreMissing": 0,
+          "low": {
+            "races": 698,
+            "sufficient": true,
+            "hitRatePct": 22.8,
+            "roiPct": 77.8,
+            "avgTickets": 8.34,
+            "stakeYen": 582200,
+            "returnYen": 452840
+          },
+          "mid": {
+            "races": 707,
+            "sufficient": true,
+            "hitRatePct": 21.9,
+            "roiPct": 65.2,
+            "avgTickets": 8.57,
+            "stakeYen": 605800,
+            "returnYen": 394780
+          },
+          "high": {
+            "races": 792,
+            "sufficient": true,
+            "hitRatePct": 25.4,
+            "roiPct": 78,
+            "avgTickets": 8.57,
+            "stakeYen": 678900,
+            "returnYen": 529650
+          }
+        },
+        "holdout": {
+          "scoreMissing": 0,
+          "low": {
+            "races": 590,
+            "sufficient": true,
+            "hitRatePct": 24.4,
+            "roiPct": 60.3,
+            "avgTickets": 8.59,
+            "stakeYen": 506600,
+            "returnYen": 305670
+          },
+          "mid": {
+            "races": 454,
+            "sufficient": true,
+            "hitRatePct": 22.7,
+            "roiPct": 119,
+            "avgTickets": 8.79,
+            "stakeYen": 399200,
+            "returnYen": 475230
+          },
+          "high": {
+            "races": 436,
+            "sufficient": true,
+            "hitRatePct": 28.7,
+            "roiPct": 74.3,
+            "avgTickets": 8.98,
+            "stakeYen": 391700,
+            "returnYen": 291060
+          }
+        }
+      },
+      "supportsConcentration": false
+    },
+    "selectionScore": {
+      "cutsFromExplored": [
+        43.4,
+        75.2
+      ],
+      "periods": {
+        "explored": {
+          "scoreMissing": 1665,
+          "low": {
+            "races": 177,
+            "sufficient": true,
+            "hitRatePct": 20.9,
+            "roiPct": 81.4,
+            "avgTickets": 6.82,
+            "stakeYen": 120800,
+            "returnYen": 98320
+          },
+          "mid": {
+            "races": 176,
+            "sufficient": true,
+            "hitRatePct": 17.6,
+            "roiPct": 81.9,
+            "avgTickets": 7.91,
+            "stakeYen": 139300,
+            "returnYen": 114130
+          },
+          "high": {
+            "races": 179,
+            "sufficient": true,
+            "hitRatePct": 22.9,
+            "roiPct": 52.8,
+            "avgTickets": 8.75,
+            "stakeYen": 156700,
+            "returnYen": 82800
+          }
+        },
+        "holdout": {
+          "scoreMissing": 1281,
+          "low": {
+            "races": 0,
+            "sufficient": false,
+            "hitRatePct": null,
+            "roiPct": null,
+            "avgTickets": null,
+            "stakeYen": 0,
+            "returnYen": 0
+          },
+          "mid": {
+            "races": 70,
+            "sufficient": false,
+            "hitRatePct": 21.4,
+            "roiPct": 74.4,
+            "avgTickets": 8.91,
+            "stakeYen": 62400,
+            "returnYen": 46400
+          },
+          "high": {
+            "races": 129,
+            "sufficient": true,
+            "hitRatePct": 26.4,
+            "roiPct": 84,
+            "avgTickets": 8.81,
+            "stakeYen": 113700,
+            "returnYen": 95540
+          }
+        }
+      },
+      "supportsConcentration": false
+    }
+  }
+}
