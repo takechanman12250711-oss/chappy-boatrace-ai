@@ -103,7 +103,54 @@ function round(value) { return Math.round(value * 10) / 10; }
 function outcomeTable() { return Object.fromEntries(gate.STATUSES.map(status => [status, emptyOutcome()])); }
 function finishTable(table) { return Object.fromEntries(Object.entries(table).map(([k, v]) => [k, finishOutcome(v)])); }
 
-const PERIODS = ['explored', 'holdout'];
+const PERIODS = ['explored', 'holdout', 'forward'];
+
+// 前向き検証（2026-10-22に固定）: B案の規則・判定基準を決めた日以降に締切前保存された予想だけで、
+// B案がA案を上回り続けるかを確かめる。B案の券は締切前保存の実戦厳選券と選手のコース別決まり手だけから決まる。
+const FORWARD = Object.freeze({
+  from: '20261022',
+  minChangedRaces: 150,
+  // 支持: 変更レースが150R以上、全体回収率 B > A（丸め前の金額）、降格対象の頭の1着率 < 実績ありの外の頭の1着率
+  supportRule: 'changed races >= 150, overall ROI B > A (unrounded), demoted-head win rate < qualified-head win rate',
+  // 前向き期間だけ現在の除外基準を使う（explored/holdoutの数値は変えない）
+  excludes: ['saved-roles-missing', 'incomplete-result-day', 'refund-or-missing-start', 'top-three-dead-heat']
+});
+
+function incompleteResultDays(resultsDir) {
+  const days = new Set();
+  if (!fs.existsSync(resultsDir)) return days;
+  for (const name of fs.readdirSync(resultsDir).filter(file => /^\d{8}\.json$/.test(file))) {
+    if (name.slice(0, 8) < FORWARD.from) continue;
+    const day = JSON.parse(fs.readFileSync(path.join(resultsDir, name), 'utf8'));
+    if (day?.complete === false) days.add(name.slice(0, 8));
+  }
+  return days;
+}
+
+// 返還券が出るレース（欠場・F・出遅れ）と、払戻が1組しか保存されない3着以内の同着。
+function unsettleableReason(official) {
+  const starts = Array.isArray(official?.starts) ? official.starts : [];
+  const boats = new Set(starts.map(start => Number(start?.boat)).filter(boat => boat >= 1 && boat <= 6));
+  if (boats.size !== 6 || starts.some(start => start?.falseStart || start?.lateStart)) return 'refund-or-missing-start';
+  const ranks = (Array.isArray(official?.finishers) ? official.finishers : []).map(item => Number(item?.rank)).filter(rank => rank >= 1 && rank <= 3);
+  if (new Set(ranks).size !== ranks.length) return 'top-three-dead-heat';
+  return '';
+}
+
+function rawRoi(ledger) { return ledger.stakeYen ? ledger.returnYen / ledger.stakeYen : null; }
+function winRate(outcome) { return outcome.count ? outcome.wins / outcome.count : null; }
+function forwardVerdict(period) {
+  const changed = period.counts.changed;
+  const a = rawRoi(period.ledgers.allA), b = rawRoi(period.ledgers.allB);
+  const demoted = winRate(period.headOutcomes.demote), qualified = winRate(period.headOutcomes.qualified);
+  const checks = {
+    enoughChangedRaces: changed >= FORWARD.minChangedRaces,
+    bBeatsA: a !== null && b !== null && b > a,
+    demotedWeaker: demoted !== null && qualified !== null && demoted < qualified
+  };
+  const status = !checks.enoughChangedRaces ? 'collecting' : (checks.bBeatsA && checks.demotedWeaker ? 'supports-b' : 'does-not-support-b');
+  return { status, changedRaces: changed, checks };
+}
 const VARIANTS = ['A', 'B', 'C'];
 function emptyPeriod() {
   return {
@@ -157,6 +204,8 @@ function build(options = {}) {
     compactPredictionRecord: projector
   });
   const index = pit.buildIndex(resultsDir);
+  const incompleteDays = incompleteResultDays(resultsDir);
+  const forwardExcluded = { reasons: {}, incompleteResultDays: new Set() };
 
   const counts = { settled: 0, basisValid: 0, basisInvalid: {}, refundedOrNoPayout: 0, rolesSource: { saved: 0, pointInTime: 0 }, pointInTimeCourseMapping: {} };
   const periods = Object.fromEntries(PERIODS.map(name => [name, emptyPeriod()]));
@@ -175,8 +224,19 @@ function build(options = {}) {
     const key = input.raceKey(record);
     const savedRoles = gate.skillRoles(record);
     const rebuilt = pit.pointInTimeRoles(index, record, key.slice(0, 8));
-    const periodName = savedRoles && savedRoles.length ? 'explored' : 'holdout';
-    const roles = periodName === 'explored' ? savedRoles : rebuilt.roles;
+    const raceDay = key.slice(0, 8);
+    const hasSavedRoles = Boolean(savedRoles && savedRoles.length);
+    const periodName = raceDay >= FORWARD.from ? 'forward' : (hasSavedRoles ? 'explored' : 'holdout');
+    if (periodName === 'forward') {
+      // 前向き期間は再構築に頼らず、締切前に保存された判定があるレースだけを使う
+      const reason = !hasSavedRoles ? 'saved-roles-missing' : (incompleteDays.has(raceDay) ? 'incomplete-result-day' : unsettleableReason(official));
+      if (reason) {
+        forwardExcluded.reasons[reason] = (forwardExcluded.reasons[reason] || 0) + 1;
+        if (reason === 'incomplete-result-day') forwardExcluded.incompleteResultDays.add(raceDay);
+        continue;
+      }
+    }
+    const roles = periodName === 'holdout' ? rebuilt.roles : savedRoles;
     const result = gate.evaluateRecord(record, { roles });
     if (!result.basisValid) {
       counts.basisInvalid[result.reason] = (counts.basisInvalid[result.reason] || 0) + 1;
@@ -184,13 +244,13 @@ function build(options = {}) {
     }
     if (!Number.isFinite(payout) || payout <= 0) { counts.refundedOrNoPayout++; continue; }
     counts.basisValid++;
-    if (periodName === 'explored') counts.rolesSource.saved++;
+    if (periodName !== 'holdout') counts.rolesSource.saved++;
     else {
       counts.rolesSource.pointInTime++;
       counts.pointInTimeCourseMapping[rebuilt.mapping] = (counts.pointInTimeCourseMapping[rebuilt.mapping] || 0) + 1;
     }
     // 保存済み判定と再構築判定の一致率（再構築の妥当性確認）
-    if (periodName === 'explored' && Array.isArray(rebuilt.roles)) {
+    if (periodName !== 'holdout' && Array.isArray(rebuilt.roles)) {
       const rebuiltByBoat = new Map(rebuilt.roles.map(r => [Number(r.boatNo), gate.evaluateBoat(r).status]));
       for (const boat of result.boats) {
         const other = rebuiltByBoat.get(boat.boatNo);
@@ -240,9 +300,15 @@ function build(options = {}) {
     fixedRule: gate.FIXED,
     stakeYenPerTicket: STAKE_YEN,
     readiness: holdoutDemoted >= gate.FIXED.evidenceReadyDemotedHeads ? 'evidence-ready' : 'collecting',
+    forward: {
+      fixed: FORWARD,
+      excluded: { reasons: forwardExcluded.reasons, incompleteResultDays: [...forwardExcluded.incompleteResultDays].sort() },
+      verdict: forwardVerdict(periods.forward)
+    },
     periodDefinition: {
       explored: '予想時に選手のコース別決まり手が保存されているレース。v1の結果とC案の試算を見た期間。',
-      holdout: '保存がない過去レース。公式結果の原本からレース前日まで3年間だけで再構築して判定。C案はこの期間を見る前に固定した。'
+      holdout: '保存がない過去レース。公式結果の原本からレース前日まで3年間だけで再構築して判定。C案はこの期間を見る前に固定した。',
+      forward: 'B案の判定基準を固定した2026-10-22以降の保存済み判定があるレース。前向き検証で、支持判定は forward.verdict。'
     },
     note: 'B案は降格艇が頭の実戦厳選券を除外。C案は降格艇を2着へ回した券に置き換え（x-h-y）。いずれも採用には本人承認が必要。',
     cohort: diagnostics,
@@ -270,9 +336,9 @@ function main() {
   const out = path.join(ROOT, OUTPUT);
   fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, JSON.stringify(report, null, 2) + '\n');
-  console.log(JSON.stringify({ readiness: report.readiness, counts: report.counts, pointInTimeAgreement: report.pointInTimeAgreement, periods: report.periods }, null, 2));
+  console.log(JSON.stringify({ readiness: report.readiness, forward: report.forward, counts: report.counts, pointInTimeAgreement: report.pointInTimeAgreement, periods: report.periods }, null, 2));
   return report;
 }
 
 if (require.main === module) main();
-module.exports = { build, main, compactPredictionRecord, OUTPUT };
+module.exports = { build, main, compactPredictionRecord, OUTPUT, FORWARD, forwardVerdict, unsettleableReason };

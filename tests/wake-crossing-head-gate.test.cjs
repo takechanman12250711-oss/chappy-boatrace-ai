@@ -140,4 +140,60 @@ f.withArchive(root => {
   assert.equal(r.historyCoverage.fullWindow.races, 5);
 });
 
+// --- 前向き検証（2026-10-22以降） ---
+{
+  assert.equal(mod.FORWARD.from, '20261022');
+  const starts = [1, 2, 3, 4, 5, 6].map(boat => ({ boat, course: boat, st: 0.15 }));
+  const finishers = order => order.split('-').map((boat, i) => ({ rank: i + 1, boat: Number(boat) }));
+  assert.equal(mod.unsettleableReason({ starts, finishers: finishers('1-2-3') }), '');
+  assert.equal(mod.unsettleableReason({ starts: starts.slice(0, 5) }), 'refund-or-missing-start');
+  assert.equal(mod.unsettleableReason({ starts: starts.map(s => s.boat === 3 ? { ...s, falseStart: true } : s) }), 'refund-or-missing-start');
+  assert.equal(mod.unsettleableReason({ starts, finishers: [{ rank: 1, boat: 1 }, { rank: 2, boat: 2 }, { rank: 2, boat: 3 }] }), 'top-three-dead-heat');
+
+  const ledger = (stakeYen, returnYen) => ({ stakeYen, returnYen });
+  const period = (changed, a, b, demote, qualified) => ({
+    counts: { changed },
+    ledgers: { allA: a, allB: b },
+    headOutcomes: { demote, qualified }
+  });
+  assert.equal(mod.forwardVerdict(period(149, ledger(100, 200), ledger(100, 300), { count: 10, wins: 0 }, { count: 10, wins: 5 })).status, 'collecting', '150R未満は判定しない');
+  assert.equal(mod.forwardVerdict(period(150, ledger(1000, 900), ledger(800, 760), { count: 10, wins: 0 }, { count: 10, wins: 5 })).status, 'supports-b');
+  assert.equal(mod.forwardVerdict(period(150, ledger(1000, 950), ledger(800, 760), { count: 10, wins: 0 }, { count: 10, wins: 5 })).status, 'does-not-support-b', '同じ回収率は支持しない');
+  assert.equal(mod.forwardVerdict(period(150, ledger(1000, 900), ledger(800, 760), { count: 10, wins: 5 }, { count: 10, wins: 5 })).status, 'does-not-support-b', '降格対象が弱くなければ支持しない');
+
+  f.withArchive(root => {
+    const day = '20261023';
+    const settled = (record, ticket, payout, extra = {}) => ({ ...f.official(record, ticket, payout), starts, finishers: finishers(ticket), ...extra });
+    const a = withRoles(f.prediction(1, day), baseRoles(), ['4-1-2', '1-4-2']);   // 降格頭を除く → 1-4-2 的中
+    const b = withRoles(f.prediction(2, day), baseRoles(), ['1-2-3']);            // 欠場あり → 除外
+    const c = f.prediction(3, day);                                               // 保存判定なし → 除外（再構築しない）
+    const d = withRoles(f.prediction(4, day), baseRoles(), ['1-2-3']);            // 3着同着 → 除外
+    f.saveDay(root, day, [a, b, c, d], [], [
+      settled(a, '1-4-2', 1500), settled(b, '1-2-3', 500, { starts: starts.slice(0, 5) }), settled(c, '1-2-3', 500),
+      settled(d, '1-2-3', 500, { finishers: [{ rank: 1, boat: 1 }, { rank: 2, boat: 2 }, { rank: 3, boat: 3 }, { rank: 3, boat: 4 }] })
+    ]);
+    // 収集途中の日は日ごと除外し、実際に除外した日だけ記録する
+    const e = withRoles(f.prediction(1, '20261024'), baseRoles(), ['1-2-3']);
+    f.saveDay(root, '20261024', [e], [], [settled(e, '1-2-3', 900)]);
+    const file = path.join(root, 'data/results/20261024.json');
+    fs.writeFileSync(file, JSON.stringify({ ...JSON.parse(fs.readFileSync(file, 'utf8')), complete: false }));
+    fs.writeFileSync(path.join(root, 'data/results/20261025.json'), JSON.stringify({ date: '20261025', complete: false, races: [] }));
+
+    const r = f.parity(mod, root);
+    const fw = r.periods.forward;
+    assert.equal(fw.counts.races, 1);
+    assert.equal(fw.counts.changed, 1);
+    assert.equal(fw.ledgers.allA.tickets, 2);
+    assert.equal(fw.ledgers.allB.tickets, 1);
+    assert.equal(fw.ledgers.allB.returnYen, 1500);
+    assert.equal(r.periods.explored.counts.races, 0, '前向き期間は explored に入れない');
+    assert.equal(r.periods.holdout.counts.races, 0, '保存判定のない前向きレースを holdout に入れない');
+    assert.deepEqual(r.forward.excluded.reasons, { 'refund-or-missing-start': 1, 'saved-roles-missing': 1, 'top-three-dead-heat': 1, 'incomplete-result-day': 1 });
+    assert.deepEqual(r.forward.excluded.incompleteResultDays, ['20261024']);
+    assert.equal(r.forward.verdict.status, 'collecting');
+    assert.equal(r.rows.find(row => row.period === 'forward').bHit, true);
+    assert.equal(r.usableForPrediction, false);
+  });
+}
+
 console.log('wake crossing head gate v2: fixed rule, point-in-time history, A/B/C by period, projection parity passed');
