@@ -104,10 +104,16 @@ function resultRace(date, jcd, raceNo, order, { absent = [] } = {}) {
     ]
   });
   write(resultsDir, "20261001", { races: [resultRace("20261001", "22", 1, [6, 1, 2, 3, 4, 5]), resultRace("20261001", "01", 2, [1, 2, 3, 4, 5, 6])] });
+  // 収集途中の日は日ごと除外し、実際に除外した日だけを記録する
+  write(predictionsDir, "20261002", { predictions: [predictionRecord("20261002", "01", 1, [6.6, 6.7, 6.7, 6.7, 6.7, 6.7])] });
+  write(resultsDir, "20261002", { complete: false, races: [resultRace("20261002", "01", 1, [1, 2, 3, 4, 5, 6])] });
+  write(resultsDir, "20230101", { complete: false, races: [] });
   const report = lib.build({ root: dir, predictionsDir, resultsDir });
+  assert.strictEqual(report.cohort.raceExcludedReasons["incomplete-result-day"], 1);
+  assert.deepStrictEqual(report.cohort.incompleteResultDays, ["20261002"], "対象の予想がない収集途中の日は載せない");
   assert.strictEqual(report.cohort.eligibleRaces, 2, "締切後に保存した予想は除外");
   assert.strictEqual(report.cohort.excludedReasons["captured-at-or-after-deadline"], 1, "締切前判定の除外理由を残す");
-  assert.deepStrictEqual(report.cohort.raceExcludedReasons, {}, "レース除外理由は別項目");
+  assert.deepStrictEqual(Object.keys(report.cohort.raceExcludedReasons), ["incomplete-result-day"], "レース除外理由は別項目");
   assert.strictEqual(report.periods.explored.races, 1);
   assert.strictEqual(report.periods.holdout.races, 1);
   assert.strictEqual(report.adjustmentFromExplored[1], -0.0833, "補正値は explored の1R目だけから");
