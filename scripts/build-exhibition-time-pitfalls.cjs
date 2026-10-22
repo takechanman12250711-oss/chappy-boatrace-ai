@@ -197,11 +197,30 @@ function analyze(races) {
   return { adjustmentFromExplored: exploredBias, periods };
 }
 
+// 収集途中（complete: false）の結果日は、確定済みレースだけが偏って残るため日ごと外す。
+function incompleteResultDays(resultsDir) {
+  const days = new Set();
+  if (!fs.existsSync(resultsDir)) return days;
+  for (const name of fs.readdirSync(resultsDir).filter((file) => /^\d{8}\.json$/.test(file))) {
+    const day = JSON.parse(fs.readFileSync(path.join(resultsDir, name), "utf8"));
+    if (day?.complete === false) days.add(name.slice(0, 8));
+  }
+  return days;
+}
+
 function build({ root = path.resolve(__dirname, ".."), predictionsDir, resultsDir, out } = {}) {
   const { records, diagnostics } = contract.buildDefaultCohort({ root, predictionsDir, resultsDir, compactPredictionRecord });
+  const incompleteDays = incompleteResultDays(resultsDir || path.join(root, "data", "results"));
+  const excludedIncompleteDays = new Set();
   const excluded = {};
   const races = [];
   for (const record of records) {
+    const key = record.__analysisRaceKey || contract.raceKey(record);
+    if (incompleteDays.has(key.slice(0, 8))) {
+      excluded["incomplete-result-day"] = (excluded["incomplete-result-day"] || 0) + 1;
+      excludedIncompleteDays.add(key.slice(0, 8));
+      continue;
+    }
     const { race, reason } = extractRace(record);
     if (race) races.push(race);
     else excluded[reason] = (excluded[reason] || 0) + 1;
@@ -227,11 +246,11 @@ function build({ root = path.resolve(__dirname, ".."), predictionsDir, resultsDi
     caveats: [
       "1着率・順位相関には進入コースの有利不利が含まれる。courseOnlyRankCorrelation は進入コースだけで着順を説明した場合の参考値",
       "艇番ごとの偏りの補正値は explored 期間だけから作り、holdout に当てはめる",
-      "完走しなかった艇は最下位タイとして扱う。欠場艇のいるレースは除外",
+      "完走しなかった艇は最下位タイとして扱う。欠場艇のいるレースと、収集途中（complete: false）の結果日は除外",
       "計測位置が異なる4場は件数が少なく、差があっても場の水面特性と区別できない"
     ],
     // 締切前判定の除外理由（diagnostics.excludedReasons）は残し、展示データ不足などのレース除外理由は別に出す。
-    cohort: { ...diagnostics, eligibleRaces: races.length, raceExcludedReasons: excluded, from: races[0]?.date || null, to: races[races.length - 1]?.date || null },
+    cohort: { ...diagnostics, eligibleRaces: races.length, raceExcludedReasons: excluded, incompleteResultDays: [...excludedIncompleteDays].sort(), from: races[0]?.date || null, to: races[races.length - 1]?.date || null },
     ...analyze(races)
   };
   if (out) {
