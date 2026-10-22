@@ -140,9 +140,9 @@ f.withArchive(root => {
   assert.equal(r.historyCoverage.fullWindow.races, 5);
 });
 
-// --- 前向き検証（2026-10-22以降） ---
+// --- 前向き検証（2026-10-23以降） ---
 {
-  assert.equal(mod.FORWARD.from, '20261022');
+  assert.equal(mod.FORWARD.from, '20261023', '固定した当日（10-22）は固定前に保存された予想を含むため使わない');
   const starts = [1, 2, 3, 4, 5, 6].map(boat => ({ boat, course: boat, st: 0.15 }));
   const finishers = order => order.split('-').map((boat, i) => ({ rank: i + 1, boat: Number(boat) }));
   assert.equal(mod.unsettleableReason({ starts, finishers: finishers('1-2-3') }), '');

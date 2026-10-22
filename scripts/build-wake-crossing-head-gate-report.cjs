@@ -105,10 +105,10 @@ function finishTable(table) { return Object.fromEntries(Object.entries(table).ma
 
 const PERIODS = ['explored', 'holdout', 'forward'];
 
-// 前向き検証（2026-10-22に固定）: B案の規則・判定基準を決めた日以降に締切前保存された予想だけで、
+// 前向き検証（2026-10-22に固定）: 判定基準を固定した翌日（2026-10-23）以降のレースだけで、
 // B案がA案を上回り続けるかを確かめる。B案の券は締切前保存の実戦厳選券と選手のコース別決まり手だけから決まる。
 const FORWARD = Object.freeze({
-  from: '20261022',
+  from: '20261023',
   minChangedRaces: 150,
   // 支持: 変更レースが150R以上、全体回収率 B > A（丸め前の金額）、降格対象の頭の1着率 < 実績ありの外の頭の1着率
   supportRule: 'changed races >= 150, overall ROI B > A (unrounded), demoted-head win rate < qualified-head win rate',
@@ -308,7 +308,7 @@ function build(options = {}) {
     periodDefinition: {
       explored: '予想時に選手のコース別決まり手が保存されているレース。v1の結果とC案の試算を見た期間。',
       holdout: '保存がない過去レース。公式結果の原本からレース前日まで3年間だけで再構築して判定。C案はこの期間を見る前に固定した。',
-      forward: 'B案の判定基準を固定した2026-10-22以降の保存済み判定があるレース。前向き検証で、支持判定は forward.verdict。'
+      forward: 'B案の判定基準を固定した翌日（2026-10-23）以降の保存済み判定があるレース。前向き検証で、支持判定は forward.verdict。'
     },
     note: 'B案は降格艇が頭の実戦厳選券を除外。C案は降格艇を2着へ回した券に置き換え（x-h-y）。いずれも採用には本人承認が必要。',
     cohort: diagnostics,
