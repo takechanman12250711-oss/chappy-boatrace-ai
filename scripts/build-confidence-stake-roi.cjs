@@ -163,11 +163,28 @@ function analyze(races) {
   return out;
 }
 
+// 収集途中（complete: false）の結果日は、確定済みレースだけが偏って残るため日ごと外す。
+function incompleteResultDays(resultsDir) {
+  const days = new Set();
+  if (!fs.existsSync(resultsDir)) return days;
+  for (const name of fs.readdirSync(resultsDir).filter((file) => /^\d{8}\.json$/.test(file))) {
+    const day = JSON.parse(fs.readFileSync(path.join(resultsDir, name), "utf8"));
+    if (day?.complete === false) days.add(name.slice(0, 8));
+  }
+  return days;
+}
+
 function build({ root = path.resolve(__dirname, ".."), predictionsDir, resultsDir, out } = {}) {
   const { records, diagnostics } = contract.buildDefaultCohort({ root, predictionsDir, resultsDir, compactPredictionRecord });
+  const incompleteDays = incompleteResultDays(resultsDir || path.join(root, "data", "results"));
   const raceExcludedReasons = {};
   const races = [];
   for (const record of records) {
+    const key = record.__analysisRaceKey || contract.raceKey(record);
+    if (incompleteDays.has(key.slice(0, 8))) {
+      raceExcludedReasons["incomplete-result-day"] = (raceExcludedReasons["incomplete-result-day"] || 0) + 1;
+      continue;
+    }
     const { race, reason } = extractRace(record);
     if (race) races.push(race);
     else raceExcludedReasons[reason] = (raceExcludedReasons[reason] || 0) + 1;
@@ -189,10 +206,10 @@ function build({ root = path.resolve(__dirname, ".."), predictionsDir, resultsDi
     caveats: [
       "券は保存済みの実戦厳選（practicalTickets）を各100円で買った場合。実購入とは別",
       "三分位の境界は explored の値だけから作り、holdout に同じ境界を当てはめる",
-      "欠場・F・出遅れのあるレース、3着以内の同着は除外",
+      "欠場・F・出遅れのあるレース、3着以内の同着、収集途中（complete: false）の結果日は除外",
       "スコアの意味や算出方法は期間中に変わっている可能性がある"
     ],
-    cohort: { ...diagnostics, eligibleRaces: races.length, raceExcludedReasons, from: races[0]?.date || null, to: races[races.length - 1]?.date || null },
+    cohort: { ...diagnostics, eligibleRaces: races.length, raceExcludedReasons, incompleteResultDays: [...incompleteDays].sort(), from: races[0]?.date || null, to: races[races.length - 1]?.date || null },
     ...analyze(races)
   };
   if (out) {
