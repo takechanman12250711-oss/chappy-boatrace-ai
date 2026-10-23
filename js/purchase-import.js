@@ -97,26 +97,59 @@
       row.append(cell,
         el(document, "td", {}, `${p.date.slice(4, 6)}/${p.date.slice(6, 8)}${p.dateAssumed ? "（推定）" : ""}`),
         el(document, "td", {}, `${VENUE_NAMES[p.jcd] || p.jcd} ${p.raceNo}R`),
-        el(document, "td", {}, p.ticket),
-        el(document, "td", { class: "num" }, yen(p.amount)));
+        el(document, "td", {}, p.ticket));
+      // 一覧に金額がない画面（投票照会）では、ここで入力してもらう
+      const amount = el(document, "input", { type: "number", inputmode: "numeric", min: "100", step: "100", class: "amount", "data-index": String(index), "aria-label": `${p.ticket}の金額` });
+      if (p.amount) amount.value = String(p.amount);
+      const amountCell = el(document, "td", { class: "num" }); amountCell.append(amount);
+      row.append(amountCell);
       table.append(row);
     });
+    const missing = parsed.purchases.filter((p) => !p.amount).length;
+    document.getElementById("bulkAmountBox").hidden = !missing;
     const skipped = document.getElementById("skippedRows");
     skipped.replaceChildren();
     for (const item of parsed.skipped) skipped.append(el(document, "li", {}, `${item.label}：${item.text}`));
     document.getElementById("skippedBox").hidden = !parsed.skipped.length;
+    const dateNote = parsed.listedDate ? `${Number(parsed.listedDate.slice(4, 6))}月${Number(parsed.listedDate.slice(6, 8))}日の照会` : "";
     document.getElementById("captureSummary").textContent =
-      `${parsed.host || "読み取り元不明"} から ${parsed.purchases.length}件を読み取りました${parsed.skipped.length ? `（読めなかった行 ${parsed.skipped.length}件）` : ""}。内容を確認してから送信してください。`;
+      `${parsed.host || "読み取り元不明"} ${dateNote}から ${parsed.purchases.length}件を読み取りました${parsed.skipped.length ? `（読めなかった行 ${parsed.skipped.length}件）` : ""}。` +
+      (missing ? `金額が画面にない明細が${missing}件あります。金額を入れてから送信してください。` : "内容を確認してから送信してください。");
     document.getElementById("captureBox").hidden = false;
     document.getElementById("sendButton").disabled = !parsed.purchases.length;
   }
 
+  // 100円単位の正の金額だけを受け付ける（APIと同じ条件）
+  function validAmount(value) {
+    const amount = Number(String(value ?? "").replace(/[,円\s]/g, ""));
+    return Number.isSafeInteger(amount) && amount > 0 && amount % 100 === 0 ? amount : 0;
+  }
+
   function selectedPurchases(document, parsed) {
-    return [...document.querySelectorAll("#purchaseRows input[type=checkbox]")]
-      .filter((input) => input.checked)
-      .map((input) => parsed.purchases[Number(input.getAttribute("data-index"))])
-      .filter(Boolean)
-      .map(({ date, jcd, raceNo, ticket, amount, contractId, source }) => ({ date, jcd, raceNo, ticket, amount, contractId, source }));
+    const picked = [];
+    for (const input of document.querySelectorAll("#purchaseRows input[type=checkbox]")) {
+      if (!input.checked) continue;
+      const index = input.getAttribute("data-index");
+      const p = parsed.purchases[Number(index)];
+      if (!p) continue;
+      const amount = validAmount(document.querySelector(`#purchaseRows input.amount[data-index="${index}"]`)?.value);
+      if (!amount) throw new Error(`${p.raceNo}R ${p.ticket} の金額を100円単位で入れてください`);
+      const { date, jcd, raceNo, ticket, contractId, source } = p;
+      picked.push({ date, jcd, raceNo, ticket, amount, contractId, source });
+    }
+    return picked;
+  }
+
+  function applyBulkAmount(document, value) {
+    const amount = validAmount(value);
+    if (!amount) throw new Error("まとめて入れる金額を100円単位で入れてください");
+    let filled = 0;
+    for (const input of document.querySelectorAll("#purchaseRows input.amount")) {
+      if (input.value) continue;
+      input.value = String(amount);
+      filled += 1;
+    }
+    return filled;
   }
 
   function install(root) {
@@ -166,6 +199,13 @@
       renderStatus(document, summarizeGuardrails(result.guardrails, today));
     }));
 
+    document.getElementById("bulkAmountButton").addEventListener("click", () => {
+      try {
+        const filled = applyBulkAmount(document, document.getElementById("bulkAmountInput").value);
+        message.textContent = `金額が空の${filled}件に入れました。違う金額の券は個別に直してください。`;
+      } catch (error) { message.textContent = String(error?.message || error); }
+    });
+
     document.getElementById("copyBookmarklet").addEventListener("click", async () => {
       const code = document.getElementById("bookmarkletCode");
       try { await root.navigator.clipboard.writeText(code.value); message.textContent = "コピーしました"; }
@@ -173,5 +213,5 @@
     });
   }
 
-  return Object.freeze({ API_URL, TOKEN_KEY, readHashCapture, summarizeGuardrails, callApi, todayJst, install });
+  return Object.freeze({ API_URL, TOKEN_KEY, validAmount, readHashCapture, summarizeGuardrails, callApi, todayJst, install });
 });

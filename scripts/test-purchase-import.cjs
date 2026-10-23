@@ -25,7 +25,7 @@ assert.strictEqual(parser.parseRow(["日付", "場", "レース", "買い目", "
 assert.strictEqual(parser.parseRow(["蒲郡", "7R", "3連複", "1-2-3", "500円"], "20261023").skip, "not-trifecta");
 assert.strictEqual(parser.parseRow(["7R", "3連単", "1-2-3", "500円"], "20261023").skip, "venue-missing");
 assert.strictEqual(parser.parseRow(["蒲郡", "3連単", "1-2-3", "500円"], "20261023").skip, "race-missing");
-assert.strictEqual(parser.parseRow(["蒲郡", "7R", "3連単", "1-2-3"], "20261023").skip, "amount-missing");
+assert.strictEqual(parser.parseRow(["蒲郡", "7R", "3連単", "1-2-3"], "20261023").purchase.amount, null, "金額がない画面は空で返し、取り込みページで入力する");
 assert.strictEqual(parser.parseRow(["蒲郡", "7R", "3連単", "1-2-3 1-3-2", "500円"], "20261023").skip, "multiple-tickets");
 assert.strictEqual(parser.parseRow(["蒲郡", "7R", "3連単", "1-2-3", "500円"], "").skip, "date-missing");
 assert.strictEqual(parser.parseRow(["蒲郡", "7R", "3連単", "1-2-3", "500円"], "20261023").purchase.dateAssumed, true, "日付がなければ読み取り日を推定として使う");
@@ -46,7 +46,7 @@ assert.strictEqual(parser.parseRow(["蒲郡", "7R", "3連単", "1-2-3", "500円"
   };
   const parsed = parser.parseCapture(capture);
   assert.strictEqual(parsed.purchases.length, 3);
-  assert.deepStrictEqual(parsed.purchases.map((p) => p.contractId), ["tb-20261023-07-7-1-2-3-500-1", "tb-20261023-07-7-1-2-3-500-2", "tb-20261023-12-12-4-1-2-1000-1"]);
+  assert.deepStrictEqual(parsed.purchases.map((p) => p.contractId), ["tb-20261023-07-7-1-2-3-1", "tb-20261023-07-7-1-2-3-2", "tb-20261023-12-12-4-1-2-1"], "金額は後から直せるのでIDに含めない");
   assert.strictEqual(parsed.purchases[2].amount, 1000);
   assert.deepStrictEqual(parsed.skipped.map((s) => s.reason), ["multiple-tickets"], "2連単は買い目が3艇でないので対象外、複数買い目は理由付きで残す");
   assert.deepStrictEqual(parser.parseCapture(capture).purchases, parsed.purchases, "同じ画面は同じ結果");
@@ -54,6 +54,45 @@ assert.strictEqual(parser.parseRow(["蒲郡", "7R", "3連単", "1-2-3", "500円"
   const fromText = parser.parseCapture({ capturedAt: capture.capturedAt, rows: [], text: "蒲郡 7R 3連単 1-2-3 500円\nお知らせ" });
   assert.strictEqual(fromText.purchases.length, 1);
 }
+
+// BOAT RACE公式の投票照会（2026-10-20の画面を元にした形）: 金額は一覧になく、日付は画面上部、1件が2行に分かれる
+{
+  const capture = {
+    v: 1, capturedAt: "2026-10-23T00:38:00.000Z", host: "www.boatrace.jp",
+    head: "投票照会 2026年 10月20日 検索 的中・払戻 別 結果 件数：24",
+    selects: ["全て", "全て", "全て"],
+    rows: [
+      ["No", "レース場", "レース", "返還", "レース結果"],
+      ["式別", "組番"],
+      ["001", "江戸川", "1R", "なし", "結果"],
+      ["3連単", "1 - 2 - 6"],
+      ["002", "江戸川", "1R", "なし", "結果"],
+      ["3連単", "2 - 3 - 6"],
+      ["008", "桐生", "10R", "なし", "結果"],
+      ["3連単", "1 - 2 - 5"],
+      ["024", "下関", "12R", "なし", "結果"],
+      ["3連単", "1 - 2 - 6"]
+    ]
+  };
+  const parsed = parser.parseCapture(capture);
+  assert.strictEqual(parsed.listedDate, "20261020", "照会日は画面上部から読む（取り込んだ日ではない）");
+  assert.deepStrictEqual(parsed.purchases.map((p) => `${p.date} ${p.jcd} ${p.raceNo}R ${p.ticket} ${p.amount}`),
+    ["20261020 03 1R 1-2-6 null", "20261020 03 1R 2-3-6 null", "20261020 01 10R 1-2-5 null", "20261020 19 12R 1-2-6 null"]);
+  assert.ok(parsed.purchases.every((p) => p.dateAssumed === false));
+  assert.deepStrictEqual(parsed.skipped, []);
+  // 1行にまとまった形でも同じ
+  const oneRow = parser.parseCapture({ ...capture, rows: [["001", "江戸川", "1R", "なし", "3連単", "1-2-6"]] });
+  assert.strictEqual(oneRow.purchases[0].ticket, "1-2-6");
+  // 選択欄の年・月・日からも読む
+  assert.strictEqual(parser.pageDate({ head: "投票照会", selects: ["全て", "2026", "10", "20"] }), "20261020");
+  assert.strictEqual(parser.pageDate({ head: "投票照会", selects: ["全て"] }), "");
+}
+
+// 金額の入力
+assert.strictEqual(page.validAmount("500"), 500);
+assert.strictEqual(page.validAmount("1,000円"), 1000);
+assert.strictEqual(page.validAmount("150"), 0, "100円単位だけ");
+assert.strictEqual(page.validAmount(""), 0);
 
 // 受け渡し（#d=...）の往復と、ブックマークの構文
 {

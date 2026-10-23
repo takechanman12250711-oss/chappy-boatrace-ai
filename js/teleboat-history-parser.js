@@ -6,9 +6,11 @@
 })(typeof window === "undefined" ? null : window, function () {
   "use strict";
 
-  // テレボートの投票履歴（照会）画面から、1タップのブックマークで読み取った表を購入明細に変換する。
+  // 投票履歴（BOAT RACE公式の投票照会など）の画面から、1タップのブックマークで読み取った表を購入明細に変換する。
   // 画面の作りが変わってもブックマークを登録し直さずに直せるよう、読み取り後の解釈はすべてここで行う。
   // 読み取れなかった行は推測で埋めず、理由付きで skipped に残して画面で確認してもらう。
+  // 投票照会の一覧には金額がないため、金額が読めない明細は amount: null で返し、取り込みページで入力してもらう。
+  const MAX_HEAD = 3000;
 
   const IMPORT_PAGE = "https://takechanman12250711-oss.github.io/chappy-boatrace-ai/purchase-import.html";
   const MAX_ROWS = 400;
@@ -82,51 +84,72 @@
       .filter((amount) => Number.isSafeInteger(amount) && amount > 0 && amount % 100 === 0);
   }
 
-  function parseRow(cells, fallbackDate) {
-    const text = normalize((Array.isArray(cells) ? cells : [cells]).join(" "));
-    const tickets = findTickets(text);
-    if (!tickets.length) return null; // 見出しや合計など、買い目のない行は対象外
+  // context: 1件が表の2行に分かれる画面（「場・レース」の行と「式別・組番」の行）で、前の行の場・レース
+  function parseRow(cells, fallbackDate, context = "") {
+    const own = normalize((Array.isArray(cells) ? cells : [cells]).join(" "));
+    const tickets = findTickets(own);
+    if (!tickets.length) return null; // 見出しや合計、場・レースだけの行は対象外
+    const text = (!findVenue(own) || !findRace(own)) && context ? `${context} ${own}` : own;
     if (OTHER_BET_TYPES.test(text) && !/3連単/.test(text)) return { skip: "not-trifecta", text };
     const jcd = findVenue(text), raceNo = findRace(text);
     if (!jcd) return { skip: "venue-missing", text };
     if (!raceNo) return { skip: "race-missing", text };
-    const amounts = findAmounts(text);
-    if (!amounts.length) return { skip: "amount-missing", text };
     if (tickets.length > 1) return { skip: "multiple-tickets", text };
     const date = findDate(text) || fallbackDate;
     if (!date) return { skip: "date-missing", text };
-    return { purchase: { date, jcd, raceNo, ticket: tickets[0], amount: amounts[0], dateAssumed: !findDate(text) }, text };
+    const amount = findAmounts(text)[0] || null;
+    return { purchase: { date, jcd, raceNo, ticket: tickets[0], amount, dateAssumed: !findDate(text) }, text };
+  }
+
+  // 画面上部の照会日（「2026年10月20日」や年・月・日の選択欄）。明細の行に日付がない画面で使う。
+  function pageDate(capture = {}) {
+    const fromHead = findDate(normalize(capture.head || ""));
+    if (fromHead) return fromHead;
+    const values = (Array.isArray(capture.selects) ? capture.selects : []).map((value) => normalize(value));
+    for (let i = 0; i + 2 < values.length; i += 1) {
+      const date = findDate(`${values[i]}/${values[i + 1]}/${values[i + 2]}`);
+      if (date) return date;
+    }
+    return "";
   }
 
   const SKIP_LABELS = Object.freeze({
     "not-trifecta": "3連単以外の券",
     "venue-missing": "場名が読めない",
     "race-missing": "レース番号が読めない",
-    "amount-missing": "金額が読めない",
     "multiple-tickets": "1行に複数の買い目（フォーメーション等）",
     "date-missing": "日付が読めない"
   });
 
   // capture: ブックマークが渡す { v, capturedAt, host, rows: [[セル...]...], text }
   function parseCapture(capture = {}) {
-    const fallbackDate = jstDate(capture.capturedAt);
+    const listedDate = pageDate(capture);
+    const fallbackDate = listedDate || jstDate(capture.capturedAt);
     const rows = Array.isArray(capture.rows) && capture.rows.length
       ? capture.rows
       : String(capture.text || "").split(/\n+/).map((line) => [line]);
     const purchases = [], skipped = [];
     const seen = new Map();
+    let context = "";
     rows.slice(0, MAX_ROWS).forEach((cells, rowIndex) => {
-      const parsed = parseRow(cells, fallbackDate);
-      if (!parsed) return;
+      const own = normalize((Array.isArray(cells) ? cells : [cells]).join(" "));
+      const parsed = parseRow(cells, fallbackDate, context);
+      if (!parsed) {
+        // 買い目のない行に場とレースがあれば、次の行（式別・組番）のために覚えておく
+        if (findVenue(own) && findRace(own)) context = own;
+        return;
+      }
       if (parsed.skip) { skipped.push({ rowIndex, reason: parsed.skip, label: SKIP_LABELS[parsed.skip], text: parsed.text.slice(0, 160) }); return; }
       const p = parsed.purchase;
-      // 同じ画面を取り込み直しても重複しないよう、同じ内容の何件目かまで含めた安定したIDにする
-      const base = `${p.date}-${p.jcd}-${p.raceNo}-${p.ticket}-${p.amount}`;
+      if (p.dateAssumed && listedDate) p.dateAssumed = false;
+      // 同じ画面を取り込み直しても重複しないよう、同じ内容の何件目かまで含めた安定したIDにする。
+      // 金額は後から入力・修正できるのでIDに含めない（金額を直して送り直すと同じ明細が更新される）。
+      const base = `${p.date}-${p.jcd}-${p.raceNo}-${p.ticket}`;
       const occurrence = (seen.get(base) || 0) + 1;
       seen.set(base, occurrence);
       purchases.push({ ...p, rowIndex, contractId: `tb-${base}-${occurrence}`, source: "teleboat-bookmarklet" });
     });
-    return { purchases, skipped, fallbackDate, host: String(capture.host || "") };
+    return { purchases, skipped, fallbackDate, listedDate, host: String(capture.host || "") };
   }
 
   function encodeCapture(capture) {
@@ -147,11 +170,12 @@
   function bookmarkletSource(importPage = IMPORT_PAGE) {
     const body = `(()=>{const docs=[document];for(const f of Array.from(window.frames)){try{if(f.document)docs.push(f.document)}catch(e){}}` +
       `const rows=[];for(const d of docs){for(const tr of Array.from(d.querySelectorAll('tr'))){const c=Array.from(tr.cells).map(x=>(x.innerText||x.textContent||'').trim());if(c.some(Boolean))rows.push(c)}}` +
-      `const data={v:1,capturedAt:new Date().toISOString(),host:location.host,rows:rows.slice(0,${MAX_ROWS}),text:rows.length?'':(document.body.innerText||'').slice(0,${MAX_TEXT})};` +
+      `const body=(document.body.innerText||'');const selects=[];for(const d of docs){for(const s of Array.from(d.querySelectorAll('select'))){const o=s.options[s.selectedIndex];selects.push(o?(o.text||o.value):'')}}` +
+      `const data={v:1,capturedAt:new Date().toISOString(),host:location.host,head:body.slice(0,${MAX_HEAD}),selects:selects.slice(0,20),rows:rows.slice(0,${MAX_ROWS}),text:rows.length?'':body.slice(0,${MAX_TEXT})};` +
       `const b=btoa(unescape(encodeURIComponent(JSON.stringify(data)))).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');` +
       `window.open(${JSON.stringify(importPage)}+'#d='+b,'_blank')})();`;
     return `javascript:${body}`;
   }
 
-  return Object.freeze({ IMPORT_PAGE, VENUES, SKIP_LABELS, normalize, findVenue, findRace, findDate, jstDate, findTickets, findAmounts, parseRow, parseCapture, encodeCapture, decodeCapture, bookmarkletSource });
+  return Object.freeze({ IMPORT_PAGE, VENUES, SKIP_LABELS, normalize, findVenue, findRace, findDate, jstDate, findTickets, findAmounts, parseRow, pageDate, parseCapture, encodeCapture, decodeCapture, bookmarkletSource });
 });

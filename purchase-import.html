@@ -19,6 +19,8 @@
   table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
   th, td { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: left; }
   td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  input.amount { width: 6.5em; padding: 6px; border: 1px solid var(--line); border-radius: 8px; font-size: 1rem; text-align: right; }
+  #bulkAmountInput { width: 8em; padding: 8px; border: 1px solid var(--line); border-radius: 8px; font-size: 1rem; }
   input[type=password], textarea { width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 8px; font-size: 1rem; }
   textarea { font-family: ui-monospace, Menlo, monospace; font-size: 0.75rem; height: 96px; }
   button { appearance: none; border: 0; border-radius: 10px; padding: 10px 14px; font-size: 1rem; background: var(--accent); color: #fff; margin: 6px 6px 0 0; }
@@ -36,7 +38,7 @@
 <body>
 <main>
   <h1>購入の取り込み</h1>
-  <p class="muted">テレボートの投票履歴を1タップで読み取り、確認してから記録します。警告は表示するだけで、購入は止めません。</p>
+  <p class="muted">投票照会（投票履歴）の画面を1タップで読み取り、確認してから記録します。警告は表示するだけで、購入は止めません。</p>
 
   <section id="captureBox" hidden>
     <h2>読み取った明細</h2>
@@ -45,6 +47,11 @@
       <thead><tr><th>送信</th><th>日付</th><th>レース</th><th>買い目</th><th>金額</th></tr></thead>
       <tbody id="purchaseRows"></tbody>
     </table>
+    <div id="bulkAmountBox" hidden>
+      <p class="muted">金額が空の明細にまとめて入れる（1点あたり）</p>
+      <input id="bulkAmountInput" type="number" inputmode="numeric" min="100" step="100" placeholder="例 500">
+      <button id="bulkAmountButton" type="button" class="secondary">空欄に入れる</button>
+    </div>
     <div id="skippedBox" hidden>
       <p class="muted">読めなかった行（送信しません）</p>
       <ul id="skippedRows" class="muted"></ul>
@@ -72,14 +79,14 @@
       <li>下の「コピー」を押します。</li>
       <li>Safariでこのページをブックマークに追加し、名前を「チャッピー取り込み」にします。</li>
       <li>ブックマークを編集し、アドレス欄をコピーした文字に置き換えて保存します。</li>
-      <li>テレボートで投票履歴（照会）を開き、そのブックマークを押すと、このページが開きます。</li>
+      <li>BOAT RACE公式サイトの投票照会（またはテレボートの投票履歴）を開き、そのブックマークを押すと、このページが開きます。</li>
     </ol>
     <textarea id="bookmarkletCode" readonly></textarea>
     <button id="copyBookmarklet" type="button" class="secondary">コピー</button>
     <p class="muted">ブックマークは画面の表の文字を読むだけで、どこにも送信しません。送信はこのページで確認してから行います。</p>
   </section>
 </main>
-<script src="js/teleboat-history-parser.js?v=20261023-1"></script>
-<script src="js/purchase-import.js?v=20261023-1"></script>
+<script src="js/teleboat-history-parser.js?v=20261023-2"></script>
+<script src="js/purchase-import.js?v=20261023-2"></script>
 </body>
 </html>
