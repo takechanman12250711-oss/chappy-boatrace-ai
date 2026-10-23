@@ -204,12 +204,15 @@
     // チェックを外したらすぐ消し、付けたらすぐ保存する（送信を待たない）
     remember.addEventListener("change", () => saveToken(storage, tokenInput.value.trim(), remember.checked));
     document.getElementById("generateToken").addEventListener("click", () => {
-      if (tokenInput.value.trim() && !root.confirm("今の合言葉を新しいものに置き換えます。Vercel 側も同じ値に変える必要があります。よろしいですか？")) return;
+      const question = tokenInput.value.trim()
+        ? "今の合言葉を新しいものに置き換えます。Vercel と GitHub の Secret の両方を同じ値に変えないと、自動精算が止まります。よろしいですか？"
+        : "新しい合言葉を作ります。すでに Vercel に合言葉があるなら、作らずにその値を貼り付けてください。作った場合は Vercel と GitHub の Secret の両方を同じ値に変える必要があります。作りますか？";
+      if (!root.confirm(question)) return;
       try {
         tokenInput.value = generateToken(root.crypto);
         remember.checked = true;
         saveToken(storage, tokenInput.value, true);
-        message.textContent = "合言葉を作って、この端末に保存しました。「合言葉をコピー」で写し、Vercel の CHAPPY_PURCHASE_SYNC_TOKEN に貼り付けてデプロイし直してください。";
+        message.textContent = "合言葉を作って、この端末に保存しました。「合言葉をコピー」で写し、Vercel の環境変数と GitHub の Secret の CHAPPY_PURCHASE_SYNC_TOKEN の両方に貼り付けて、Vercel をデプロイし直してください。";
       } catch (error) { message.textContent = String(error?.message || error); }
     });
     document.getElementById("toggleToken").addEventListener("click", (event) => {
