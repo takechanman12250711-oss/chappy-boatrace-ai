@@ -186,6 +186,26 @@ assert.strictEqual(parser.parseRow(["蒲郡", "7R", "3連単", "1-2-3", "500円"
   assert.match(parser.parseCapture({ head: dayText, rows: [["×", "検索"]] }).textPreview, /購入金額合計 ¥76,000/);
 }
 
+// 実画面の日別合計：日付の欄は「8\n(木)」（日付と曜日の2段）、1日が2行
+{
+  const head = "BOAT RACE 月別収支 カテゴリーメニュー 2026年 10月 2026年 10月 月別収支 ※本日の投票結果は反映していません。 収支合計 勝式別 結果 日別合計 日別合計";
+  const rows = [["日付\n曜日", "購入R数", "的中率", "購入金額合計", "回収率"], ["的中R数", "払戻金額合計"],
+    ["7\n(水)", "0", "0%", "¥0", "0%"], ["0", "¥0"],
+    ["8\n(木)", "2", "0%", "¥10,000", "0%"], ["0", "¥0"],
+    ["9\n(金)", "4", "25%", "¥22,000", "66%"], ["1", "¥14,600"],
+    ["10\n(土)", "2", "0%", "¥8,000", "0%"], ["0", "¥0"],
+    ["20\n(火)", "6", "0%", "¥76,000", "0%"], ["0", "¥0"]];
+  const expected = [
+    { date: "20261008", stakeYen: 10000, payoutYen: 0, races: 2, hitRaces: 0 },
+    { date: "20261009", stakeYen: 22000, payoutYen: 14600, races: 4, hitRaces: 1 },
+    { date: "20261010", stakeYen: 8000, payoutYen: 0, races: 2, hitRaces: 0 },
+    { date: "20261020", stakeYen: 76000, payoutYen: 0, races: 6, hitRaces: 0 }
+  ];
+  assert.deepStrictEqual(parser.parseDailyTotals({ head, selects: ["2026年 10月"], rows }), expected, "表の行から読む");
+  const text = head + " " + rows.map((cells) => cells.join("\n")).join("\n");
+  assert.deepStrictEqual(parser.parseDailyTotals({ head: text.slice(0, 3000), text, rows: [["×", "検索"]] }), expected, "画面の文字から読む");
+}
+
 // 合言葉は端末の乱数から作り、毎回ちがう43文字
 {
   const nodeCrypto = require("crypto").webcrypto;

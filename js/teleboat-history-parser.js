@@ -146,6 +146,9 @@
 
   // マイページ「月別収支」の「日別合計」タブ。1日が2行（日・購入R数・的中率・購入金額・回収率／的中R数・払戻金額）に分かれる。
   // 購入も払戻もない日は送らない。
+  // 日別合計の日付の欄。「20日」または実画面の「20 (火)」（日付と曜日の2段）。数だけの欄（購入R数など）とは区別する
+  const DAY_CELL = /^(\d{1,2})\s*(?:日|(?:日\s*)?\((?:月|火|水|木|金|土|日)\))$/;
+
   function parseDailyTotals(capture = {}) {
     const head = normalize(capture.head || "");
     if (!/月別収支/.test(head)) return [];
@@ -159,22 +162,22 @@
     const intOf = (cell) => (/^\d+$/.test(cell || "") ? Number(cell) : null);
     const totals = [];
     rows.forEach((cells, index) => {
-      const day = (cells[0] || "").match(/^(\d{1,2})\s*日$/);
+      const day = (cells[0] || "").match(DAY_CELL);
       if (!day) return;
       const date = findDate(`${y}/${m}/${Number(day[1])}`);
       if (!date) return;
       let yens = yenOf(cells), hitRaces = null;
       const next = rows[index + 1] || [];
       // 払戻金額は次の行（的中R数と並ぶ）。1行にまとまっている画面なら2つ目の金額。
-      if (yens.length === 1 && !/^\d{1,2}\s*日$/.test(next[0] || "")) { yens = yens.concat(yenOf(next)); hitRaces = intOf(next[0]); }
+      if (yens.length === 1 && !DAY_CELL.test(next[0] || "")) { yens = yens.concat(yenOf(next)); hitRaces = intOf(next[0]); }
       if (yens.length < 2) return;
       const [stakeYen, payoutYen] = yens;
       if (!stakeYen && !payoutYen) return;
       totals.push({ date, stakeYen, payoutYen, races: intOf(cells[1]), hitRaces });
     });
     if (totals.length) return totals;
-    // 表が table でない画面は、画面の文字の「20日 6 0% ¥76,000 0% 0 ¥0」の並び（日・購入R数・的中率・購入金額・回収率・的中R数・払戻金額）で読む
-    for (const match of pageText(capture).matchAll(/(?:^|\s)(\d{1,2})\s*日\s+(\d+)\s+\d+\s*%\s+[¥￥]\s*(\d[\d,]*)\s+\d+\s*%\s+(\d+)\s+[¥￥]\s*(\d[\d,]*)/g)) {
+    // 表が table でない画面は、画面の文字の「20 (火) 6 0% ¥76,000 0% 0 ¥0」の並び（日・購入R数・的中率・購入金額・回収率・的中R数・払戻金額）で読む
+    for (const match of pageText(capture).matchAll(/(?:^|\s)(\d{1,2})\s*(?:日\s*)?(?:\((?:月|火|水|木|金|土|日)\)|(?<=日))\s+(\d+)\s+\d+\s*%\s+[¥￥]\s*(\d[\d,]*)\s+\d+\s*%\s+(\d+)\s+[¥￥]\s*(\d[\d,]*)/g)) {
       const date = findDate(`${y}/${m}/${Number(match[1])}`);
       const stakeYen = Number(match[3].replace(/,/g, "")), payoutYen = Number(match[5].replace(/,/g, ""));
       if (!date || (!stakeYen && !payoutYen) || totals.some((item) => item.date === date)) continue;
