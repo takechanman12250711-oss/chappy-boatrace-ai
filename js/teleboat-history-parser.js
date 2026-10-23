@@ -222,7 +222,8 @@
     const seen = new Set();
     const buttons = all("a,button,input[type=button],[onclick]").filter((node) => {
       const no = text(node);
-      if (!/^\d{3}$/.test(no) || !node.closest("tr") || seen.has(no)) return false;
+      const row = node.closest("tr");
+      if (!/^\d{3}$/.test(no) || !row || !visible(row) || seen.has(no)) return false;
       seen.add(no);
       return true;
     }).slice(0, limits.rows);
