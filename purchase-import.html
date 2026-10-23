@@ -77,6 +77,10 @@
     <h2>同期用の合言葉（トークン）</h2>
     <input id="tokenInput" type="password" autocomplete="off" spellcheck="false" placeholder="CHAPPY_PURCHASE_SYNC_TOKEN">
     <p><label><input id="rememberToken" type="checkbox"> この端末に保存する</label></p>
+    <button id="generateToken" type="button" class="secondary">合言葉を作る</button>
+    <button id="toggleToken" type="button" class="secondary">表示する</button>
+    <button id="copyToken" type="button" class="secondary">合言葉をコピー</button>
+    <p class="muted">「合言葉を作る」はこの端末の中だけで作り、どこにも送りません。作ったら「合言葉をコピー」で写し、Vercel の chappy-boatrace-api の環境変数 <code>CHAPPY_PURCHASE_SYNC_TOKEN</code> に貼り付けて、デプロイし直してください。</p>
     <p class="muted">チャッピーの購入同期APIにだけ送ります。チャットやSNSには貼らないでください。</p>
   </section>
 
@@ -84,9 +88,9 @@
     <h2>ブックマークの登録（最初の1回だけ）</h2>
     <ol class="muted">
       <li>下の「コピー」を押します。</li>
-      <li>Safariでこのページをブックマークに追加し、名前を「チャッピー取り込み」にします。</li>
-      <li>ブックマークを編集し、アドレス欄をコピーした文字に置き換えて保存します。</li>
-      <li>BOAT RACE公式サイトの投票照会（またはテレボートの投票履歴）を開き、そのブックマークを押すと、このページが開きます。</li>
+      <li>このページをブックマークに追加し、名前を「チャッピー取り込み」にします（Chromeは右下の「…」→「ブックマークに追加」）。</li>
+      <li>ブックマークを編集し、URL（アドレス）をコピーした文字に置き換えて保存します（Chromeは「…」→「ブックマーク」→ 長押し →「ブックマークを編集」）。</li>
+      <li>BOAT RACE公式サイトの投票照会（またはテレボートの投票履歴）を開き、そのブックマークを押すと、このページが開きます。スマホのChromeでは、アドレス欄に「チャッピー取り込み」と入力し、☆の付いた候補を押します。</li>
       <li>照会の「合計」のタブで押すと、その日の購入金額・払戻を送れます（1日の負けと月の予算はこの合計で判定）。一覧で入れた金額との照合にも使います。</li>
     </ol>
     <textarea id="bookmarkletCode" readonly></textarea>
@@ -94,7 +98,7 @@
     <p class="muted">ブックマークは画面の表の文字を読み、各明細の No を順に開いて金額を読んでから閉じます（24件で数秒）。どこにも送信しません。送信はこのページで確認してから行います。</p>
   </section>
 </main>
-<script src="js/teleboat-history-parser.js?v=20261023-7"></script>
-<script src="js/purchase-import.js?v=20261023-7"></script>
+<script src="js/teleboat-history-parser.js?v=20261023-8"></script>
+<script src="js/purchase-import.js?v=20261023-8"></script>
 </body>
 </html>
