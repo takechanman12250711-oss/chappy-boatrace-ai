@@ -4,7 +4,7 @@
   "monitorVersion": "outer-attack-ticket-central-monitor-v1",
   "sourceShadowVersion": "outer-attack-ticket-shadow-v1",
   "createdAt": "2026-08-31T07:23:49.270Z",
-  "updatedAt": "2026-10-23T01:49:58.617Z",
+  "updatedAt": "2026-10-23T03:25:20.419Z",
   "immutable": true,
   "productionChanged": false,
   "automaticApplication": false,
@@ -54853,35 +54853,444 @@
         "centralCapturedAt": "2026-10-22T10:40:43.247Z",
         "immutableFingerprint": "sha256:e0c121548d9086b7cb9d522a695ebabf50f9fa71c95a951cce18698730b7dcb0"
       }
+    },
+    "20261023-05-4|2026-10-23T02:52:21.013Z": {
+      "archiveKey": "20261023-05-4|2026-10-23T02:52:21.013Z",
+      "sourceRaceKey": "20261023-05-4",
+      "sourceKind": "primary-prediction",
+      "sourcePredictionCapturedAt": "2026-10-23T02:52:21.013Z",
+      "centralCapturedAt": "2026-10-23T03:25:20.419Z",
+      "immutableFingerprint": "sha256:22bc1c7c5c08ec8f184959d5fc1f1e651b429c270b94549124231868a7ad7b7b",
+      "sourceShadowVersion": "outer-attack-ticket-shadow-v1",
+      "productionChanged": false,
+      "automaticApplication": false,
+      "snapshot": {
+        "schemaVersion": 1,
+        "experimentId": "outer-attack-ticket-shadow-v1",
+        "status": "shadow-only",
+        "productionChanged": false,
+        "automaticApplication": false,
+        "resultUsedForGeneration": false,
+        "retrospectiveBackfillAllowed": false,
+        "replacementPolicy": "category-tail-preserve-leading-order",
+        "sourceRaceKey": "20261023-05-4",
+        "captureAt": "2026-10-23T02:52:21.013Z",
+        "captureKey": "20261023-05-4|2026-10-23T02:52:21.013Z",
+        "generatedAt": "2026-10-23T02:52:21.013Z",
+        "signal": {
+          "status": "active",
+          "active": true,
+          "targetBoatNo": 4,
+          "basisValid": true,
+          "baselineTopBoatNo": 1,
+          "matchedBoatNos": [
+            4
+          ],
+          "pairs": [
+            {
+              "boatNo": 3,
+              "matched": false,
+              "attackSignal": false,
+              "flowSuppressed": true,
+              "weightedGaps": {
+                "st": -0.7399999999999999,
+                "roleAttack": -0.6270000000000003,
+                "exhibition": 1.8810000000000004,
+                "raceFlow": -6.649999999999999
+              }
+            },
+            {
+              "boatNo": 4,
+              "matched": true,
+              "attackSignal": true,
+              "flowSuppressed": true,
+              "weightedGaps": {
+                "st": 2.0700000000000003,
+                "roleAttack": 1.045,
+                "exhibition": 3.528,
+                "raceFlow": -0.1999999999999993
+              }
+            }
+          ],
+          "fixedThresholds": {
+            "st": 0,
+            "roleAttack": 0.25,
+            "exhibition": 0.5
+          },
+          "baselineProfileId": "p0-current"
+        },
+        "a": {
+          "formations": {
+            "main": [
+              {
+                "ticket": "4-1-5",
+                "amountYen": 100
+              },
+              {
+                "ticket": "4-5-6",
+                "amountYen": 100
+              },
+              {
+                "ticket": "4-3-5",
+                "amountYen": 100
+              }
+            ],
+            "cover": [
+              {
+                "ticket": "1-2-3",
+                "amountYen": 100
+              },
+              {
+                "ticket": "1-2-4",
+                "amountYen": 100
+              }
+            ],
+            "flow": [
+              {
+                "ticket": "4-1-6",
+                "amountYen": 100
+              },
+              {
+                "ticket": "4-1-2",
+                "amountYen": 100
+              }
+            ],
+            "possibility": [
+              {
+                "ticket": "1-2-5",
+                "amountYen": 100
+              }
+            ]
+          },
+          "entries": [
+            {
+              "ticket": "4-1-5",
+              "amountYen": 100,
+              "sourceKey": "main",
+              "categoryKey": "main"
+            },
+            {
+              "ticket": "4-5-6",
+              "amountYen": 100,
+              "sourceKey": "main",
+              "categoryKey": "main"
+            },
+            {
+              "ticket": "4-3-5",
+              "amountYen": 100,
+              "sourceKey": "main",
+              "categoryKey": "main"
+            },
+            {
+              "ticket": "1-2-3",
+              "amountYen": 100,
+              "sourceKey": "cover",
+              "categoryKey": "cover"
+            },
+            {
+              "ticket": "1-2-4",
+              "amountYen": 100,
+              "sourceKey": "cover",
+              "categoryKey": "cover"
+            },
+            {
+              "ticket": "4-1-6",
+              "amountYen": 100,
+              "sourceKey": "flow",
+              "categoryKey": "flow"
+            },
+            {
+              "ticket": "4-1-2",
+              "amountYen": 100,
+              "sourceKey": "flow",
+              "categoryKey": "flow"
+            },
+            {
+              "ticket": "1-2-5",
+              "amountYen": 100,
+              "sourceKey": "possibility",
+              "categoryKey": "possibility"
+            }
+          ],
+          "ticketCount": 8,
+          "uniqueTicketCount": 8,
+          "totalStakeYen": 800,
+          "fingerprint": "fnv1a32:e44dfdec",
+          "inputUnchanged": true
+        },
+        "variants": {
+          "cover": {
+            "id": "cover-one-ticket-replacement",
+            "categoryKey": "cover",
+            "categoryLabel": "押さえ",
+            "targetBoatNo": 4,
+            "replacementPolicy": "category-tail-preserve-leading-order",
+            "status": "ready",
+            "candidateCount": 4,
+            "replacement": {
+              "sourceKey": "cover",
+              "validEntryIndex": 1,
+              "fromTicket": "1-2-4",
+              "toTicket": "1-4-5",
+              "carriedAmountYen": 100,
+              "targetPosition": 2,
+              "candidateId": "",
+              "candidateKind": "canonical-formation",
+              "purchaseEligible": false,
+              "evidenceQualified": true,
+              "priorityScore": 100
+            },
+            "b": {
+              "entries": [
+                {
+                  "ticket": "4-1-5",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "4-5-6",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "4-3-5",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "1-2-3",
+                  "amountYen": 100,
+                  "sourceKey": "cover",
+                  "categoryKey": "cover"
+                },
+                {
+                  "ticket": "1-4-5",
+                  "amountYen": 100,
+                  "sourceKey": "cover",
+                  "categoryKey": "cover"
+                },
+                {
+                  "ticket": "4-1-6",
+                  "amountYen": 100,
+                  "sourceKey": "flow",
+                  "categoryKey": "flow"
+                },
+                {
+                  "ticket": "4-1-2",
+                  "amountYen": 100,
+                  "sourceKey": "flow",
+                  "categoryKey": "flow"
+                },
+                {
+                  "ticket": "1-2-5",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                }
+              ],
+              "ticketCount": 8,
+              "totalStakeYen": 800
+            },
+            "invariants": {
+              "sameTicketCount": true,
+              "sameStake": true,
+              "mainUnchanged": true,
+              "exactlyOneTicketReplaced": true,
+              "targetNotHead": true
+            }
+          },
+          "flow": {
+            "id": "flow-one-ticket-replacement",
+            "categoryKey": "flow",
+            "categoryLabel": "流し",
+            "targetBoatNo": 4,
+            "replacementPolicy": "category-tail-preserve-leading-order",
+            "status": "ready",
+            "candidateCount": 7,
+            "replacement": {
+              "sourceKey": "flow",
+              "validEntryIndex": 1,
+              "fromTicket": "4-1-2",
+              "toTicket": "1-4-5",
+              "carriedAmountYen": 100,
+              "targetPosition": 2,
+              "candidateId": "shadow-physical-1-4-5",
+              "candidateKind": "outer-attack-shadow-physical",
+              "purchaseEligible": true,
+              "evidenceQualified": true,
+              "priorityScore": 78.948
+            },
+            "b": {
+              "entries": [
+                {
+                  "ticket": "4-1-5",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "4-5-6",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "4-3-5",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "1-2-3",
+                  "amountYen": 100,
+                  "sourceKey": "cover",
+                  "categoryKey": "cover"
+                },
+                {
+                  "ticket": "1-2-4",
+                  "amountYen": 100,
+                  "sourceKey": "cover",
+                  "categoryKey": "cover"
+                },
+                {
+                  "ticket": "4-1-6",
+                  "amountYen": 100,
+                  "sourceKey": "flow",
+                  "categoryKey": "flow"
+                },
+                {
+                  "ticket": "1-4-5",
+                  "amountYen": 100,
+                  "sourceKey": "flow",
+                  "categoryKey": "flow"
+                },
+                {
+                  "ticket": "1-2-5",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                }
+              ],
+              "ticketCount": 8,
+              "totalStakeYen": 800
+            },
+            "invariants": {
+              "sameTicketCount": true,
+              "sameStake": true,
+              "mainUnchanged": true,
+              "exactlyOneTicketReplaced": true,
+              "targetNotHead": true
+            }
+          },
+          "hole": {
+            "id": "hole-one-ticket-replacement",
+            "categoryKey": "hole",
+            "categoryLabel": "万舟",
+            "targetBoatNo": 4,
+            "replacementPolicy": "category-tail-preserve-leading-order",
+            "status": "no-source-ticket",
+            "replacement": null,
+            "b": {
+              "entries": [
+                {
+                  "ticket": "4-1-5",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "4-5-6",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "4-3-5",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "1-2-3",
+                  "amountYen": 100,
+                  "sourceKey": "cover",
+                  "categoryKey": "cover"
+                },
+                {
+                  "ticket": "1-2-4",
+                  "amountYen": 100,
+                  "sourceKey": "cover",
+                  "categoryKey": "cover"
+                },
+                {
+                  "ticket": "4-1-6",
+                  "amountYen": 100,
+                  "sourceKey": "flow",
+                  "categoryKey": "flow"
+                },
+                {
+                  "ticket": "4-1-2",
+                  "amountYen": 100,
+                  "sourceKey": "flow",
+                  "categoryKey": "flow"
+                },
+                {
+                  "ticket": "1-2-5",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                }
+              ],
+              "ticketCount": 8,
+              "totalStakeYen": 800
+            },
+            "invariants": {
+              "sameTicketCount": true,
+              "sameStake": true,
+              "mainUnchanged": true,
+              "exactlyOneTicketReplaced": false,
+              "targetNotHead": true
+            }
+          }
+        },
+        "readyVariantCount": 2,
+        "comparisonStatus": "awaiting-official-result",
+        "persistenceRecommended": true,
+        "centralCapturedAt": "2026-10-23T03:25:20.419Z",
+        "immutableFingerprint": "sha256:22bc1c7c5c08ec8f184959d5fc1f1e651b429c270b94549124231868a7ad7b7b"
+      }
     }
   },
   "conflicts": [],
-  "snapshotCount": 124,
+  "snapshotCount": 125,
   "conflictCount": 0,
   "lastCapture": {
     "date": "20261023",
-    "capturedAt": "2026-10-23T01:49:58.617Z",
+    "capturedAt": "2026-10-23T03:25:20.419Z",
     "diagnostics": {
-      "sourceRecordCount": 25,
-      "preDeadlineRecordCount": 25,
-      "duplicateRaceKeyCount": 1,
+      "sourceRecordCount": 49,
+      "preDeadlineRecordCount": 49,
+      "duplicateRaceKeyCount": 3,
       "excludedReasons": {},
-      "selectedRaceCount": 24,
+      "selectedRaceCount": 46,
       "beforeProspectiveStartCount": 0,
-      "notPersistenceRecommendedCount": 24,
+      "notPersistenceRecommendedCount": 45,
       "notReadyCount": 0,
-      "capturedCount": 0,
+      "capturedCount": 1,
       "preservedCount": 0,
       "conflictCount": 0
     }
   },
   "noteCollection": {
-    "checked": 1998,
+    "checked": 2005,
     "saved": 0,
-    "inactive": 1637,
-    "missing": 252,
+    "inactive": 1643,
+    "missing": 253,
     "invalid": 1,
     "missingBasis": 0,
-    "checkedAt": "2026-10-23T01:49:58.617Z"
+    "checkedAt": "2026-10-23T03:25:20.419Z"
   }
 }
