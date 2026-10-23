@@ -82,6 +82,7 @@
     <button id="copyToken" type="button" class="secondary">合言葉をコピー</button>
     <p class="muted"><strong>ふだんは作らず、すでにある合言葉を使ってください。</strong>Vercel の chappy-boatrace-api →「Settings」→「Environment Variables」の <code>CHAPPY_PURCHASE_SYNC_TOKEN</code> の値をコピーして、上の欄に貼り付けます。この合言葉は5分ごとの自動精算や最終オッズの収集（GitHub Actions）でも使っています。</p>
     <p class="muted">「合言葉を作る」は、値を表示できないなどで新しくするときだけ使います。この端末の中だけで作り、どこにも送りません。作ったら、<strong>Vercel の環境変数と GitHub の Secret（chappy-boatrace-ai →「Settings」→「Secrets and variables」→「Actions」の <code>CHAPPY_PURCHASE_SYNC_TOKEN</code>）の両方</strong>を同じ値に置き換え、Vercel をデプロイし直してください。片方だけだと自動精算が止まります。</p>
+    <p class="muted"><strong>作った合言葉は、iPhoneの「パスワード」アプリにも保存してください</strong>（タイトル「チャッピー購入同期の合言葉」）。合言葉は開いたブラウザごとに別々に保存され、Vercel と GitHub では後から見られません。消えたときはパスワードアプリからコピーして上の欄に貼れば、作り直さずに済みます。</p>
     <p class="muted">チャッピーの購入同期APIにだけ送ります。チャットやSNSには貼らないでください。</p>
   </section>
 
@@ -99,7 +100,7 @@
     <p class="muted">ブックマークは画面の表の文字を読み、各明細の No を順に開いて金額を読んでから閉じます（24件で数秒）。どこにも送信しません。送信はこのページで確認してから行います。</p>
   </section>
 </main>
-<script src="js/teleboat-history-parser.js?v=20261023-9"></script>
-<script src="js/purchase-import.js?v=20261023-9"></script>
+<script src="js/teleboat-history-parser.js?v=20261023-10"></script>
+<script src="js/purchase-import.js?v=20261023-10"></script>
 </body>
 </html>
