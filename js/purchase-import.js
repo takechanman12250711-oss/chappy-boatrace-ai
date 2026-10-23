@@ -28,6 +28,15 @@
     try { return parser.decodeCapture(match[1]); } catch { return { error: "読み取ったデータを開けませんでした" }; }
   }
 
+  // 端末の中だけで強い合言葉を作る（32バイトの乱数、URLに使える文字で43文字）
+  function generateToken(cryptoImpl) {
+    if (!cryptoImpl?.getRandomValues) throw new Error("この端末では合言葉を作れません");
+    const bytes = cryptoImpl.getRandomValues(new Uint8Array(32));
+    const binary = Array.from(bytes, (byte) => String.fromCharCode(byte)).join("");
+    const base64 = typeof btoa === "function" ? btoa(binary) : Buffer.from(bytes).toString("base64");
+    return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
   function loadToken(storage) {
     try { return storage?.getItem(TOKEN_KEY) || ""; } catch { return ""; }
   }
@@ -194,6 +203,29 @@
     remember.checked = Boolean(saved);
     // チェックを外したらすぐ消し、付けたらすぐ保存する（送信を待たない）
     remember.addEventListener("change", () => saveToken(storage, tokenInput.value.trim(), remember.checked));
+    document.getElementById("generateToken").addEventListener("click", () => {
+      const question = tokenInput.value.trim()
+        ? "今の合言葉を新しいものに置き換えます。Vercel と GitHub の Secret の両方を同じ値に変えないと、自動精算が止まります。よろしいですか？"
+        : "新しい合言葉を作ります。すでに Vercel に合言葉があるなら、作らずにその値を貼り付けてください。作った場合は Vercel と GitHub の Secret の両方を同じ値に変える必要があります。作りますか？";
+      if (!root.confirm(question)) return;
+      try {
+        tokenInput.value = generateToken(root.crypto);
+        remember.checked = true;
+        saveToken(storage, tokenInput.value, true);
+        message.textContent = "合言葉を作って、この端末に保存しました。「合言葉をコピー」で写し、Vercel の環境変数と GitHub の Secret の CHAPPY_PURCHASE_SYNC_TOKEN の両方に貼り付けて、Vercel をデプロイし直してください。";
+      } catch (error) { message.textContent = String(error?.message || error); }
+    });
+    document.getElementById("toggleToken").addEventListener("click", (event) => {
+      const show = tokenInput.type === "password";
+      tokenInput.type = show ? "text" : "password";
+      event.currentTarget.textContent = show ? "隠す" : "表示する";
+    });
+    document.getElementById("copyToken").addEventListener("click", async () => {
+      const value = tokenInput.value.trim();
+      if (!value) { message.textContent = "合言葉が入っていません"; return; }
+      try { await root.navigator.clipboard.writeText(value); message.textContent = "合言葉をコピーしました。チャットやSNSには貼らないでください。"; }
+      catch { tokenInput.type = "text"; tokenInput.select(); message.textContent = "選択した合言葉をコピーしてください"; }
+    });
     tokenInput.addEventListener("change", () => { if (remember.checked) saveToken(storage, tokenInput.value.trim(), true); });
     document.getElementById("bookmarkletCode").value = parser.bookmarkletSource();
 
@@ -285,5 +317,5 @@
     });
   }
 
-  return Object.freeze({ API_URL, TOKEN_KEY, SUMMARY_KEY, validAmount, loadToken, saveToken, loadSummaries, saveSummary, summaryPayload, amountCheck, readHashCapture, summarizeGuardrails, callApi, todayJst, install });
+  return Object.freeze({ API_URL, TOKEN_KEY, SUMMARY_KEY, generateToken, validAmount, loadToken, saveToken, loadSummaries, saveSummary, summaryPayload, amountCheck, readHashCapture, summarizeGuardrails, callApi, todayJst, install });
 });

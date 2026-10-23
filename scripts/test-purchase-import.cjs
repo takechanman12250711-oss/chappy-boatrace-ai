@@ -143,6 +143,15 @@ assert.strictEqual(parser.parseRow(["蒲郡", "7R", "3連単", "1-2-3", "500円"
   assert.deepStrictEqual(page.loadSummaries(storage)["20261020"], summary);
 }
 
+// 合言葉は端末の乱数から作り、毎回ちがう43文字
+{
+  const nodeCrypto = require("crypto").webcrypto;
+  const a = page.generateToken(nodeCrypto), b = page.generateToken(nodeCrypto);
+  assert.match(a, /^[A-Za-z0-9_-]{43}$/);
+  assert.notStrictEqual(a, b);
+  assert.throws(() => page.generateToken(null), /作れません/);
+}
+
 // 金額の入力
 assert.strictEqual(page.validAmount("500"), 500);
 assert.strictEqual(page.validAmount("1,000円"), 1000);
