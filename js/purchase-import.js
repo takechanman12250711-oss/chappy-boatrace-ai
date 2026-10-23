@@ -15,6 +15,7 @@
   // 今日・今月の負けと警告（購入の歯止め）を表示する。警告のみで購入は止めない。
   const API_URL = "https://chappy-boatrace-api.vercel.app/api/purchases";
   const TOKEN_KEY = "chappy_purchase_sync_token_v1";
+  const SUMMARY_KEY = "chappy_inquiry_summary_v1";
   const VENUE_NAMES = Object.freeze(Object.fromEntries((parser?.VENUES || []).filter(([name]) => name !== "琵琶湖").map(([name, jcd]) => [jcd, name])));
 
   function yen(value) {
@@ -36,6 +37,28 @@
       if (remember && token) storage?.setItem(TOKEN_KEY, token);
       else storage?.removeItem(TOKEN_KEY);
     } catch { /* 保存できなくても送信はできる */ }
+  }
+
+  // 「合計」タブの購入金額を日付ごとに覚えておき、明細の金額を入れたときに照合する（この端末だけ）
+  function loadSummaries(storage) {
+    try { return JSON.parse(storage?.getItem(SUMMARY_KEY) || "{}") || {}; } catch { return {}; }
+  }
+
+  function saveSummary(storage, summary) {
+    const all = loadSummaries(storage);
+    all[summary.date] = summary;
+    const recent = Object.fromEntries(Object.entries(all).sort().slice(-31));
+    try { storage?.setItem(SUMMARY_KEY, JSON.stringify(recent)); } catch { /* 照合ができないだけ */ }
+    return recent;
+  }
+
+  // 入力した金額の合計と、照会の購入金額との照合文
+  function amountCheck(total, summary) {
+    if (!summary) return "";
+    const diff = summary.stakeYen - total;
+    const base = `入力した金額の合計 ${yen(total)} ／ 照会の購入金額 ${yen(summary.stakeYen)}`;
+    if (diff === 0) return `${base}（一致）`;
+    return diff > 0 ? `${base}（あと ${yen(diff)}）` : `${base}（${yen(-diff)} 多い）`;
   }
 
   async function callApi(fetchImpl, token, { method = "GET", query = "", body } = {}) {
@@ -171,8 +194,30 @@
     const capture = readHashCapture(root.location.hash);
     // 読み取った内容をアドレス欄や履歴に残さない
     if (root.location.hash) root.history?.replaceState?.(null, "", root.location.pathname + root.location.search);
+    const check = document.getElementById("amountCheck");
+    const updateCheck = () => {
+      const summary = loadSummaries(storage)[parsed.listedDate];
+      const total = [...document.querySelectorAll("#purchaseRows input[type=checkbox]")]
+        .filter((input) => input.checked)
+        .reduce((sum, input) => sum + validAmount(document.querySelector(`#purchaseRows input.amount[data-index="${input.getAttribute("data-index")}"]`)?.value), 0);
+      check.textContent = amountCheck(total, summary);
+      check.hidden = !summary;
+    };
     if (capture?.error) message.textContent = capture.error;
-    else if (capture) { parsed = parser.parseCapture(capture); renderCapture(document, parsed); }
+    else if (capture) {
+      parsed = parser.parseCapture(capture);
+      const summary = parsed.purchases.length ? null : parser.parseSummary(capture);
+      if (summary) {
+        saveSummary(storage, summary);
+        message.textContent = `${Number(summary.date.slice(4, 6))}月${Number(summary.date.slice(6, 8))}日の合計を覚えました：購入 ${yen(summary.stakeYen)}・払戻 ${yen(summary.payoutYen)}` +
+          `${summary.races !== null ? `（${summary.races}レース）` : ""}。一覧を取り込むと、入力した金額と照合します。`;
+      } else {
+        renderCapture(document, parsed);
+        document.getElementById("purchaseRows").addEventListener("input", updateCheck);
+        document.getElementById("purchaseRows").addEventListener("change", updateCheck);
+        updateCheck();
+      }
+    }
 
     const token = () => {
       const value = tokenInput.value.trim();
@@ -205,6 +250,7 @@
     document.getElementById("bulkAmountButton").addEventListener("click", () => {
       try {
         const filled = applyBulkAmount(document, document.getElementById("bulkAmountInput").value);
+        updateCheck();
         message.textContent = `金額が空の${filled}件に入れました。違う金額の券は個別に直してください。`;
       } catch (error) { message.textContent = String(error?.message || error); }
     });
@@ -216,5 +262,5 @@
     });
   }
 
-  return Object.freeze({ API_URL, TOKEN_KEY, validAmount, loadToken, saveToken, readHashCapture, summarizeGuardrails, callApi, todayJst, install });
+  return Object.freeze({ API_URL, TOKEN_KEY, SUMMARY_KEY, validAmount, loadToken, saveToken, loadSummaries, saveSummary, amountCheck, readHashCapture, summarizeGuardrails, callApi, todayJst, install });
 });

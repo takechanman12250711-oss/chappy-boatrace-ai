@@ -105,6 +105,26 @@ assert.strictEqual(parser.parseRow(["蒲郡", "7R", "3連単", "1-2-3", "500円"
   assert.strictEqual(page.loadToken(storage), "");
 }
 
+// 投票照会の「合計」タブ（2026-10-20の画面を元にした形）
+{
+  const summary = parser.parseSummary({
+    head: "投票照会 2026年 10月20日 合計収支",
+    rows: [["購入レース数", "6"], ["的中レース数", "0"], ["的中率", "0%"], ["購入金額", "¥76,000"], ["払戻金額", "¥0"], ["回収率", "0%"]]
+  });
+  assert.deepStrictEqual(summary, { date: "20261020", stakeYen: 76000, payoutYen: 0, races: 6, hitRaces: 0 });
+  assert.strictEqual(parser.parseSummary({ head: "2026年10月20日", rows: [["購入金額", "¥76,000"]] }), null, "払戻金額がなければ合計とみなさない");
+  assert.strictEqual(parser.parseSummary({ head: "照会", rows: [["購入金額", "¥76,000"], ["払戻金額", "¥0"]] }), null, "日付がなければ使わない");
+  assert.strictEqual(parser.parseCapture({ head: "2026年10月20日", rows: [["購入金額", "¥76,000"], ["払戻金額", "¥0"]] }).purchases.length, 0, "合計タブは明細として読まない");
+  assert.strictEqual(page.amountCheck(76000, summary), "入力した金額の合計 76,000円 ／ 照会の購入金額 76,000円（一致）");
+  assert.match(page.amountCheck(12000, summary), /あと 64,000円/);
+  assert.match(page.amountCheck(80000, summary), /4,000円 多い/);
+  assert.strictEqual(page.amountCheck(1000, undefined), "");
+  const memory = new Map();
+  const storage = { getItem: (k) => memory.get(k) ?? null, setItem: (k, v) => memory.set(k, v), removeItem: (k) => memory.delete(k) };
+  page.saveSummary(storage, summary);
+  assert.deepStrictEqual(page.loadSummaries(storage)["20261020"], summary);
+}
+
 // 金額の入力
 assert.strictEqual(page.validAmount("500"), 500);
 assert.strictEqual(page.validAmount("1,000円"), 1000);

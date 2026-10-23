@@ -79,8 +79,8 @@
   }
 
   function findAmounts(text) {
-    return [...text.matchAll(/(\d[\d,]*)\s*円/g)]
-      .map((match) => Number(match[1].replace(/,/g, "")))
+    return [...text.matchAll(/(?:[¥￥]\s*(\d[\d,]*)|(\d[\d,]*)\s*円)/g)]
+      .map((match) => Number((match[1] || match[2]).replace(/,/g, "")))
       .filter((amount) => Number.isSafeInteger(amount) && amount > 0 && amount % 100 === 0);
   }
 
@@ -105,6 +105,25 @@
   function findSerial(text) {
     const match = String(text || "").match(/^(\d{3})(?=\s|$)/);
     return match ? match[1] : "";
+  }
+
+  // 投票照会の「合計」タブ（購入金額・払戻金額・レース数）。明細の金額を入れたときの照合に使う。
+  function parseSummary(capture = {}) {
+    const rows = Array.isArray(capture.rows) ? capture.rows.map((cells) => normalize([].concat(cells).join(" "))) : [];
+    const valueOf = (pattern) => {
+      const row = rows.find((text) => pattern.test(text));
+      if (!row) return null;
+      const yen = row.match(/[¥￥]\s*(\d[\d,]*)|(\d[\d,]*)\s*円/);
+      if (yen) return Number((yen[1] || yen[2]).replace(/,/g, ""));
+      const plain = row.match(/(\d[\d,]*)\s*$/);
+      return plain ? Number(plain[1].replace(/,/g, "")) : null;
+    };
+    const stakeYen = valueOf(/購入金額/);
+    const payoutYen = valueOf(/払戻金額/);
+    if (stakeYen === null || payoutYen === null) return null;
+    const date = pageDate(capture);
+    if (!date) return null;
+    return { date, stakeYen, payoutYen, races: valueOf(/^(?!.*的中).*レース数/), hitRaces: valueOf(/的中レース数/) };
   }
 
   // 画面上部の照会日（「2026年10月20日」や年・月・日の選択欄）。明細の行に日付がない画面で使う。
@@ -189,5 +208,5 @@
     return `javascript:${body}`;
   }
 
-  return Object.freeze({ IMPORT_PAGE, VENUES, SKIP_LABELS, normalize, findVenue, findRace, findDate, jstDate, findTickets, findAmounts, findSerial, parseRow, pageDate, parseCapture, encodeCapture, decodeCapture, bookmarkletSource });
+  return Object.freeze({ IMPORT_PAGE, VENUES, SKIP_LABELS, normalize, findVenue, findRace, findDate, jstDate, findTickets, findAmounts, findSerial, parseRow, pageDate, parseSummary, parseCapture, encodeCapture, decodeCapture, bookmarkletSource });
 });
