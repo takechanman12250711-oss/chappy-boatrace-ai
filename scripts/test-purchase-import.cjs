@@ -143,6 +143,35 @@ assert.strictEqual(parser.parseRow(["蒲郡", "7R", "3連単", "1-2-3", "500円"
   assert.deepStrictEqual(page.loadSummaries(storage)["20261020"], summary);
 }
 
+// マイページの収支（実画面の表の形：日の投票結果の収支合計・月別収支の日別合計・年別収支）
+{
+  const day = parser.parseSummary({
+    head: "BOAT RACE 投票結果照会 2026年 10月 20日の投票結果 収支合計 勝式別 結果 投票結果検索",
+    rows: [["購入R数", "6"], ["的中R数", "0"], ["的中率", "0%"], ["購入金額合計", "¥76,000"], ["払戻金額合計", "¥0"], ["回収率", "0%"]]
+  });
+  assert.deepStrictEqual(day, { date: "20261020", stakeYen: 76000, payoutYen: 0, races: 6, hitRaces: 0 });
+  const monthHead = "BOAT RACE 月別収支 2026年 10月 2026年 10月 月別収支 ※本日の投票結果は反映していません。 収支合計 勝式別 結果 日別合計";
+  const monthTotal = { head: monthHead, selects: ["2026年 10月"], rows: [["購入R数", "14"], ["的中R数", "1"], ["購入金額合計", "¥116,000"], ["払戻金額合計", "¥14,600"]] };
+  assert.strictEqual(parser.parseSummary(monthTotal), null, "月の収支合計を1日の合計にしない");
+  assert.deepStrictEqual(parser.parseDailyTotals(monthTotal), [], "日別合計のタブでなければ読まない");
+  const daily = parser.parseDailyTotals({
+    head: monthHead, selects: ["2026年 10月"],
+    rows: [["日", "購入R数", "的中率", "購入金額合計", "回収率"], ["的中R数", "払戻金額合計"],
+      ["1\n日", "0", "0%", "¥0", "0%"], ["0", "¥0"],
+      ["8\n日", "3", "33%", "¥20,000", "73%"], ["1", "¥14,600"],
+      ["20\n日", "6", "0%", "¥76,000", "0%"], ["0", "¥0"]]
+  });
+  assert.deepStrictEqual(daily, [
+    { date: "20261008", stakeYen: 20000, payoutYen: 14600, races: 3, hitRaces: 1 },
+    { date: "20261020", stakeYen: 76000, payoutYen: 0, races: 6, hitRaces: 0 }
+  ], "購入も払戻もない日は送らない");
+  assert.strictEqual(parser.parseDailyTotals({ head: "月別収支 2026年 9月 2026年 10月 2026年 10月 月別収支", rows: [["8 日", "3", "33%", "¥20,000", "73%"], ["1", "¥14,600"]] })[0].date, "20261008", "選択欄の他の月を使わない");
+  assert.deepStrictEqual(parser.parseDailyTotals({ head: "月別収支", selects: ["2026年 2月"], rows: [["30 日", "1", "0%", "¥100", "0%"], ["0", "¥0"]] }), [], "ない日付は使わない");
+  const year = { head: "BOAT RACE 年別収支 2026年 2026年 年別収支", rows: [["購入金額合計", "¥1,591,100"], ["払戻金額合計", "¥852,260"]] };
+  assert.strictEqual(parser.parseSummary(year), null);
+  assert.deepStrictEqual(parser.parseDailyTotals(year), []);
+}
+
 // 合言葉は端末の乱数から作り、毎回ちがう43文字
 {
   const nodeCrypto = require("crypto").webcrypto;

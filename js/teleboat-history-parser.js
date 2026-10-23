@@ -118,12 +118,45 @@
       const plain = row.match(/(\d[\d,]*)\s*$/);
       return plain ? Number(plain[1].replace(/,/g, "")) : null;
     };
+    // マイページの月別・年別収支の「収支合計」は1日の合計ではないので使わない（日別は parseDailyTotals）
+    if (/(月別|年別)収支/.test(normalize(capture.head || ""))) return null;
     const stakeYen = valueOf(/購入金額/);
     const payoutYen = valueOf(/払戻金額/);
     if (stakeYen === null || payoutYen === null) return null;
     const date = pageDate(capture);
     if (!date) return null;
-    return { date, stakeYen, payoutYen, races: valueOf(/^(?!.*的中).*レース数/), hitRaces: valueOf(/的中レース数/) };
+    return { date, stakeYen, payoutYen, races: valueOf(/購入\s*(?:R|レース)数/), hitRaces: valueOf(/的中\s*(?:R|レース)数/) };
+  }
+
+  // マイページ「月別収支」の「日別合計」タブ。1日が2行（日・購入R数・的中率・購入金額・回収率／的中R数・払戻金額）に分かれる。
+  // 購入も払戻もない日は送らない。
+  function parseDailyTotals(capture = {}) {
+    const head = normalize(capture.head || "");
+    if (!/月別収支/.test(head)) return [];
+    // 画面の文字には月の選択欄の全候補も入るので、見出し「2026年 10月 月別収支」→ 選択中の月の順に見る
+    const ym = head.match(/(20\d{2})\s*年\s*(\d{1,2})\s*月\s*月別収支/)
+      || (Array.isArray(capture.selects) ? capture.selects : []).map((text) => normalize(text).match(/(20\d{2})\s*年\s*(\d{1,2})\s*月/)).find(Boolean);
+    if (!ym) return [];
+    const [y, m] = [Number(ym[1]), Number(ym[2])];
+    const rows = Array.isArray(capture.rows) ? capture.rows.map((cells) => [].concat(cells).map(normalize)) : [];
+    const yenOf = (cells) => cells.map((cell) => cell.match(/^[¥￥]\s*(\d[\d,]*)$/)).filter(Boolean).map((match) => Number(match[1].replace(/,/g, "")));
+    const intOf = (cell) => (/^\d+$/.test(cell || "") ? Number(cell) : null);
+    const totals = [];
+    rows.forEach((cells, index) => {
+      const day = (cells[0] || "").match(/^(\d{1,2})\s*日$/);
+      if (!day) return;
+      const date = findDate(`${y}/${m}/${Number(day[1])}`);
+      if (!date) return;
+      let yens = yenOf(cells), hitRaces = null;
+      const next = rows[index + 1] || [];
+      // 払戻金額は次の行（的中R数と並ぶ）。1行にまとまっている画面なら2つ目の金額。
+      if (yens.length === 1 && !/^\d{1,2}\s*日$/.test(next[0] || "")) { yens = yens.concat(yenOf(next)); hitRaces = intOf(next[0]); }
+      if (yens.length < 2) return;
+      const [stakeYen, payoutYen] = yens;
+      if (!stakeYen && !payoutYen) return;
+      totals.push({ date, stakeYen, payoutYen, races: intOf(cells[1]), hitRaces });
+    });
+    return totals;
   }
 
   // 画面上部の照会日（「2026年10月20日」や年・月・日の選択欄）。明細の行に日付がない画面で使う。
@@ -266,5 +299,5 @@
     return { no: String(detail.no || ""), ticket, amount };
   }
 
-  return Object.freeze({ IMPORT_PAGE, VENUES, SKIP_LABELS, normalize, findVenue, findRace, findDate, jstDate, findTickets, findAmounts, findSerial, parseRow, pageDate, parseSummary, parseDetail, parseCapture, encodeCapture, decodeCapture, capturePage, bookmarkletSource });
+  return Object.freeze({ IMPORT_PAGE, VENUES, SKIP_LABELS, normalize, findVenue, findRace, findDate, jstDate, findTickets, findAmounts, findSerial, parseRow, pageDate, parseSummary, parseDailyTotals, parseDetail, parseCapture, encodeCapture, decodeCapture, capturePage, bookmarkletSource });
 });
