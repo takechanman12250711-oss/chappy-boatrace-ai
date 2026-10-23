@@ -214,7 +214,8 @@
     if (capture?.error) message.textContent = capture.error;
     else if (capture) {
       parsed = parser.parseCapture(capture);
-      const summary = parsed.purchases.length ? null : parser.parseSummary(capture);
+      // 合計タブなら合計を出す。明細も読めた場合は両方を出す（隠れた行が混ざっても合計を送れるように）
+      const summary = parser.parseSummary(capture);
       if (summary) {
         pendingSummary = { ...summary, capturedAt: capture.capturedAt || "" };
         saveSummary(storage, pendingSummary);
@@ -222,7 +223,8 @@
           `${Number(summary.date.slice(4, 6))}月${Number(summary.date.slice(6, 8))}日の照会の合計：購入 ${yen(summary.stakeYen)}・払戻 ${yen(summary.payoutYen)}` +
           `${summary.races !== null ? `（${summary.races}レース）` : ""}。送信すると、この日の負けと今月の予算をこの合計で判定します。一覧を取り込むと、入れた金額とも照合します。`;
         document.getElementById("summaryBox").hidden = false;
-      } else {
+      }
+      if (parsed.purchases.length || !summary) {
         renderCapture(document, parsed);
         document.getElementById("purchaseRows").addEventListener("input", updateCheck);
         document.getElementById("purchaseRows").addEventListener("change", updateCheck);

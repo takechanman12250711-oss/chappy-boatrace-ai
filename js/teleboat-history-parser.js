@@ -204,7 +204,7 @@
     return JSON.parse(json);
   }
 
-  // 照会の画面で実行するブックマーク本体。表のセル文字を集めたあと、各明細の No を順に押して
+  // 照会の画面で実行するブックマーク本体。表示中の表の行（隠れたタブの行は除く）のセル文字を集めたあと、各明細の No を順に押して
   // 詳細（金額）を読み、閉じる。最後に取り込みページを開く。このコードは何も送信しない。
   // ブックマークのアドレス欄は1行になるため、関数内には行コメントを書かず、文末は必ずセミコロンで閉じる。
   async function capturePage(importPage, limits) {
@@ -216,7 +216,7 @@
     const all = (selector) => docs.flatMap((d) => Array.from(d.querySelectorAll(selector)));
     const visible = (node) => node.getClientRects().length > 0;
     const rows = [];
-    for (const tr of all("tr")) { const cells = Array.from(tr.cells).map(text); if (cells.some(Boolean)) rows.push(cells); }
+    for (const tr of all("tr")) { if (!visible(tr)) continue; const cells = Array.from(tr.cells).map(text); if (cells.some(Boolean)) rows.push(cells); }
     const body = text(document.body);
     const selects = all("select").map((select) => { const option = select.options[select.selectedIndex]; return option ? (option.text || option.value) : ""; });
     const seen = new Set();
