@@ -79,6 +79,13 @@ assert.strictEqual(parser.parseRow(["蒲郡", "7R", "3連単", "1-2-3", "500円"
   assert.deepStrictEqual(parsed.purchases.map((p) => `${p.date} ${p.jcd} ${p.raceNo}R ${p.ticket} ${p.amount}`),
     ["20261020 03 1R 1-2-6 null", "20261020 03 1R 2-3-6 null", "20261020 01 10R 1-2-5 null", "20261020 19 12R 1-2-6 null"]);
   assert.ok(parsed.purchases.every((p) => p.dateAssumed === false));
+  assert.deepStrictEqual(parsed.purchases.map((p) => p.contractId),
+    ["tb-20261020-03-1-1-2-6-n001", "tb-20261020-03-1-2-3-6-n002", "tb-20261020-01-10-1-2-5-n008", "tb-20261020-19-12-1-2-6-n024"], "通し番号（No）をIDに使う");
+  // 同じ券を別の購入で2回買い、別々の画面（絞り込み）で取り込んでも、別のIDになる
+  const first = parser.parseCapture({ ...capture, rows: [["001", "江戸川", "1R", "なし", "結果"], ["3連単", "1 - 2 - 6"]] });
+  const second = parser.parseCapture({ ...capture, rows: [["005", "江戸川", "1R", "なし", "結果"], ["3連単", "1 - 2 - 6"]] });
+  assert.notStrictEqual(first.purchases[0].contractId, second.purchases[0].contractId);
+  assert.strictEqual(parser.findSerial("100円 1-2-3"), "", "金額の数字は通し番号にしない");
   assert.deepStrictEqual(parsed.skipped, []);
   // 1行にまとまった形でも同じ
   const oneRow = parser.parseCapture({ ...capture, rows: [["001", "江戸川", "1R", "なし", "3連単", "1-2-6"]] });
@@ -86,6 +93,16 @@ assert.strictEqual(parser.parseRow(["蒲郡", "7R", "3連単", "1-2-3", "500円"
   // 選択欄の年・月・日からも読む
   assert.strictEqual(parser.pageDate({ head: "投票照会", selects: ["全て", "2026", "10", "20"] }), "20261020");
   assert.strictEqual(parser.pageDate({ head: "投票照会", selects: ["全て"] }), "");
+}
+
+// トークンの保存: チェックを外すと消える
+{
+  const memory = new Map();
+  const storage = { getItem: (k) => memory.get(k) ?? null, setItem: (k, v) => memory.set(k, v), removeItem: (k) => memory.delete(k) };
+  page.saveToken(storage, "secret", true);
+  assert.strictEqual(page.loadToken(storage), "secret");
+  page.saveToken(storage, "secret", false);
+  assert.strictEqual(page.loadToken(storage), "");
 }
 
 // 金額の入力

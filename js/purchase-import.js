@@ -162,6 +162,9 @@
     const saved = loadToken(storage);
     tokenInput.value = saved;
     remember.checked = Boolean(saved);
+    // チェックを外したらすぐ消し、付けたらすぐ保存する（送信を待たない）
+    remember.addEventListener("change", () => saveToken(storage, tokenInput.value.trim(), remember.checked));
+    tokenInput.addEventListener("change", () => { if (remember.checked) saveToken(storage, tokenInput.value.trim(), true); });
     document.getElementById("bookmarkletCode").value = parser.bookmarkletSource();
 
     let parsed = { purchases: [], skipped: [] };
@@ -213,5 +216,5 @@
     });
   }
 
-  return Object.freeze({ API_URL, TOKEN_KEY, validAmount, readHashCapture, summarizeGuardrails, callApi, todayJst, install });
+  return Object.freeze({ API_URL, TOKEN_KEY, validAmount, loadToken, saveToken, readHashCapture, summarizeGuardrails, callApi, todayJst, install });
 });

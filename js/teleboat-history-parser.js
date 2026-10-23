@@ -101,6 +101,12 @@
     return { purchase: { date, jcd, raceNo, ticket: tickets[0], amount, dateAssumed: !findDate(text) }, text };
   }
 
+  // 投票照会の各明細に付く通し番号（No 001〜）。行の先頭にある3桁の数字。
+  function findSerial(text) {
+    const match = String(text || "").match(/^(\d{3})(?=\s|$)/);
+    return match ? match[1] : "";
+  }
+
   // 画面上部の照会日（「2026年10月20日」や年・月・日の選択欄）。明細の行に日付がない画面で使う。
   function pageDate(capture = {}) {
     const fromHead = findDate(normalize(capture.head || ""));
@@ -142,12 +148,18 @@
       if (parsed.skip) { skipped.push({ rowIndex, reason: parsed.skip, label: SKIP_LABELS[parsed.skip], text: parsed.text.slice(0, 160) }); return; }
       const p = parsed.purchase;
       if (p.dateAssumed && listedDate) p.dateAssumed = false;
-      // 同じ画面を取り込み直しても重複しないよう、同じ内容の何件目かまで含めた安定したIDにする。
       // 金額は後から入力・修正できるのでIDに含めない（金額を直して送り直すと同じ明細が更新される）。
       const base = `${p.date}-${p.jcd}-${p.raceNo}-${p.ticket}`;
+      // 投票照会の通し番号（No）があれば使う。別の画面・絞り込みで取り込んでも、別の購入が同じIDにならない。
+      const serial = findSerial(own) || (own !== parsed.text ? findSerial(context) : "");
+      if (serial) {
+        purchases.push({ ...p, rowIndex, serial, contractId: `tb-${base}-n${serial}`, source: "teleboat-bookmarklet" });
+        return;
+      }
+      // 通し番号がない画面では、同じ画面の中で同じ内容の何件目かで区別する（画面をまたぐと区別できない）
       const occurrence = (seen.get(base) || 0) + 1;
       seen.set(base, occurrence);
-      purchases.push({ ...p, rowIndex, contractId: `tb-${base}-${occurrence}`, source: "teleboat-bookmarklet" });
+      purchases.push({ ...p, rowIndex, serial: "", contractId: `tb-${base}-${occurrence}`, source: "teleboat-bookmarklet" });
     });
     return { purchases, skipped, fallbackDate, listedDate, host: String(capture.host || "") };
   }
@@ -177,5 +189,5 @@
     return `javascript:${body}`;
   }
 
-  return Object.freeze({ IMPORT_PAGE, VENUES, SKIP_LABELS, normalize, findVenue, findRace, findDate, jstDate, findTickets, findAmounts, parseRow, pageDate, parseCapture, encodeCapture, decodeCapture, bookmarkletSource });
+  return Object.freeze({ IMPORT_PAGE, VENUES, SKIP_LABELS, normalize, findVenue, findRace, findDate, jstDate, findTickets, findAmounts, findSerial, parseRow, pageDate, parseCapture, encodeCapture, decodeCapture, bookmarkletSource });
 });
