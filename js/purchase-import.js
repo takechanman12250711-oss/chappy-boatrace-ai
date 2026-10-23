@@ -52,6 +52,11 @@
     return recent;
   }
 
+  function summaryPayload(summary) {
+    const { date, stakeYen, payoutYen, races, hitRaces, capturedAt } = summary;
+    return { date, stakeYen, payoutYen, races, hitRaces, source: "inquiry-summary", capturedAt: capturedAt || "" };
+  }
+
   // 入力した金額の合計と、照会の購入金額との照合文
   function amountCheck(total, summary) {
     if (!summary) return "";
@@ -81,7 +86,8 @@
     const lines = [];
     for (const [date, day] of Object.entries(guardrails.days || {}).sort().reverse()) {
       const label = date === today ? "今日" : `${Number(date.slice(4, 6))}/${Number(date.slice(6, 8))}`;
-      lines.push({ level: day.level, text: `${label}の負け ${yen(day.netSpentYen)} ／ 上限 ${yen(day.limitYen)}（購入 ${yen(day.stakeYen)}・結果待ち ${yen(day.pendingStakeYen)}）` });
+      const detail = day.source === "inquiry-summary" ? `照会の合計・購入 ${yen(day.stakeYen)}` : `購入 ${yen(day.stakeYen)}・結果待ち ${yen(day.pendingStakeYen)}`;
+      lines.push({ level: day.level, text: `${label}の負け ${yen(day.netSpentYen)} ／ 上限 ${yen(day.limitYen)}（${detail}）` });
     }
     for (const [month, data] of Object.entries(guardrails.months || {}).sort().reverse()) {
       const label = month === today.slice(0, 6) ? "今月" : `${Number(month.slice(4, 6))}月`;
@@ -192,6 +198,7 @@
     document.getElementById("bookmarkletCode").value = parser.bookmarkletSource();
 
     let parsed = { purchases: [], skipped: [] };
+    let pendingSummary = null;
     const capture = readHashCapture(root.location.hash);
     // 読み取った内容をアドレス欄や履歴に残さない
     if (root.location.hash) root.history?.replaceState?.(null, "", root.location.pathname + root.location.search);
@@ -209,9 +216,12 @@
       parsed = parser.parseCapture(capture);
       const summary = parsed.purchases.length ? null : parser.parseSummary(capture);
       if (summary) {
-        saveSummary(storage, summary);
-        message.textContent = `${Number(summary.date.slice(4, 6))}月${Number(summary.date.slice(6, 8))}日の合計を覚えました：購入 ${yen(summary.stakeYen)}・払戻 ${yen(summary.payoutYen)}` +
-          `${summary.races !== null ? `（${summary.races}レース）` : ""}。一覧を取り込むと、入力した金額と照合します。`;
+        pendingSummary = { ...summary, capturedAt: capture.capturedAt || "" };
+        saveSummary(storage, pendingSummary);
+        document.getElementById("summaryText").textContent =
+          `${Number(summary.date.slice(4, 6))}月${Number(summary.date.slice(6, 8))}日の照会の合計：購入 ${yen(summary.stakeYen)}・払戻 ${yen(summary.payoutYen)}` +
+          `${summary.races !== null ? `（${summary.races}レース）` : ""}。送信すると、この日の負けと今月の予算をこの合計で判定します。一覧を取り込むと、入れた金額とも照合します。`;
+        document.getElementById("summaryBox").hidden = false;
       } else {
         renderCapture(document, parsed);
         document.getElementById("purchaseRows").addEventListener("input", updateCheck);
@@ -236,8 +246,18 @@
     document.getElementById("sendButton").addEventListener("click", (event) => run(event.currentTarget, async () => {
       const purchases = selectedPurchases(document, parsed);
       if (!purchases.length) throw new Error("送信する明細を1件以上選んでください");
-      const result = await callApi(fetchImpl, token(), { method: "POST", body: { purchases } });
-      message.textContent = `${result.received}件を送信しました（新規 ${result.added}件）。`;
+      // 同じ日の照会の合計を覚えていれば一緒に送る
+      const stored = loadSummaries(storage)[parsed.listedDate];
+      const dailySummaries = stored ? [summaryPayload(stored)] : [];
+      const result = await callApi(fetchImpl, token(), { method: "POST", body: { purchases, ...(dailySummaries.length ? { dailySummaries } : {}) } });
+      message.textContent = `${result.received}件を送信しました（新規 ${result.added}件）${result.receivedSummaries ? "。照会の合計も送りました" : ""}。`;
+      renderStatus(document, summarizeGuardrails(result.guardrails, todayJst()));
+    }));
+
+    document.getElementById("sendSummaryButton").addEventListener("click", (event) => run(event.currentTarget, async () => {
+      if (!pendingSummary) throw new Error("送信する合計がありません");
+      const result = await callApi(fetchImpl, token(), { method: "POST", body: { dailySummaries: [summaryPayload(pendingSummary)] } });
+      message.textContent = "照会の合計を送信しました。";
       renderStatus(document, summarizeGuardrails(result.guardrails, todayJst()));
     }));
 
@@ -263,5 +283,5 @@
     });
   }
 
-  return Object.freeze({ API_URL, TOKEN_KEY, SUMMARY_KEY, validAmount, loadToken, saveToken, loadSummaries, saveSummary, amountCheck, readHashCapture, summarizeGuardrails, callApi, todayJst, install });
+  return Object.freeze({ API_URL, TOKEN_KEY, SUMMARY_KEY, validAmount, loadToken, saveToken, loadSummaries, saveSummary, summaryPayload, amountCheck, readHashCapture, summarizeGuardrails, callApi, todayJst, install });
 });

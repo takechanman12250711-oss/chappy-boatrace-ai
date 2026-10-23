@@ -136,6 +136,9 @@ assert.strictEqual(parser.parseRow(["蒲郡", "7R", "3連単", "1-2-3", "500円"
   assert.strictEqual(page.amountCheck(1000, undefined), "");
   const memory = new Map();
   const storage = { getItem: (k) => memory.get(k) ?? null, setItem: (k, v) => memory.set(k, v), removeItem: (k) => memory.delete(k) };
+  assert.deepStrictEqual(page.summaryPayload({ ...summary, capturedAt: "2026-10-23T00:38:00.000Z" }),
+    { date: "20261020", stakeYen: 76000, payoutYen: 0, races: 6, hitRaces: 0, source: "inquiry-summary", capturedAt: "2026-10-23T00:38:00.000Z" });
+  assert.match(page.summarizeGuardrails({ days: { "20261020": { level: "warning", netSpentYen: 76000, limitYen: 10000, stakeYen: 76000, pendingStakeYen: 0, source: "inquiry-summary" } } }, "20261023")[0].text, /照会の合計・購入 76,000円/);
   page.saveSummary(storage, summary);
   assert.deepStrictEqual(page.loadSummaries(storage)["20261020"], summary);
 }

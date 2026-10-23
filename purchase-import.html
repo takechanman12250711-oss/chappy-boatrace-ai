@@ -40,6 +40,12 @@
   <h1>購入の取り込み</h1>
   <p class="muted">投票照会（投票履歴）の画面を1タップで読み取り、確認してから記録します。警告は表示するだけで、購入は止めません。</p>
 
+  <section id="summaryBox" hidden>
+    <h2>照会の合計</h2>
+    <p id="summaryText"></p>
+    <button id="sendSummaryButton" type="button">この合計を送信</button>
+  </section>
+
   <section id="captureBox" hidden>
     <h2>読み取った明細</h2>
     <p id="captureSummary"></p>
@@ -81,14 +87,14 @@
       <li>Safariでこのページをブックマークに追加し、名前を「チャッピー取り込み」にします。</li>
       <li>ブックマークを編集し、アドレス欄をコピーした文字に置き換えて保存します。</li>
       <li>BOAT RACE公式サイトの投票照会（またはテレボートの投票履歴）を開き、そのブックマークを押すと、このページが開きます。</li>
-      <li>照会の「合計」のタブでも押しておくと、その日の購入金額を覚え、一覧で入れた金額と照合します。</li>
+      <li>照会の「合計」のタブで押すと、その日の購入金額・払戻を送れます（1日の負けと月の予算はこの合計で判定）。一覧で入れた金額との照合にも使います。</li>
     </ol>
     <textarea id="bookmarkletCode" readonly></textarea>
     <button id="copyBookmarklet" type="button" class="secondary">コピー</button>
     <p class="muted">ブックマークは画面の表の文字を読み、各明細の No を順に開いて金額を読んでから閉じます（24件で数秒）。どこにも送信しません。送信はこのページで確認してから行います。</p>
   </section>
 </main>
-<script src="js/teleboat-history-parser.js?v=20261023-4"></script>
-<script src="js/purchase-import.js?v=20261023-4"></script>
+<script src="js/teleboat-history-parser.js?v=20261023-5"></script>
+<script src="js/purchase-import.js?v=20261023-5"></script>
 </body>
 </html>
