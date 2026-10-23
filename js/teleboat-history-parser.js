@@ -188,7 +188,9 @@
       if (!detail || p.amount) continue;
       if (detail.ticket === p.ticket && detail.amount) { p.amount = detail.amount; p.amountFromDetail = true; detailAmounts += 1; }
     }
-    return { purchases, skipped, fallbackDate, listedDate, detailAmounts, detailCount: details.size, host: String(capture.host || "") };
+    // 0件のときに原因を確かめるため、読み取った行の先頭だけを画面に出せるようにする（送信はしない）
+    const preview = rows.slice(0, 15).map((cells) => normalize((Array.isArray(cells) ? cells : [cells]).join(" | ")).slice(0, 120)).filter(Boolean);
+    return { purchases, skipped, fallbackDate, listedDate, detailAmounts, detailCount: details.size, rowCount: Array.isArray(capture.rows) ? capture.rows.length : 0, preview, host: String(capture.host || "") };
   }
 
   function encodeCapture(capture) {
@@ -216,7 +218,7 @@
     const all = (selector) => docs.flatMap((d) => Array.from(d.querySelectorAll(selector)));
     const visible = (node) => node.getClientRects().length > 0;
     const rows = [];
-    for (const tr of all("tr")) { if (!visible(tr)) continue; const cells = Array.from(tr.cells).map(text); if (cells.some(Boolean)) rows.push(cells); }
+    for (const tr of all("tr")) { if (!visible(tr)) continue; const cells = Array.from(tr.cells).map((cell) => [text(cell), ...Array.from(cell.querySelectorAll("img[alt]")).map((img) => img.alt.trim())].filter(Boolean).join(" ")); if (cells.some(Boolean)) rows.push(cells); }
     const body = text(document.body);
     const selects = all("select").map((select) => { const option = select.options[select.selectedIndex]; return option ? (option.text || option.value) : ""; });
     const seen = new Set();
