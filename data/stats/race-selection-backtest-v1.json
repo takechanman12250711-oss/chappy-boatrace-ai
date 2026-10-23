@@ -1,0 +1,1000 @@
+{
+  "version": "race-selection-filter-v1",
+  "generatedAt": "2026-10-23T16:44:10.985Z",
+  "productionChanged": false,
+  "automaticApplication": false,
+  "usableForPrediction": false,
+  "source": "外部動画「勝ちやすいレースの選び方」（フナフェッショナル／あべけん）。ユーザーが貼った文字起こしと要約から作成。動画本体は未視聴",
+  "params": {
+    "venueWindowDays": 365,
+    "venueMinRaces": 200,
+    "venueMinCourse1Rate": 0.55,
+    "maxWindSpeed": 4,
+    "maxWaveHeight": 4,
+    "minLocalWinRate": 5.5,
+    "maxExhibitionGap": 0.1,
+    "seriesWindowDays": 6,
+    "seriesMinRaces": 2,
+    "maxSeriesAvgFinish": 3.5
+  },
+  "periodSplit": "20261001",
+  "notes": [
+    "閾値は動画に数値がないものを含め、集計を初めて流す前に固定した仮置き",
+    "場の1コース1着率と本節は、その日より前の公式結果だけで判定（当日の先行レースは使わない）",
+    "安定板の使用は保存データにないため判定していない",
+    "practical はチャッピーの保存済み実戦券（1点100円）。boat1Head20 は1号艇1着・2・3着全部の20点（1点100円）",
+    "フライング・出遅れ・欠場艇を含む券は返還として購入額・払戻から除外",
+    "saved は締切前判定（analysis-input-contract）を通した保存予想だけ。チャッピーが選んだレースだけなので全レースの代表ではない",
+    "results は風・展示・当地勝率がなく、①と本節だけの判定。完走しなかった1号艇の選手は登録番号が分からず本節を判定できない"
+  ],
+  "saved": {
+    "counts": {
+      "records": 3385,
+      "preDeadline": 3374,
+      "excluded": {
+        "captured-at-or-after-deadline": 3,
+        "timestamp-missing": 6,
+        "source-fetched-at-or-after-deadline": 2
+      },
+      "unsettled": 9
+    },
+    "overall": {
+      "all": {
+        "races": 3365,
+        "boat1WinRate": 53.7,
+        "practical": {
+          "races": 3354,
+          "hitRate": 24.6,
+          "tickets": 28587,
+          "stake": 2858700,
+          "payout": 2202640,
+          "returnRate": 77.1
+        },
+        "boat1Head20": {
+          "hitRate": 53.7,
+          "stake": 6616600,
+          "payout": 4547520,
+          "returnRate": 68.7
+        }
+      },
+      "fail": {
+        "races": 2114,
+        "boat1WinRate": 49.1,
+        "practical": {
+          "races": 2107,
+          "hitRate": 22.7,
+          "tickets": 18366,
+          "stake": 1836600,
+          "payout": 1490920,
+          "returnRate": 81.2
+        },
+        "boat1Head20": {
+          "hitRate": 49.1,
+          "stake": 4156600,
+          "payout": 2813290,
+          "returnRate": 67.7
+        }
+      },
+      "pass": {
+        "races": 495,
+        "boat1WinRate": 64.2,
+        "practical": {
+          "races": 494,
+          "hitRate": 29.4,
+          "tickets": 4105,
+          "stake": 410500,
+          "payout": 288660,
+          "returnRate": 70.3
+        },
+        "boat1Head20": {
+          "hitRate": 64.2,
+          "stake": 979400,
+          "payout": 705830,
+          "returnRate": 72.1
+        }
+      },
+      "unknown": {
+        "races": 756,
+        "boat1WinRate": 59.7,
+        "practical": {
+          "races": 753,
+          "hitRate": 26.7,
+          "tickets": 6116,
+          "stake": 611600,
+          "payout": 423060,
+          "returnRate": 69.2
+        },
+        "boat1Head20": {
+          "hitRate": 59.7,
+          "stake": 1480600,
+          "payout": 1028400,
+          "returnRate": 69.5
+        }
+      }
+    },
+    "byPeriod": {
+      "before-20261001": {
+        "all": {
+          "races": 2335,
+          "boat1WinRate": 53.2,
+          "practical": {
+            "races": 2328,
+            "hitRate": 24.9,
+            "tickets": 19739,
+            "stake": 1973900,
+            "payout": 1629900,
+            "returnRate": 82.6
+          },
+          "boat1Head20": {
+            "hitRate": 53.2,
+            "stake": 4601200,
+            "payout": 3099140,
+            "returnRate": 67.4
+          }
+        },
+        "fail": {
+          "races": 1405,
+          "boat1WinRate": 48,
+          "practical": {
+            "races": 1399,
+            "hitRate": 22.9,
+            "tickets": 12161,
+            "stake": 1216100,
+            "payout": 1058100,
+            "returnRate": 87
+          },
+          "boat1Head20": {
+            "hitRate": 48,
+            "stake": 2768800,
+            "payout": 1883270,
+            "returnRate": 68
+          }
+        },
+        "pass": {
+          "races": 364,
+          "boat1WinRate": 64.8,
+          "practical": {
+            "races": 364,
+            "hitRate": 30.8,
+            "tickets": 3029,
+            "stake": 302900,
+            "payout": 238030,
+            "returnRate": 78.6
+          },
+          "boat1Head20": {
+            "hitRate": 64.8,
+            "stake": 720200,
+            "payout": 448570,
+            "returnRate": 62.3
+          }
+        },
+        "unknown": {
+          "races": 566,
+          "boat1WinRate": 58.7,
+          "practical": {
+            "races": 565,
+            "hitRate": 26.2,
+            "tickets": 4549,
+            "stake": 454900,
+            "payout": 333770,
+            "returnRate": 73.4
+          },
+          "boat1Head20": {
+            "hitRate": 58.7,
+            "stake": 1112200,
+            "payout": 767300,
+            "returnRate": 69
+          }
+        }
+      },
+      "from-20261001": {
+        "all": {
+          "races": 1030,
+          "boat1WinRate": 54.8,
+          "practical": {
+            "races": 1026,
+            "hitRate": 23.8,
+            "tickets": 8848,
+            "stake": 884800,
+            "payout": 572740,
+            "returnRate": 64.7
+          },
+          "boat1Head20": {
+            "hitRate": 54.8,
+            "stake": 2015400,
+            "payout": 1448380,
+            "returnRate": 71.9
+          }
+        },
+        "fail": {
+          "races": 709,
+          "boat1WinRate": 51.2,
+          "practical": {
+            "races": 708,
+            "hitRate": 22.3,
+            "tickets": 6205,
+            "stake": 620500,
+            "payout": 432820,
+            "returnRate": 69.8
+          },
+          "boat1Head20": {
+            "hitRate": 51.2,
+            "stake": 1387800,
+            "payout": 930020,
+            "returnRate": 67
+          }
+        },
+        "pass": {
+          "races": 131,
+          "boat1WinRate": 62.6,
+          "practical": {
+            "races": 130,
+            "hitRate": 25.4,
+            "tickets": 1076,
+            "stake": 107600,
+            "payout": 50630,
+            "returnRate": 47.1
+          },
+          "boat1Head20": {
+            "hitRate": 62.6,
+            "stake": 259200,
+            "payout": 257260,
+            "returnRate": 99.3
+          }
+        },
+        "unknown": {
+          "races": 190,
+          "boat1WinRate": 62.6,
+          "practical": {
+            "races": 188,
+            "hitRate": 28.2,
+            "tickets": 1567,
+            "stake": 156700,
+            "payout": 89290,
+            "returnRate": 57
+          },
+          "boat1Head20": {
+            "hitRate": 62.6,
+            "stake": 368400,
+            "payout": 261100,
+            "returnRate": 70.9
+          }
+        }
+      }
+    },
+    "byCondition": {
+      "venue": {
+        "fail": {
+          "races": 1391,
+          "boat1WinRate": 49.3,
+          "practical": {
+            "races": 1385,
+            "hitRate": 22.5,
+            "tickets": 12124,
+            "stake": 1212400,
+            "payout": 1030120,
+            "returnRate": 85
+          },
+          "boat1Head20": {
+            "hitRate": 49.3,
+            "stake": 2732000,
+            "payout": 1902500,
+            "returnRate": 69.6
+          }
+        },
+        "pass": {
+          "races": 1974,
+          "boat1WinRate": 56.7,
+          "practical": {
+            "races": 1969,
+            "hitRate": 26,
+            "tickets": 16463,
+            "stake": 1646300,
+            "payout": 1172520,
+            "returnRate": 71.2
+          },
+          "boat1Head20": {
+            "hitRate": 56.7,
+            "stake": 3884600,
+            "payout": 2645020,
+            "returnRate": 68.1
+          }
+        }
+      },
+      "water": {
+        "fail": {
+          "races": 403,
+          "boat1WinRate": 53.1,
+          "practical": {
+            "races": 402,
+            "hitRate": 21.1,
+            "tickets": 3500,
+            "stake": 350000,
+            "payout": 221490,
+            "returnRate": 63.3
+          },
+          "boat1Head20": {
+            "hitRate": 53.1,
+            "stake": 792200,
+            "payout": 600440,
+            "returnRate": 75.8
+          }
+        },
+        "pass": {
+          "races": 2567,
+          "boat1WinRate": 52.8,
+          "practical": {
+            "races": 2559,
+            "hitRate": 24.8,
+            "tickets": 21890,
+            "stake": 2189000,
+            "payout": 1742150,
+            "returnRate": 79.6
+          },
+          "boat1Head20": {
+            "hitRate": 52.8,
+            "stake": 5044200,
+            "payout": 3410770,
+            "returnRate": 67.6
+          }
+        },
+        "unknown": {
+          "races": 395,
+          "boat1WinRate": 60,
+          "practical": {
+            "races": 393,
+            "hitRate": 26.7,
+            "tickets": 3197,
+            "stake": 319700,
+            "payout": 239000,
+            "returnRate": 74.8
+          },
+          "boat1Head20": {
+            "hitRate": 60,
+            "stake": 780200,
+            "payout": 536310,
+            "returnRate": 68.7
+          }
+        }
+      },
+      "boat1": {
+        "fail": {
+          "races": 1040,
+          "boat1WinRate": 45.2,
+          "practical": {
+            "races": 1038,
+            "hitRate": 20.9,
+            "tickets": 9083,
+            "stake": 908300,
+            "payout": 639560,
+            "returnRate": 70.4
+          },
+          "boat1Head20": {
+            "hitRate": 45.2,
+            "stake": 2053400,
+            "payout": 1386210,
+            "returnRate": 67.5
+          }
+        },
+        "pass": {
+          "races": 952,
+          "boat1WinRate": 61.1,
+          "practical": {
+            "races": 948,
+            "hitRate": 28.5,
+            "tickets": 8126,
+            "stake": 812600,
+            "payout": 584620,
+            "returnRate": 71.9
+          },
+          "boat1Head20": {
+            "hitRate": 61.1,
+            "stake": 1880000,
+            "payout": 1357530,
+            "returnRate": 72.2
+          }
+        },
+        "unknown": {
+          "races": 1373,
+          "boat1WinRate": 54.9,
+          "practical": {
+            "races": 1368,
+            "hitRate": 24.6,
+            "tickets": 11378,
+            "stake": 1137800,
+            "payout": 978460,
+            "returnRate": 86
+          },
+          "boat1Head20": {
+            "hitRate": 54.9,
+            "stake": 2683200,
+            "payout": 1803780,
+            "returnRate": 67.2
+          }
+        }
+      }
+    },
+    "byPeriodCondition": {
+      "before-20261001:boat1": {
+        "fail": {
+          "races": 682,
+          "boat1WinRate": 43.7,
+          "practical": {
+            "races": 680,
+            "hitRate": 20.4,
+            "tickets": 5970,
+            "stake": 597000,
+            "payout": 389960,
+            "returnRate": 65.3
+          },
+          "boat1Head20": {
+            "hitRate": 43.7,
+            "stake": 1352400,
+            "payout": 944370,
+            "returnRate": 69.8
+          }
+        },
+        "pass": {
+          "races": 663,
+          "boat1WinRate": 61.2,
+          "practical": {
+            "races": 660,
+            "hitRate": 30,
+            "tickets": 5639,
+            "stake": 563900,
+            "payout": 453260,
+            "returnRate": 80.4
+          },
+          "boat1Head20": {
+            "hitRate": 61.2,
+            "stake": 1308400,
+            "payout": 869510,
+            "returnRate": 66.5
+          }
+        },
+        "unknown": {
+          "races": 990,
+          "boat1WinRate": 54.3,
+          "practical": {
+            "races": 988,
+            "hitRate": 24.6,
+            "tickets": 8130,
+            "stake": 813000,
+            "payout": 786680,
+            "returnRate": 96.8
+          },
+          "boat1Head20": {
+            "hitRate": 54.3,
+            "stake": 1940400,
+            "payout": 1285260,
+            "returnRate": 66.2
+          }
+        }
+      },
+      "before-20261001:venue": {
+        "fail": {
+          "races": 915,
+          "boat1WinRate": 48.2,
+          "practical": {
+            "races": 910,
+            "hitRate": 22.9,
+            "tickets": 7945,
+            "stake": 794500,
+            "payout": 765110,
+            "returnRate": 96.3
+          },
+          "boat1Head20": {
+            "hitRate": 48.2,
+            "stake": 1799600,
+            "payout": 1289330,
+            "returnRate": 71.6
+          }
+        },
+        "pass": {
+          "races": 1420,
+          "boat1WinRate": 56.4,
+          "practical": {
+            "races": 1418,
+            "hitRate": 26.2,
+            "tickets": 11794,
+            "stake": 1179400,
+            "payout": 864790,
+            "returnRate": 73.3
+          },
+          "boat1Head20": {
+            "hitRate": 56.4,
+            "stake": 2801600,
+            "payout": 1809810,
+            "returnRate": 64.6
+          }
+        }
+      },
+      "before-20261001:water": {
+        "fail": {
+          "races": 273,
+          "boat1WinRate": 54.9,
+          "practical": {
+            "races": 272,
+            "hitRate": 22.8,
+            "tickets": 2344,
+            "stake": 234400,
+            "payout": 155820,
+            "returnRate": 66.5
+          },
+          "boat1Head20": {
+            "hitRate": 54.9,
+            "stake": 536200,
+            "payout": 380850,
+            "returnRate": 71
+          }
+        },
+        "pass": {
+          "races": 1786,
+          "boat1WinRate": 52,
+          "practical": {
+            "races": 1781,
+            "hitRate": 24.9,
+            "tickets": 15163,
+            "stake": 1516300,
+            "payout": 1325840,
+            "returnRate": 87.4
+          },
+          "boat1Head20": {
+            "hitRate": 52,
+            "stake": 3520000,
+            "payout": 2334390,
+            "returnRate": 66.3
+          }
+        },
+        "unknown": {
+          "races": 276,
+          "boat1WinRate": 59.4,
+          "practical": {
+            "races": 275,
+            "hitRate": 27.3,
+            "tickets": 2232,
+            "stake": 223200,
+            "payout": 148240,
+            "returnRate": 66.4
+          },
+          "boat1Head20": {
+            "hitRate": 59.4,
+            "stake": 545000,
+            "payout": 383900,
+            "returnRate": 70.4
+          }
+        }
+      },
+      "from-20261001:boat1": {
+        "fail": {
+          "races": 358,
+          "boat1WinRate": 48,
+          "practical": {
+            "races": 358,
+            "hitRate": 21.8,
+            "tickets": 3113,
+            "stake": 311300,
+            "payout": 249600,
+            "returnRate": 80.2
+          },
+          "boat1Head20": {
+            "hitRate": 48,
+            "stake": 701000,
+            "payout": 441840,
+            "returnRate": 63
+          }
+        },
+        "pass": {
+          "races": 289,
+          "boat1WinRate": 60.9,
+          "practical": {
+            "races": 288,
+            "hitRate": 25,
+            "tickets": 2487,
+            "stake": 248700,
+            "payout": 131360,
+            "returnRate": 52.8
+          },
+          "boat1Head20": {
+            "hitRate": 60.9,
+            "stake": 571600,
+            "payout": 488020,
+            "returnRate": 85.4
+          }
+        },
+        "unknown": {
+          "races": 383,
+          "boat1WinRate": 56.4,
+          "practical": {
+            "races": 380,
+            "hitRate": 24.7,
+            "tickets": 3248,
+            "stake": 324800,
+            "payout": 191780,
+            "returnRate": 59
+          },
+          "boat1Head20": {
+            "hitRate": 56.4,
+            "stake": 742800,
+            "payout": 518520,
+            "returnRate": 69.8
+          }
+        }
+      },
+      "from-20261001:venue": {
+        "fail": {
+          "races": 476,
+          "boat1WinRate": 51.5,
+          "practical": {
+            "races": 475,
+            "hitRate": 21.9,
+            "tickets": 4179,
+            "stake": 417900,
+            "payout": 265010,
+            "returnRate": 63.4
+          },
+          "boat1Head20": {
+            "hitRate": 51.5,
+            "stake": 932400,
+            "payout": 613170,
+            "returnRate": 65.8
+          }
+        },
+        "pass": {
+          "races": 554,
+          "boat1WinRate": 57.6,
+          "practical": {
+            "races": 551,
+            "hitRate": 25.4,
+            "tickets": 4669,
+            "stake": 466900,
+            "payout": 307730,
+            "returnRate": 65.9
+          },
+          "boat1Head20": {
+            "hitRate": 57.6,
+            "stake": 1083000,
+            "payout": 835210,
+            "returnRate": 77.1
+          }
+        }
+      },
+      "from-20261001:water": {
+        "fail": {
+          "races": 130,
+          "boat1WinRate": 49.2,
+          "practical": {
+            "races": 130,
+            "hitRate": 17.7,
+            "tickets": 1156,
+            "stake": 115600,
+            "payout": 65670,
+            "returnRate": 56.8
+          },
+          "boat1Head20": {
+            "hitRate": 49.2,
+            "stake": 256000,
+            "payout": 219590,
+            "returnRate": 85.8
+          }
+        },
+        "pass": {
+          "races": 781,
+          "boat1WinRate": 54.7,
+          "practical": {
+            "races": 778,
+            "hitRate": 24.6,
+            "tickets": 6727,
+            "stake": 672700,
+            "payout": 416310,
+            "returnRate": 61.9
+          },
+          "boat1Head20": {
+            "hitRate": 54.7,
+            "stake": 1524200,
+            "payout": 1076380,
+            "returnRate": 70.6
+          }
+        },
+        "unknown": {
+          "races": 119,
+          "boat1WinRate": 61.3,
+          "practical": {
+            "races": 118,
+            "hitRate": 25.4,
+            "tickets": 965,
+            "stake": 96500,
+            "payout": 90760,
+            "returnRate": 94.1
+          },
+          "boat1Head20": {
+            "hitRate": 61.3,
+            "stake": 235200,
+            "payout": 152410,
+            "returnRate": 64.8
+          }
+        }
+      }
+    },
+    "byFailReason": {
+      "boat1-exhibition-slow": {
+        "races": 63,
+        "boat1WinRate": 41.3,
+        "practical": {
+          "races": 63,
+          "hitRate": 33.3,
+          "tickets": 537,
+          "stake": 53700,
+          "payout": 69390,
+          "returnRate": 129.2
+        },
+        "boat1Head20": {
+          "hitRate": 41.3,
+          "stake": 126000,
+          "payout": 62690,
+          "returnRate": 49.8
+        }
+      },
+      "boat1-local-low": {
+        "races": 281,
+        "boat1WinRate": 48.4,
+        "practical": {
+          "races": 281,
+          "hitRate": 22.4,
+          "tickets": 2386,
+          "stake": 238600,
+          "payout": 123740,
+          "returnRate": 51.9
+        },
+        "boat1Head20": {
+          "hitRate": 48.4,
+          "stake": 555000,
+          "payout": 346040,
+          "returnRate": 62.3
+        }
+      },
+      "boat1-local-missing": {
+        "races": 72,
+        "boat1WinRate": 48.6,
+        "practical": {
+          "races": 71,
+          "hitRate": 32.4,
+          "tickets": 483,
+          "stake": 48300,
+          "payout": 45710,
+          "returnRate": 94.6
+        },
+        "boat1Head20": {
+          "hitRate": 48.6,
+          "stake": 140400,
+          "payout": 86550,
+          "returnRate": 61.6
+        }
+      },
+      "boat1-series-poor": {
+        "races": 176,
+        "boat1WinRate": 44.3,
+        "practical": {
+          "races": 175,
+          "hitRate": 23.4,
+          "tickets": 1541,
+          "stake": 154100,
+          "payout": 155070,
+          "returnRate": 100.6
+        },
+        "boat1Head20": {
+          "hitRate": 44.3,
+          "stake": 344000,
+          "payout": 203060,
+          "returnRate": 59
+        }
+      },
+      "exhibition-time-missing": {
+        "races": 574,
+        "boat1WinRate": 58,
+        "practical": {
+          "races": 573,
+          "hitRate": 25,
+          "tickets": 4807,
+          "stake": 480700,
+          "payout": 322190,
+          "returnRate": 67
+        },
+        "boat1Head20": {
+          "hitRate": 58,
+          "stake": 1126400,
+          "payout": 791980,
+          "returnRate": 70.3
+        }
+      },
+      "venue-course1-low": {
+        "races": 1391,
+        "boat1WinRate": 49.3,
+        "practical": {
+          "races": 1385,
+          "hitRate": 22.5,
+          "tickets": 12124,
+          "stake": 1212400,
+          "payout": 1030120,
+          "returnRate": 85
+        },
+        "boat1Head20": {
+          "hitRate": 49.3,
+          "stake": 2732000,
+          "payout": 1902500,
+          "returnRate": 69.6
+        }
+      },
+      "wave-high": {
+        "races": 3,
+        "boat1WinRate": 66.7,
+        "practical": {
+          "races": 3,
+          "hitRate": 33.3,
+          "tickets": 25,
+          "stake": 2500,
+          "payout": 1080,
+          "returnRate": 43.2
+        },
+        "boat1Head20": {
+          "hitRate": 66.7,
+          "stake": 6000,
+          "payout": 1980,
+          "returnRate": 33
+        }
+      },
+      "weather-missing": {
+        "races": 110,
+        "boat1WinRate": 75.5,
+        "practical": {
+          "races": 109,
+          "hitRate": 32.1,
+          "tickets": 826,
+          "stake": 82600,
+          "payout": 55160,
+          "returnRate": 66.8
+        },
+        "boat1Head20": {
+          "hitRate": 75.5,
+          "stake": 213800,
+          "payout": 149870,
+          "returnRate": 70.1
+        }
+      },
+      "wind-strong": {
+        "races": 200,
+        "boat1WinRate": 54.5,
+        "practical": {
+          "races": 200,
+          "hitRate": 20,
+          "tickets": 1753,
+          "stake": 175300,
+          "payout": 111520,
+          "returnRate": 63.6
+        },
+        "boat1Head20": {
+          "hitRate": 54.5,
+          "stake": 393600,
+          "payout": 297020,
+          "returnRate": 75.5
+        }
+      }
+    }
+  },
+  "results": {
+    "from": "20240101",
+    "venue": {
+      "fail": {
+        "races": 49879,
+        "boat1WinRate": 50.5,
+        "practical": {
+          "races": 0,
+          "hitRate": null,
+          "tickets": 0,
+          "stake": 0,
+          "payout": 0,
+          "returnRate": null
+        },
+        "boat1Head20": {
+          "hitRate": 50.5,
+          "stake": 97913800,
+          "payout": 70612430,
+          "returnRate": 72.1
+        }
+      },
+      "pass": {
+        "races": 66723,
+        "boat1WinRate": 58.1,
+        "practical": {
+          "races": 0,
+          "hitRate": null,
+          "tickets": 0,
+          "stake": 0,
+          "payout": 0,
+          "returnRate": null
+        },
+        "boat1Head20": {
+          "hitRate": 58.1,
+          "stake": 131345800,
+          "payout": 94132750,
+          "returnRate": 71.7
+        }
+      }
+    },
+    "venueAndSeries": {
+      "fail": {
+        "races": 49879,
+        "boat1WinRate": 50.5,
+        "practical": {
+          "races": 0,
+          "hitRate": null,
+          "tickets": 0,
+          "stake": 0,
+          "payout": 0,
+          "returnRate": null
+        },
+        "boat1Head20": {
+          "hitRate": 50.5,
+          "stake": 97913800,
+          "payout": 70612430,
+          "returnRate": 72.1
+        }
+      },
+      "fail-series": {
+        "races": 17799,
+        "boat1WinRate": 47.5,
+        "practical": {
+          "races": 0,
+          "hitRate": null,
+          "tickets": 0,
+          "stake": 0,
+          "payout": 0,
+          "returnRate": null
+        },
+        "boat1Head20": {
+          "hitRate": 47.5,
+          "stake": 35272200,
+          "payout": 25357940,
+          "returnRate": 71.9
+        }
+      },
+      "pass": {
+        "races": 48155,
+        "boat1WinRate": 63,
+        "practical": {
+          "races": 0,
+          "hitRate": null,
+          "tickets": 0,
+          "stake": 0,
+          "payout": 0,
+          "returnRate": null
+        },
+        "boat1Head20": {
+          "hitRate": 63,
+          "stake": 95446200,
+          "payout": 68774810,
+          "returnRate": 72.1
+        }
+      },
+      "unknown-boat1": {
+        "races": 769,
+        "boat1WinRate": 0,
+        "practical": {
+          "races": 0,
+          "hitRate": null,
+          "tickets": 0,
+          "stake": 0,
+          "payout": 0,
+          "returnRate": null
+        },
+        "boat1Head20": {
+          "hitRate": 0,
+          "stake": 627400,
+          "payout": 0,
+          "returnRate": 0
+        }
+      }
+    }
+  },
+  "incompleteDaysSkipped": 269
+}
