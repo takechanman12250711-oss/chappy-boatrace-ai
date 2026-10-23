@@ -73,9 +73,31 @@ const diagnostics = step(
   "Restore saved result sources",
   "Build Local Water V2 post-adoption monitor",
 );
+const diagnosticsJobStart = workflow.indexOf("\n  diagnostics:\n");
+const diagnosticsJobEnd = workflow.indexOf("\n  publish_diagnostics:\n");
+const diagnosticsJob = workflow.slice(diagnosticsJobStart, diagnosticsJobEnd);
 assert.ok(
   diagnostics.includes("node scripts/build-learning-analysis-pipeline.js"),
   "重い学習分析は公式結果checkpoint後に実行する",
+);
+assert.match(
+  diagnosticsJob,
+  /timeout-minutes: 90/,
+  "実測約60分の診断に片付け・検証・artifact保存の余裕を確保する",
+);
+assert.doesNotMatch(
+  diagnostics,
+  /node scripts\/build-prediction-index-shards\.js/,
+  "公式結果checkpointで生成済みの予想indexを診断jobで重複再構築しない",
+);
+const collect = step(
+  "Collect official results",
+  "Save official results before calibration",
+);
+assert.match(
+  collect,
+  /node scripts\/build-prediction-index-shards\.js/,
+  "予想indexは公式結果checkpointの入力で一度だけ再構築する",
 );
 
 const restoreCanonical =
