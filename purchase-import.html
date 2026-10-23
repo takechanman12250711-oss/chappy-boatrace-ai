@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<title>購入の取り込み｜チャッピーボートレースAI</title>
+<style>
+  :root { --bg: #f3f8ff; --card: #ffffff; --text: #1b2a3a; --muted: #5b6b7c; --line: #d6e2ef; --accent: #1f6fd1; --notice-bg: #fff6dc; --notice: #8a5a00; --warn-bg: #ffe3e3; --warn: #b42318; --ok-bg: #e8f6ee; --ok: #1d6b3c; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif; line-height: 1.6; }
+  main { max-width: 640px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 1.25rem; margin: 8px 0 4px; }
+  h2 { font-size: 1.05rem; margin: 0 0 8px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 12px 0; }
+  p { margin: 6px 0; }
+  .muted { color: var(--muted); font-size: 0.9rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+  th, td { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: left; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  input[type=password], textarea { width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 8px; font-size: 1rem; }
+  textarea { font-family: ui-monospace, Menlo, monospace; font-size: 0.75rem; height: 96px; }
+  button { appearance: none; border: 0; border-radius: 10px; padding: 10px 14px; font-size: 1rem; background: var(--accent); color: #fff; margin: 6px 6px 0 0; }
+  button.secondary { background: #e7eef7; color: var(--text); }
+  button:disabled { opacity: 0.5; }
+  .line { padding: 8px 10px; border-radius: 8px; margin: 6px 0; }
+  .line.ok { background: var(--ok-bg); color: var(--ok); }
+  .line.notice { background: var(--notice-bg); color: var(--notice); }
+  .line.warning { background: var(--warn-bg); color: var(--warn); font-weight: 600; }
+  #messageArea { min-height: 1.4em; font-size: 0.95rem; }
+  ol { padding-left: 1.3em; margin: 6px 0; }
+  li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>購入の取り込み</h1>
+  <p class="muted">テレボートの投票履歴を1タップで読み取り、確認してから記録します。警告は表示するだけで、購入は止めません。</p>
+
+  <section id="captureBox" hidden>
+    <h2>読み取った明細</h2>
+    <p id="captureSummary"></p>
+    <table>
+      <thead><tr><th>送信</th><th>日付</th><th>レース</th><th>買い目</th><th>金額</th></tr></thead>
+      <tbody id="purchaseRows"></tbody>
+    </table>
+    <div id="skippedBox" hidden>
+      <p class="muted">読めなかった行（送信しません）</p>
+      <ul id="skippedRows" class="muted"></ul>
+    </div>
+    <button id="sendButton" type="button" disabled>確認して送信</button>
+  </section>
+
+  <section>
+    <h2>今日・今月の状況</h2>
+    <div id="guardrailArea"><p class="muted">送信するか「今日の状況を見る」を押すと表示します。</p></div>
+    <button id="statusButton" type="button" class="secondary">今日の状況を見る</button>
+    <p id="messageArea" role="status" aria-live="polite"></p>
+  </section>
+
+  <section>
+    <h2>同期用の合言葉（トークン）</h2>
+    <input id="tokenInput" type="password" autocomplete="off" spellcheck="false" placeholder="CHAPPY_PURCHASE_SYNC_TOKEN">
+    <p><label><input id="rememberToken" type="checkbox"> この端末に保存する</label></p>
+    <p class="muted">チャッピーの購入同期APIにだけ送ります。チャットやSNSには貼らないでください。</p>
+  </section>
+
+  <section>
+    <h2>ブックマークの登録（最初の1回だけ）</h2>
+    <ol class="muted">
+      <li>下の「コピー」を押します。</li>
+      <li>Safariでこのページをブックマークに追加し、名前を「チャッピー取り込み」にします。</li>
+      <li>ブックマークを編集し、アドレス欄をコピーした文字に置き換えて保存します。</li>
+      <li>テレボートで投票履歴（照会）を開き、そのブックマークを押すと、このページが開きます。</li>
+    </ol>
+    <textarea id="bookmarkletCode" readonly></textarea>
+    <button id="copyBookmarklet" type="button" class="secondary">コピー</button>
+    <p class="muted">ブックマークは画面の表の文字を読むだけで、どこにも送信しません。送信はこのページで確認してから行います。</p>
+  </section>
+</main>
+<script src="js/teleboat-history-parser.js?v=20261023-1"></script>
+<script src="js/purchase-import.js?v=20261023-1"></script>
+</body>
+</html>
