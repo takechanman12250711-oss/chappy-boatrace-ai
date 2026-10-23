@@ -159,6 +159,7 @@
     diagnosis.replaceChildren();
     for (const line of parsed.purchases.length ? [] : parsed.preview || []) diagnosis.append(el(document, "li", {}, line));
     document.getElementById("diagnosisCounts").textContent = `表の行 ${parsed.rowCount || 0}行・詳細 ${parsed.detailCount || 0}件を読み取りました。`;
+    document.getElementById("diagnosisText").textContent = parsed.purchases.length ? "" : `画面の文字（先頭）：${parsed.textPreview || "なし"}`;
     document.getElementById("diagnosisBox").hidden = Boolean(parsed.purchases.length);
     document.getElementById("captureBox").hidden = false;
     document.getElementById("sendButton").disabled = !parsed.purchases.length;
