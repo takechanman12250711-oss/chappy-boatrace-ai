@@ -236,7 +236,7 @@
     document.getElementById("bookmarkletCode").value = parser.bookmarkletSource();
 
     let parsed = { purchases: [], skipped: [] };
-    let pendingSummary = null;
+    let pendingSummaries = [];
     const capture = readHashCapture(root.location.hash);
     // 読み取った内容をアドレス欄や履歴に残さない
     if (root.location.hash) root.history?.replaceState?.(null, "", root.location.pathname + root.location.search);
@@ -254,15 +254,29 @@
       parsed = parser.parseCapture(capture);
       // 合計タブなら合計を出す。明細も読めた場合は両方を出す（隠れた行が混ざっても合計を送れるように）
       const summary = parser.parseSummary(capture);
-      if (summary) {
-        pendingSummary = { ...summary, capturedAt: capture.capturedAt || "" };
-        saveSummary(storage, pendingSummary);
+      const dailyTotals = parser.parseDailyTotals(capture);
+      if (dailyTotals.length) {
+        // マイページの月別収支（日別合計）：表にある日をまとめて送る
+        pendingSummaries = dailyTotals.map((item) => ({ ...item, capturedAt: capture.capturedAt || "" }));
+        for (const item of pendingSummaries) saveSummary(storage, item);
+        const sum = (key) => dailyTotals.reduce((total, item) => total + item[key], 0);
+        document.getElementById("summaryText").textContent =
+          `${Number(dailyTotals[0].date.slice(4, 6))}月の日別合計 ${dailyTotals.length}日分：購入 ${yen(sum("stakeYen"))}・払戻 ${yen(sum("payoutYen"))}。` +
+          "送信すると、各日の負けと今月の予算をこの数字で判定します（今日の分はマイページにまだ出ません）。";
+        document.getElementById("summaryBox").hidden = false;
+      } else if (summary) {
+        pendingSummaries = [{ ...summary, capturedAt: capture.capturedAt || "" }];
+        saveSummary(storage, pendingSummaries[0]);
         document.getElementById("summaryText").textContent =
           `${Number(summary.date.slice(4, 6))}月${Number(summary.date.slice(6, 8))}日の照会の合計：購入 ${yen(summary.stakeYen)}・払戻 ${yen(summary.payoutYen)}` +
           `${summary.races !== null ? `（${summary.races}レース）` : ""}。送信すると、この日の負けと今月の予算をこの合計で判定します。一覧を取り込むと、入れた金額とも照合します。`;
         document.getElementById("summaryBox").hidden = false;
       }
-      if (parsed.purchases.length || !summary) {
+      if (!dailyTotals.length && /(月別|年別)収支/.test(parser.normalize(capture.head || ""))) {
+        message.textContent = /年別収支/.test(parser.normalize(capture.head || ""))
+          ? "年別収支は記録に使いません。「今月の収支」を開き、「日別合計」のタブで押してください。"
+          : "「日別合計」のタブを開いてから、もう一度ブックマークを押してください。";
+      } else if (parsed.purchases.length || !(summary || dailyTotals.length)) {
         renderCapture(document, parsed);
         document.getElementById("purchaseRows").addEventListener("input", updateCheck);
         document.getElementById("purchaseRows").addEventListener("change", updateCheck);
@@ -295,9 +309,9 @@
     }));
 
     document.getElementById("sendSummaryButton").addEventListener("click", (event) => run(event.currentTarget, async () => {
-      if (!pendingSummary) throw new Error("送信する合計がありません");
-      const result = await callApi(fetchImpl, token(), { method: "POST", body: { dailySummaries: [summaryPayload(pendingSummary)] } });
-      message.textContent = "照会の合計を送信しました。";
+      if (!pendingSummaries.length) throw new Error("送信する合計がありません");
+      const result = await callApi(fetchImpl, token(), { method: "POST", body: { dailySummaries: pendingSummaries.map(summaryPayload) } });
+      message.textContent = pendingSummaries.length > 1 ? `${pendingSummaries.length}日分の合計を送信しました。` : "照会の合計を送信しました。";
       renderStatus(document, summarizeGuardrails(result.guardrails, todayJst()));
     }));
 
