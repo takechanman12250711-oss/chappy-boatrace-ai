@@ -212,7 +212,7 @@
         tokenInput.value = generateToken(root.crypto);
         remember.checked = true;
         saveToken(storage, tokenInput.value, true);
-        message.textContent = "合言葉を作って、この端末に保存しました。「合言葉をコピー」で写し、Vercel の環境変数と GitHub の Secret の CHAPPY_PURCHASE_SYNC_TOKEN の両方に貼り付けて、Vercel をデプロイし直してください。";
+        message.textContent = "合言葉を作って、この端末に保存しました。「合言葉をコピー」で写し、Vercel の環境変数と GitHub の Secret の CHAPPY_PURCHASE_SYNC_TOKEN の両方に貼り付けて、Vercel をデプロイし直してください。あとで消えても困らないよう、iPhoneの「パスワード」アプリにも保存してください。";
       } catch (error) { message.textContent = String(error?.message || error); }
     });
     document.getElementById("toggleToken").addEventListener("click", (event) => {
