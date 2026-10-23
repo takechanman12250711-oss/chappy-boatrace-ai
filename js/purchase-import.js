@@ -154,6 +154,12 @@
       `${parsed.host || "読み取り元不明"} ${dateNote}から ${parsed.purchases.length}件を読み取りました${parsed.skipped.length ? `（読めなかった行 ${parsed.skipped.length}件）` : ""}。` +
       (parsed.detailAmounts ? `金額は詳細から${parsed.detailAmounts}件読みました。` : "") +
       (missing ? `金額が読めなかった明細が${missing}件あります。金額を入れてから送信してください。` : "内容を確認してから送信してください。");
+    // 0件のときは、読み取った行の先頭を見せて原因を確かめられるようにする（この端末の中だけ）
+    const diagnosis = document.getElementById("diagnosisRows");
+    diagnosis.replaceChildren();
+    for (const line of parsed.purchases.length ? [] : parsed.preview || []) diagnosis.append(el(document, "li", {}, line));
+    document.getElementById("diagnosisCounts").textContent = `表の行 ${parsed.rowCount || 0}行・詳細 ${parsed.detailCount || 0}件を読み取りました。`;
+    document.getElementById("diagnosisBox").hidden = Boolean(parsed.purchases.length);
     document.getElementById("captureBox").hidden = false;
     document.getElementById("sendButton").disabled = !parsed.purchases.length;
   }
