@@ -498,9 +498,9 @@ jobs:
   diagnostics:
     needs: collect
     runs-on: ubuntu-latest
-    # Restored history, the bounded monitor, source validation and artifact upload
-    # must all finish; the 45-minute limit interrupted validation after the build.
-    timeout-minutes: 60
+    # Full-history diagnostics currently take about 60 minutes on a hosted runner.
+    # Keep a bounded margin for checkout, cleanup, validation and artifact upload.
+    timeout-minutes: 90
     outputs:
       artifact_id: ${{ steps.reports.outputs.artifact-id }}
     steps:
@@ -552,7 +552,6 @@ jobs:
           node scripts/build-phase4-daily-cycle-gate.js
           node scripts/build-practical-priority-shadow-report.js
           node scripts/test-practical-priority-shadow-artifact.js
-          node scripts/build-prediction-index-shards.js
 
       - name: Build Local Water V2 post-adoption monitor
         continue-on-error: true
