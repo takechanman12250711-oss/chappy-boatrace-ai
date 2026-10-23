@@ -120,12 +120,28 @@
     };
     // マイページの月別・年別収支の「収支合計」は1日の合計ではないので使わない（日別は parseDailyTotals）
     if (/(月別|年別)収支/.test(normalize(capture.head || ""))) return null;
-    const stakeYen = valueOf(/購入金額/);
-    const payoutYen = valueOf(/払戻金額/);
+    let stakeYen = valueOf(/購入金額/);
+    let payoutYen = valueOf(/払戻金額/);
+    let races = valueOf(/購入\s*(?:R|レース)数/), hitRaces = valueOf(/的中\s*(?:R|レース)数/);
+    if ((stakeYen === null || payoutYen === null) && /収支合計/.test(pageText(capture))) {
+      // 表が table でない画面（マイページの収支合計など）は、画面の文字から「購入金額合計 ¥76,000」の並びで読む
+      const text = pageText(capture);
+      const yenAfter = (label) => { const match = text.match(new RegExp(`${label}\\s*[¥￥]\\s*(\\d[\\d,]*)`)); return match ? Number(match[1].replace(/,/g, "")) : null; };
+      const intAfter = (label) => { const match = text.match(new RegExp(`${label}\\s*(\\d+)(?![\\d,%])`)); return match ? Number(match[1]) : null; };
+      stakeYen = yenAfter("購入金額(?:合計)?");
+      payoutYen = yenAfter("払戻金額(?:合計)?");
+      races = intAfter("購入\\s*(?:R|レース)数");
+      hitRaces = intAfter("的中\\s*(?:R|レース)数");
+    }
     if (stakeYen === null || payoutYen === null) return null;
     const date = pageDate(capture);
     if (!date) return null;
-    return { date, stakeYen, payoutYen, races: valueOf(/購入\s*(?:R|レース)数/), hitRaces: valueOf(/的中\s*(?:R|レース)数/) };
+    return { date, stakeYen, payoutYen, races, hitRaces };
+  }
+
+  // 画面全体の文字（新しいブックマークは text、古いブックマークは先頭の head だけ）
+  function pageText(capture = {}) {
+    return normalize(capture.text || capture.head || "");
   }
 
   // マイページ「月別収支」の「日別合計」タブ。1日が2行（日・購入R数・的中率・購入金額・回収率／的中R数・払戻金額）に分かれる。
@@ -156,6 +172,14 @@
       if (!stakeYen && !payoutYen) return;
       totals.push({ date, stakeYen, payoutYen, races: intOf(cells[1]), hitRaces });
     });
+    if (totals.length) return totals;
+    // 表が table でない画面は、画面の文字の「20日 6 0% ¥76,000 0% 0 ¥0」の並び（日・購入R数・的中率・購入金額・回収率・的中R数・払戻金額）で読む
+    for (const match of pageText(capture).matchAll(/(?:^|\s)(\d{1,2})\s*日\s+(\d+)\s+\d+\s*%\s+[¥￥]\s*(\d[\d,]*)\s+\d+\s*%\s+(\d+)\s+[¥￥]\s*(\d[\d,]*)/g)) {
+      const date = findDate(`${y}/${m}/${Number(match[1])}`);
+      const stakeYen = Number(match[3].replace(/,/g, "")), payoutYen = Number(match[5].replace(/,/g, ""));
+      if (!date || (!stakeYen && !payoutYen) || totals.some((item) => item.date === date)) continue;
+      totals.push({ date, stakeYen, payoutYen, races: Number(match[2]), hitRaces: Number(match[4]) });
+    }
     return totals;
   }
 
@@ -222,8 +246,9 @@
       if (detail.ticket === p.ticket && detail.amount) { p.amount = detail.amount; p.amountFromDetail = true; detailAmounts += 1; }
     }
     // 0件のときに原因を確かめるため、読み取った行の先頭だけを画面に出せるようにする（送信はしない）
+    const textPreview = normalize(capture.text || capture.head || "").slice(0, 600);
     const preview = rows.slice(0, 15).map((cells) => normalize((Array.isArray(cells) ? cells : [cells]).join(" | ")).slice(0, 120)).filter(Boolean);
-    return { purchases, skipped, fallbackDate, listedDate, detailAmounts, detailCount: details.size, rowCount: Array.isArray(capture.rows) ? capture.rows.length : 0, preview, host: String(capture.host || "") };
+    return { purchases, skipped, fallbackDate, listedDate, detailAmounts, detailCount: details.size, rowCount: Array.isArray(capture.rows) ? capture.rows.length : 0, preview, textPreview, host: String(capture.host || "") };
   }
 
   function encodeCapture(capture) {
@@ -279,7 +304,7 @@
       if (close) close.click(); else document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
       await sleep(150);
     }
-    const data = { v: 2, capturedAt: new Date().toISOString(), host: location.host, head: body.slice(0, limits.head), selects: selects.slice(0, 20), rows: rows.slice(0, limits.rows), details, text: rows.length ? "" : body.slice(0, limits.text) };
+    const data = { v: 2, capturedAt: new Date().toISOString(), host: location.host, head: body.slice(0, limits.head), selects: selects.slice(0, 20), rows: rows.slice(0, limits.rows), details, text: body.slice(0, limits.text) };
     const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
     const url = importPage + "#d=" + encoded;
     if (win) win.location.href = url; else window.open(url, "_blank");
@@ -299,5 +324,5 @@
     return { no: String(detail.no || ""), ticket, amount };
   }
 
-  return Object.freeze({ IMPORT_PAGE, VENUES, SKIP_LABELS, normalize, findVenue, findRace, findDate, jstDate, findTickets, findAmounts, findSerial, parseRow, pageDate, parseSummary, parseDailyTotals, parseDetail, parseCapture, encodeCapture, decodeCapture, capturePage, bookmarkletSource });
+  return Object.freeze({ IMPORT_PAGE, VENUES, SKIP_LABELS, normalize, findVenue, findRace, findDate, jstDate, findTickets, findAmounts, findSerial, parseRow, pageDate, pageText, parseSummary, parseDailyTotals, parseDetail, parseCapture, encodeCapture, decodeCapture, capturePage, bookmarkletSource });
 });
