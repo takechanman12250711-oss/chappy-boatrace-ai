@@ -105,6 +105,21 @@ assert.strictEqual(parser.parseRow(["蒲郡", "7R", "3連単", "1-2-3", "500円"
   assert.strictEqual(page.loadToken(storage), "");
 }
 
+// 詳細（No を押すと出る小窓）の金額を明細に入れる（2026-10-20 No 001 の小窓を元にした形）
+{
+  const detailText = "001 受付番号 002 レース場 三国 レース 1R 式別 3連単 組番 1 - 2 - 6 購入金額 ¥5,000 返還 なし 払戻金 ¥0 合計 ¥0 閉じる";
+  assert.deepStrictEqual(parser.parseDetail({ no: "001", text: detailText }), { no: "001", ticket: "1-2-6", amount: 5000 });
+  const capture = {
+    v: 2, capturedAt: "2026-10-23T00:38:00.000Z", host: "www.boatrace.jp", head: "投票照会 2026年 10月20日",
+    rows: [["001", "三国", "1R", "なし", "結果"], ["3連単", "1 - 2 - 6"], ["002", "三国", "1R", "なし", "結果"], ["3連単", "2 - 3 - 6"], ["003", "三国", "1R", "なし", "結果"], ["3連単", "2 - 1 - 3"]],
+    details: [{ no: "001", text: detailText }, { no: "002", text: "002 三国 1R 3連単 2 - 3 - 6 ¥3,000 なし ¥0 ¥0 閉じる" }, { no: "003", text: "003 三国 1R 3連単 1 - 2 - 3 ¥9,000 閉じる" }]
+  };
+  const parsed = parser.parseCapture(capture);
+  assert.deepStrictEqual(parsed.purchases.map((p) => p.amount), [5000, 3000, null], "組番が一致する詳細だけ使う");
+  assert.strictEqual(parsed.detailAmounts, 2);
+  assert.strictEqual(parsed.purchases[0].amountFromDetail, true);
+}
+
 // 投票照会の「合計」タブ（2026-10-20の画面を元にした形）
 {
   const summary = parser.parseSummary({
@@ -143,7 +158,8 @@ assert.strictEqual(page.validAmount(""), 0);
   const source = parser.bookmarkletSource();
   assert.ok(source.startsWith("javascript:"));
   assert.doesNotThrow(() => new Function(source.slice("javascript:".length)), "ブックマークは構文として正しい");
-  assert.ok(!/fetch|XMLHttpRequest|sendBeacon/.test(source), "ブックマークは何も送信しない");
+  assert.ok(!/fetch|XMLHttpRequest|sendBeacon|navigator\./.test(source), "ブックマークは何も送信しない");
+  assert.ok(!/\n/.test(source), "アドレス欄に入る1行");
   assert.ok(source.includes(parser.IMPORT_PAGE));
 }
 

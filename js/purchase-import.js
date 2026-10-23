@@ -137,7 +137,8 @@
     const dateNote = parsed.listedDate ? `${Number(parsed.listedDate.slice(4, 6))}月${Number(parsed.listedDate.slice(6, 8))}日の照会` : "";
     document.getElementById("captureSummary").textContent =
       `${parsed.host || "読み取り元不明"} ${dateNote}から ${parsed.purchases.length}件を読み取りました${parsed.skipped.length ? `（読めなかった行 ${parsed.skipped.length}件）` : ""}。` +
-      (missing ? `金額が画面にない明細が${missing}件あります。金額を入れてから送信してください。` : "内容を確認してから送信してください。");
+      (parsed.detailAmounts ? `金額は詳細から${parsed.detailAmounts}件読みました。` : "") +
+      (missing ? `金額が読めなかった明細が${missing}件あります。金額を入れてから送信してください。` : "内容を確認してから送信してください。");
     document.getElementById("captureBox").hidden = false;
     document.getElementById("sendButton").disabled = !parsed.purchases.length;
   }

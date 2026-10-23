@@ -180,7 +180,15 @@
       seen.set(base, occurrence);
       purchases.push({ ...p, rowIndex, serial: "", contractId: `tb-${base}-${occurrence}`, source: "teleboat-bookmarklet" });
     });
-    return { purchases, skipped, fallbackDate, listedDate, host: String(capture.host || "") };
+    // 詳細から読んだ金額を、通し番号（No）と組番が一致する明細に入れる
+    const details = new Map((Array.isArray(capture.details) ? capture.details : []).map(parseDetail).filter((d) => d.no).map((d) => [d.no, d]));
+    let detailAmounts = 0;
+    for (const p of purchases) {
+      const detail = p.serial ? details.get(p.serial) : null;
+      if (!detail || p.amount) continue;
+      if (detail.ticket === p.ticket && detail.amount) { p.amount = detail.amount; p.amountFromDetail = true; detailAmounts += 1; }
+    }
+    return { purchases, skipped, fallbackDate, listedDate, detailAmounts, detailCount: details.size, host: String(capture.host || "") };
   }
 
   function encodeCapture(capture) {
@@ -196,17 +204,64 @@
     return JSON.parse(json);
   }
 
-  // テレボートの画面で実行するブックマーク。表のセル文字だけを集め、取り込みページを開く。
-  // 送信は取り込みページで確認してから行う（このコードは何も送信しない）。
-  function bookmarkletSource(importPage = IMPORT_PAGE) {
-    const body = `(()=>{const docs=[document];for(const f of Array.from(window.frames)){try{if(f.document)docs.push(f.document)}catch(e){}}` +
-      `const rows=[];for(const d of docs){for(const tr of Array.from(d.querySelectorAll('tr'))){const c=Array.from(tr.cells).map(x=>(x.innerText||x.textContent||'').trim());if(c.some(Boolean))rows.push(c)}}` +
-      `const body=(document.body.innerText||'');const selects=[];for(const d of docs){for(const s of Array.from(d.querySelectorAll('select'))){const o=s.options[s.selectedIndex];selects.push(o?(o.text||o.value):'')}}` +
-      `const data={v:1,capturedAt:new Date().toISOString(),host:location.host,head:body.slice(0,${MAX_HEAD}),selects:selects.slice(0,20),rows:rows.slice(0,${MAX_ROWS}),text:rows.length?'':body.slice(0,${MAX_TEXT})};` +
-      `const b=btoa(unescape(encodeURIComponent(JSON.stringify(data)))).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');` +
-      `window.open(${JSON.stringify(importPage)}+'#d='+b,'_blank')})();`;
-    return `javascript:${body}`;
+  // 照会の画面で実行するブックマーク本体。表のセル文字を集めたあと、各明細の No を順に押して
+  // 詳細（金額）を読み、閉じる。最後に取り込みページを開く。このコードは何も送信しない。
+  // ブックマークのアドレス欄は1行になるため、関数内には行コメントを書かず、文末は必ずセミコロンで閉じる。
+  async function capturePage(importPage, limits) {
+    const win = window.open("about:blank", "_blank");
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const text = (node) => String((node && (node.innerText || node.textContent || node.value)) || "").trim();
+    const docs = [document];
+    for (const frame of Array.from(window.frames)) { try { if (frame.document) docs.push(frame.document); } catch (e) { } }
+    const all = (selector) => docs.flatMap((d) => Array.from(d.querySelectorAll(selector)));
+    const visible = (node) => node.getClientRects().length > 0;
+    const rows = [];
+    for (const tr of all("tr")) { const cells = Array.from(tr.cells).map(text); if (cells.some(Boolean)) rows.push(cells); }
+    const body = text(document.body);
+    const selects = all("select").map((select) => { const option = select.options[select.selectedIndex]; return option ? (option.text || option.value) : ""; });
+    const seen = new Set();
+    const buttons = all("a,button,input[type=button],[onclick]").filter((node) => {
+      const no = text(node);
+      if (!/^\d{3}$/.test(no) || !node.closest("tr") || seen.has(no)) return false;
+      seen.add(no);
+      return true;
+    }).slice(0, limits.rows);
+    const findDetail = (no) => all("div,section,dialog,table,aside").filter((node) => {
+      if (!visible(node)) return false;
+      const value = text(node);
+      return value.length < 1500 && value.includes("閉じる") && /[¥￥]/.test(value) && value.split(/\s+/).includes(no);
+    }).sort((a, b) => text(a).length - text(b).length)[0] || null;
+    const details = [];
+    for (const button of buttons) {
+      const no = text(button);
+      button.click();
+      let box = null;
+      for (let i = 0; i < 20 && !box; i += 1) { await sleep(100); box = findDetail(no); }
+      if (!box) { if (!details.length) break; continue; }
+      details.push({ no, text: text(box).slice(0, 1000) });
+      const close = Array.from(box.querySelectorAll("a,button,input,[onclick]")).find((node) => /閉じる|×|close/i.test(text(node) || node.getAttribute("aria-label") || ""));
+      if (close) close.click(); else document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      await sleep(150);
+    }
+    const data = { v: 2, capturedAt: new Date().toISOString(), host: location.host, head: body.slice(0, limits.head), selects: selects.slice(0, 20), rows: rows.slice(0, limits.rows), details, text: rows.length ? "" : body.slice(0, limits.text) };
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const url = importPage + "#d=" + encoded;
+    if (win) win.location.href = url; else window.open(url, "_blank");
   }
 
-  return Object.freeze({ IMPORT_PAGE, VENUES, SKIP_LABELS, normalize, findVenue, findRace, findDate, jstDate, findTickets, findAmounts, findSerial, parseRow, pageDate, parseSummary, parseCapture, encodeCapture, decodeCapture, bookmarkletSource });
+  function bookmarkletSource(importPage = IMPORT_PAGE) {
+    const source = capturePage.toString().replace(/\n\s*/g, " ");
+    const limits = { rows: MAX_ROWS, head: MAX_HEAD, text: MAX_TEXT };
+    return `javascript:(${source})(${JSON.stringify(importPage)},${JSON.stringify(limits)});void 0;`;
+  }
+
+  // 詳細（No を押すと出る小窓）の文字から、組番と金額を読む。金額は最初の「¥」（購入金額）を使う。
+  function parseDetail(detail = {}) {
+    const value = normalize(detail.text);
+    const ticket = findTickets(value)[0] || "";
+    const amount = findAmounts(value)[0] || null;
+    return { no: String(detail.no || ""), ticket, amount };
+  }
+
+  return Object.freeze({ IMPORT_PAGE, VENUES, SKIP_LABELS, normalize, findVenue, findRace, findDate, jstDate, findTickets, findAmounts, findSerial, parseRow, pageDate, parseSummary, parseDetail, parseCapture, encodeCapture, decodeCapture, capturePage, bookmarkletSource });
 });
