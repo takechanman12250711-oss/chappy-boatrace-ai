@@ -99,10 +99,11 @@ function checkVenue(venue, params = DEFAULT_PARAMS) {
 
 function checkWater(weather = {}, params = DEFAULT_PARAMS) {
   const wind = num(weather?.windSpeed), wave = num(weather?.waveHeight);
-  if (wind === null || wave === null) return { status: "unknown", reason: "weather-missing" };
-  if (wind > params.maxWindSpeed) return { status: "fail", reason: "wind-strong" };
-  if (wave > params.maxWaveHeight) return { status: "fail", reason: "wave-high" };
-  return { status: "pass" };
+  // 片方が欠けていても、分かる方が外れていれば見送り
+  return combine([
+    wind === null ? { status: "unknown", reason: "weather-missing" } : wind > params.maxWindSpeed ? { status: "fail", reason: "wind-strong" } : { status: "pass" },
+    wave === null ? { status: "unknown", reason: "weather-missing" } : wave > params.maxWaveHeight ? { status: "fail", reason: "wave-high" } : { status: "pass" }
+  ]);
 }
 
 function checkBoat1(boats = [], series = { races: 0, avgFinish: null }, params = DEFAULT_PARAMS) {

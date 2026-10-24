@@ -47,6 +47,8 @@ assert.equal(filter.checkWater({ windSpeed: 6, waveHeight: 1 }).reason, "wind-st
 assert.equal(filter.checkWater({ windSpeed: 1, waveHeight: 5 }).reason, "wave-high");
 assert.equal(filter.checkWater({ windSpeed: null, waveHeight: 1 }).status, "unknown");
 assert.equal(filter.checkWater(undefined).status, "unknown");
+assert.equal(filter.checkWater({ windSpeed: 6, waveHeight: null }).reason, "wind-strong", "波高がなくても風が強ければ見送り");
+assert.equal(filter.checkWater({ windSpeed: null, waveHeight: 6 }).reason, "wave-high");
 
 // ③ 1号艇
 {
