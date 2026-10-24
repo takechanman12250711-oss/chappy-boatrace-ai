@@ -61,6 +61,8 @@ assert.equal(filter.checkWater(undefined).status, "unknown");
   assert.equal(filter.checkBoat1(boats(), { races: 2, avgFinish: 3.6 }).reason, "boat1-series-poor");
   assert.equal(filter.checkBoat1(boats(), { races: 1, avgFinish: 6 }).status, "pass", "本節1走だけなら本節は見ない");
   assert.equal(filter.checkBoat1([], none).status, "unknown");
+  assert.equal(filter.checkBoat1(boats(), { races: 0, avgFinish: null, known: false }).reason, "boat1-identity-missing", "選手が分からなければ本節は判定不能");
+  assert.equal(filter.checkBoat1(boats(), { races: 3, avgFinish: 4, known: false }).reason, "boat1-series-poor");
 }
 
 // 本節：同じ場・前日までの6日以内

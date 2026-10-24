@@ -120,6 +120,8 @@ function checkBoat1(boats = [], series = { races: 0, avgFinish: null }, params =
   const gap = Math.round(times[0] * 100) - Math.round(Math.min(...times) * 100);
   if (gap > Math.round(params.maxExhibitionGap * 100)) return { status: "fail", reason: "boat1-exhibition-slow" };
   if (series.races >= params.seriesMinRaces && series.avgFinish > params.maxSeriesAvgFinish) return { status: "fail", reason: "boat1-series-poor" };
+  // 選手が特定できないときは「本節の走数が少ない」と区別して判定不能にする
+  if (series.known === false) return { status: "unknown", reason: "boat1-identity-missing" };
   return { status: "pass" };
 }
 

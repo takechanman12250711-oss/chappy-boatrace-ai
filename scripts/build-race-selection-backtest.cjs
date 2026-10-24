@@ -98,7 +98,14 @@ function build({ results, predictions, out }, params = filter.DEFAULT_PARAMS) {
         const conditions = record.prediction.preRaceConditions || {};
         const boats = Array.isArray(conditions.boats) ? conditions.boats : [];
         const boat1 = boats.find((boat) => Number(boat?.boatNo) === 1);
-        const series = boat1 ? filter.seriesRecord(state, boat1.registerNo, race.jcd, date, params) : { races: 0, avgFinish: null };
+        // 選手の登録番号が保存されていない古い予想は、公式結果の1号艇の登録番号を使う（出走表で締切前に分かる情報）。
+        // どちらにもなければ本節は判定不能
+        const registerNo = /^\d{4}$/.test(String(boat1?.registerNo || ""))
+          ? String(boat1.registerNo)
+          : String(race.finishers.find((finisher) => finisher.boat === 1)?.registerNo || "");
+        const series = /^\d{4}$/.test(registerNo)
+          ? filter.seriesRecord(state, registerNo, race.jcd, date, params)
+          : { races: 0, avgFinish: null, known: false };
         const checks = {
           venue: filter.checkVenue(filter.venueCourse1Rate(state, race.jcd, date, params), params),
           water: filter.checkWater(conditions.weather, params),
