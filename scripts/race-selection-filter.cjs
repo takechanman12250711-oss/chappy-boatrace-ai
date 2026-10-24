@@ -107,22 +107,25 @@ function checkWater(weather = {}, params = DEFAULT_PARAMS) {
 
 function checkBoat1(boats = [], series = { races: 0, avgFinish: null }, params = DEFAULT_PARAMS) {
   const boat1 = boats.find((boat) => Number(boat?.boatNo) === 1);
-  if (!boat1) return { status: "unknown", reason: "boat1-missing" };
-  const course = num(boat1.course);
-  if (course === null) return { status: "unknown", reason: "boat1-course-missing" };
-  if (course !== 1) return { status: "fail", reason: "boat1-not-course1" };
-  const local = num(boat1.localWinRate);
-  if (local === null) return { status: "unknown", reason: "boat1-local-missing" };
-  if (local < params.minLocalWinRate) return { status: "fail", reason: "boat1-local-low" };
+  // 分かる条件をすべて見てから決める（材料不足の条件があっても、外れた条件があれば見送り）
+  const checks = [];
+  const course = num(boat1?.course);
+  checks.push(course === null ? { status: "unknown", reason: boat1 ? "boat1-course-missing" : "boat1-missing" }
+    : course !== 1 ? { status: "fail", reason: "boat1-not-course1" } : { status: "pass" });
+  const local = num(boat1?.localWinRate);
+  checks.push(local === null ? { status: "unknown", reason: "boat1-local-missing" }
+    : local < params.minLocalWinRate ? { status: "fail", reason: "boat1-local-low" } : { status: "pass" });
   const times = [1, 2, 3, 4, 5, 6].map((no) => num(boats.find((boat) => Number(boat?.boatNo) === no)?.exhibitionTime));
-  if (times.some((time) => time === null || time <= 0)) return { status: "unknown", reason: "exhibition-time-missing" };
-  // 0.01秒単位の整数で比べる（浮動小数の誤差で境界がずれないように）
-  const gap = Math.round(times[0] * 100) - Math.round(Math.min(...times) * 100);
-  if (gap > Math.round(params.maxExhibitionGap * 100)) return { status: "fail", reason: "boat1-exhibition-slow" };
-  if (series.races >= params.seriesMinRaces && series.avgFinish > params.maxSeriesAvgFinish) return { status: "fail", reason: "boat1-series-poor" };
+  if (times.some((time) => time === null || time <= 0)) checks.push({ status: "unknown", reason: "exhibition-time-missing" });
+  else {
+    // 0.01秒単位の整数で比べる（浮動小数の誤差で境界がずれないように）
+    const gap = Math.round(times[0] * 100) - Math.round(Math.min(...times) * 100);
+    checks.push(gap > Math.round(params.maxExhibitionGap * 100) ? { status: "fail", reason: "boat1-exhibition-slow" } : { status: "pass" });
+  }
+  if (series.races >= params.seriesMinRaces && series.avgFinish > params.maxSeriesAvgFinish) checks.push({ status: "fail", reason: "boat1-series-poor" });
   // 選手が特定できないときは「本節の走数が少ない」と区別して判定不能にする
-  if (series.known === false) return { status: "unknown", reason: "boat1-identity-missing" };
-  return { status: "pass" };
+  else if (series.known === false) checks.push({ status: "unknown", reason: "boat1-identity-missing" });
+  return combine(checks);
 }
 
 // 3つを順に見て、1つでも外れたら見送り。外れがなく材料不足があれば判定不能。

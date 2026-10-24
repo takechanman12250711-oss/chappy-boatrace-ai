@@ -55,6 +55,8 @@ assert.equal(filter.checkWater(undefined).status, "unknown");
   assert.equal(filter.checkBoat1(boats({ 1: { course: 2 }, 2: { course: 1 } }), none).reason, "boat1-not-course1");
   assert.equal(filter.checkBoat1(boats({ 1: { localWinRate: 5.49 } }), none).reason, "boat1-local-low");
   assert.equal(filter.checkBoat1(boats({ 1: { localWinRate: null } }), none).status, "unknown");
+  assert.equal(filter.checkBoat1(boats({ 1: { localWinRate: null } }), { races: 2, avgFinish: 5 }).reason, "boat1-series-poor", "当地勝率がなくても本節が悪ければ見送り");
+  assert.equal(filter.checkBoat1(boats({ 1: { localWinRate: null, exhibitionTime: 7.2 } }), none).reason, "boat1-exhibition-slow");
   assert.equal(filter.checkBoat1(boats({ 1: { exhibitionTime: 6.9 } }), none).status, "pass", "最速との差0.10秒ちょうどは通過");
   assert.equal(filter.checkBoat1(boats({ 1: { exhibitionTime: 6.91 } }), none).reason, "boat1-exhibition-slow");
   assert.equal(filter.checkBoat1(boats({ 4: { exhibitionTime: 0 } }), none).status, "unknown", "展示タイムが欠けた艇があれば判定不能");
