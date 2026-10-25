@@ -1,25 +1,25 @@
 {
   "schemaVersion": 2,
   "version": "local-water-v2-post-adoption-monitor-v2",
-  "generatedAt": "2026-10-24T21:46:17.993Z",
+  "generatedAt": "2026-10-25T19:16:25.297Z",
   "adoptionPr": 614,
   "adoptionCommit": "b230d52969b3aa612498e4c994d840c9b7120abc",
   "startDate": "20260824",
-  "latestDate": "20261024",
+  "latestDate": "20261025",
   "method": "2026-08-24以降の確定レースだけを対象に、A=本番Local/Water V2 gap<=3タイブレーク、B=同じ未適用base coreの旧展開のまま、固定5点で比較。本番と同じrace trend ready条件を満たす公式入力だけをfingerprint世代別cacheで再利用し、評価レポートは全件揃った場合だけ保存。",
   "productionChanged": false,
   "automaticApplication": false,
   "sourceCompleteness": {
-    "expectedRaces": 2545,
-    "completedRaces": 2545,
+    "expectedRaces": 2607,
+    "completedRaces": 2607,
     "cachedRaces": 2545,
-    "fetchedRaces": 0,
+    "fetchedRaces": 62,
     "complete": true
   },
   "total": {
-    "sourceRaces": 2545,
-    "comparableRaces": 162,
-    "appliedRaces": 162,
+    "sourceRaces": 2607,
+    "comparableRaces": 164,
+    "appliedRaces": 164,
     "productionHits": 29,
     "counterfactualHits": 20,
     "gains": 23,
@@ -783,6 +783,19 @@
       "counterfactualReturn": 0,
       "hitDelta": 1,
       "returnDelta": 1010
+    },
+    "20261025": {
+      "sourceRaces": 62,
+      "comparableRaces": 2,
+      "appliedRaces": 2,
+      "productionHits": 0,
+      "counterfactualHits": 0,
+      "gains": 0,
+      "losses": 0,
+      "productionReturn": 0,
+      "counterfactualReturn": 0,
+      "hitDelta": 0,
+      "returnDelta": 0
     }
   },
   "appliedSamples": [
@@ -5159,6 +5172,60 @@
       "productionHit": true,
       "counterfactualHit": false,
       "payoutPer100": 1010
+    },
+    {
+      "raceKey": "20261025-05-4",
+      "date": "20261025",
+      "jcd": "05",
+      "raceNo": 4,
+      "gap": 2.5999999999999943,
+      "previousHead": 3,
+      "selectedHead": 2,
+      "actual": "1-5-3",
+      "productionTickets": [
+        "2-1-3",
+        "2-3-1",
+        "2-5-1",
+        "1-2-3",
+        "1-2-5"
+      ],
+      "counterfactualTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4"
+      ],
+      "productionHit": false,
+      "counterfactualHit": false,
+      "payoutPer100": 2930
+    },
+    {
+      "raceKey": "20261025-20-4",
+      "date": "20261025",
+      "jcd": "20",
+      "raceNo": 4,
+      "gap": 0.7999999999999972,
+      "previousHead": 4,
+      "selectedHead": 1,
+      "actual": "3-1-2",
+      "productionTickets": [
+        "1-2-3",
+        "1-3-2",
+        "1-4-2",
+        "2-1-3",
+        "2-1-4"
+      ],
+      "counterfactualTickets": [
+        "4-1-5",
+        "4-5-6",
+        "4-3-5",
+        "1-2-3",
+        "1-2-4"
+      ],
+      "productionHit": false,
+      "counterfactualHit": false,
+      "payoutPer100": 7570
     }
   ],
   "apiFailures": 0,
