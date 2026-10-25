@@ -3,6 +3,7 @@ const {createHash}=require('node:crypto');
 const {ticketsIn}=require('./note-readable-article');
 const {counts}=require('./note-marketing-reports');
 const {statusCounts}=require('./note-result-presentation');
+const {SOCIAL_NOTICE,withNoticeIfFits}=require('./note-social-notice');
 const labels={normal:'AI展開',escape:'本命',manshu:'万舟'};
 const articleContents='🧭 無料：展開・注目艇・狙う理由\n🎟️ 有料：買い目・フォーメーション・点数';
 const dateOf=now=>new Date(now+9*3600000).toISOString().slice(0,10).replaceAll('-','');
@@ -55,7 +56,7 @@ function announcementCopy(rows,indexUrl,now) {
       if(ordered.length>n)races.push(`ほか${ordered.length-n}記事は一覧へ`);
       const text=[[title,...races].join('\n'),
         insight?`${sameSeries?'':labels[first.articleSeries]+'・'}${first.place}${first.raceNo}R：${insight}`:'',
-        articleContents,`まず無料部分を読んで選べます。${price}\n${url}`]
+        articleContents,`まず無料部分を読んで選べます。${price}\n${url}`,SOCIAL_NOTICE]
         .filter(Boolean).join('\n\n');
       if(weight(text)<=280)return text;
     }
@@ -80,6 +81,6 @@ function recapCopy(rows,indexUrl,now,{date=dateOf(now),late=false,supplement=fal
   if(weight(text)>280)text=[lines[0],lines[1],statusCounts(counts(current)),
     '種類別の内訳は無料一覧へ',...tail].join('\n');
   if(weight(text)>280)throw Error('social_recap_too_long');
-  return text;
+  return withNoticeIfFits(text,weight);
 }
 module.exports={sourceContext,contextOf,safePreview,announcementCopy,recapCopy,weight,dateOf,timeOf};

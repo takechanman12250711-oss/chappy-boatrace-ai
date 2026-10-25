@@ -414,7 +414,7 @@ test('all-miss and all-pending recaps retain denominators without empty status p
    for(const series of ['AI展開','本命','万舟'])assert(text.includes(`${series}：${label} 1件`));
    assert(!text.includes('🎯 的中'));assert(!text.includes('0的中'));assert(!text.includes('0不的中'));
    assert(!text.includes('🔎 照合確認中'));assert(!text.includes('➖ 不成立'));
-   assert(text.includes('21:00時点'));assert(text.endsWith(marketing.index.url));assert(weight(text)<=280);
+   assert(text.includes('21:00時点'));assert(text.endsWith(marketing.index.url+'\n'+require('./note-social-notice').SOCIAL_NOTICE));assert(weight(text)<=280);
   }
   assert.equal(JSON.stringify(rows),before);
  }

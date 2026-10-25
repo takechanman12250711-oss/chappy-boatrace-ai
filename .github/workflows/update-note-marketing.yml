@@ -26,6 +26,7 @@ on:
       - 'config/note-social.json'
       - 'scripts/send-note-social*'
       - 'scripts/send-note-buffer*'
+      - 'scripts/note-social-notice*'
       - 'scripts/note-marketing-*.js'
       - 'scripts/note-result-card*'
       - 'scripts/note-public-results*'
@@ -86,7 +87,7 @@ jobs:
           echo "NOTE_CLAIM_SHA=$revision" >> "$GITHUB_ENV"
           echo "sha=$revision" >> "$GITHUB_OUTPUT"
       - name: Verify marketing safeguards
-        run: node --test scripts/note-public-results.test.js scripts/note-published-ticket-sections.test.js scripts/note-marketing-expiry.test.js scripts/note-marketing.test.js scripts/note-marketing-reports.test.js scripts/note-marketing-measurement.test.js scripts/send-note-social.test.cjs scripts/send-note-buffer.test.cjs scripts/note-korogashi*.test.cjs
+        run: node --test scripts/note-public-results.test.js scripts/note-published-ticket-sections.test.js scripts/note-marketing-expiry.test.js scripts/note-marketing.test.js scripts/note-marketing-reports.test.js scripts/note-marketing-measurement.test.js scripts/send-note-social.test.cjs scripts/send-note-buffer.test.cjs scripts/note-social-notice.test.cjs scripts/note-korogashi*.test.cjs
       - name: Prepare requested korogashi courses and settle saved legs
         id: korogashi-prepare
         continue-on-error: true

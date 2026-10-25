@@ -108,7 +108,7 @@ function hitText(report,indexUrl,previousDay=false) {
     `掲載全券${report.publishedTicketCount}点（重複なし・参考別集計）`,
     '公式結果',report.resultUrl,'📋 全結果（無料）',indexUrl].join('\n');
   if(weight(text)>280)throw Error('public_results_text_too_long');
-  return text;
+  return require('./note-social-notice').withNoticeIfFits(text,weight);
 }
 function publicRecapCopy(rows,reports,indexUrl,now,{date,late=false,supplement=false}={}) {
   const {dateOf,timeOf,weight}=require('./note-marketing-social');
@@ -128,6 +128,6 @@ function publicRecapCopy(rows,reports,indexUrl,now,{date,late=false,supplement=f
     `${centerRows.length}記事・${selected.length}レース（重複なし）`,statusCounts(tally,'R'),
     '掲載全券で判定（参考別集計）。種類別・中心のみは無料一覧へ。',
     `🕒 ${label(dateOf(now))} ${timeOf(now)}時点`,indexUrl].join('\n');
-  if(weight(text)>280)throw Error('public_results_recap_too_long');return text;
+  if(weight(text)>280)throw Error('public_results_recap_too_long');return require('./note-social-notice').withNoticeIfFits(text,weight);
 }
 module.exports={validatedRaceStatus,combinedStatus,summarizePublicRows,VERSION,METHOD,HEADINGS,LABELS,raceEvidenceId,settlePublic,raceReports,summarizeRaceReports,matchedLabel,hitText,publicRecapCopy};
