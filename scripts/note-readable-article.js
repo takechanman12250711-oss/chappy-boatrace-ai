@@ -197,8 +197,22 @@ function readableArticleV3(article, bundle, { presentationVersion = 'readable-v3
   const fullText = [freeText, article.paywallMarker, paidText, NOTICE, article.tags.join(' ')].join('\n\n');
   return { ...base, presentationVersion, freeText, paidText, fullText };
 }
-function readableArticle(article, bundle, { presentationVersion = 'readable-v4' } = {}) {
-  if (presentationVersion !== 'readable-v4') return readableArticleV3(article, bundle, { presentationVersion });
+function readableArticleV4(article, bundle) {
   return require('./note-free-explanation.cjs').withVerifiedExplanation(readableArticleV3(article, bundle), article, bundle);
 }
-module.exports = { readableArticle, ticketsIn };
+// 2026-10-25 owner request: readers who have not bought the article also see
+// the notice. v5 adds one paragraph at the end of the free part only; the paid
+// bytes, tickets, price and paywall stay exactly as in v4. v4 is frozen in
+// note-recovery-readable-v4.cjs for proof-gated recovery of earlier claims.
+const FREE_NOTICE = '※予想は参考情報です。舟券の購入は20歳以上の方が、ご自身の判断と責任でお願いします。';
+function readableArticle(article, bundle, { presentationVersion = 'readable-v5' } = {}) {
+  if (presentationVersion === 'readable-v4') return readableArticleV4(article, bundle);
+  if (presentationVersion !== 'readable-v5') return readableArticleV3(article, bundle, { presentationVersion });
+  const base = readableArticleV4(article, bundle);
+  if (base.presentationVersion !== 'readable-v4' || !base.fullText.startsWith(base.freeText)) throw Error('readable_free_prefix_invalid');
+  const freeText = `${base.freeText}\n\n${FREE_NOTICE}`;
+  if (mentions(freeText).length) throw new Error('readable_free_ticket_leak');
+  const fullText = freeText + base.fullText.slice(base.freeText.length);
+  return { ...base, presentationVersion: 'readable-v5', freeText, fullText };
+}
+module.exports = { readableArticle, ticketsIn, FREE_NOTICE };

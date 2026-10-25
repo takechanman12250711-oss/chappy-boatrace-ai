@@ -47,7 +47,9 @@ async function main() {
   const payload = publicationPayload(sourcePath, root, clock);
   assert.equal(payload.canPublish, true);
   assert.equal(payload.practicalTicketCount, 1);
-  assert.equal(payload.presentationVersion, 'readable-v4');
+  assert.equal(payload.presentationVersion, 'readable-v5');
+  assert.ok(payload.freeText.endsWith(require('./note-readable-article').FREE_NOTICE), 'free part ends with the notice');
+  assert.ok(!payload.paidText.includes(require('./note-readable-article').FREE_NOTICE), 'paid bytes stay unchanged');
   assert.equal(typeof payload.publishedDisplayProofJson, 'string');
   const displayProof = parsePublishedDisplayProof(payload);
   const sha = value => createHash('sha256').update(value).digest('hex');
