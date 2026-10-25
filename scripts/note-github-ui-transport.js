@@ -706,7 +706,7 @@ function recoveryBodyDiagnostic(actualBody, payload) {
   while (firstMismatch < Math.max(actualLines.length, expectedLines.length) &&
     actualLines[firstMismatch] === expectedLines[firstMismatch]) firstMismatch++;
   return { version: 'note-recovery-body-diagnostic-v1',
-    presentationVersion: ['readable-v1', 'readable-v2', 'readable-v3', 'readable-v4'].includes(payload.presentationVersion)
+    presentationVersion: ['readable-v1', 'readable-v2', 'readable-v3', 'readable-v4', 'readable-v5'].includes(payload.presentationVersion)
       ? payload.presentationVersion : 'unknown',
     actualLength: actual.length, expectedLength: expected.length,
     actualLines: actualLines.length, expectedLines: expectedLines.length,

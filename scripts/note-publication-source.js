@@ -18,8 +18,8 @@ function requirePublicationTicketCount(article) {
   return tickets.length;
 }
 
-function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now(), { presentationVersion = 'readable-v4' } = {}) {
-  if (!['readable-v1', 'readable-v2', 'readable-v3', 'readable-v4'].includes(presentationVersion)) throw Error('published_presentation_version_unsupported');
+function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now(), { presentationVersion = 'readable-v5' } = {}) {
+  if (!['readable-v1', 'readable-v2', 'readable-v3', 'readable-v4', 'readable-v5'].includes(presentationVersion)) throw Error('published_presentation_version_unsupported');
   const match = /^data\/note-drafts\/(\d{8})\/\1-(\d{2})-(\d{1,2})-([a-f0-9]{64})\.json$/.exec(String(sourcePath));
   if (!match) throw new Error('publication_source_path_invalid');
   const bytes = fs.readFileSync(path.join(rootDir, sourcePath), 'utf8');
@@ -51,11 +51,12 @@ function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now(), { 
   requirePublicationTicketCount(article);
   // Audit the immutable original first, then verify the approved public copy.
   // Explicit versions are used only by the proof-gated historical recovery
-  // path. New publication gates always reconstruct the v4 default. Historical
+  // path. New publication gates always reconstruct the v5 default. Historical
   // v1 needs its original free introduction as well as the frozen paid body.
   const renderer = presentationVersion === 'readable-v1' ? require('./note-recovery-readable-v1.cjs')
     : presentationVersion === 'readable-v2' ? require('./note-recovery-readable-v2.cjs')
-    : presentationVersion === 'readable-v3' ? require('./note-recovery-readable-v3.cjs') : require('./note-readable-article');
+    : presentationVersion === 'readable-v3' ? require('./note-recovery-readable-v3.cjs')
+    : presentationVersion === 'readable-v4' ? require('./note-recovery-readable-v4.cjs') : require('./note-readable-article');
   const readable = renderer.readableArticle(article, bundle);
   if (readable.presentationVersion === 'readable-v2') {
     // A new receipt must be reproducible from the immutable original itself,
@@ -65,7 +66,7 @@ function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now(), { 
     const sourcePaidText = categories.paidTextFromSections(categories.sourceSections(bundle, articleSeries));
     if (readable.paidText !== sourcePaidText) throw new Error('publication_category_source_mismatch');
   }
-  if (['readable-v3', 'readable-v4'].includes(readable.presentationVersion)) {
+  if (['readable-v3', 'readable-v4', 'readable-v5'].includes(readable.presentationVersion)) {
     // Bind the compact-derived publication to the exact immutable original,
     // including the unchanged practical subset and its separate appendix.
     const sourcePaidText = require('./note-korogashi-presentation.cjs').paidTextFromSource(bundle, articleSeries);
