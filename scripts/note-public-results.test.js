@@ -151,7 +151,7 @@ test('public summaries preserve every positive result state and omit only zero c
   assert(recap.startsWith(`📊 ${day} 結果まとめ\n2記事・2レース（重複なし）`));
   assert(recap.includes(`${label} 2R`));assert(weight(recap)<=280);
   for(const other of Object.keys(labels).filter(s=>s!==status))assert(!recap.includes(labels[other]));
-  assert(recap.includes('🕒 '));assert(recap.includes('時点'));assert(recap.endsWith(marketing.index.url));
+  assert(recap.includes('🕒 '));assert(recap.includes('時点'));assert(recap.endsWith(marketing.index.url+'\n'+require('./note-social-notice').SOCIAL_NOTICE));
   assert.equal(JSON.stringify({rows,reports}),before);
  }
  const reports=Object.keys(labels).map((status,i)=>({raceKey:`${date}-13-${i+1}`,status}));
