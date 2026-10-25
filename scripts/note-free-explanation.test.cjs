@@ -20,7 +20,7 @@ function fixture() {
   return b;
 }
 test('future v4 removes contradictory old ranking prose but keeps every paid byte and source immutable', () => {
-  const b = fixture(), before = JSON.stringify(b), old = readableArticle(b.article,b,{presentationVersion:'readable-v3'}), next = readableArticle(b.article,b);
+  const b = fixture(), before = JSON.stringify(b), old = readableArticle(b.article,b,{presentationVersion:'readable-v3'}), next = readableArticle(b.article,b,{presentationVersion:'readable-v4'});
   assert.match(old.freeText,/本命は5号艇/);
   assert.equal(next.presentationVersion,'readable-v4');
   assert.doesNotMatch(next.freeText,/本命は5号艇|対抗は1号艇/);
@@ -88,8 +88,27 @@ test('result-like extra fields never select the free explanation', () => {
 });
 test('independent original prose and paid bytes stay unchanged', () => {
   for(const kind of ['escape','manshu']) {const b=independentFixture();b.monitor.kind=kind;
-    const old=readableArticle(b.article,b,{presentationVersion:'readable-v3'}),next=readableArticle(b.article,b);
+    const old=readableArticle(b.article,b,{presentationVersion:'readable-v3'}),next=readableArticle(b.article,b,{presentationVersion:'readable-v4'});
     assert.equal(next.freeText,old.freeText);assert.equal(next.paidText,old.paidText);assert.equal(next.fullText,old.fullText);
   }
 });
 
+test('v5 adds only the free notice; frozen v4 reproduces the earlier bytes exactly', () => {
+  const { FREE_NOTICE } = require('./note-readable-article');
+  const frozenV4 = require('./note-recovery-readable-v4.cjs');
+  for (const make of [fixture, ...['escape', 'manshu'].map(kind => () => { const b = independentFixture(); b.monitor.kind = kind; return b; })]) {
+    const b = make(), before = JSON.stringify(b);
+    const v4 = readableArticle(b.article, b, { presentationVersion: 'readable-v4' }), v5 = readableArticle(b.article, b);
+    assert.deepEqual(v4, frozenV4.readableArticle(b.article, b));
+    assert.equal(v5.presentationVersion, 'readable-v5');
+    assert.equal(v5.freeText, `${v4.freeText}\n\n${FREE_NOTICE}`);
+    assert.equal(v5.paidText, v4.paidText);
+    assert.equal(v5.fullText, v5.freeText + v4.fullText.slice(v4.freeText.length));
+    assert.equal(v5.fullText.split(v5.paywallMarker).length, 2);
+    assert.ok(v5.fullText.indexOf(FREE_NOTICE) < v5.fullText.indexOf(v5.paywallMarker), 'notice sits before the paywall');
+    assert.deepEqual(ticketsIn(v5.freeText), []);
+    assert.equal(JSON.stringify(b), before);
+  }
+  for (const phrase of ['参考情報', '20歳以上', '責任']) assert.ok(FREE_NOTICE.includes(phrase));
+  assert.doesNotMatch(FREE_NOTICE, /必勝|絶対|確実|儲か|保証/);
+});

@@ -387,3 +387,9 @@ node scripts/check-charter.js
 元の永久claimと原本SHA、claim時の公開表示コード指紋を再確認し、保存profileで既存記事の無料・有料全文を厳密照合する。その後、独立した未ログインcontextで同じURL・タイトル・有料境界・200円・無料本文全行・同じ公開日時を検査する。日時は元原稿取得以後かつ締切前でなければならない。認証切れ、別記事への遷移、本文差分、価格／境界の欠落、公開日時の不一致ではreceiptを作らない。
 
 照合済みの場合のみ従来の `note-published/<race hash>` に永久receiptを保存する。新規投稿、再クリック、手編集、claimの解除、公開済み価格や販売状態の変更は行わない。復旧前の本文hash／券hashを、実際の公開全文との照合なしに成功記録へ昇格させない。通常 `publish` のselector、15秒待機、実時計監査は変更していない。コード反映と、対象記事での実復旧成功は別に確認する。
+
+## 2026-10-25 無料部分の注意書き（readable-v5）
+
+本人依頼により、新規公開記事は readable-v5 とし、無料部分の末尾（有料境界の直前）に「※予想は参考情報です。舟券の購入は20歳以上の方が、ご自身の判断と責任でお願いします。」を置く。v4から変わるのは無料部分のこの1段落だけで、有料本文・買い目・価格・有料境界・公開証明（published-ticket-sections）は同じバイトのまま。有料末尾の従来の自己責任文も残す。
+
+v4は `scripts/note-recovery-readable-v4.cjs`（v4当時の renderer と同一バイト）と `note-recovery-presentation.cjs` の HISTORICAL へ固定し、v5以前に作られた claim の復旧は従来どおり v4 で照合する。既存の公開済み記事は変更しない。無料の毎日の一覧と「はじめての方へ」は、過去版の復旧照合が `note-marketing-content.js` と `config/note-marketing.json` の指紋を固定しているため今回は変更しない。X投稿の注意書きは `scripts/note-social-notice.js`（PR #1375）。
