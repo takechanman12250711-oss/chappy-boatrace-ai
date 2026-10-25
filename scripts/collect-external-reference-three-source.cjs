@@ -51,9 +51,10 @@ async function officialDeadline(date,jcd,raceNo,fetcher){
 }
 async function collect({root=process.cwd(),now=Date.now(),fetcher=fetch}={}){
  const date=jstDate(now), ds=deadlines(root,date), captured=[], skipped=[], errors=[];
- const sources=[
-  {source:'hiyori',url:`https://kyoteibiyori.com/blog/${date}0001`,parse:b=>hiyoriDailySignals(b.toString('utf8'),date)}
- ];
+ // 2026-10-26: kyoteibiyori.com terms (Article 5, items 15-17, updated 2026-02-01)
+ // prohibit automated access and scraping, so it is never requested here.
+ // Previously saved captures are left untouched; see docs/external-reference-research.md.
+ const sources=[];
  for(const s of sources){
   try{
    const bytes=await get(s.url,fetcher), signals=s.parse(bytes);
@@ -91,7 +92,7 @@ async function collect({root=process.cwd(),now=Date.now(),fetcher=fetch}={}){
  }catch(e){br={url:'https://boatrace.site/',raceLevelPublic:false,methodologyAvailable:false,error:e.message};}
  const report={version:'external-reference-collector-v1',generatedAt:new Date(now).toISOString(),date,
   productionChanged:false,automaticApplication:false,usableForPrediction:false,captured,skipped,errors,
-  capabilities:{hiyori:{raceLevelPublic:true},macour:{raceLevelPublic:'wakamatsu_public_preview_only'},br},
+  capabilities:{hiyori:{automatedAccess:false,reason:'terms_prohibit_automated_access',terms:'https://kyoteibiyori.com/terms.html'},macour:{raceLevelPublic:'wakamatsu_public_preview_only'},br},
   note:'BR public site exposes methodology; race-level B/E/S/A/G/K/L/W values are sold on note/regimag, so no race capture is fabricated.'};
  const out=path.join(root,'data','stats','external-reference-collector-v1.json');fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify(report,null,2)+'\n');
  return report;
