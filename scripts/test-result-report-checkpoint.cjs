@@ -437,6 +437,7 @@ try {
   const regression = predictions.slice(predictions.indexOf('\n  regression:'));
   assert.match(regression, /needs: predict/);
   assert.match(regression, /contents: read/);
+  assert.match(regression, /timeout-minutes: 30/);
   assert.match(regression, /Run noncritical regression checks/);
   assert.doesNotMatch(regression, /chappy-main-data-writers|git push/);
   console.log('result checkpoint: diagnostics/calibration and eight audit profiles, source preservation, receipt replay guards, artifact validation, racing pushes and queue boundaries passed');
