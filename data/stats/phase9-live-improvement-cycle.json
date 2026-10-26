@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "analysisId": "phase9-live-improvement-cycle-v1",
-  "generatedAt": "2026-10-25T19:02:21.793Z",
+  "generatedAt": "2026-10-26T02:17:35.571Z",
   "productionChanged": false,
   "summary": {
-    "matchedRows": 4410,
-    "hits": 1089,
-    "misses": 3321,
+    "matchedRows": 4414,
+    "hits": 1091,
+    "misses": 3323,
     "duplicates": 0,
     "patterns": 109,
     "eligibleCandidates": 0
@@ -98971,6 +98971,89 @@
         "3-1-2"
       ],
       "result": "213"
+    },
+    {
+      "raceKey": "20261026-10-1",
+      "hit": true,
+      "missReason": "HIT",
+      "reason": "official trifecta is present in final tickets",
+      "logicFingerprint": "dd6fe8c24fc4f1a88829",
+      "theoryIds": [
+        "flow",
+        "holdPickup"
+      ],
+      "finalTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-5",
+        "1-3-2"
+      ],
+      "result": "132"
+    },
+    {
+      "raceKey": "20261026-10-2",
+      "hit": false,
+      "missReason": "HEAD_MISS",
+      "reason": "predicted first-place axis differs from official result",
+      "logicFingerprint": "dd6fe8c24fc4f1a88829",
+      "theoryIds": [
+        "flow",
+        "holdPickup"
+      ],
+      "finalTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "1-2-4",
+        "1-2-5",
+        "1-3-5"
+      ],
+      "result": "216"
+    },
+    {
+      "raceKey": "20261026-21-1",
+      "hit": false,
+      "missReason": "HEAD_MISS",
+      "reason": "predicted first-place axis differs from official result",
+      "logicFingerprint": "dd6fe8c24fc4f1a88829",
+      "theoryIds": [
+        "flow",
+        "holdPickup"
+      ],
+      "finalTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-5",
+        "1-4-2",
+        "1-3-2",
+        "1-3-5"
+      ],
+      "result": "512"
+    },
+    {
+      "raceKey": "20261026-21-2",
+      "hit": true,
+      "missReason": "HIT",
+      "reason": "official trifecta is present in final tickets",
+      "logicFingerprint": "dd6fe8c24fc4f1a88829",
+      "theoryIds": [
+        "flow",
+        "holdPickup"
+      ],
+      "finalTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-5",
+        "1-3-2"
+      ],
+      "result": "143"
     }
   ],
   "patterns": [
@@ -104080,9 +104163,9 @@
       "reason": "No pre-existing formal minimum-count gate is attached to this observed pattern; phase9 must not invent one."
     },
     {
-      "patternId": "60b2b7ccb7f7253f25f0acd829fe7aeac8002d7d0a1c62235c86591e88ef2210",
+      "patternId": "55e2b93285b50de49befa0badfb6e04fb2739507c28f8c2055366d9c1b8ef134",
       "key": "dd6fe8c24fc4f1a88829::HIT",
-      "count": 100,
+      "count": 102,
       "races": [
         "20261019-01-10",
         "20261019-01-6",
@@ -104183,16 +104266,18 @@
         "20261025-20-8",
         "20261025-22-8",
         "20261025-24-10",
-        "20261025-24-5"
+        "20261025-24-5",
+        "20261026-10-1",
+        "20261026-21-2"
       ],
       "status": "INSUFFICIENT_EVIDENCE",
       "candidate": null,
       "reason": "No pre-existing formal minimum-count gate is attached to this observed pattern; phase9 must not invent one."
     },
     {
-      "patternId": "d058afd4299f900b2a44a27e1690480f1a7db9169342348f1a9d742d00f5814a",
+      "patternId": "2e75307d37bb14c00c3bafb09b94ef5dbdc528ae09ba17e659d526d972f182cd",
       "key": "dd6fe8c24fc4f1a88829::HEAD_MISS",
-      "count": 198,
+      "count": 200,
       "races": [
         "20261019-01-8",
         "20261019-12-6",
@@ -104391,7 +104476,9 @@
         "20261025-22-11",
         "20261025-22-2",
         "20261025-24-1",
-        "20261025-24-3"
+        "20261025-24-3",
+        "20261026-10-2",
+        "20261026-21-1"
       ],
       "status": "INSUFFICIENT_EVIDENCE",
       "candidate": null,
