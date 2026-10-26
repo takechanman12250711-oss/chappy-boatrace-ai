@@ -1,6 +1,6 @@
 {
   "version": "outer-attack-all-scenarios-v1",
-  "generatedAt": "2026-10-25T22:07:18.283Z",
+  "generatedAt": "2026-10-26T00:05:31.653Z",
   "productionChanged": false,
   "automaticApplication": false,
   "adoptionStatus": "NOT_REGISTERED_FOR_PRODUCTION_ADOPTION",
@@ -22437,10 +22437,12 @@
       "scheduledRaces": 144,
       "scheduleComplete": true,
       "observedRaces": 144,
-      "savedRaces": 0,
-      "missingRaces": 144,
+      "savedRaces": 2,
+      "missingRaces": 142,
       "reasons": {
-        "deferred-until-one-hour": 144
+        "deferred-until-one-hour": 138,
+        "waiting-exhibition": 3,
+        "closed-or-too-close": 1
       },
       "missing": [
         {
@@ -22732,16 +22734,12 @@
           "reason": "deferred-until-one-hour"
         },
         {
-          "raceKey": "20261026-10-1",
-          "reason": "deferred-until-one-hour"
-        },
-        {
           "raceKey": "20261026-10-2",
-          "reason": "deferred-until-one-hour"
+          "reason": "waiting-exhibition"
         },
         {
           "raceKey": "20261026-10-3",
-          "reason": "deferred-until-one-hour"
+          "reason": "waiting-exhibition"
         },
         {
           "raceKey": "20261026-10-4",
@@ -22877,15 +22875,11 @@
         },
         {
           "raceKey": "20261026-21-1",
-          "reason": "deferred-until-one-hour"
-        },
-        {
-          "raceKey": "20261026-21-2",
-          "reason": "deferred-until-one-hour"
+          "reason": "closed-or-too-close"
         },
         {
           "raceKey": "20261026-21-3",
-          "reason": "deferred-until-one-hour"
+          "reason": "waiting-exhibition"
         },
         {
           "raceKey": "20261026-21-4",
@@ -23020,18 +23014,18 @@
           "reason": "deferred-until-one-hour"
         }
       ],
-      "lastObservedAt": "2026-10-25T17:17:17.465Z",
+      "lastObservedAt": "2026-10-25T23:52:52.451Z",
       "venueFailures": []
     }
   },
   "diagnosticCounts": {
-    "inactive": 865,
+    "inactive": 867,
     "active": 55,
     "ambiguous-multiple-targets": 3
   },
-  "capturedRaces": 902,
+  "capturedRaces": 904,
   "settledRaces": 837,
-  "pending": 0,
+  "pending": 2,
   "voidRaces": 48,
   "unknownPayout": 0,
   "rejected": {},
