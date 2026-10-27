@@ -63,6 +63,16 @@ assert.equal(active.status, "watching");
 assert.equal(active.healthy, false);
 const stuck = evaluate({ now, run: { ...successRun, status: "in_progress", run_started_at: "2026-09-13T21:00:00Z" }, jobs, results });
 assert.equal(stuck.status, "error");
+const progressedAfterQueue = evaluate({ now, run: {
+  ...successRun, status: "in_progress", run_started_at: "2026-09-13T21:00:00Z"
+}, jobs: [{ ...jobs[0], started_at: "2026-09-13T23:55:00Z" }], results });
+assert.equal(progressedAfterQueue.status, "watching",
+  "runner activity, not the queue-inclusive workflow timestamp, controls the active timeout");
+const stalledJob = evaluate({ now, run: {
+  ...successRun, status: "in_progress", run_started_at: "2026-09-13T23:55:00Z"
+}, jobs: [{ ...jobs[0], started_at: "2026-09-13T21:00:00Z", completed_at: "2026-09-13T21:10:00Z" }], results });
+assert.equal(stalledJob.status, "watching",
+  "a recent workflow start remains the fallback when job timestamps are older");
 const queue = evaluate({ now, run: { ...successRun, status: "queued", created_at: "2026-09-13T23:59:00Z" }, jobs: [], results });
 assert.equal(queue.status, "watching");
 assert.equal(evaluate({ now, run: successRun, jobs: [], results }).healthy, false);
