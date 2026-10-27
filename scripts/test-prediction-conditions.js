@@ -31,6 +31,7 @@ const snapshot = conditions.capture({
     boat: index + 1,
     course: index + 1,
     st: 0.1 + index * 0.01,
+    marker: index === 1 ? "F" : "",
     isOfficialCourse: true,
     mappingSource: "official-start-image"
   })),
@@ -67,6 +68,10 @@ assert.equal(
   "official-start-image"
 );
 assert.equal(snapshot.boats[0].exhibitionST, 0.1);
+assert.equal(snapshot.boats[0].exhibitionStartMarker, "");
+assert.equal(snapshot.boats[1].exhibitionStartMarker, "F", "展示のF印を各艇の保存欄に残す");
+assert.equal(snapshot.boats[1].startExhibition.marker, "F");
+assert.equal(snapshot.boats[1].exhibitionST, 0.11, "STの数値は従来どおり（予想入力を変えない）");
 assert.equal(snapshot.boats[0].exhibitionTime, 6.7);
 assert.equal(snapshot.weather.windSpeed, 4);
 assert.equal(snapshot.weather.venueTideInfluence, 70);
