@@ -43,7 +43,10 @@ assert.strictEqual(result.ok, true);
 assert.strictEqual(JSON.stringify(source), originalJson, "元データを変更しない");
 assert(result.motorMaintenanceTheoryV2.isFormal, "正式評価を返す");
 assert(received.entries[0].motorMaintenanceTheoryV2.isFormal, "展示・今節根拠で正式評価");
-assert.notStrictEqual(received.entries[0].motorRate, source.entries[0].motorRate, "既存motor入力を置換する");
+// 2026-10-27: the official motor/boat rates stay in the entry; the score is evidence only.
+assert.strictEqual(received.entries[0].motorRate, source.entries[0].motorRate, "公式のmotor入力を置換しない");
+assert.strictEqual(received.entries[0].motor2Rate, source.entries[0].motor2Rate, "公式のモーター2連率を置換しない");
+assert(received.entries[0].motorMaintenanceTheoryV2.encodedMotor, "採点は根拠として艇ごとに残す");
 assert.strictEqual(
   received.entries[0].motorMaintenanceTheoryV2.weightPolicy,
   "展示・STは確認条件のみ・motor枠内"

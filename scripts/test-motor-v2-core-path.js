@@ -32,10 +32,10 @@ assert.match(
   /core\.buildBoatAnalyses\s*=\s*function\s*\(data\)/,
   "艇分析単体でもVer2入力を通す"
 );
-assert.match(
+assert.doesNotMatch(
   motor,
   /\.\.\.row\.encodedMotor/,
-  "正式評価時だけencodedMotorを既存motor入力へ反映する"
+  "encodedMotorで公式のmotor入力を上書きしない（2026-10-27 本人決定）"
 );
 assert.ok(
   motor.includes("const maintenanceEffect = maintenance") &&

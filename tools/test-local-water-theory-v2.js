@@ -124,10 +124,15 @@ assert(
   omuraOne.score > omuraSix.score,
   "大村の弱風では内コース適性を上位にする"
 );
-assert.notStrictEqual(
+// 2026-10-27: the official local win rate stays in the entry; the score is evidence only.
+assert.strictEqual(
   omura.receivedData.entries[0].localWinRate,
   omuraInput.entries[0].localWinRate,
-  "正式時だけ既存local指数への入力を置換する"
+  "公式の当地勝率を置換しない"
+);
+assert.ok(
+  omura.receivedData.entries[0].localWaterTheoryV2,
+  "水面相性の採点は根拠として艇ごとに残す"
 );
 assert.strictEqual(
   omuraInput.entries[0].localWinRate,
