@@ -275,9 +275,10 @@
       const transformed = source.entries.map((entry, index) => {
         const row = rows[index];
         if (!row.isFormal || !row.encodedMotor) return { ...entry, motorMaintenanceTheoryV2: row };
+        // 2026-10-27 owner decision: keep the official motor/boat rates in the
+        // entry. encodedMotor stays on the theory row as evidence only.
         return {
           ...entry,
-          ...row.encodedMotor,
           motorMaintenanceTheoryV2: row
         };
       });

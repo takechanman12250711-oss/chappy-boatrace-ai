@@ -791,9 +791,10 @@
         const row = rows[index];
         if (!row?.isFormal) return { ...entry };
 
+        // 2026-10-27 owner decision: keep the official local win/2/3 rates in
+        // the entry. The theory row stays attached for evidence and display.
         return {
           ...entry,
-          ...syntheticLocalStats(row.score),
           localWaterTheoryV2: row
         };
       }
