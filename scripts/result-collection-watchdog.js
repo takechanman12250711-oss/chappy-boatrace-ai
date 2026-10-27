@@ -156,6 +156,12 @@ function stepState(jobs, name) {
   const steps = [...latest.values()].flatMap(job => job.steps || []).filter(step => step.name === name);
   return steps.at(-1)?.conclusion || steps.at(-1)?.status || "未実行";
 }
+function latestJobProgressAt(jobs) {
+  const timestamps = [];
+  for (const job of jobs) timestamps.push(job?.started_at, job?.completed_at);
+  const parsed = timestamps.map(Date.parse).filter(Number.isFinite);
+  return parsed.length ? Math.max(...parsed) : NaN;
+}
 function evaluate({ now = new Date(), run, jobs = [], results }) {
   const dates = dueDates(now);
   const data = dates.map(date => inspectResults(date, results[date]));
@@ -169,9 +175,15 @@ function evaluate({ now = new Date(), run, jobs = [], results }) {
   if (!run || !(Date.parse(run.created_at) >= scheduledAfter(dates[0])))
     problems.push(`${dates[0]}の夜間収集が期限までに起動していません`);
   if (active) {
-    const started = run.status === "in_progress" ? run.run_started_at : run.created_at;
-    const limit = run.status === "in_progress" ? 90 * 60000 : 3 * HOUR;
-    if (!(Date.parse(started) > now.getTime() - limit)) problems.push("結果収集が長時間実行中・待機中です");
+    // GitHub sets run_started_at before a concurrency-queued workflow gets a
+    // runner. Use the latest job checkpoint so a long queue does not become an
+    // incident at the instant useful work finally starts. A genuinely stuck
+    // active job still exceeds the same bounded 90-minute allowance.
+    const jobProgress = latestJobProgressAt(jobs);
+    const started = Number.isFinite(jobProgress) ? jobProgress :
+      Date.parse(run.status === "in_progress" ? run.run_started_at : run.created_at);
+    const limit = Number.isFinite(jobProgress) || run.status === "in_progress" ? 90 * 60000 : 3 * HOUR;
+    if (!(started > now.getTime() - limit)) problems.push("結果収集が長時間実行中・待機中です");
   } else if (run) {
     if (run.conclusion !== "success") problems.push(`結果収集workflow: ${run.conclusion || "不明"}`);
     if (stages.resultSave !== "success") problems.push(`結果保存: ${stages.resultSave}`);
