@@ -68,11 +68,16 @@ const progressedAfterQueue = evaluate({ now, run: {
 }, jobs: [{ ...jobs[0], started_at: "2026-09-13T23:55:00Z" }], results });
 assert.equal(progressedAfterQueue.status, "watching",
   "runner activity, not the queue-inclusive workflow timestamp, controls the active timeout");
+const pendingAfterProgress = evaluate({ now, run: {
+  ...successRun, status: "pending", created_at: "2026-09-13T20:00:00Z"
+}, jobs: [{ ...jobs[0], started_at: "2026-09-13T22:00:00Z", completed_at: "2026-09-13T23:55:00Z" }], results });
+assert.equal(pendingAfterProgress.status, "watching",
+  "a later job waiting for a runner retains the previous completed-job progress time");
 const stalledJob = evaluate({ now, run: {
   ...successRun, status: "in_progress", run_started_at: "2026-09-13T23:55:00Z"
 }, jobs: [{ ...jobs[0], started_at: "2026-09-13T21:00:00Z", completed_at: "2026-09-13T21:10:00Z" }], results });
-assert.equal(stalledJob.status, "watching",
-  "a recent workflow start remains the fallback when job timestamps are older");
+assert.equal(stalledJob.status, "error",
+  "once runner checkpoints exist, a stale job cannot be hidden by run_started_at");
 const queue = evaluate({ now, run: { ...successRun, status: "queued", created_at: "2026-09-13T23:59:00Z" }, jobs: [], results });
 assert.equal(queue.status, "watching");
 assert.equal(evaluate({ now, run: successRun, jobs: [], results }).healthy, false);

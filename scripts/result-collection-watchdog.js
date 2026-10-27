@@ -156,8 +156,8 @@ function stepState(jobs, name) {
   const steps = [...latest.values()].flatMap(job => job.steps || []).filter(step => step.name === name);
   return steps.at(-1)?.conclusion || steps.at(-1)?.status || "未実行";
 }
-function latestProgressAt(run, jobs) {
-  const timestamps = [run?.run_started_at];
+function latestJobProgressAt(jobs) {
+  const timestamps = [];
   for (const job of jobs) timestamps.push(job?.started_at, job?.completed_at);
   const parsed = timestamps.map(Date.parse).filter(Number.isFinite);
   return parsed.length ? Math.max(...parsed) : NaN;
@@ -179,8 +179,10 @@ function evaluate({ now = new Date(), run, jobs = [], results }) {
     // runner. Use the latest job checkpoint so a long queue does not become an
     // incident at the instant useful work finally starts. A genuinely stuck
     // active job still exceeds the same bounded 90-minute allowance.
-    const started = run.status === "in_progress" ? latestProgressAt(run, jobs) : Date.parse(run.created_at);
-    const limit = run.status === "in_progress" ? 90 * 60000 : 3 * HOUR;
+    const jobProgress = latestJobProgressAt(jobs);
+    const started = Number.isFinite(jobProgress) ? jobProgress :
+      Date.parse(run.status === "in_progress" ? run.run_started_at : run.created_at);
+    const limit = Number.isFinite(jobProgress) || run.status === "in_progress" ? 90 * 60000 : 3 * HOUR;
     if (!(started > now.getTime() - limit)) problems.push("結果収集が長時間実行中・待機中です");
   } else if (run) {
     if (run.conclusion !== "success") problems.push(`結果収集workflow: ${run.conclusion || "不明"}`);
