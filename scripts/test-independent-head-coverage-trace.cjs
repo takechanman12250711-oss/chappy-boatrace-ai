@@ -29,9 +29,30 @@ function frozenWrapperBytes(file,bytes) {
   if(hash(original)!==expected) throw Error('Frozen v1 wrapper snapshot changed: '+file);
   return original;
 }
+// 2026-10-27: production stopped two stat overwrites (docs/official-stat-values.md).
+// The trial was measured with the overwrites, so restore exactly those lines and
+// require the complete original hash, as with the wrapper forwarder above.
+const FROZEN_STAT_SOURCES = {
+  'js/history-insights-base.js':{sha256:'4b28f11098cc811fcab65ebbfa57c0b9bd01876cb8d9f32cb088cdb1861d201e',
+    current:'        // 2026-10-27 owner decision: keep the official local win/2/3 rates in\n        // the entry. The theory row stays attached for evidence and display.\n        return {\n          ...entry,\n          localWaterTheoryV2: row',
+    original:'        return {\n          ...entry,\n          ...syntheticLocalStats(row.score),\n          localWaterTheoryV2: row'},
+  'js/motor-maintenance-insights.js':{sha256:'19325fd99db43d98dbf0504b30d40d9c6daf1c85832b95c98e283fa51ab3bcc1',
+    current:'        // 2026-10-27 owner decision: keep the official motor/boat rates in the\n        // entry. encodedMotor stays on the theory row as evidence only.\n        return {\n          ...entry,\n          motorMaintenanceTheoryV2: row',
+    original:'        return {\n          ...entry,\n          ...row.encodedMotor,\n          motorMaintenanceTheoryV2: row'}
+};
+function frozenStatBytes(file,bytes) {
+  const frozenSource=FROZEN_STAT_SOURCES[file];
+  if(hash(bytes)===frozenSource.sha256) return bytes;
+  const source=bytes.toString('utf8');
+  if(source.split(frozenSource.current).length!==2) throw Error('Frozen stat source snapshot changed: '+file);
+  const original=Buffer.from(source.replace(frozenSource.current,frozenSource.original));
+  if(hash(original)!==frozenSource.sha256) throw Error('Frozen stat source snapshot changed: '+file);
+  return original;
+}
 function frozenSourceBytes(file) {
   const bytes=fs.readFileSync(path.join(ROOT,file));
-  return Object.hasOwn(FROZEN_WRAPPERS,file)?frozenWrapperBytes(file,bytes):bytes;
+  if(Object.hasOwn(FROZEN_WRAPPERS,file)) return frozenWrapperBytes(file,bytes);
+  return Object.hasOwn(FROZEN_STAT_SOURCES,file)?frozenStatBytes(file,bytes):bytes;
 }
 const source=fs.readFileSync(path.join(ROOT,'js/practical-selection.js'),'utf8');
 const fixtureSource=fs.readFileSync(path.join(__dirname,'test-practical-selection.js'),'utf8');
@@ -235,8 +256,15 @@ test('fixed source manifests and original candidate fingerprint fail closed on c
 test('the old wrapper snapshot rejects unrelated changes and current production wrappers cannot enter the fixed v1 trial',()=>{
   const fixture=makeEnvironment();
   try {
+    // The first changed file in manifest order is reported; since 2026-10-27 that is the stat source.
     assert.throws(()=>trace.verifyReferenceSources(ROOT,fixture.reference),
-      /Reference source hash mismatch: js\/three-course-escape-rescue-fixed5\.js/);
+      /Reference source hash mismatch: js\/(history-insights-base|three-course-escape-rescue-fixed5)\.js/);
+    for(const [file,{sha256}] of Object.entries(FROZEN_STAT_SOURCES)) {
+      const current=fs.readFileSync(path.join(ROOT,file)),original=frozenSourceBytes(file);
+      assert.notEqual(hash(current),sha256);assert.equal(hash(original),sha256);
+      assert.equal(hash(frozenStatBytes(file,original)),sha256);
+      assert.throws(()=>frozenStatBytes(file,Buffer.concat([current,Buffer.from('\n// unrelated change')])),/Frozen stat source snapshot changed/);
+    }
     for(const [file,expected] of Object.entries(FROZEN_WRAPPERS)) {
       const current=fs.readFileSync(path.join(ROOT,file)),original=frozenSourceBytes(file);
       assert.notEqual(hash(current),expected);assert.equal(hash(original),expected);
