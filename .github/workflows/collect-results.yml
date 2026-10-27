@@ -657,7 +657,9 @@ jobs:
   calibrate:
     needs: publish_reports
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Recent hosted-runner checkouts plus full calibration need about 30 minutes.
+    # Keep a bounded margin for validation, checkpoint packaging and upload.
+    timeout-minutes: 45
     outputs:
       artifact_id: ${{ steps.reports.outputs.artifact-id }}
     steps:
