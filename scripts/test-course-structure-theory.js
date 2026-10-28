@@ -40,8 +40,9 @@ function startRow(
   boat,
   st
 ) {
+  // 公式の行頭の数字は艇番（画像と同じ）。コースは行の順番。
   return (
-    `<div>${course}` +
+    `<div>${boat}` +
     `<img src="/static_extra/pc/images/img_boat2_${boat}.png">` +
     `${st}</div>`
   );

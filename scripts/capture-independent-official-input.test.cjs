@@ -154,7 +154,7 @@ test('real parser preserves synthetic HTML F/L and changed entry order without i
   const beforeHtml = '<main>枠 写真 ボートレーサー ' +
     Array.from({ length: 6 }, (_, i) => `${i + 1} 山田 太郎 52.0kg 6.7${i} 0.0`).join(' ') +
     ' 部品交換凡例 スタート展示 ' + order.map((boat, i) =>
-      `<div>${i + 1}<img src="/static_extra/pc/images/img_boat2_${boat}.png">${st[i]}</div>`).join(' ') +
+      `<div>${boat}<img src="/static_extra/pc/images/img_boat2_${boat}.png">${st[i]}</div>`).join(' ') +
     ' 水面気象情報</main>';
   const fixture = apiFixture({ realParser: true, entryHtml, beforeHtml });
   const out = await captureIndependentOfficialInput(target, { handler: fixture.handler, now });
