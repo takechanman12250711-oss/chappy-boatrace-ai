@@ -27,6 +27,17 @@ const OUT = path.join(
   "analysis",
   "hold-pickup-data-shadow-ab.json"
 );
+const FORWARD_CONFIG = path.join(
+  root,
+  "config",
+  "hold-pickup-data-shadow-forward-v1.json"
+);
+const FORWARD_OUT = path.join(
+  root,
+  "data",
+  "analysis",
+  "hold-pickup-data-shadow-forward-v1.json"
+);
 const STAKE = 100;
 const SHARES = [0.3, 0.5, 0.7];
 /*
@@ -83,7 +94,7 @@ function loadResults(date) {
   return map;
 }
 
-function collectRaces(from, to) {
+function collectRaces(from, to, variants = VARIANTS) {
   const days = fs
     .readdirSync(predictionDir)
     .filter((name) => /^\d{8}\.json$/.test(name))
@@ -120,10 +131,10 @@ function collectRaces(from, to) {
       seen.add(key);
       // 元データは大きいため、ここで評価して結果だけ持つ。
       const evals = {};
-      for (const variant of VARIANTS) {
+      for (const variant of variants) {
         evals[variant.id] = shadow.evaluateRace(basis, variant);
       }
-      if (!evals[VARIANTS[0].id]) continue;
+      if (!evals[variants[0].id]) continue;
       races.push({ key, date, result, evals });
     }
   }
@@ -284,7 +295,100 @@ function summarize(rows) {
   return out;
 }
 
+function sha256(file) {
+  return require("node:crypto")
+    .createHash("sha256")
+    .update(fs.readFileSync(file))
+    .digest("hex");
+}
+
+/*
+  前向き（これからのレース）比較。方式・開始日は config で固定済み。
+  評価コードが固定時から変わっていたら集計しない（後出し防止）。
+*/
+function forward() {
+  const config = JSON.parse(fs.readFileSync(FORWARD_CONFIG, "utf8"));
+  const modulePath = path.join(root, config.frozenModule.path);
+  const actualSha = sha256(modulePath);
+  const base = {
+    schemaVersion: 1,
+    id: config.id,
+    generatedAt: new Date().toISOString(),
+    usableForPrediction: false,
+    automaticApplication: false,
+    adoptionGate: config.adoptionGate,
+    prospectiveStartDate: config.prospectiveStartDate,
+    variant: config.variant,
+    checkpointRaces: config.checkpointRaces,
+    frozenModuleSha256: config.frozenModule.sha256,
+    actualModuleSha256: actualSha
+  };
+
+  if (actualSha !== config.frozenModule.sha256) {
+    const report = {
+      ...base,
+      status: "frozen-module-mismatch",
+      message: "評価コードが固定時から変わっているため集計しません"
+    };
+    fs.mkdirSync(path.dirname(FORWARD_OUT), { recursive: true });
+    fs.writeFileSync(FORWARD_OUT, `${JSON.stringify(report, null, 2)}\n`);
+    console.log(JSON.stringify(report, null, 2));
+    process.exitCode = 1;
+    return;
+  }
+
+  const variant = {
+    id: "forward",
+    dataShare: config.variant.dataShare,
+    ineligibleFloor: config.variant.ineligibleFloor
+  };
+  const races = collectRaces(
+    config.prospectiveStartDate,
+    arg("--to", "99999999"),
+    [variant]
+  );
+  const rows = races.map((race) => ({
+    key: race.key,
+    date: race.date,
+    result: race.result,
+    eval: race.evals.forward
+  }));
+  const dates = [...new Set(rows.map((row) => row.date))].sort();
+  const report = {
+    ...base,
+    status:
+      rows.length >= config.checkpointRaces
+        ? "checkpoint-reached"
+        : "collecting",
+    period: {
+      from: dates[0] || null,
+      to: dates[dates.length - 1] || null,
+      days: dates.length,
+      races: rows.length,
+      remainingToCheckpoint: Math.max(
+        0,
+        config.checkpointRaces - rows.length
+      )
+    },
+    summary: rows.length ? summarize(rows) : null
+  };
+
+  fs.mkdirSync(path.dirname(FORWARD_OUT), { recursive: true });
+  fs.writeFileSync(FORWARD_OUT, `${JSON.stringify(report, null, 2)}\n`);
+  console.log(
+    JSON.stringify(
+      { status: report.status, period: report.period },
+      null,
+      2
+    )
+  );
+}
+
 function main() {
+  if (process.argv.includes("--forward")) {
+    forward();
+    return;
+  }
   const from = arg("--from", "00000000");
   const to = arg("--to", "99999999");
   const races = collectRaces(from, to);
