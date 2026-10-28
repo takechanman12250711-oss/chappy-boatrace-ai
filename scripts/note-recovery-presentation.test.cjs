@@ -76,7 +76,7 @@ async function pinned(f, version, options = {}) {
   return { ...mock, ...gate, payload };
 }
 
-test('historical v1-v4 recovery pins exact old body and proof; new publication uses v5', async () => {
+test('historical v1-v5 recovery pins exact old body and proof; new publication uses free v6', async () => {
   const f = original();
   try {
     for (const version of ['readable-v1', 'readable-v2', 'readable-v3', 'readable-v4', 'readable-v5']) {
@@ -102,9 +102,13 @@ test('historical v1-v4 recovery pins exact old body and proof; new publication u
       assert.deepEqual(ui.anonymousVisited, [receipt.url]);
       assert.equal(ui.closed(), 1);
       assert.equal(fs.readFileSync(path.join(f.rootDir, f.sourcePath), 'utf8'), before);
-      if (version !== 'readable-v5') assert.throws(() => requirePublicationGate(p.payload, f.rootDir, f.identity.sourceTime), /handoff_mismatch/);
-      else assert.deepEqual(requirePublicationGate(p.payload, f.rootDir, f.identity.sourceTime), p.payload);
-      assert.equal(publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime).presentationVersion, 'readable-v5');
+      assert.throws(() => requirePublicationGate(p.payload, f.rootDir, f.identity.sourceTime), /handoff_mismatch/);
+      const current = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime);
+      assert.equal(current.presentationVersion, 'readable-v6');
+      assert.equal(current.price, 0);
+      assert.equal(p.payload.price, 200);
+      // The free v6 keeps the exact paid-section bytes of v5; only free wording and the paywall change.
+      if (version === 'readable-v5') assert.equal(current.paidText, p.payload.paidText);
       // Only the free part gains the notice; the paid body and proof stay the v4 bytes.
       if (version === 'readable-v4' || version === 'readable-v5') assert.equal(p.payload.freeText.endsWith(require('./note-readable-article').FREE_NOTICE), version === 'readable-v5');
     }

@@ -6,6 +6,8 @@ const {statusCounts}=require('./note-result-presentation');
 const {SOCIAL_NOTICE,withNoticeIfFits}=require('./note-social-notice');
 const labels={normal:'AI展開',escape:'本命',manshu:'万舟'};
 const articleContents='🧭 無料：展開・注目艇・狙う理由\n🎟️ 有料：買い目・フォーメーション・点数';
+// 2026-10-28: new articles are free in full.
+const freeArticleContents='🧭 展開・注目艇・狙う理由\n🎟️ 買い目・フォーメーション・点数（すべて無料）';
 const dateOf=now=>new Date(now+9*3600000).toISOString().slice(0,10).replaceAll('-','');
 const timeOf=now=>new Date(now+9*3600000).toISOString().slice(11,16);
 const dayLabel=date=>`${Number(date.slice(4,6))}/${Number(date.slice(6,8))}`;
@@ -45,18 +47,20 @@ function announcementCopy(rows,indexUrl,now) {
   const preview=short(safePreview(contextOf(first)?.preview),36);
   const sameSeries=ordered.every(r=>r.articleSeries===first.articleSeries);
   // A shared price describes the whole batch, including rows linked via the index.
+  const allFree=ordered.every(r=>r.price===0);
   const samePrice=[200,300].includes(first.price)&&ordered.every(r=>r.price===first.price);
   const price=samePrice?`${ordered.length>1?'各':''}${first.price}円。`:'価格は各記事で確認。';
+  const lead=allFree?'買い目まで全部無料で読めます。':`まず無料部分を読んで選べます。${price}`;
   const title=`🚤 ${dayLabel(dateOf(now))} ${sameSeries?labels[first.articleSeries]+'予想':'予想記事'}`;
   // Keep the source-backed insight when it fits; never invent a shorter forecast.
   for(const insight of preview?[preview,'']:['']) {
     for(let n=Math.min(3,ordered.length);n>=1;n--) {
       const races=ordered.slice(0,n).map(r=>
-        `${sameSeries?'':labels[r.articleSeries]+'｜'}${r.place}${r.raceNo}R｜🕒 ${timeOf(Date.parse(r.deadlineAt))}締切${!samePrice&&[200,300].includes(r.price)?`｜${r.price}円`:''}`);
+        `${sameSeries?'':labels[r.articleSeries]+'｜'}${r.place}${r.raceNo}R｜🕒 ${timeOf(Date.parse(r.deadlineAt))}締切${allFree?'':!samePrice&&[200,300].includes(r.price)?`｜${r.price}円`:!samePrice&&r.price===0?'｜無料':''}`);
       if(ordered.length>n)races.push(`ほか${ordered.length-n}記事は一覧へ`);
       const text=[[title,...races].join('\n'),
         insight?`${sameSeries?'':labels[first.articleSeries]+'・'}${first.place}${first.raceNo}R：${insight}`:'',
-        articleContents,`まず無料部分を読んで選べます。${price}\n${url}`,SOCIAL_NOTICE]
+        allFree?freeArticleContents:articleContents,`${lead}\n${url}`,SOCIAL_NOTICE]
         .filter(Boolean).join('\n\n');
       if(weight(text)<=280)return text;
     }

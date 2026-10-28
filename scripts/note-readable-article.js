@@ -205,9 +205,7 @@ function readableArticleV4(article, bundle) {
 // bytes, tickets, price and paywall stay exactly as in v4. v4 is frozen in
 // note-recovery-readable-v4.cjs for proof-gated recovery of earlier claims.
 const FREE_NOTICE = '※予想は参考情報です。舟券の購入は20歳以上の方が、ご自身の判断と責任でお願いします。';
-function readableArticle(article, bundle, { presentationVersion = 'readable-v5' } = {}) {
-  if (presentationVersion === 'readable-v4') return readableArticleV4(article, bundle);
-  if (presentationVersion !== 'readable-v5') return readableArticleV3(article, bundle, { presentationVersion });
+function readableArticleV5(article, bundle) {
   const base = readableArticleV4(article, bundle);
   if (base.presentationVersion !== 'readable-v4' || !base.fullText.startsWith(base.freeText)) throw Error('readable_free_prefix_invalid');
   const freeText = `${base.freeText}\n\n${FREE_NOTICE}`;
@@ -215,4 +213,33 @@ function readableArticle(article, bundle, { presentationVersion = 'readable-v5' 
   const fullText = freeText + base.fullText.slice(base.freeText.length);
   return { ...base, presentationVersion: 'readable-v5', freeText, fullText };
 }
-module.exports = { readableArticle, ticketsIn, FREE_NOTICE };
+// 2026-10-28 owner decision: new articles are free. v6 is v5 with the whole
+// article public: no paywall line, and the introduction no longer calls the
+// ticket list a paid part. The ticket section bytes (paidText), tickets,
+// notices and publication proofs stay exactly as in v5. paidText keeps its
+// field name only because proofs and result readers parse that section.
+// v5 is frozen in note-recovery-readable-v5.cjs for recovery of earlier claims.
+const FREE_WORDING = Object.freeze([
+  ['🎟️ 有料部分の内容', '🎟️ この記事の買い目'],
+  ['🔄 コロがし検証対象は、有料部分の末尾に掲載します。', '🔄 コロがし検証対象は、この記事の末尾に掲載します。']
+]);
+function readableArticleV6(article, bundle) {
+  const base = readableArticleV5(article, bundle);
+  const marker = base.paywallMarker;
+  const rest = base.fullText.slice(base.freeText.length);
+  if (!marker || !base.fullText.startsWith(base.freeText) || !rest.startsWith(`\n\n${marker}\n\n`)) throw Error('readable_free_prefix_invalid');
+  let freeText = base.freeText;
+  for (const [paid, free] of FREE_WORDING) freeText = freeText.split(paid).join(free);
+  if (/有料/.test(freeText)) throw Error('readable_free_paid_wording_left');
+  if (mentions(freeText).length) throw new Error('readable_free_ticket_leak');
+  const fullText = freeText + rest.slice(`\n\n${marker}`.length);
+  if (fullText.includes(marker)) throw Error('readable_free_paywall_left');
+  return { ...base, presentationVersion: 'readable-v6', freeText, fullText };
+}
+function readableArticle(article, bundle, { presentationVersion = 'readable-v6' } = {}) {
+  if (presentationVersion === 'readable-v4') return readableArticleV4(article, bundle);
+  if (presentationVersion === 'readable-v5') return readableArticleV5(article, bundle);
+  if (presentationVersion !== 'readable-v6') return readableArticleV3(article, bundle, { presentationVersion });
+  return readableArticleV6(article, bundle);
+}
+module.exports = { readableArticle, ticketsIn, FREE_NOTICE, FREE_WORDING };

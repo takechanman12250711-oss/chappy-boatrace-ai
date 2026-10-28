@@ -7,7 +7,7 @@ const { compactArticle } = require('../js/note-generator');
 const { auditNotePublication } = require('./note-publication-audit');
 const { VERSION: MONITOR_VERSION, independentArticle } = require('./note-independent-monitor-source');
 const { seriesOfBundle, publicationKey, seriesTitle } = require('./note-article-series');
-const { NOTE_PRICE_YEN } = require('./note-pricing');
+const { priceForPresentation } = require('./note-pricing');
 const { sectionProof } = require('./note-published-ticket-sections');
 const MAX_PUBLICATION_TICKETS = 7;
 
@@ -18,8 +18,24 @@ function requirePublicationTicketCount(article) {
   return tickets.length;
 }
 
-function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now(), { presentationVersion = 'readable-v5' } = {}) {
-  if (!['readable-v1', 'readable-v2', 'readable-v3', 'readable-v4', 'readable-v5'].includes(presentationVersion)) throw Error('published_presentation_version_unsupported');
+const PRESENTATION_VERSIONS = Object.freeze(['readable-v1', 'readable-v2', 'readable-v3', 'readable-v4', 'readable-v5', 'readable-v6']);
+// Claims made before the 2026-10-28 free change are rebuilt with the navigation
+// module and config frozen at that time, so their bytes match what was claimed.
+function navigationFor(presentationVersion, rootDir) {
+  if (presentationVersion === 'readable-v6') {
+    const { navigation, loadConfig } = require('./note-marketing-content');
+    return article => navigation(article, loadConfig(rootDir));
+  }
+  const frozen = require('./note-recovery-marketing-content-v1.cjs');
+  // Immutable frozen copy: read beside the code, never from the working data root.
+  const file = path.join(__dirname, '..', 'config/note-marketing.recovery-v1.json');
+  const config = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
+  if (config && (config.version !== 'note-marketing-config-v1' || config.account !== frozen.ACCOUNT)) throw Error('marketing_config_invalid');
+  return article => frozen.navigation(article, config);
+}
+
+function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now(), { presentationVersion = 'readable-v6' } = {}) {
+  if (!PRESENTATION_VERSIONS.includes(presentationVersion)) throw Error('published_presentation_version_unsupported');
   const match = /^data\/note-drafts\/(\d{8})\/\1-(\d{2})-(\d{1,2})-([a-f0-9]{64})\.json$/.exec(String(sourcePath));
   if (!match) throw new Error('publication_source_path_invalid');
   const bytes = fs.readFileSync(path.join(rootDir, sourcePath), 'utf8');
@@ -34,12 +50,12 @@ function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now(), { 
   // A monitoring original is already the final article. It must never pass
   // through the normal AI article generator or its presentation compactor.
   const baseArticle = independent ? independentArticle(bundle) : compactArticle(bundle.article, bundle.record.prediction);
-  const { navigation, loadConfig } = require('./note-marketing-content');
+  const navigation = navigationFor(presentationVersion, rootDir);
   const articleSeries = seriesOfBundle(bundle);
   if (independent && (Date.parse(bundle.capturedAt) > now || Date.parse(bundle.record.selectedAt) > now)) {
     throw new Error('independent_monitor_future_confirmation');
   }
-  const article = seriesTitle(independent ? baseArticle : navigation(baseArticle, loadConfig(rootDir)), articleSeries);
+  const article = seriesTitle(independent ? baseArticle : navigation(baseArticle), articleSeries);
   const audit = auditNotePublication({ ...bundle, article, now: new Date(now).toISOString() });
   if (!audit.contentReady) {
     const error = new Error('publication_content_audit_blocked');
@@ -51,12 +67,13 @@ function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now(), { 
   requirePublicationTicketCount(article);
   // Audit the immutable original first, then verify the approved public copy.
   // Explicit versions are used only by the proof-gated historical recovery
-  // path. New publication gates always reconstruct the v5 default. Historical
+  // path. New publication gates always reconstruct the v6 default. Historical
   // v1 needs its original free introduction as well as the frozen paid body.
   const renderer = presentationVersion === 'readable-v1' ? require('./note-recovery-readable-v1.cjs')
     : presentationVersion === 'readable-v2' ? require('./note-recovery-readable-v2.cjs')
     : presentationVersion === 'readable-v3' ? require('./note-recovery-readable-v3.cjs')
-    : presentationVersion === 'readable-v4' ? require('./note-recovery-readable-v4.cjs') : require('./note-readable-article');
+    : presentationVersion === 'readable-v4' ? require('./note-recovery-readable-v4.cjs')
+    : presentationVersion === 'readable-v5' ? require('./note-recovery-readable-v5.cjs') : require('./note-readable-article');
   const readable = renderer.readableArticle(article, bundle);
   if (readable.presentationVersion === 'readable-v2') {
     // A new receipt must be reproducible from the immutable original itself,
@@ -66,7 +83,7 @@ function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now(), { 
     const sourcePaidText = categories.paidTextFromSections(categories.sourceSections(bundle, articleSeries));
     if (readable.paidText !== sourcePaidText) throw new Error('publication_category_source_mismatch');
   }
-  if (['readable-v3', 'readable-v4', 'readable-v5'].includes(readable.presentationVersion)) {
+  if (['readable-v3', 'readable-v4', 'readable-v5', 'readable-v6'].includes(readable.presentationVersion)) {
     // Bind the compact-derived publication to the exact immutable original,
     // including the unchanged practical subset and its separate appendix.
     const sourcePaidText = require('./note-korogashi-presentation.cjs').paidTextFromSource(bundle, articleSeries);
@@ -93,7 +110,7 @@ function publicationPayload(sourcePath, rootDir = process.cwd(), now = Date.now(
     raceDate: `${bundle.record.date.slice(0, 4)}-${bundle.record.date.slice(4, 6)}-${bundle.record.date.slice(6, 8)}`,
     title: article.title, freeText: article.freeText.trim(), paidText,
     presentationVersion, publishedDisplayProofJson,
-    body: article.fullText, price: NOTE_PRICE_YEN, deadlineAt: bundle.record.deadlineAt,
+    body: article.fullText, price: priceForPresentation(presentationVersion), deadlineAt: bundle.record.deadlineAt,
     practicalTicketCount,
     canPublish: true, blockReason: null
   };
@@ -126,4 +143,4 @@ function verifyPublicationSource(payload, rootDir = process.cwd(), now = Date.no
   return expected;
 }
 
-module.exports = { MAX_PUBLICATION_TICKETS, requirePublicationTicketCount, sourceArticle, publicationPayload, parsePublishedDisplayProof, verifyPublicationSource };
+module.exports = { PRESENTATION_VERSIONS, MAX_PUBLICATION_TICKETS, requirePublicationTicketCount, sourceArticle, publicationPayload, parsePublishedDisplayProof, verifyPublicationSource };

@@ -1,9 +1,11 @@
 'use strict';
 // Presentation only. This never changes a paid article, its price, the saved
 // official deadline, a publication receipt, or the original prediction.
-const EXPIRED = '締切済み｜購入リンクの掲載終了';
-const UNKNOWN = '締切未確認｜購入リンクの掲載保留';
-const NOTICE = '締切済みの記事は購入しないでください。一覧の購入リンクは定期更新時に外します。記事本体の販売停止ではないため、直接URLや更新前の画面からは購入できる場合があります。';
+// 2026-10-28: new articles are free, so the list speaks of article links.
+// The behaviour (removing links after the deadline) is unchanged.
+const EXPIRED = '締切済み｜記事リンクの掲載終了';
+const UNKNOWN = '締切未確認｜記事リンクの掲載保留';
+const NOTICE = '締切済みの記事は振り返り用です。一覧の記事リンクは定期更新時に外します。以前の有料記事は、締切後に購入しないでください（直接URLからは購入できる場合があります）。';
 const ARTICLE = /^https:\/\/note\.com\/great_robin3243\/n\/n[a-f0-9]+$/;
 function requireClock(now) {
   if (!Number.isFinite(now)) throw Error('marketing_expiry_clock_invalid');

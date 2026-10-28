@@ -37,7 +37,8 @@ try {
     assert.deepEqual(shown.modelTickets.sort(), ['1-2-3', '1-2-4']);
     assert.equal(shown.sections.length,1, 'model subset replay is not another prediction category');
     assert.deepEqual(b.article, b.monitor.article);
-    assert.equal(p.price, 200); assert.equal(p.practicalTicketCount, 2);
+    assert.equal(p.price, 0); assert.equal(p.presentationVersion, 'readable-v6'); assert.equal(p.practicalTicketCount, 2);
+    assert.ok(!p.body?.includes?.(b.article.paywallMarker) && !p.freeText.includes('有料'));
     assert.deepEqual(verifyPublicationSource(p, root, NOW), p);
   });
   const rejects = [

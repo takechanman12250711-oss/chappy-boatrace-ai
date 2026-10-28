@@ -42,14 +42,21 @@ const gate = (payload) => validateDraftGate(payload, now);
 const storageState = { cookies: [{ name: 'session', value: 'redacted', domain: '.note.com', path: '/' }], origins: [] };
 const encodedState = Buffer.from(JSON.stringify(storageState), 'utf8').toString('base64');
 
-assert.equal(EXPECTED_PRICE_YEN, 200);
+// 2026-10-28: new articles are free. A payload without the current version is
+// a historical (200-yen) claim; the gate compares each payload with its own price.
+assert.equal(EXPECTED_PRICE_YEN, 0);
+const freeValid = { ...valid, presentationVersion: 'readable-v6', price: 0 };
+assert.deepEqual(gate(freeValid), { ok: true });
+assert.deepEqual(gate({ ...freeValid, price: 200 }), { ok: false, reason: 'price_mismatch' });
+assert.deepEqual(gate({ ...valid, presentationVersion: 'readable-v5', price: 0 }), { ok: false, reason: 'price_mismatch' });
+assert.deepEqual(gate({ ...valid, price: 0 }), { ok: false, reason: 'price_mismatch' });
 assert.deepEqual(gate(valid), { ok: true });
 assert.deepEqual(gate({ ...valid, canPublish: false, blockReason: 'deadline_passed' }), { ok: false, reason: 'deadline_passed' });
 assert.deepEqual(gate({ ...valid, blockReason: 'audit_error' }), { ok: false, reason: 'audit_error' });
 assert.deepEqual(gate({ ...valid, title: '' }), { ok: false, reason: 'title_missing' });
 assert.deepEqual(gate({ ...valid, freeText: '' }), { ok: false, reason: 'free_text_missing' });
 assert.deepEqual(gate({ ...valid, paidText: '' }), { ok: false, reason: 'paid_text_missing' });
-assert.deepEqual(gate({ ...valid, price: 500 }), { ok: false, reason: 'price_not_200' });
+assert.deepEqual(gate({ ...valid, price: 500 }), { ok: false, reason: 'price_mismatch' });
 assert.deepEqual(gate({ ...valid, practicalTicketCount: 8 }), { ok: false, reason: 'ticket_count_exceeds_7' });
 assert.deepEqual(gate({ ...valid, practicalTicketCount: 0 }), { ok: false, reason: 'ticket_count_exceeds_7' });
 assert.deepEqual(gate({ ...valid, deadlineAt: '' }), { ok: false, reason: 'deadline_unavailable' });
@@ -110,6 +117,35 @@ async function checkAsyncGuards() {
   assert.deepEqual(await prepareTransport('auth', {}, handlers), { ok: true });
   await assert.rejects(prepareTransport('invalid', {}, handlers), /unsupported_note_ui_mode/);
   await assert.rejects(run({ env: { NOTE_UI_MODE: 'publish', NOTE_UI_RECOVERY_ONLY: 'true' } }), /explicit_recovery_mode_required/);
+  {
+    const { configureFreePublication, verifyFreePublicBody } = require('./note-github-ui-transport');
+    // Free settings: select note's own 無料 choice and refuse a lingering paid one.
+    for (const scenario of ['already-free', 'click-free', 'no-radio', 'click-ignored', 'paid-stays']) {
+      let freeChecked = scenario === 'already-free' || scenario === 'paid-stays';
+      const radios = {
+        '無料': { count: async () => scenario === 'no-radio' ? 0 : 1, isChecked: async () => freeChecked },
+        '有料': { count: async () => 1, isChecked: async () => scenario === 'paid-stays' }
+      };
+      const ui = { getByRole: (_, { name }) => radios[name],
+        getByText: text => ({ click: async () => { assert.equal(text, '無料'); if (scenario !== 'click-ignored') freeChecked = true; } }) };
+      const run = configureFreePublication(ui);
+      if (['already-free', 'click-free'].includes(scenario)) assert.deepEqual(await run, { ok: true, price: 0, paidStart: null });
+      else await assert.rejects(run, { 'no-radio': /free_toggle_missing/, 'click-ignored': /free_toggle_not_selected/, 'paid-stays': /paid_toggle_still_selected/ }[scenario]);
+    }
+    // Free public page: the whole body, no paywall heading, no price button.
+    const freePayload = { ...valid, presentationVersion: 'readable-v6', price: 0 };
+    for (const scenario of ['ok', 'paywall', 'price', 'body', 'two-bodies']) {
+      const page = {
+        locator: () => ({ first: () => ({ waitFor: async () => {} }), count: async () => scenario === 'two-bodies' ? 2 : 1,
+          innerText: async () => scenario === 'body' ? '無料本文' : articleBody(freePayload) }),
+        getByRole: (role, options) => ({ count: async () =>
+          role === 'heading' ? (scenario === 'paywall' ? 1 : 0) : (scenario === 'price' && String(options.name) === String(/^¥\d/) ? 1 : 0) })
+      };
+      const check = verifyFreePublicBody(page, freePayload);
+      if (scenario === 'ok') await check;
+      else await assert.rejects(check, { paywall: /free_paywall_present/, price: /free_price_present/, body: /free_body_mismatch/, 'two-bodies': /free_body_layout_unverified/ }[scenario]);
+    }
+  }
   const publicUrl = 'https://note.com/great_robin3243/n/nc97383960b4b';
   for (const scenario of ['published', 'other-id', 'external', 'preview', 'login', 'error']) {
     let closed = 0;
