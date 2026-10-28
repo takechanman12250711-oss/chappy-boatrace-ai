@@ -4,7 +4,7 @@
   "monitorVersion": "outer-attack-ticket-central-monitor-v1",
   "sourceShadowVersion": "outer-attack-ticket-shadow-v1",
   "createdAt": "2026-08-31T07:23:49.270Z",
-  "updatedAt": "2026-10-27T10:20:36.014Z",
+  "updatedAt": "2026-10-28T03:59:41.652Z",
   "immutable": true,
   "productionChanged": false,
   "automaticApplication": false,
@@ -60006,16 +60006,18 @@
   "snapshotCount": 136,
   "conflictCount": 0,
   "lastCapture": {
-    "date": "20261027",
-    "capturedAt": "2026-10-27T10:20:36.014Z",
+    "date": "20261028",
+    "capturedAt": "2026-10-28T03:59:41.652Z",
     "diagnostics": {
-      "sourceRecordCount": 65,
-      "preDeadlineRecordCount": 65,
+      "sourceRecordCount": 40,
+      "preDeadlineRecordCount": 39,
       "duplicateRaceKeyCount": 4,
-      "excludedReasons": {},
-      "selectedRaceCount": 61,
+      "excludedReasons": {
+        "source-fetched-at-or-after-deadline": 1
+      },
+      "selectedRaceCount": 35,
       "beforeProspectiveStartCount": 0,
-      "notPersistenceRecommendedCount": 61,
+      "notPersistenceRecommendedCount": 35,
       "notReadyCount": 0,
       "capturedCount": 0,
       "preservedCount": 0,
@@ -60023,12 +60025,12 @@
     }
   },
   "noteCollection": {
-    "checked": 2376,
+    "checked": 2396,
     "saved": 0,
-    "inactive": 1982,
-    "missing": 269,
+    "inactive": 2000,
+    "missing": 271,
     "invalid": 1,
     "missingBasis": 0,
-    "checkedAt": "2026-10-27T10:20:36.014Z"
+    "checkedAt": "2026-10-28T03:59:41.652Z"
   }
 }
