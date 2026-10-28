@@ -14,6 +14,10 @@ test('only a verified publication with matching immutable original becomes an in
   for (const mutation of [{price:0},{url:'https://note.com/another/n/n123'},{verifiedAt:'bad'},{verifiedAt:'2026-09-29T01:00:00+09:00'},{publishedAt:'2026-09-28T11:53:00+09:00',verifiedAt:'2026-09-28T11:54:00+09:00'}]) {
     assert.throws(()=>c.receiptRow({...receipt,...mutation},source,now));
   }
+  const freeReceipt={...receipt,price:0,publishedDisplayProof:{presentationVersion:'readable-v6'}};
+  assert.equal(c.receiptRow(freeReceipt,source,now).price,0);
+  assert.throws(()=>c.receiptRow({...freeReceipt,price:200},source,now),/receipt_invalid/);
+  assert.throws(()=>c.receiptRow({...receipt,publishedDisplayProof:{presentationVersion:'readable-v6'}},source,now),/receipt_invalid/);
   assert.equal(c.receiptRow(receipt,source,now+86400000).raceKey,receipt.raceKey);
   assert.equal(c.receiptRow(receipt,'',now+2*86400000),null);
 });
@@ -34,7 +38,7 @@ test('index uses absolute deadlines, rolls over at midnight JST and refuses dupl
   const tomorrow=c.indexBody([row],config,Date.parse('2026-09-28T15:00:00Z'));
   assert(tomorrow.startsWith('📅 2026年9月29日の予想・結果一覧'));
   assert(!tomorrow.includes(receipt.url));
-  assert(tomorrow.includes('締切済み｜購入リンクの掲載終了'));
+  assert(tomorrow.includes('締切済み｜記事リンクの掲載終了'));
   assert(tomorrow.includes('📅 前日の結果（9月28日）'));
   assert(!c.indexBody([row],config,now+2*86400000).includes(receipt.url));
   assert.throws(()=>c.indexBody([row,row],config,now),/duplicate_publication/);
@@ -72,7 +76,7 @@ test('terminal free-guide NBSP does not block the index; meaningful edits and pa
   assert.equal(c.hash(actual),c.hash(desired));
   assert.equal(c.sameMarketingContent(actual+'\n',desired),true);
   c.requireEditable(actual,c.hash(desired),desired);
-  for(const changed of [desired+' ',desired+'追加',desired.replace('200円','500円'),desired.replace('今日の予想一覧',' 今日の予想一覧')]) {
+  for(const changed of [desired+' ',desired+'追加',desired.replace('全部無料','一部有料'),desired.replace('今日の予想一覧',' 今日の予想一覧')]) {
     assert.throws(()=>c.requireEditable(changed,c.hash(desired),desired),/manual_change/);
   }
   assert.equal(require('./note-editor-content').compareEditorContent(actual,desired).equal,false,'paid article comparison is unchanged');

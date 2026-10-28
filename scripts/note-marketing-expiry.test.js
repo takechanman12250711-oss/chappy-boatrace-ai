@@ -50,7 +50,7 @@ test('rendering is read-only and explains the remaining direct-purchase risk',()
   const rows=[expired,future], before=JSON.stringify(rows);
   e.indexPurchaseLinks(`${expired.url}\n${future.url}`,rows,now);
   assert.equal(JSON.stringify(rows),before);
-  assert(e.NOTICE.includes('定期更新'));assert(e.NOTICE.includes('直接URL'));assert(e.NOTICE.includes('販売停止ではない'));
+  assert(e.NOTICE.includes('定期更新'));assert(e.NOTICE.includes('直接URL'));assert(e.NOTICE.includes('以前の有料記事'));assert(e.NOTICE.includes('購入しないでください'));
 });
 // Integration checks run beside the existing marketing renderer.
 const c = require('./note-marketing-content');

@@ -98,7 +98,7 @@ test('v5 adds only the free notice; frozen v4 reproduces the earlier bytes exact
   const frozenV4 = require('./note-recovery-readable-v4.cjs');
   for (const make of [fixture, ...['escape', 'manshu'].map(kind => () => { const b = independentFixture(); b.monitor.kind = kind; return b; })]) {
     const b = make(), before = JSON.stringify(b);
-    const v4 = readableArticle(b.article, b, { presentationVersion: 'readable-v4' }), v5 = readableArticle(b.article, b);
+    const v4 = readableArticle(b.article, b, { presentationVersion: 'readable-v4' }), v5 = readableArticle(b.article, b, { presentationVersion: 'readable-v5' });
     assert.deepEqual(v4, frozenV4.readableArticle(b.article, b));
     assert.equal(v5.presentationVersion, 'readable-v5');
     assert.equal(v5.freeText, `${v4.freeText}\n\n${FREE_NOTICE}`);
@@ -111,4 +111,22 @@ test('v5 adds only the free notice; frozen v4 reproduces the earlier bytes exact
   }
   for (const phrase of ['参考情報', '20歳以上', '責任']) assert.ok(FREE_NOTICE.includes(phrase));
   assert.doesNotMatch(FREE_NOTICE, /必勝|絶対|確実|儲か|保証/);
+});
+
+test('v6 (default) is fully free: no paywall, no paid wording, same tickets as v5; frozen v5 reproduces v5 bytes', () => {
+  const { FREE_NOTICE } = require('./note-readable-article');
+  const frozenV5 = require('./note-recovery-readable-v5.cjs');
+  for (const make of [fixture, ...['escape', 'manshu'].map(kind => () => { const b = independentFixture(); b.monitor.kind = kind; return b; })]) {
+    const b = make(), before = JSON.stringify(b);
+    const v5 = readableArticle(b.article, b, { presentationVersion: 'readable-v5' }), v6 = readableArticle(b.article, b);
+    assert.deepEqual(v5, frozenV5.readableArticle(b.article, b));
+    assert.equal(v6.presentationVersion, 'readable-v6');
+    assert.equal(v6.paidText, v5.paidText);
+    assert.ok(!v6.fullText.includes(v6.paywallMarker || '\u0000none'), 'no paywall marker in the free article');
+    assert.doesNotMatch(v6.freeText, /有料/);
+    assert.ok(v6.freeText.includes(FREE_NOTICE));
+    assert.deepEqual(ticketsIn(v6.freeText), []);
+    assert.ok(v6.fullText.includes(v6.paidText.trim().split('\n')[0]), 'tickets are in the readable body');
+    assert.equal(JSON.stringify(b), before);
+  }
 });

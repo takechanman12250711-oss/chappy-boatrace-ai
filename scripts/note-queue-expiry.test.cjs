@@ -106,7 +106,7 @@ function harness(options = {}) {
     result.nth = () => result; result.first = () => result;
     return result;
   };
-  let currentUrl, boundaryReads = 0, price = '';
+  let currentUrl, boundaryReads = 0, freeChecks = 0, price = '';
   const blocks = () => [{ text: state.active.freeText, widget: false, buttons: 0, pressed: false },
     { text: 'ラインをこの場所に変更', widget: true, buttons: 1, pressed: true },
     { text: state.active.paidText, widget: false, buttons: 0, pressed: false }];
@@ -128,8 +128,13 @@ function harness(options = {}) {
     if (first() && options.expire !== false && options.phase === 'last-guard') expires();
     return true;
   };
+  // Free articles (readable-v6): the anonymous page shows the whole body with
+  // no paid area or price button.
+  const publicBody = { ...locator(), count: async () => 1, innerText: async () => `${state.active.freeText}\n\n${state.active.paidText}` };
+  const absent = { ...locator(), count: async () => 0 };
   const publicPage = { goto: async url => { publicPage.address = url; return { ok: () => true }; }, url: () => publicPage.address,
-    getByRole: () => locator(), locator: () => ({ evaluateAll: async () => [new Date(state.now).toISOString()] }) };
+    getByRole: (role, query) => role === 'button' || query?.name === 'ここから先は' ? absent : locator(),
+    locator: selector => selector === 'time[datetime]' ? { evaluateAll: async () => [new Date(state.now).toISOString()] } : publicBody };
   const verification = { newPage: async () => publicPage, close: async () => event('verification-close') };
   const browser = { contexts: () => [context], newContext: async () => verification, close: async () => {
     event('browser-close'); state.closed.push(state.active.publicationKey);
@@ -138,7 +143,18 @@ function harness(options = {}) {
   const context = { pages: () => [page], browser: () => browser, newPage: async () => page };
   const page = { goto: async url => { currentUrl = url; return response(null); }, url: () => currentUrl,
     waitForTimeout: async () => {}, context: () => context,
-    getByRole: (role, query) => role === 'button' && query.name === '投稿する' ? submit : locator(),
+    getByRole: (role, query) => {
+      if (role === 'button' && query.name === '投稿する') return submit;
+      if (role === 'radio' && query.name === '無料') return { ...locator(), isChecked: async () => {
+        // The free flow has no paywall editor; expire at the same point between
+        // the settings and the first pre-click gate instead.
+        freeChecks++;
+        if (first() && options.expire !== false && options.phase !== 'last-guard' && freeChecks === 1) expires();
+        return true;
+      } };
+      if (role === 'radio' && query.name === '有料') return { ...locator(), isChecked: async () => false };
+      return locator();
+    },
     getByText: () => locator(), locator: selector => {
       assert.equal(selector, '.ProseMirror.paywall-setting[role="textbox"]'); return editor;
     } };
@@ -187,7 +203,7 @@ function harness(options = {}) {
     './build-note-publish-handoff': { buildLatestHandoff: () => ({ payload: handoff() }) } });
   const publish = async ({ env: runEnv }) => {
     state.active = JSON.parse(fs.readFileSync(runEnv.NOTE_IPHONE_HANDOFF, 'utf8'));
-    boundaryReads = 0; state.afterCleanup = false;
+    boundaryReads = 0; freeChecks = 0; state.afterCleanup = false;
     state.attempts.push(state.active.publicationKey); event('run-start');
     try { return await transport.run({ env: runEnv }); }
     catch (error) { state.errors.push(error); throw error; }

@@ -7,7 +7,7 @@ const { raceDateFromKey } = require('./build-note-iphone-handoff');
 const { requireSeries, publicationKey, seriesOfBundle } = require('./note-article-series');
 
 const DEFAULT_HANDOFF = path.join(process.cwd(), 'data', 'note-publish', 'iphone.json');
-const { NOTE_PRICE_YEN: EXPECTED_PRICE_YEN, isRecordedPrice } = require('./note-pricing');
+const { NOTE_PRICE_YEN: EXPECTED_PRICE_YEN, isRecordedPrice, isFreePrice, priceForPresentation } = require('./note-pricing');
 const NOTE_EDITOR_URL = 'https://editor.note.com/new';
 const BROWSER_USE_API_URL = 'https://api.browser-use.com/api/v4/browsers';
 const BROWSER_USE_PROXY_COUNTRY = 'jp';
@@ -112,7 +112,9 @@ function validateDraftGate(payload, now = Date.now()) {
   if (!String(payload.title || '').trim()) return { ok: false, reason: 'title_missing' };
   if (!String(payload.freeText || '').trim()) return { ok: false, reason: 'free_text_missing' };
   if (!String(payload.paidText || '').trim()) return { ok: false, reason: 'paid_text_missing' };
-  if (Number(payload.price) !== EXPECTED_PRICE_YEN) return { ok: false, reason: 'price_not_200' };
+  // New publications are always rebuilt as the current (free) version by the
+  // source gate; a historical recovery payload keeps its 200-yen claim price.
+  if (Number(payload.price) !== priceForPresentation(payload.presentationVersion)) return { ok: false, reason: 'price_mismatch' };
   if (payload.practicalTicketCount != null &&
       (!Number.isInteger(payload.practicalTicketCount) || payload.practicalTicketCount < 1 || payload.practicalTicketCount > 7)) {
     return { ok: false, reason: 'ticket_count_exceeds_7' };
@@ -417,6 +419,18 @@ async function setPaidBoundary(page, paidText, freeText) {
   }
 }
 
+async function configureFreePublication(page) {
+  // A free article has no price or paid area. Require note's own "無料"
+  // choice to be the selected one; never leave a paid setting in place.
+  const free = page.getByRole('radio', { name: '無料', exact: true });
+  if (await free.count() !== 1) throw new Error('note_free_toggle_missing');
+  if (!(await free.isChecked())) await page.getByText('無料', { exact: true }).click();
+  if (!(await free.isChecked())) throw new Error('note_free_toggle_not_selected');
+  const paid = page.getByRole('radio', { name: '有料', exact: true });
+  if (await paid.count() > 0 && await paid.isChecked()) throw new Error('note_paid_toggle_still_selected');
+  return { ok: true, price: 0, paidStart: null };
+}
+
 async function configurePaidPublication(page, payload) {
   requireDraftGate(payload);
   if (!(await clickVisibleText(page, ['公開に進む', '公開設定']))) {
@@ -424,13 +438,22 @@ async function configurePaidPublication(page, payload) {
   }
   await page.waitForTimeout(1000);
 
+  if (isFreePrice(Number(payload.price))) {
+    const free = await configureFreePublication(page);
+    requireDraftGate(payload);
+    return free;
+  }
+  if (Number(payload.price) !== priceForPresentation(payload.presentationVersion)) {
+    throw new Error('publication_price_unverified');
+  }
+  const price = Number(payload.price);
   await page.getByText('有料', { exact: true }).click();
   if (!(await page.getByRole('radio', { name: '有料', exact: true }).isChecked())) throw new Error('note_paid_toggle_missing');
   requireDraftGate(payload);
-  await setPaidPrice(page, EXPECTED_PRICE_YEN);
+  await setPaidPrice(page, price);
   requireDraftGate(payload);
   await setPaidBoundary(page, payload.paidText, payload.freeText);
-  return { ok: true, price: EXPECTED_PRICE_YEN, paidStart: firstPaidParagraph(payload.paidText) };
+  return { ok: true, price, paidStart: firstPaidParagraph(payload.paidText) };
 }
 
 async function createAuthenticatedPage(browser) {
@@ -609,12 +632,19 @@ function publicArticleUrl(value, noteId) {
 
 async function publishConfiguredArticle(page, payload, paid, guard = requirePublicationGate) {
   preClickPublicationGate(payload, guard);
-  if (paid?.price !== EXPECTED_PRICE_YEN) throw new Error('publication_price_unverified');
+  const price = priceForPresentation(payload.presentationVersion);
+  if (paid?.price !== price || Number(payload.price) !== price) throw new Error('publication_price_unverified');
+  const free = isFreePrice(price);
   const publishedDisplayProof = require('./note-publication-source').parsePublishedDisplayProof(payload);
   const noteId = new URL(page.url()).pathname.match(/^\/notes\/(n[a-f0-9]+)\/publish\/?$/)?.[1];
   if (!noteId || !isEditorUrl(page.url())) throw new Error('publication_editor_identity_missing');
   const title = page.getByRole('heading', { name: payload.title, exact: true });
   if (await title.count() !== 1 || !await title.isVisible()) throw new Error('publication_title_mismatch');
+  if (!free) await verifyPaidBoundaryBeforeClick(page, payload);
+  return clickAndVerifyPublication(page, payload, { noteId, price, free, publishedDisplayProof, guard });
+}
+
+async function verifyPaidBoundaryBeforeClick(page, payload) {
   const editor = page.locator('.ProseMirror.paywall-setting[role="textbox"]');
   const blocks = await editor.evaluate(el => Array.from(el.children, child => ({
     text: (child.textContent || '').trim(), widget: child.classList.contains('ProseMirror-widget'),
@@ -627,6 +657,9 @@ async function publishConfiguredArticle(page, payload, paid, guard = requirePubl
       normalize(blocks.filter(b => !b.widget).map(b => b.text).join('\n')) !== normalize(articleBody(payload))) {
     throw new Error('publication_body_or_boundary_mismatch');
   }
+}
+
+async function clickAndVerifyPublication(page, payload, { noteId, price, free, publishedDisplayProof, guard }) {
   const submit = page.getByRole('button', { name: '投稿する', exact: true });
   if (await submit.count() !== 1 || !await submit.isVisible() || !await submit.isEnabled()) {
     throw new Error('publication_submit_unavailable');
@@ -654,17 +687,35 @@ async function publishConfiguredArticle(page, payload, paid, guard = requirePubl
     const response = await publicPage.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
     if (!response?.ok() || !publicArticleUrl(publicPage.url(), noteId)) throw new Error('publication_public_page_unavailable');
     await publicPage.getByRole('heading', { name: payload.title, exact: true }).waitFor({ state: 'visible', timeout: 15000 });
-    await publicPage.getByRole('heading', { name: 'ここから先は', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
-    await publicPage.getByRole('button', { name: `¥${EXPECTED_PRICE_YEN}`, exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+    if (free) await verifyFreePublicBody(publicPage, payload);
+    else {
+      await publicPage.getByRole('heading', { name: 'ここから先は', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+      await publicPage.getByRole('button', { name: `¥${price}`, exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+    }
     const dates = await publicPage.locator('time[datetime]').evaluateAll(elements => elements.map(el => el.getAttribute('datetime')));
     const publishedAt = dates.find(value => Number.isFinite(Date.parse(value)) &&
       Math.abs(Date.now() - Date.parse(value)) < 10 * 60 * 1000);
     if (!publishedAt) throw new Error('publication_timestamp_unverified_review_required');
     return { version: 'note-publication-receipt-v1', raceKey: payload.raceKey, url,
       articleSeries: payload.articleSeries, publicationKey: payload.publicationKey,
-      publishedAt, verifiedAt: new Date().toISOString(), price: EXPECTED_PRICE_YEN,
+      publishedAt, verifiedAt: new Date().toISOString(), price,
       sourceSha256: payload.sourceSha256, publishedDisplayProof };
   } finally { await verification.close(); }
+}
+
+// A free article must show its whole body, word for word, to a reader who is
+// not logged in, with no paid area or price button anywhere on the page.
+async function verifyFreePublicBody(publicPage, payload) {
+  const body = publicPage.locator('.note-common-styles__textnote-body');
+  await body.first().waitFor({ state: 'visible', timeout: 15000 });
+  if (await body.count() !== 1) throw new Error('publication_free_body_layout_unverified');
+  if (await publicPage.getByRole('heading', { name: 'ここから先は', exact: true }).count() !== 0) {
+    throw new Error('publication_free_paywall_present');
+  }
+  if (await publicPage.getByRole('button', { name: /^¥\d/ }).count() !== 0) throw new Error('publication_free_price_present');
+  if (!require('./note-editor-content').compareEditorContent(await body.innerText(), articleBody(payload)).equal) {
+    throw new Error('publication_free_body_mismatch');
+  }
 }
 
 async function findPublishedArticleInList(page, noteId) {
@@ -706,7 +757,7 @@ function recoveryBodyDiagnostic(actualBody, payload) {
   while (firstMismatch < Math.max(actualLines.length, expectedLines.length) &&
     actualLines[firstMismatch] === expectedLines[firstMismatch]) firstMismatch++;
   return { version: 'note-recovery-body-diagnostic-v1',
-    presentationVersion: ['readable-v1', 'readable-v2', 'readable-v3', 'readable-v4', 'readable-v5'].includes(payload.presentationVersion)
+    presentationVersion: ['readable-v1', 'readable-v2', 'readable-v3', 'readable-v4', 'readable-v5', 'readable-v6'].includes(payload.presentationVersion)
       ? payload.presentationVersion : 'unknown',
     actualLength: actual.length, expectedLength: expected.length,
     actualLines: actualLines.length, expectedLines: expectedLines.length,
@@ -803,12 +854,16 @@ async function verifyRecoveredPublicPage(page, payload, target, publishedAt) {
   const response = await page.goto(target.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
   if (!response?.ok() || page.url() !== target.url) throw new Error('publication_public_page_unavailable');
   await page.getByRole('heading', { name: payload.title, exact: true }).waitFor({ state: 'visible', timeout: 15000 });
-  await page.getByRole('heading', { name: 'ここから先は', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
-  await page.getByRole('button', { name: `¥${EXPECTED_PRICE_YEN}`, exact: true }).waitFor({ state: 'visible', timeout: 15000 });
-  const body = page.locator('.note-common-styles__textnote-body');
-  if (await body.count() !== 1) throw new Error('publication_recovery_free_body_layout_unverified');
-  if (!require('./note-editor-content').compareEditorContent(await body.innerText(), payload.freeText).equal) {
-    throw new Error('publication_recovery_free_body_mismatch');
+  const price = priceForPresentation(payload.presentationVersion);
+  if (isFreePrice(price)) await verifyFreePublicBody(page, payload);
+  else {
+    await page.getByRole('heading', { name: 'ここから先は', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+    await page.getByRole('button', { name: `¥${price}`, exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+    const body = page.locator('.note-common-styles__textnote-body');
+    if (await body.count() !== 1) throw new Error('publication_recovery_free_body_layout_unverified');
+    if (!require('./note-editor-content').compareEditorContent(await body.innerText(), payload.freeText).equal) {
+      throw new Error('publication_recovery_free_body_mismatch');
+    }
   }
   const dates = await page.locator('time[datetime]').evaluateAll(elements => elements.map(el => el.getAttribute('datetime')));
   if (dates.length !== 1 || Date.parse(dates[0]) !== Date.parse(publishedAt)) {
@@ -847,9 +902,13 @@ async function recoverClaimedPublication(page, payload, rootDir = process.cwd(),
       } catch { /* Reader observation never changes the strict full-body guard. */ }
       throw new Error('publication_recovery_body_mismatch');
     }
-    const articleText = await page.locator('article').innerText();
-    if (!String(articleText).replace(/\s+/g, '').includes(`¥${EXPECTED_PRICE_YEN}`)) {
-      throw new Error('publication_price_unverified');
+    const claimPrice = priceForPresentation(payload.presentationVersion);
+    if (Number(payload.price) !== claimPrice) throw new Error('publication_price_unverified');
+    if (!isFreePrice(claimPrice)) {
+      const articleText = await page.locator('article').innerText();
+      if (!String(articleText).replace(/\s+/g, '').includes(`¥${claimPrice}`)) {
+        throw new Error('publication_price_unverified');
+      }
     }
     const dates = await page.locator('time[datetime]').evaluateAll(elements => elements.map(el => el.getAttribute('datetime')));
     const deadline = Date.parse(payload.deadlineAt);
@@ -864,7 +923,7 @@ async function recoverClaimedPublication(page, payload, rootDir = process.cwd(),
     } finally { await verification.close(); }
     const receipt = { version: 'note-publication-receipt-v1', raceKey: payload.raceKey, url,
       articleSeries: payload.articleSeries, publicationKey: payload.publicationKey,
-      publishedAt, verifiedAt: new Date().toISOString(), price: EXPECTED_PRICE_YEN,
+      publishedAt, verifiedAt: new Date().toISOString(), price: claimPrice,
       sourceSha256: payload.sourceSha256, publishedDisplayProof };
     console.log(`NOTE_UI_PUBLICATION_URL_RECOVERED=${url}`);
     return receipt;
@@ -984,9 +1043,9 @@ async function run({ env = process.env } = {}) {
     console.log('NOTE_UI_DRAFT_FILLED=true');
     console.log(`NOTE_UI_DRAFT_URL=${result.url}`);
     console.log(`NOTE_UI_HANDOFF=${absolute}`);
-    console.log('NOTE_UI_PAID_CONFIGURED=true');
+    console.log(`NOTE_UI_PAID_CONFIGURED=${!isFreePrice(paid.price)}`);
     console.log(`NOTE_UI_PRICE_YEN=${paid.price}`);
-    console.log(`NOTE_UI_PAID_START=${paid.paidStart}`);
+    console.log(`NOTE_UI_PAID_START=${paid.paidStart ?? ''}`);
     console.log('NOTE_UI_PUBLISH_CLICKED=false');
   } catch (error) {
     failure = error;
@@ -1035,6 +1094,8 @@ module.exports = {
   isEditorUrl,
   ensureEditorReady,
   configurePaidPublication,
+  configureFreePublication,
+  verifyFreePublicBody,
   createAuthenticatedPage,
   requirePublicationGate,
   preparePublication,

@@ -393,3 +393,14 @@ node scripts/check-charter.js
 本人依頼により、新規公開記事は readable-v5 とし、無料部分の末尾（有料境界の直前）に「※予想は参考情報です。舟券の購入は20歳以上の方が、ご自身の判断と責任でお願いします。」を置く。v4から変わるのは無料部分のこの1段落だけで、有料本文・買い目・価格・有料境界・公開証明（published-ticket-sections）は同じバイトのまま。有料末尾の従来の自己責任文も残す。
 
 v4は `scripts/note-recovery-readable-v4.cjs`（v4当時の renderer と同一バイト）と `note-recovery-presentation.cjs` の HISTORICAL へ固定し、v5以前に作られた claim の復旧は従来どおり v4 で照合する。既存の公開済み記事は変更しない。無料の毎日の一覧と「はじめての方へ」は、過去版の復旧照合が `note-marketing-content.js` と `config/note-marketing.json` の指紋を固定しているため今回は変更しない。X投稿の注意書きは `scripts/note-social-notice.js`（PR #1375）。
+
+## 2026-10-28 新規記事は全部無料（readable-v6、本人承認）
+
+note収益がほぼ無いため、本人が「全部無料にする」を選択。過去の200円・300円指定より優先する。新規公開の通常AI・独立本命（escape）・万舟は readable-v6・価格0円で、有料エリアを作らず買い目まで全文を無料公開する。
+
+- v6はv5の出力から有料境界を外し、前半の「有料部分」の言い回しだけを「この記事の買い目」等へ置き換える。買い目欄（paidText）・券・オッズ・注意書き・公開証明（published-ticket-sections）はv5と同じバイト。前半に買い目・「有料」の語が残れば生成を止める。
+- 価格正本は `scripts/note-pricing.js`（`priceForPresentation`：v6は0円、v1〜v5は200円）。投稿直前ゲートは版ごとの価格と一致しない handoff を `price_mismatch` で止める。版を持たない旧iPhone handoff（draft手動用）は無料公開に使えずfail-closed。
+- 公開設定では「無料」ラジオが1つだけ選択済みであることを確認し、有料切替・価格・境界は操作しない。ログインなしの公開画面で、本文1つ・「ここから先は」なし・¥ボタンなし・全文一致を確認してからreceipt（price 0、v6証明）を保存する。予約・締切120秒超・展示後・中心1〜7点・クリック1回は従来どおり。
+- 過去の200円claimの復旧は従来の価格・境界・本文で照合する。200円時代の `note-pricing.js`・`note-marketing-content.js`・`config/note-marketing.json`・v5 rendererを `note-recovery-pricing-v1.cjs`・`note-recovery-marketing-content-v1.cjs`・`config/note-marketing.recovery-v1.json`・`note-recovery-readable-v5.cjs` へ同一バイトで固定し、HISTORICAL の readable-v5 指紋で検証する。
+- 一覧は無料receiptを「｜無料公開」、過去分を「｜公開時価格 N円」で表示。0円receiptはv6証明付きのときだけ、v6証明は0円のときだけ受け付ける。「はじめての方へ」は無料前提の文面へ更新。Xの告知は「買い目まで全部無料で読めます。」とする。締切後は「記事リンクの掲載終了」。
+- 公開済みの過去記事の価格・本文は変更しない。main反映だけで無料公開開始とせず、最初の無料公開receiptと匿名画面での全文表示確認を開始証拠とする。

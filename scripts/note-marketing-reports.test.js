@@ -79,7 +79,7 @@ test('note retains misses and every unresolved category in the published denomin
     assert(body.includes(`${label}｜尼崎${i+1}R`));
   }
   for(const row of rows) { assert(!body.includes(row.url)); assert(body.includes(row.resultUrl)); }
-  assert(body.includes('締切済み｜購入リンクの掲載終了'));
+  assert(body.includes('締切済み｜記事リンクの掲載終了'));
   assert.equal(JSON.stringify(rows),before);
   const unresolved=indexBody([{...f.row,settlement:{status:'pending'}}],config,now);
   assert(!unresolved.includes('1-2-3')); assert(!unresolved.includes('1-3-2'));
