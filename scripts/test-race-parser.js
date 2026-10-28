@@ -57,13 +57,13 @@ assert.ok(
   "6艇すべての展示タイムを取得する"
 );
 
+// 公式ページの実際の形：行は上から1〜6コース順、行頭の数字は艇番（画像と同じ）。
 function officialStartRow(
-  course,
   boat,
   st
 ) {
   return (
-    `<div>${course}` +
+    `<div>${boat}` +
     `<img src="/static_extra/pc/images/img_boat2_${boat}.png">` +
     `${st}</div>`
   );
@@ -71,12 +71,12 @@ function officialStartRow(
 
 const officialStartHtml = [
   "<main>スタート展示",
-  officialStartRow(1, 1, ".14"),
-  officialStartRow(2, 2, ".24"),
-  officialStartRow(3, 6, ".15"),
-  officialStartRow(4, 3, ".03"),
-  officialStartRow(5, 5, ".06"),
-  officialStartRow(6, 4, ".16"),
+  officialStartRow(1, ".14"),
+  officialStartRow(2, ".24"),
+  officialStartRow(6, ".15"),
+  officialStartRow(3, ".03"),
+  officialStartRow(5, ".06"),
+  officialStartRow(4, ".16"),
   "水面気象情報</main>"
 ].join("");
 const officialStart = parseOfficialRaceHtml(
@@ -91,6 +91,30 @@ assert.deepEqual(
   [1, 2, 6, 3, 5, 4],
   "公式の艇番画像から進入順を保持する"
 );
+assert.deepEqual(
+  officialStart.startExhibition.map(row => row.course),
+  [1, 2, 3, 4, 5, 6],
+  "行の順番をコースとする"
+);
+// 2026-10-23 大村6R：公式スタート展示の並びは 1-6-4-2-3-5。
+const omura6 = parseOfficialRaceHtml("", [
+  "<main>スタート展示",
+  officialStartRow(1, ".16"), officialStartRow(6, ".01"), officialStartRow(4, ".15"),
+  officialStartRow(2, ".18"), officialStartRow(3, ".19"), officialStartRow(5, ".37"),
+  "水面気象情報</main>"
+].join("")).startExhibition;
+assert.deepEqual(omura6.map(row => [row.course, row.boat, row.st]),
+  [[1, 1, 0.16], [2, 6, 0.01], [3, 4, 0.15], [4, 2, 0.18], [5, 3, 0.19], [6, 5, 0.37]],
+  "前付けの進入を艇番と取り違えない");
+// 行頭の数字と画像の艇番が食い違う行は採用せず、公式進入と扱わない。
+const mismatched = parseOfficialRaceHtml("", [
+  "<main>スタート展示",
+  `<div>2<img src="/static_extra/pc/images/img_boat2_1.png">.16</div>`,
+  officialStartRow(2, ".18"), officialStartRow(3, ".19"), officialStartRow(4, ".15"),
+  officialStartRow(5, ".37"), officialStartRow(6, ".01"),
+  "水面気象情報</main>"
+].join("")).startExhibition;
+assert.ok(mismatched.every(row => row.isOfficialCourse === false), "不一致の行は公式進入にしない");
 assert.ok(
   officialStart.startExhibition.every(
     row =>
