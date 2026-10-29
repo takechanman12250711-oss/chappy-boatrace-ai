@@ -438,8 +438,15 @@ async function configureFreePublication(page) {
   return { ok: true, price: 0, paidStart: null };
 }
 
+function editorNoteId(value, stage) {
+  if (!isEditorUrl(value)) return null;
+  return new URL(String(value)).pathname.match(new RegExp(`^/notes/(n[a-f0-9]+)/${stage}/?$`))?.[1] || null;
+}
+
 async function configurePaidPublication(page, payload) {
   requireDraftGate(payload);
+  // The note whose title and body fillDraft just verified.
+  const editNoteId = editorNoteId(page.url(), 'edit');
   if (!(await clickVisibleText(page, ['公開に進む', '公開設定']))) {
     throw new Error('note_publish_settings_button_missing');
   }
@@ -447,8 +454,21 @@ async function configurePaidPublication(page, payload) {
 
   if (isFreePrice(Number(payload.price))) {
     const free = await configureFreePublication(page);
+    // A free article has no paid-area preview, so the settings page shows no
+    // title heading. Bind it to the editor whose title and body fillDraft
+    // verified in this same tab: when the editor URL carried a note id, the
+    // settings page must belong to that very id. (If note had not yet moved
+    // the editor off /new, the same-tab settings page is the saved draft.)
+    // The anonymous public check after the single click still requires the
+    // exact title and the whole body before any receipt is written.
+    if (typeof page.waitForURL === 'function') {
+      await page.waitForURL(url => Boolean(editorNoteId(String(url), 'publish')), { timeout: 20000 }).catch(() => {});
+    }
+    const publishNoteId = editorNoteId(page.url(), 'publish');
+    if (!publishNoteId || (editNoteId && publishNoteId !== editNoteId)) throw new Error('note_free_publish_identity_mismatch');
+    console.log(`NOTE_UI_FREE_IDENTITY=${editNoteId ? 'editor-id' : 'same-tab'}`);
     requireDraftGate(payload);
-    return free;
+    return { ...free, editNoteId: publishNoteId };
   }
   if (Number(payload.price) !== priceForPresentation(payload.presentationVersion)) {
     throw new Error('publication_price_unverified');
@@ -646,7 +666,10 @@ async function publishConfiguredArticle(page, payload, paid, guard = requirePubl
   const noteId = new URL(page.url()).pathname.match(/^\/notes\/(n[a-f0-9]+)\/publish\/?$/)?.[1];
   if (!noteId || !isEditorUrl(page.url())) throw new Error('publication_editor_identity_missing');
   const title = page.getByRole('heading', { name: payload.title, exact: true });
-  if (await title.count() !== 1 || !await title.isVisible()) throw new Error('publication_title_mismatch');
+  const titleShown = await title.count() === 1 && await title.isVisible();
+  // Paid: the paywall preview shows the title. Free: no preview exists, so the
+  // settings page must be the same note whose title and body fillDraft verified.
+  if (!titleShown && !(free && paid?.editNoteId === noteId)) throw new Error('publication_title_mismatch');
   if (!free) await verifyPaidBoundaryBeforeClick(page, payload);
   return clickAndVerifyPublication(page, payload, { noteId, price, free, publishedDisplayProof, guard });
 }
@@ -1078,6 +1101,7 @@ if (require.main === module) {
 
 module.exports = {
   confirmedExpiredPublication,
+  editorNoteId,
   DEFAULT_HANDOFF,
   EXPECTED_PRICE_YEN,
   NOTE_EDITOR_URL,

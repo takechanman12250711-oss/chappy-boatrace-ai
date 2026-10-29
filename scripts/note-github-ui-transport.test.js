@@ -138,6 +138,47 @@ async function checkAsyncGuards() {
       if (['already-free', 'click-free', 'late-page'].includes(scenario)) assert.deepEqual(await run, { ok: true, price: 0, paidStart: null });
       else await assert.rejects(run, { 'no-radio': /free_toggle_missing/, 'click-ignored': /free_toggle_not_selected/, 'paid-stays': /paid_toggle_still_selected/ }[scenario]);
     }
+    // Free settings page shows no title heading: identity comes from the verified editor note id.
+    {
+      const { editorNoteId, publishConfiguredArticle } = require('./note-github-ui-transport');
+      assert.equal(editorNoteId('https://editor.note.com/notes/nabc123/edit/', 'edit'), 'nabc123');
+      assert.equal(editorNoteId('https://editor.note.com/notes/nabc123/publish/', 'publish'), 'nabc123');
+      assert.equal(editorNoteId('https://editor.note.com/new', 'edit'), null);
+      assert.equal(editorNoteId('https://evil.example/notes/nabc123/edit/', 'edit'), null);
+      const pv = { ...valid, presentationVersion: 'readable-v6', price: 0,
+        publishedDisplayProofJson: JSON.stringify({ version: 'published-ticket-sections-v1' }) };
+      const settings = (heading) => ({ url: () => 'https://editor.note.com/notes/nabc123/publish/',
+        getByRole: role => role === 'heading' ? { count: async () => heading, isVisible: async () => heading === 1 }
+          : { count: async () => 0, isVisible: async () => false, isEnabled: async () => false } });
+      const proof = require('./note-publication-source');
+      const parse = proof.parsePublishedDisplayProof; proof.parsePublishedDisplayProof = () => ({});
+      try {
+        // Same note id as the verified editor: passes the identity check and stops at the (absent) submit button.
+        await assert.rejects(publishConfiguredArticle(settings(0), pv, { price: 0, editNoteId: 'nabc123' }, () => {}), /submit_unavailable/);
+        await assert.rejects(publishConfiguredArticle(settings(0), pv, { price: 0, editNoteId: 'nother' }, () => {}), /title_mismatch/);
+        await assert.rejects(publishConfiguredArticle(settings(0), pv, { price: 0 }, () => {}), /title_mismatch/);
+        // Paid articles still require the visible title heading.
+        const paidPayload = { ...pv, presentationVersion: 'readable-v5', price: 200 };
+        await assert.rejects(publishConfiguredArticle(settings(0), paidPayload, { price: 200, editNoteId: 'nabc123' }, () => {}), /title_mismatch/);
+      } finally { proof.parsePublishedDisplayProof = parse; }
+    }
+      // configurePaidPublication (free branch): the settings page must be the editor's own note.
+      const { configurePaidPublication } = require('./note-github-ui-transport');
+      for (const [start, after, expected] of [
+        ['https://editor.note.com/notes/nabc123/edit/', 'https://editor.note.com/notes/nabc123/publish/', 'nabc123'],
+        ['https://editor.note.com/new', 'https://editor.note.com/notes/nabc123/publish/', 'nabc123'],
+        ['https://editor.note.com/notes/nabc123/edit/', 'https://editor.note.com/notes/nzzz999/publish/', /publish_identity_mismatch/],
+        ['https://editor.note.com/notes/nabc123/edit/', 'https://editor.note.com/notes/nabc123/edit/', /publish_identity_mismatch/]]) {
+        let current = start;
+        const freeRadio = { count: async () => 1, isChecked: async () => true, waitFor: async () => {} };
+        freeRadio.first = () => freeRadio;
+        const button = { count: async () => 1, nth: () => ({ isVisible: async () => true, click: async () => { current = after; } }) };
+        const ui = { url: () => current, waitForTimeout: async () => {}, waitForURL: async () => {},
+          getByRole: (role, { name }) => role === 'button' ? button : name === '無料' ? freeRadio : { count: async () => 0, isChecked: async () => false } };
+        const run = configurePaidPublication(ui, { ...valid, presentationVersion: 'readable-v6', price: 0 });
+        if (typeof expected === 'string') assert.equal((await run).editNoteId, expected);
+        else await assert.rejects(run, expected);
+      }
     // Free public page: the whole body, no paywall heading, no price button.
     const freePayload = { ...valid, presentationVersion: 'readable-v6', price: 0 };
     for (const scenario of ['ok', 'paywall', 'price', 'body', 'two-bodies']) {
