@@ -541,5 +541,7 @@ function parseOfficialRaceHtml(entryHtml, beforeHtml = "") {
 }
 
 module.exports = {
-  parseOfficialRaceHtml
+  parseOfficialRaceHtml,
+  // Offline comparisons re-read the saved official row text with the same parser.
+  parseEntryBlock
 };
