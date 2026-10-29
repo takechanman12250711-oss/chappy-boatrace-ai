@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "analysisId": "outer-attack-gate-dropoff-v1",
-  "generatedAt": "2026-10-28T15:19:16.032Z",
+  "generatedAt": "2026-10-29T01:57:40.940Z",
   "productionChanged": false,
   "automaticApplication": false,
   "fixedSignal": {
@@ -16,17 +16,17 @@
     "requiresNegativeRaceFlowGap": true
   },
   "counts": {
-    "total": 4120,
-    "preDeadline": 4102,
+    "total": 4133,
+    "preDeadline": 4115,
     "basisInvalid": 1197,
-    "topNot1": 420,
+    "topNot1": 423,
     "noChallengerPair": 0,
-    "noStAttackAdvantage": 1323,
+    "noStAttackAdvantage": 1328,
     "noFlowSuppression": 143,
-    "noExhibitionAdvantage": 812,
-    "active": 77,
+    "noExhibitionAdvantage": 815,
+    "active": 78,
     "ambiguous": 9,
-    "inactiveOther": 121
+    "inactiveOther": 122
   },
   "rows": [
     {
@@ -99252,6 +99252,375 @@
       "baselineTopBoatNo": 2,
       "matchedBoatNos": [],
       "pairs": []
+    },
+    {
+      "raceKey": "20261029-01-1",
+      "selectedAt": "2026-10-29T01:26:10.017Z",
+      "gate": "topNot1",
+      "status": "inactive",
+      "baselineTopBoatNo": 2,
+      "matchedBoatNos": [],
+      "pairs": []
+    },
+    {
+      "raceKey": "20261029-03-1",
+      "selectedAt": "2026-10-29T01:26:10.111Z",
+      "gate": "noStAttackAdvantage",
+      "status": "inactive",
+      "baselineTopBoatNo": 1,
+      "matchedBoatNos": [],
+      "pairs": [
+        {
+          "boatNo": 3,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": -2.2400000000000007,
+            "roleAttack": -1.2979999999999996,
+            "exhibition": 0,
+            "raceFlow": -3.8999999999999986
+          }
+        },
+        {
+          "boatNo": 4,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": false,
+          "weightedGaps": {
+            "st": -0.3600000000000009,
+            "roleAttack": -0.18699999999999875,
+            "exhibition": 0,
+            "raceFlow": 0
+          }
+        }
+      ]
+    },
+    {
+      "raceKey": "20261029-07-1",
+      "selectedAt": "2026-10-29T01:26:10.368Z",
+      "gate": "noStAttackAdvantage",
+      "status": "inactive",
+      "baselineTopBoatNo": 1,
+      "matchedBoatNos": [],
+      "pairs": [
+        {
+          "boatNo": 3,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": 0,
+            "roleAttack": -0.22,
+            "exhibition": 0,
+            "raceFlow": -3.8249999999999993
+          }
+        },
+        {
+          "boatNo": 4,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": 0.2200000000000003,
+            "roleAttack": -0.06600000000000093,
+            "exhibition": 0,
+            "raceFlow": -4.175000000000001
+          }
+        }
+      ]
+    },
+    {
+      "raceKey": "20261029-08-1",
+      "selectedAt": "2026-10-29T01:00:53.872Z",
+      "gate": "noStAttackAdvantage",
+      "status": "inactive",
+      "baselineTopBoatNo": 1,
+      "matchedBoatNos": [],
+      "pairs": [
+        {
+          "boatNo": 3,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": -3.08,
+            "roleAttack": -2.0130000000000003,
+            "exhibition": 0,
+            "raceFlow": -6.199999999999999
+          }
+        },
+        {
+          "boatNo": 4,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": -0.8799999999999998,
+            "roleAttack": -0.88,
+            "exhibition": 0,
+            "raceFlow": -5.25
+          }
+        }
+      ]
+    },
+    {
+      "raceKey": "20261029-08-2",
+      "selectedAt": "2026-10-29T01:26:10.519Z",
+      "gate": "noExhibitionAdvantage",
+      "status": "inactive",
+      "baselineTopBoatNo": 1,
+      "matchedBoatNos": [],
+      "pairs": [
+        {
+          "boatNo": 3,
+          "matched": false,
+          "attackSignal": true,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": 0.9799999999999998,
+            "roleAttack": 0.605,
+            "exhibition": 0,
+            "raceFlow": -0.3249999999999993
+          }
+        },
+        {
+          "boatNo": 4,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": 0.2200000000000003,
+            "roleAttack": -0.09900000000000063,
+            "exhibition": 0,
+            "raceFlow": -6
+          }
+        }
+      ]
+    },
+    {
+      "raceKey": "20261029-13-1",
+      "selectedAt": "2026-10-29T01:26:11.094Z",
+      "gate": "noExhibitionAdvantage",
+      "status": "inactive",
+      "baselineTopBoatNo": 1,
+      "matchedBoatNos": [],
+      "pairs": [
+        {
+          "boatNo": 3,
+          "matched": false,
+          "attackSignal": true,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": 0.7200000000000003,
+            "roleAttack": 0.14299999999999968,
+            "exhibition": -1.521,
+            "raceFlow": -3.3000000000000007
+          }
+        },
+        {
+          "boatNo": 4,
+          "matched": false,
+          "attackSignal": true,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": 0.06000000000000086,
+            "roleAttack": 0.17599999999999938,
+            "exhibition": -0.8999999999999999,
+            "raceFlow": -3.9250000000000007
+          }
+        }
+      ]
+    },
+    {
+      "raceKey": "20261029-14-5",
+      "selectedAt": "2026-10-29T01:26:11.410Z",
+      "gate": "active",
+      "status": "active",
+      "baselineTopBoatNo": 1,
+      "matchedBoatNos": [
+        4
+      ],
+      "pairs": [
+        {
+          "boatNo": 3,
+          "matched": false,
+          "attackSignal": true,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": 0.4399999999999999,
+            "roleAttack": 0.26399999999999985,
+            "exhibition": -3.9330000000000003,
+            "raceFlow": -3.3000000000000007
+          }
+        },
+        {
+          "boatNo": 4,
+          "matched": true,
+          "attackSignal": true,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": 1.35,
+            "roleAttack": 0.8689999999999999,
+            "exhibition": 1.0710000000000004,
+            "raceFlow": -0.7750000000000021
+          }
+        }
+      ]
+    },
+    {
+      "raceKey": "20261029-15-1",
+      "selectedAt": "2026-10-29T01:26:11.328Z",
+      "gate": "topNot1",
+      "status": "inactive",
+      "baselineTopBoatNo": 2,
+      "matchedBoatNos": [],
+      "pairs": []
+    },
+    {
+      "raceKey": "20261029-16-1",
+      "selectedAt": "2026-10-29T01:26:11.848Z",
+      "gate": "inactiveOther",
+      "status": "inactive",
+      "baselineTopBoatNo": 1,
+      "matchedBoatNos": [],
+      "pairs": [
+        {
+          "boatNo": 3,
+          "matched": false,
+          "attackSignal": true,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": 0.5400000000000006,
+            "roleAttack": 0.18699999999999875,
+            "exhibition": 1.26,
+            "raceFlow": -1.7250000000000014
+          }
+        },
+        {
+          "boatNo": 4,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": -0.6799999999999997,
+            "roleAttack": -0.5720000000000003,
+            "exhibition": 1.8720000000000003,
+            "raceFlow": -5.175000000000001
+          }
+        }
+      ]
+    },
+    {
+      "raceKey": "20261029-18-4",
+      "selectedAt": "2026-10-29T01:00:54.817Z",
+      "gate": "noStAttackAdvantage",
+      "status": "inactive",
+      "baselineTopBoatNo": 1,
+      "matchedBoatNos": [],
+      "pairs": [
+        {
+          "boatNo": 3,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": -0.8400000000000006,
+            "roleAttack": -1.088999999999999,
+            "exhibition": -1.1160000000000005,
+            "raceFlow": -6.225000000000001
+          }
+        },
+        {
+          "boatNo": 4,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": -0.7000000000000001,
+            "roleAttack": -0.9129999999999997,
+            "exhibition": -1.575,
+            "raceFlow": -5.325000000000003
+          }
+        }
+      ]
+    },
+    {
+      "raceKey": "20261029-18-5",
+      "selectedAt": "2026-10-29T01:26:12.130Z",
+      "gate": "noExhibitionAdvantage",
+      "status": "inactive",
+      "baselineTopBoatNo": 1,
+      "matchedBoatNos": [],
+      "pairs": [
+        {
+          "boatNo": 3,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": 0.11999999999999958,
+            "roleAttack": -0.12100000000000016,
+            "exhibition": -0.8099999999999999,
+            "raceFlow": -0.02500000000000213
+          }
+        },
+        {
+          "boatNo": 4,
+          "matched": false,
+          "attackSignal": true,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": 0.5699999999999996,
+            "roleAttack": 0.25299999999999967,
+            "exhibition": -2.394,
+            "raceFlow": -2.7250000000000014
+          }
+        }
+      ]
+    },
+    {
+      "raceKey": "20261029-23-4",
+      "selectedAt": "2026-10-29T01:00:55.180Z",
+      "gate": "topNot1",
+      "status": "inactive",
+      "baselineTopBoatNo": 2,
+      "matchedBoatNos": [],
+      "pairs": []
+    },
+    {
+      "raceKey": "20261029-23-5",
+      "selectedAt": "2026-10-29T01:26:12.182Z",
+      "gate": "noStAttackAdvantage",
+      "status": "inactive",
+      "baselineTopBoatNo": 1,
+      "matchedBoatNos": [],
+      "pairs": [
+        {
+          "boatNo": 3,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": -2.0199999999999996,
+            "roleAttack": -1.4520000000000004,
+            "exhibition": -2.3850000000000007,
+            "raceFlow": -6.350000000000001
+          }
+        },
+        {
+          "boatNo": 4,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": -1.0899999999999992,
+            "roleAttack": -0.7810000000000009,
+            "exhibition": -3.258,
+            "raceFlow": -2.3500000000000014
+          }
+        }
+      ]
     }
   ]
 }
