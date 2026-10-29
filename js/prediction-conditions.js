@@ -114,6 +114,11 @@
     ) || {};
   }
 
+  function startMarker(value) {
+    const marker = text(value).toUpperCase();
+    return marker === "F" || marker === "L" ? marker : "";
+  }
+
   function captureTheoryIndex(prediction, boatNo) {
     const index = getPredictionIndex(prediction, boatNo);
     const attackStrength = numberOrNull(index?.attack);
@@ -196,8 +201,12 @@
         isOfficialCourse:
           start?.isOfficialCourse === true,
         mappingSource:
-          text(start?.mappingSource)
+          text(start?.mappingSource),
+        // Official start-exhibition flag ("F" flying / "L" late), kept beside
+        // the unchanged ST so F.08 is not read as a clean .08. Record only.
+        marker: startMarker(start?.marker)
       },
+      exhibitionStartMarker: startMarker(start?.marker),
       registerNo,
       racerName: text(entry?.racerName || entry?.name || entry?.playerName),
       className: text(entry?.className || entry?.class || entry?.grade),

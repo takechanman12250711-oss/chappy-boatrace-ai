@@ -1,14 +1,15 @@
 {
   "schemaVersion": 1,
   "analysisId": "outer-attack-pipeline-loss-v1",
-  "generatedAt": "2026-10-27T10:30:13.320Z",
+  "generatedAt": "2026-10-29T04:19:06.896Z",
   "productionChanged": false,
   "automaticApplication": false,
-  "signalRaceCount": 86,
+  "signalRaceCount": 88,
   "stageCounts": {
-    "archive-missed": 18,
+    "archive-missed": 19,
     "not-comparable": 20,
-    "settled": 48
+    "settled": 48,
+    "archived-unsettled": 1
   },
   "notComparableVariantStatus": {
     "cover:no-category-candidate": 13,
@@ -4301,6 +4302,72 @@
           }
         ]
       ]
+    },
+    {
+      "raceKey": "20261029-14-5",
+      "selectedAt": "2026-10-29T01:26:11.410Z",
+      "signalGate": "active",
+      "stage": "archived-unsettled",
+      "archiveCount": 1,
+      "exclusionStatus": "",
+      "variantDiagnostics": [
+        [
+          {
+            "variant": "cover",
+            "status": "ready",
+            "candidateCount": 4,
+            "sourceTicketPresent": true,
+            "replacement": {
+              "sourceKey": "cover",
+              "validEntryIndex": 1,
+              "fromTicket": "1-2-4",
+              "toTicket": "1-4-5",
+              "carriedAmountYen": 100,
+              "targetPosition": 2,
+              "candidateId": "",
+              "candidateKind": "canonical-formation",
+              "purchaseEligible": false,
+              "evidenceQualified": true,
+              "priorityScore": 100
+            }
+          },
+          {
+            "variant": "flow",
+            "status": "ready",
+            "candidateCount": 7,
+            "sourceTicketPresent": true,
+            "replacement": {
+              "sourceKey": "flow",
+              "validEntryIndex": 1,
+              "fromTicket": "4-1-2",
+              "toTicket": "1-4-2",
+              "carriedAmountYen": 100,
+              "targetPosition": 2,
+              "candidateId": "shadow-physical-1-4-2",
+              "candidateKind": "outer-attack-shadow-physical",
+              "purchaseEligible": true,
+              "evidenceQualified": true,
+              "priorityScore": 74.054
+            }
+          },
+          {
+            "variant": "hole",
+            "status": "no-source-ticket",
+            "candidateCount": 0,
+            "sourceTicketPresent": false,
+            "replacement": null
+          }
+        ]
+      ]
+    },
+    {
+      "raceKey": "20261029-18-6",
+      "selectedAt": "2026-10-29T01:56:29.530Z",
+      "signalGate": "active",
+      "stage": "archive-missed",
+      "archiveCount": 0,
+      "exclusionStatus": "",
+      "variantDiagnostics": []
     }
   ]
 }

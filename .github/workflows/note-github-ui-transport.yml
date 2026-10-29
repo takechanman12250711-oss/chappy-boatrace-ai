@@ -49,7 +49,7 @@ jobs:
     permissions:
       contents: write
       actions: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
       NOTE_UI_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'publish' }}

@@ -335,7 +335,8 @@ async function main() {
   // Central workflow checkpoint: no parallel writers or dependence on a dirty workspace.
   const workflow = fs.readFileSync(".github/workflows/collect-results.yml", "utf8");
   assert.match(workflow, /group: chappy-main-data-writers\n\s+queue: max\n\s+cancel-in-progress: false/);
-  assert.match(workflow, /calibrate:\n\s+needs: publish_reports/);
+  assert.match(workflow, /calibrate:\n\s+needs: publish_reports\n\s+runs-on: ubuntu-latest\n(?:\s+#.*\n)+\s+timeout-minutes: 45/,
+    "calibration must retain enough bounded time for checkout, full generation, validation and upload");
   assert.match(workflow, /saved_sha: \$\{\{ steps\.save_reports\.outputs\.sha \}\}/);
   assert.match(workflow, /ref: \$\{\{ needs\.collect\.outputs\.saved_sha \}\}/);
   const reportSave = workflow.indexOf("- name: Save derived result reports before calibration");

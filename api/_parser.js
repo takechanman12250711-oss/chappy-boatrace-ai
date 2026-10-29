@@ -356,9 +356,17 @@ function parseStartExhibition(html) {
   let rowMatch;
 
   while ((rowMatch = rowRe.exec(section)) !== null) {
+    // 公式の行は上から1〜6コースの順。行頭の数字はコースではなく
+    // 艇番の表示で、同じ行の艇番画像と一致する（2026-10-23大村6Rで確認。
+    // chappy-boatrace-api #2 と同じ扱い）。
+    const labelBoat = Number(rowMatch[1]);
+    const imageBoat = Number(rowMatch[2]);
+
+    if (labelBoat !== imageBoat) continue;
+
     officialRows.push({
-      course: Number(rowMatch[1]),
-      boat: Number(rowMatch[2]),
+      course: officialRows.length + 1,
+      boat: imageBoat,
       st: Number(`0.${rowMatch[4]}`),
       marker: rowMatch[3] || "",
       mappingSource: "official-start-image",
@@ -366,21 +374,15 @@ function parseStartExhibition(html) {
     });
   }
 
-  const courses = new Set(
-    officialRows.map(item => item.course)
-  );
   const boats = new Set(
     officialRows.map(item => item.boat)
   );
 
   if (
     officialRows.length === 6 &&
-    courses.size === 6 &&
     boats.size === 6
   ) {
-    return officialRows.sort(
-      (a, b) => a.course - b.course
-    );
+    return officialRows;
   }
 
   const stValues = [];

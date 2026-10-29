@@ -44,7 +44,16 @@ const env = { GITHUB_REPOSITORY: 'takechanman12250711-oss/chappy-boatrace-ai', G
 
 async function main() {
   Date.now = () => clock;
-  const payload = publicationPayload(sourcePath, root, clock);
+  const freePayload = publicationPayload(sourcePath, root, clock);
+  assert.equal(freePayload.canPublish, true);
+  assert.equal(freePayload.presentationVersion, 'readable-v6');
+  assert.equal(freePayload.price, 0);
+  assert.doesNotMatch(freePayload.freeText, /有料/);
+  assert.ok(freePayload.freeText.includes(require('./note-readable-article').FREE_NOTICE));
+  // The paid publication flow below stays covered with the claimed v5 era.
+  const payload = publicationPayload(sourcePath, root, clock, { presentationVersion: 'readable-v5' });
+  assert.equal(payload.paidText, freePayload.paidText, 'free v6 keeps the v5 ticket section bytes');
+  assert.equal(payload.price, 200);
   assert.equal(payload.canPublish, true);
   assert.equal(payload.practicalTicketCount, 1);
   assert.equal(payload.presentationVersion, 'readable-v5');
@@ -115,8 +124,10 @@ async function main() {
   const oversizedPath = `data/note-drafts/20300914/20300914-23-10-${sha(oversizedBytes)}.json`;
   fs.writeFileSync(path.join(root, oversizedPath), oversizedBytes);
   assert.throws(() => publicationPayload(oversizedPath, root, clock), /publication_ticket_count_exceeds_7/);
-  assert.deepEqual(verifyPublicationSource(payload, root, clock), payload);
-  assert.deepEqual(requirePublicationGate(payload, root, clock), payload);
+  assert.deepEqual(verifyPublicationSource(freePayload, root, clock), freePayload);
+  assert.deepEqual(requirePublicationGate(freePayload, root, clock), freePayload);
+  // A v5 (200-yen) payload is no longer the current publication.
+  assert.throws(() => requirePublicationGate(payload, root, clock), /handoff_mismatch/);
   // An old source that today's compactor can display still cannot acquire a v3
   // receipt unless the immutable original supports frozen result reconstruction.
   const oldSource = structuredClone(bundle);
@@ -128,13 +139,13 @@ async function main() {
   fs.writeFileSync(path.join(root, oldPath), oldBytes);
   assert.throws(() => publicationPayload(oldPath, root, clock), /published_original_format_unsupported/);
   const { loadCoverTemplate } = require('./note-cover');
-  assert.ok(loadCoverTemplate(payload, root, clock).html.includes('ChappyRound'));
-  assert.throws(() => loadCoverTemplate({ ...payload, paidText: '別原稿' }, root, clock), /mismatch/);
+  assert.ok(loadCoverTemplate(freePayload, root, clock).html.includes('ChappyRound'));
+  assert.throws(() => loadCoverTemplate({ ...freePayload, paidText: '別原稿' }, root, clock), /mismatch/);
   for (const field of ['paidText', 'freeText', 'title', 'body', 'sourceSha256', 'price', 'deadlineAt', 'practicalTicketCount', 'articleSeries', 'publicationKey', 'presentationVersion', 'publishedDisplayProofJson']) {
-    assert.throws(() => verifyPublicationSource({ ...payload, [field]: 'tampered' }, root, clock), /mismatch/);
+    assert.throws(() => verifyPublicationSource({ ...freePayload, [field]: 'tampered' }, root, clock), /mismatch/);
   }
-  assert.throws(() => requirePublicationGate(payload, root, Date.parse(bundle.record.deadlineAt) - 60000), /audit_blocked/);
-  assert.throws(() => requirePublicationGate(payload, root, Date.parse(bundle.record.deadlineAt)), /deadline_passed/);
+  assert.throws(() => requirePublicationGate(freePayload, root, Date.parse(bundle.record.deadlineAt) - 60000), /audit_blocked/);
+  assert.throws(() => requirePublicationGate(freePayload, root, Date.parse(bundle.record.deadlineAt)), /deadline_passed/);
   assert.throws(() => publicationPayload('../../etc/passwd', root, clock), /path_invalid/);
   fs.writeFileSync(path.join(root, sourcePath), bytes + ' ');
   assert.throws(() => publicationPayload(sourcePath, root, clock), /hash_mismatch/);
@@ -240,7 +251,7 @@ async function main() {
       selector === '.note-common-styles__textnote-body' ? { count: async () => 1, innerText: async () => recoveryBody.replace(/\n¥200$/, '') } :
       { evaluateAll: async () => [new Date(clock).toISOString()] }
   };
-  const recoveryMock = require('./note-recovery-test-fixture.cjs').requestFixture(payload, { rootDir: root });
+  const recoveryMock = require('./note-recovery-test-fixture.cjs').requestFixture(payload, { rootDir: root, version: 'readable-v5' });
   const recoveryGate = await require('./note-github-ui-transport').recoveryClaimStatus(payload, env, recoveryMock.request, root);
   const target = { sourcePath, url: 'https://note.com/great_robin3243/n/n123abc' };
   const anonymousRecovery = {
@@ -260,6 +271,38 @@ async function main() {
   assert.equal(JSON.stringify(claimedReceipt).includes('1-2-3'), false);
   recoveryBody = recoveryBody.replace('3 → 4 → 5', '3 → 4 → 6');
   await assert.rejects(recoverClaimedPublication(recoveryPage, payload, root, recoveryGate.recoveryEvidence, target), /recovery_body_mismatch/);
+  // Free v6: no paid boundary step; the anonymous page must show the whole body, with no paywall or price.
+  {
+    let freeClicks = 0, freeClosed = 0;
+    const freeUrl = 'https://note.com/test/n/n456def';
+    let freeBody = `${freePayload.freeText}\n\n${freePayload.paidText}`, paywallCount = 0, priceCount = 0;
+    const freePublic = { goto: async () => ({ ok: () => true }), url: () => freeUrl,
+      getByRole: (role, options) => ({ waitFor: async () => {},
+        count: async () => role === 'heading' && options.name === 'ここから先は' ? paywallCount : role === 'button' ? priceCount : 1 }),
+      locator: selector => selector === '.note-common-styles__textnote-body'
+        ? { first: () => ({ waitFor: async () => {} }), count: async () => 1, innerText: async () => freeBody }
+        : { evaluateAll: async () => [new Date(clock).toISOString()] } };
+    const freeSubmit = { count: async () => 1, isVisible: async () => true, isEnabled: async () => true, click: async () => { freeClicks++; } };
+    const freePage = { url: () => 'https://editor.note.com/notes/n456def/publish/',
+      getByRole: role => role === 'heading' ? { count: async () => 1, isVisible: async () => true } : freeSubmit,
+      locator: selector => selector === 'a[href]' ? { evaluateAll: async () => [freeUrl] } : { evaluate: async () => { throw new Error('no paid editor read'); } },
+      context: () => ({ browser: () => ({ newContext: async () => ({ newPage: async () => freePublic, close: async () => { freeClosed++; } }) }) }) };
+    await assert.rejects(publishConfiguredArticle(freePage, freePayload, { price: 200 }, () => {}), /price_unverified/);
+    await assert.rejects(publishConfiguredArticle(freePage, { ...freePayload, price: 200 }, { price: 0 }, () => {}), /price_unverified/);
+    assert.equal(freeClicks, 0);
+    const freeReceipt = await publishConfiguredArticle(freePage, freePayload, { price: 0 }, () => {});
+    assert.equal(freeReceipt.price, 0);
+    assert.equal(freeReceipt.url, freeUrl);
+    assert.equal(JSON.stringify(freeReceipt).includes('1-2-3'), false);
+    paywallCount = 1;
+    await assert.rejects(publishConfiguredArticle(freePage, freePayload, { price: 0 }, () => {}), /free_paywall_present/);
+    paywallCount = 0; priceCount = 1;
+    await assert.rejects(publishConfiguredArticle(freePage, freePayload, { price: 0 }, () => {}), /free_price_present/);
+    priceCount = 0; freeBody = freeBody.replace('3 → 4 → 5', '3 → 4 → 6');
+    await assert.rejects(publishConfiguredArticle(freePage, freePayload, { price: 0 }, () => {}), /free_body_mismatch/);
+    assert.equal(freeClicks, 4);
+    assert.equal(freeClosed, 4, 'every anonymous check closes its context');
+  }
   assert.equal(fs.readFileSync(path.join(root, sourcePath), 'utf8'), bytes, 'source remains immutable');
   console.log('note publication source, claim and final-click tests passed');
 }

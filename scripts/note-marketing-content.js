@@ -5,7 +5,7 @@ const { createHash } = require('node:crypto');
 const { contentLines, compareEditorContent } = require('./note-editor-content');
 const { SERIES, seriesOfBundle, publicationKey } = require('./note-article-series');
 const { dailySummary,publishedOutcomeLine,dailyPublishedSummary } = require('./note-marketing-reports');
-const { NOTE_PRICE_YEN, isRecordedPrice } = require('./note-pricing');
+const { isRecordedPrice, isFreePrice, FREE_PRESENTATION_VERSIONS } = require('./note-pricing');
 const { NOTICE: EXPIRY_NOTICE, purchaseLinkText, indexPurchaseLinks } = require('./note-marketing-expiry');
 const ACCOUNT = 'great_robin3243';
 const PROFILE = `https://note.com/${ACCOUNT}`;
@@ -58,6 +58,10 @@ function receiptRow(receipt, bytes, now = Date.now()) {
       !Number.isFinite(Date.parse(receipt.publishedAt)) || !Number.isFinite(Date.parse(receipt.verifiedAt)) ||
       Date.parse(receipt.publishedAt) > now || Date.parse(receipt.verifiedAt) > now ||
       Date.parse(receipt.verifiedAt) < Date.parse(receipt.publishedAt)) throw new Error('marketing_receipt_invalid');
+  // A free receipt exists only for a free presentation, and a free
+  // presentation is never listed with a price.
+  const freeVersion = FREE_PRESENTATION_VERSIONS.includes(receipt.publishedDisplayProof?.presentationVersion);
+  if (isFreePrice(receipt.price) !== freeVersion) throw new Error('marketing_receipt_invalid');
   if (!recentDates(now).includes(receipt.raceKey.slice(0, 8))) return null;
   if (createHash('sha256').update(bytes).digest('hex') !== receipt.sourceSha256) throw new Error('marketing_source_hash_mismatch');
   const bundle = JSON.parse(bytes), r = bundle.record;
@@ -93,7 +97,7 @@ function indexBody(rows, config, now = Date.now()) {
     const result=publishedOutcomeLine(r).split('\n');
     return [`${result.shift()}｜${r.place}${r.raceNo}R`,...result,
       `🕒 締切 ${time(r.deadlineAt)}｜公開 ${time(r.publishedAt)}`,
-      `${Number.isInteger(r.ticketCount)?`中心${r.ticketCount}点`:'点数は記事で確認'}${isRecordedPrice(r.price)?`｜公開時価格 ${r.price}円`:'｜価格は記事ページで確認'}`,
+      `${Number.isInteger(r.ticketCount)?`中心${r.ticketCount}点`:'点数は記事で確認'}${!isRecordedPrice(r.price)?'｜価格は記事ページで確認':isFreePrice(r.price)?'｜無料公開':`｜公開時価格 ${r.price}円`}`,
       purchaseLinkText(r, now),'🏁 公式結果を確認',r.resultUrl].join('\n');
   };
   const yesterday = recentDates(now)[1], previous = rows.filter(r=>r.raceKey.slice(0,8)===yesterday)
@@ -113,7 +117,7 @@ function indexBody(rows, config, now = Date.now()) {
     `📅 前日の結果（${Number(yesterday.slice(4,6))}月${Number(yesterday.slice(6,8))}日）\n${summarizePublicRows(previous)}\n\n${groups(previous)}`,
     `📊 集計の詳細\n${details(current,date,'本日')}\n\n${details(previous,yesterday,'前日')}`,
     'ℹ️ 結果の見方\n掲載全券は、締切前に公開した本命・押さえ・展開・万舟の買い目が対象です。別会計の参考予想は含めません。\n同じレースは全体で1回だけ数え、種類別と中心のみの成績は記事単位です。結果待ち・不成立・照合確認中は判定済み件数に含めません。\n払戻は公式の100円あたりの金額です。実際の購入額・利益ではありません。',
-    `🕒 購入前に\n時刻は日本時間です。日付・締切・各記事の価格をご確認ください。新規公開の記事は各${NOTE_PRICE_YEN}円で試行中です。\n${EXPIRY_NOTICE}`,
+    `🕒 ご確認ください\n時刻は日本時間です。日付と締切をご確認ください。新しい予想記事は、買い目まで全部無料で公開しています。以前の有料記事は公開時の価格のままです。\n${EXPIRY_NOTICE}`,
     `📖 はじめての方へ\n${config.guide.url}`, `チャッピーのプロフィール\n${PROFILE}`].join('\n\n');
 }
 function initialState(config) {

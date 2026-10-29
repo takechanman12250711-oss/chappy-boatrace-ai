@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "hold-pickup-data-shadow-forward-v1",
+  "approvedBy": "本人（2026-10-28 会話で「全て許可」）",
+  "frozenAt": "2026-10-28T08:45:00Z",
+  "prospectiveStartDate": "20261029",
+  "productionChanged": false,
+  "usableForPrediction": false,
+  "automaticApplication": false,
+  "adoptionGate": null,
+  "purpose": "2着・3着候補の並びに選手データを3割まぜる案（データ併用0.3）を、これからのレースだけで現行と比べる。本番の予想・note・コロがしには使わない。",
+  "variant": {
+    "dataShare": 0.3,
+    "ineligibleFloor": null
+  },
+  "frozenModule": {
+    "path": "scripts/hold-pickup-data-shadow.js",
+    "sha256": "5b4a6ae0ae3b14b99571ba459ca9e2f49d39fce25d30e9d61561e9fe3314a4e7"
+  },
+  "checkpointRaces": 500,
+  "selectionBoundary": {
+    "usesOnlySavedPreRaceFields": true,
+    "resultUsedForSelection": false,
+    "oddsUsedForSelection": false,
+    "payoutUsedForSelection": false
+  },
+  "comparison": {
+    "baseline": "保存済みの固定表の点数による並び（現行）",
+    "stakePerTicket": 100,
+    "metrics": ["先頭3点の的中レース数", "先頭3点の回収率", "現行との回収率差の95%区間", "先頭3点の並びの種類"]
+  }
+}
