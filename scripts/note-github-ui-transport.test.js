@@ -120,16 +120,22 @@ async function checkAsyncGuards() {
   {
     const { configureFreePublication, verifyFreePublicBody } = require('./note-github-ui-transport');
     // Free settings: select note's own 無料 choice and refuse a lingering paid one.
-    for (const scenario of ['already-free', 'click-free', 'no-radio', 'click-ignored', 'paid-stays']) {
-      let freeChecked = scenario === 'already-free' || scenario === 'paid-stays';
+    for (const scenario of ['already-free', 'click-free', 'no-radio', 'click-ignored', 'paid-stays', 'late-page']) {
+      let freeChecked = scenario === 'already-free' || scenario === 'paid-stays' || scenario === 'late-page';
+      // late-page: the settings page renders the choice only after waitFor.
+      let loaded = scenario !== 'late-page', waits = 0;
+      const freeRadio = { count: async () => scenario === 'no-radio' || !loaded ? 0 : 1, isChecked: async () => freeChecked,
+        waitFor: async ({ state, timeout }) => { waits++; assert.equal(state, 'attached'); assert.ok(timeout >= 10000); loaded = true;
+          if (scenario === 'no-radio') throw new Error('Timeout'); } };
+      freeRadio.first = () => freeRadio;
       const radios = {
-        '無料': { count: async () => scenario === 'no-radio' ? 0 : 1, isChecked: async () => freeChecked },
+        '無料': freeRadio,
         '有料': { count: async () => 1, isChecked: async () => scenario === 'paid-stays' }
       };
       const ui = { getByRole: (_, { name }) => radios[name],
         getByText: text => ({ click: async () => { assert.equal(text, '無料'); if (scenario !== 'click-ignored') freeChecked = true; } }) };
       const run = configureFreePublication(ui);
-      if (['already-free', 'click-free'].includes(scenario)) assert.deepEqual(await run, { ok: true, price: 0, paidStart: null });
+      if (['already-free', 'click-free', 'late-page'].includes(scenario)) assert.deepEqual(await run, { ok: true, price: 0, paidStart: null });
       else await assert.rejects(run, { 'no-radio': /free_toggle_missing/, 'click-ignored': /free_toggle_not_selected/, 'paid-stays': /paid_toggle_still_selected/ }[scenario]);
     }
     // Free public page: the whole body, no paywall heading, no price button.

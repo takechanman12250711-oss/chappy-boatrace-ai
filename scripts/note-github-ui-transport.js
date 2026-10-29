@@ -423,6 +423,13 @@ async function configureFreePublication(page) {
   // A free article has no price or paid area. Require note's own "無料"
   // choice to be the selected one; never leave a paid setting in place.
   const free = page.getByRole('radio', { name: '無料', exact: true });
+  // The settings page loads after the "公開に進む" click. count() does not
+  // wait, so give the choice time to appear before judging it missing
+  // (the paid path's click() already waited the same way).
+  const first = typeof free.first === 'function' ? free.first() : free;
+  if (typeof first.waitFor === 'function') {
+    await first.waitFor({ state: 'attached', timeout: 20000 }).catch(() => {});
+  }
   if (await free.count() !== 1) throw new Error('note_free_toggle_missing');
   if (!(await free.isChecked())) await page.getByText('無料', { exact: true }).click();
   if (!(await free.isChecked())) throw new Error('note_free_toggle_not_selected');
