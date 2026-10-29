@@ -52,5 +52,12 @@ async function publishQueue({ env = process.env, request = fetch, prepare = prep
     return { published, continued: pending.ok };
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 }
-if (require.main === module) publishQueue().catch(error => { console.error(error.message); process.exitCode = 1; });
+// Actions logs are not always readable from review environments; a check-run
+// annotation carries the bounded failure code (never page text or tickets).
+const annotate = message => {
+  if (process.env.GITHUB_ACTIONS !== 'true') return;
+  const code = String(message || '').replace(/[^A-Za-z0-9_.:=-]/g, '_').slice(0, 200);
+  console.log(`::error title=note publish failed::${code}`);
+};
+if (require.main === module) publishQueue().catch(error => { console.error(error.message); annotate(error.message); process.exitCode = 1; });
 module.exports = { publishQueue };
