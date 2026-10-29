@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "version": "local-water-priority-selection-consistency-audit-v1",
-  "generatedAt": "2026-10-28T04:47:41.286Z",
+  "generatedAt": "2026-10-29T12:54:47.140Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
   "methodology": "当地・水面の同一確定コホートで、実5・6号艇勝ちが同じ保存済み候補配列内で最終頭以上のpriorityScoreを持ちながら未選択だった例だけを対象に、締切前保存済みの選択フラグ・除外理由・配列順・役割・重複信号を監査する。",
   "sourceVersion": "local-water-outer-head-priority-score-audit-v1",
-  "sourceGeneratedAt": "2026-10-28T04:25:14.767Z",
+  "sourceGeneratedAt": "2026-10-29T12:08:00.289Z",
   "sourceNextStep": "audit-local-water-priority-selection-consistency",
   "applicable": true,
   "fixedDecisionRules": {
@@ -20,40 +20,40 @@
     "explicitRejectionCountForContractAudit": 5
   },
   "metrics": {
-    "sourceComparableCount": 195,
-    "targetCount": 60,
-    "predictionMatchedCount": 60,
-    "resolvedPairCount": 60,
+    "sourceComparableCount": 201,
+    "targetCount": 61,
+    "predictionMatchedCount": 61,
+    "resolvedPairCount": 61,
     "strictInversionCount": 7,
-    "tiedCount": 53,
+    "tiedCount": 54,
     "explicitWinnerRejectionCount": 0,
     "explicitWinnerSelectedCount": 0,
     "explicitFinalSelectedCount": 0,
-    "duplicateSignalCount": 22,
-    "tieFinalEarlierCount": 53,
+    "duplicateSignalCount": 23,
+    "tieFinalEarlierCount": 54,
     "tieWinnerEarlierCount": 0,
     "tieSameIndexCount": 0,
     "winnerRoleLowerPriorityCount": 0,
     "resolvedPairCoverageRate": 100,
-    "strictInversionRate": 11.7,
-    "tiedRate": 88.3,
-    "duplicateSignalShare": 36.7,
+    "strictInversionRate": 11.5,
+    "tiedRate": 88.5,
+    "duplicateSignalShare": 37.7,
     "tieFinalEarlierShare": 100,
     "winnerRoleLowerPriorityShare": 0
   },
   "classifications": {
-    "tie-final-earlier-order": 53,
+    "tie-final-earlier-order": 54,
     "winner-ahead-selector-inversion": 7
   },
   "signalCounts": {
-    "final-earlier": 60,
-    "same-role-class": 60,
-    "priority-score-tied": 53,
-    "duplicate-overlap": 22,
+    "final-earlier": 61,
+    "same-role-class": 61,
+    "priority-score-tied": 54,
+    "duplicate-overlap": 23,
     "winner-score-ahead": 7
   },
   "comparisonPathCounts": {
-    "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches": 22,
+    "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches": 23,
     "practicalSelection.targetDecisions[0].candidateDecisions": 13,
     "practicalSelection.targetDecisions[1].candidateDecisions": 12,
     "practicalSelection.targetDecisions[2].candidateDecisions": 5,
@@ -2685,6 +2685,53 @@
       ],
       "finalReasons": [
         "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhead・91点・最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 既存フォーメーションに同一買い目あり"
+      ],
+      "classification": "tie-final-earlier-order",
+      "signals": [
+        "priority-score-tied",
+        "duplicate-overlap",
+        "final-earlier",
+        "same-role-class"
+      ]
+    },
+    {
+      "date": "20261028",
+      "jcd": "07",
+      "raceNo": 4,
+      "actualHead": 6,
+      "finalHead": 2,
+      "comparisonPath": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+      "upstreamWinnerScore": 98,
+      "upstreamFinalScore": 98,
+      "upstreamGap": 0,
+      "upstreamWinnerAhead": false,
+      "upstreamTied": true,
+      "upstreamDuplicateReason": true,
+      "resolved": true,
+      "rankingArrayLength": 170,
+      "resolvedWinnerScore": 98,
+      "resolvedFinalScore": 98,
+      "resolvedGap": 0,
+      "winnerIndex": 138,
+      "finalIndex": 54,
+      "orderRelation": "final-earlier",
+      "winnerRole": "unclassified",
+      "finalRole": "unclassified",
+      "winnerSelectionState": {
+        "selected": false,
+        "rejected": false,
+        "duplicate": true
+      },
+      "finalSelectionState": {
+        "selected": false,
+        "rejected": false,
+        "duplicate": true
+      },
+      "winnerReasons": [
+        "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 6号艇のalternate-head・98点・6号艇 菊地 孝平 は🔥攻め艇 / 🌊展開艇 / ⚡道中艇 / 🏠当地巧者 / 💣外コース妙味。総合96点。プラス材料は道中拾い・高配当候補、A1格上、ST速い .11。大きなマイナスは少ない。 / 既存フォーメーションに同一買い目あり"
+      ],
+      "finalReasons": [
+        "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 6号艇のpickup・98点・6コース最内差し・道中拾い / 道中指数上位 / 当地指数上位 / 既存フォーメーションに同一買い目あり"
       ],
       "classification": "tie-final-earlier-order",
       "signals": [
