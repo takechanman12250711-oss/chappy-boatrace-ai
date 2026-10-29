@@ -82,8 +82,8 @@ assert.ok(
 );
 assert.match(
   diagnosticsJob,
-  /timeout-minutes: 90/,
-  "実測約60分の診断に片付け・検証・artifact保存の余裕を確保する",
+  /timeout-minutes: 150/,
+  "実測75〜85分（2026-10-28）の診断に片付け・検証・artifact保存の余裕を確保する",
 );
 assert.doesNotMatch(
   diagnostics,
