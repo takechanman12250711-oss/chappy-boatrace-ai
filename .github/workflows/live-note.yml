@@ -338,7 +338,9 @@ jobs:
 
       - name: Capture paired head coverage and preserve failed attempts
         id: head-forward-capture
-        if: always() && github.event_name != 'pull_request'
+        # Closed 2026-10-29: its pinned predictor sources changed (PR #1385). The
+        # closure record keeps stored attempts and the guard; it only stops capture.
+        if: always() && github.event_name != 'pull_request' && hashFiles('config/independent-head-forward-v2-closed.json') == ''
         continue-on-error: true
         timeout-minutes: 1
         env:

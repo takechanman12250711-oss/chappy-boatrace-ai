@@ -498,9 +498,10 @@ jobs:
   diagnostics:
     needs: collect
     runs-on: ubuntu-latest
-    # Full-history diagnostics currently take about 60 minutes on a hosted runner.
+    # Full-history diagnostics grow with saved data: about 60 minutes earlier,
+    # 75-85 minutes by 2026-10-28, when runs started hitting the old 90-minute cap.
     # Keep a bounded margin for checkout, cleanup, validation and artifact upload.
-    timeout-minutes: 90
+    timeout-minutes: 150
     outputs:
       artifact_id: ${{ steps.reports.outputs.artifact-id }}
     steps:
@@ -657,9 +658,9 @@ jobs:
   calibrate:
     needs: publish_reports
     runs-on: ubuntu-latest
-    # Recent hosted-runner checkouts plus full calibration need about 30 minutes.
+    # Hosted-runner checkout plus full calibration took 30-38 minutes by 2026-10-28.
     # Keep a bounded margin for validation, checkpoint packaging and upload.
-    timeout-minutes: 45
+    timeout-minutes: 75
     outputs:
       artifact_id: ${{ steps.reports.outputs.artifact-id }}
     steps:
