@@ -36,6 +36,13 @@ async function main() {
   events.length = 0;
   await assert.rejects(attachCover(failedUpload, file), /upload_failed/);
   assert.ok(!events.includes('保存'), 'upload failure stops before saving the cover');
+  // A cover that never appears reports a bounded diagnostic of what the page shows.
+  const hidden = { ...page, getByRole: (role, options) => role === 'dialog' ? { count: async () => 1,
+      getByRole: (child, o) => ({ waitFor: async () => {}, click: async () => {} }) }
+    : role === 'main' ? { getByRole: (child, o) => o ? { waitFor: async () => { throw new Error('Timeout 60000ms'); } }
+      : { evaluateAll: async fn => fn([{ getAttribute: k => k === 'alt' ? 'ヘッダー画像' : null }, { getAttribute: k => k === 'alt' ? 'eye catch!' : null }]) } }
+    : { click: async () => {} } };
+  await assert.rejects(attachCover(hidden, file), /^Error: note_cover_not_visible:dialogs=1,imgs=2,names=x\.eyecatch$/);
   console.log('note cover attachment and failure tests passed');
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

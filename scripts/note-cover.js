@@ -30,12 +30,27 @@ async function attachCover(page, file) {
   await dialog.getByRole('slider', { name: '画像のサイズの変更', exact: true }).waitFor({ state: 'visible', timeout: 30000 });
   await dialog.getByRole('button', { name: '保存', exact: true }).click();
   const cover = page.getByRole('main').getByRole('img', { name: 'eyecatch', exact: true });
-  await cover.waitFor({ state: 'visible', timeout: 60000 });
+  try {
+    await cover.waitFor({ state: 'visible', timeout: 60000 });
+  } catch (error) {
+    // Bounded diagnostic for the failure annotation: what the page showed
+    // instead (dialog still open, image names). Never page text or tickets.
+    const state = await coverDiagnostic(page).catch(() => 'unreadable');
+    throw new Error(`note_cover_not_visible:${state}`);
+  }
   await cover.evaluate(image => image.decode());
   if (!await cover.evaluate(image => image.complete && image.naturalWidth > 0)) {
     throw new Error('note_cover_verification_failed');
   }
   return { attached: true };
+}
+
+async function coverDiagnostic(page) {
+  const dialogs = await page.getByRole('dialog').count();
+  const names = await page.getByRole('main').getByRole('img').evaluateAll(images => images
+    .map(image => image.getAttribute('alt') || image.getAttribute('aria-label') || '-'));
+  const clean = value => String(value).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 20) || 'x';
+  return `dialogs=${dialogs},imgs=${names.length},names=${names.slice(0, 6).map(clean).join('.')}`;
 }
 
 function loadCoverTemplate(payload, rootDir = process.cwd(), now = Date.now()) {
