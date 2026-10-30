@@ -1007,7 +1007,7 @@ async function run({ env = process.env } = {}) {
     recoveryEvidence = gate.recoveryEvidence;
     requireRecoveryPublicationGate(draft.payload, recoveryEvidence);
   }
-  const { loadCoverTemplate, attachCover } = require('./note-cover');
+  const { loadCoverTemplate, attachCoverOrSkip } = require('./note-cover');
   const { renderCover } = require('./note-cover-template');
   const coverTemplate = draft && !recoveryOnly ? loadCoverTemplate(draft.payload) : null;
   const { chromium } = require('playwright');
@@ -1059,9 +1059,9 @@ async function run({ env = process.env } = {}) {
       title: String(payload.title).trim(),
       body: articleBody(payload)
     });
-    await attachCover(page, cover);
+    const coverResult = await attachCoverOrSkip(page, cover);
     requireDraftGate(payload);
-    console.log('NOTE_UI_COVER_ATTACHED=true');
+    console.log(`NOTE_UI_COVER_ATTACHED=${coverResult.attached}`);
     const paid = await configurePaidPublication(page, payload);
     if (mode === 'publish') {
       const receipt = await publishConfiguredArticle(page, payload, paid);

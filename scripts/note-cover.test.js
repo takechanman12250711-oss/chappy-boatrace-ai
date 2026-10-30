@@ -1,6 +1,6 @@
 'use strict';
 const assert = require('node:assert/strict');
-const { loadCover, loadSeriesCover, attachCover } = require('./note-cover');
+const { loadCover, loadSeriesCover, attachCover, attachCoverOrSkip } = require('./note-cover');
 
 async function main() {
   const file = loadCover();
@@ -43,6 +43,25 @@ async function main() {
       : { evaluateAll: async fn => fn([{ getAttribute: k => k === 'alt' ? 'ヘッダー画像' : null }, { getAttribute: k => k === 'alt' ? 'eye catch!' : null }]) } }
     : { click: async () => {} } };
   await assert.rejects(attachCover(hidden, file), /^Error: note_cover_not_visible:dialogs=1,imgs=2,names=x\.eyecatch$/);
+  // Cover never appears: close the dialog and continue without a cover.
+  let open = 1; const logs = [];
+  const skipPage = { ...hidden, keyboard: { press: async key => { assert.equal(key, 'Escape'); open = 0; } },
+    waitForTimeout: async () => {},
+    getByRole: (role, o) => role === 'dialog' ? { count: async () => open,
+      getByRole: () => ({ waitFor: async () => {}, click: async () => {} }) } : hidden.getByRole(role, o) };
+  const skipped = await attachCoverOrSkip(skipPage, file, line => logs.push(line));
+  assert.equal(skipped.attached, false);
+  assert.match(logs[0], /^NOTE_UI_COVER_SKIPPED=note_cover_not_visible:/);
+  // Dialog that will not close: stop as before.
+  const stuck = { ...skipPage, keyboard: { press: async () => {} },
+    getByRole: (role, o) => role === 'dialog' ? { count: async () => 1,
+      getByRole: () => ({ waitFor: async () => {}, click: async () => {} }) } : hidden.getByRole(role, o) };
+  await assert.rejects(attachCoverOrSkip(stuck, file, () => {}), /note_cover_not_visible/);
+  // Other failures (upload) still stop.
+  await assert.rejects(attachCoverOrSkip(failedUpload, file, () => {}), /upload_failed/);
+  // Normal path unchanged.
+  loaded = true;
+  assert.deepEqual(await attachCoverOrSkip(page, file, () => {}), { attached: true });
   console.log('note cover attachment and failure tests passed');
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });
