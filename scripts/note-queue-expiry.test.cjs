@@ -192,7 +192,7 @@ function harness(options = {}) {
     } };
   transport = loadIsolated('note-github-ui-transport.js', sandbox, {
     './note-publication-source': sourceDependency,
-    './note-cover': { loadCoverTemplate: () => null, attachCover: async () => event('cover-attach') },
+    './note-cover': { loadCoverTemplate: () => null, attachCoverOrSkip: async () => { event('cover-attach'); return { attached: true }; } },
     './note-cover-template': { renderCover: async () => { throw Error('unexpected_cover_render'); } },
     './note-browserbase-draft-save': draftDependency,
     playwright: { chromium: { connectOverCDP: async address => { assert.equal(address, 'mock://cdp'); return browser; },

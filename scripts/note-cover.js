@@ -45,6 +45,27 @@ async function attachCover(page, file) {
   return { attached: true };
 }
 
+// A cover is decoration, not part of the verified article. When the editor
+// does not show it (2026-10-30 鳴門1R stopped here), close the crop dialog and
+// continue without a cover instead of losing the article. This runs before
+// any publish click, so it can never cause a second publication. If the
+// dialog will not close, stop as before.
+async function attachCoverOrSkip(page, file, log = console.log) {
+  try {
+    return await attachCover(page, file);
+  } catch (error) {
+    if (!/^note_cover_(not_visible|verification_failed)/.test(String(error.message))) throw error;
+    const dialog = page.getByRole('dialog');
+    for (let i = 0; i < 2 && await dialog.count() > 0; i++) {
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(1000);
+    }
+    if (await dialog.count() > 0) throw error;
+    log(`NOTE_UI_COVER_SKIPPED=${error.message.slice(0, 120)}`);
+    return { attached: false, skipped: error.message };
+  }
+}
+
 async function coverDiagnostic(page) {
   const dialogs = await page.getByRole('dialog').count();
   const names = await page.getByRole('main').getByRole('img').evaluateAll(images => images
@@ -80,4 +101,4 @@ function loadCoverTemplate(payload, rootDir = process.cwd(), now = Date.now()) {
   return { lines, html: coverHtml(lines, loadCover().buffer, font) };
 }
 
-module.exports = { COVER_PATH, loadCover, loadSeriesCover, loadCoverTemplate, attachCover };
+module.exports = { COVER_PATH, loadCover, loadSeriesCover, loadCoverTemplate, attachCover, attachCoverOrSkip };
