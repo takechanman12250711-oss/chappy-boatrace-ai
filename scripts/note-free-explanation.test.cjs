@@ -144,7 +144,7 @@ test('v7 (default) rewords only two free lines of v6; frozen v6 reproduces v6 by
     assert.equal(plain.toModelText(v7.paidText), v6.paidText);
     assert.equal(v7.fullText.slice(v7.freeText.length), v6.fullText.slice(v6.freeText.length).replace(v6.paidText, v7.paidText));
     assert.ok(v7.paidText.includes('\n\n⭐ 中心の買い目\n\n') && v7.paidText.includes('追加で買うことを勧めるものではありません'));
-    assert.doesNotMatch(v7.fullText, /コロがし|保存済みの実戦厳選|延べ/);
+    assert.doesNotMatch(v7.fullText, /コロがし|実戦厳選|延べ/);
     assert.match(v7.paidText, /区分ごとの点数を足すと\d+点です/);
     assert.deepEqual(plain.parsePaidText(v7.paidText).modelTickets, require('./note-korogashi-presentation.cjs').parsePaidText(v6.paidText).modelTickets);
     assert.equal(plain.modelProof(v7.paidText, 'a'.repeat(64)).label, '⭐ 中心の買い目');
