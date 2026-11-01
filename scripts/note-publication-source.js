@@ -87,7 +87,9 @@ function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now(), { 
   if (['readable-v3', 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7'].includes(readable.presentationVersion)) {
     // Bind the compact-derived publication to the exact immutable original,
     // including the unchanged practical subset and its separate appendix.
-    const sourcePaidText = require('./note-korogashi-presentation.cjs').paidTextFromSource(bundle, articleSeries);
+    const sourcePaidText = readable.presentationVersion === 'readable-v7'
+      ? require('./note-plain-presentation.cjs').paidTextFromSource(bundle, articleSeries)
+      : require('./note-korogashi-presentation.cjs').paidTextFromSource(bundle, articleSeries);
     if (readable.paidText !== sourcePaidText) throw new Error('publication_model_source_mismatch');
   }
   return { bundle, article: readable, articleSeries, sha256: match[4] };

@@ -21,7 +21,8 @@ const PATHS = Object.freeze({
   pricingSha256: 'scripts/note-pricing.js',
   navigationSha256: 'scripts/note-marketing-content.js',
   navigationConfigSha256: 'config/note-marketing.json',
-  freeExplanationSha256: 'scripts/note-free-explanation.cjs'
+  freeExplanationSha256: 'scripts/note-free-explanation.cjs',
+  plainSha256: 'scripts/note-plain-presentation.cjs'
 });
 const COMMON = Object.freeze({
   generatorSha256: LEGACY_READABLE.generatorSha256,

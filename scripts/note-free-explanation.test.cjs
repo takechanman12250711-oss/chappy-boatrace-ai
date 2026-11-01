@@ -139,8 +139,15 @@ test('v7 (default) rewords only two free lines of v6; frozen v6 reproduces v6 by
     const v6 = readableArticle(b.article, b, { presentationVersion: 'readable-v6' }), v7 = readableArticle(b.article, b);
     assert.deepEqual(v6, frozenV6.readableArticle(b.article, b));
     assert.equal(v7.presentationVersion, 'readable-v7');
-    assert.equal(v7.paidText, v6.paidText);
-    assert.equal(v7.fullText.slice(v7.freeText.length), v6.fullText.slice(v6.freeText.length), 'everything after the free part is unchanged');
+    const plain = require('./note-plain-presentation.cjs');
+    assert.equal(v7.paidText, plain.fromModelText(v6.paidText), 'only the end heading and notice change');
+    assert.equal(plain.toModelText(v7.paidText), v6.paidText);
+    assert.equal(v7.fullText.slice(v7.freeText.length), v6.fullText.slice(v6.freeText.length).replace(v6.paidText, v7.paidText));
+    assert.ok(v7.paidText.includes('\n\n⭐ 中心の買い目\n\n') && v7.paidText.includes('追加で買うことを勧めるものではありません'));
+    assert.doesNotMatch(v7.fullText, /コロがし|保存済みの実戦厳選/);
+    assert.deepEqual(plain.parsePaidText(v7.paidText).modelTickets, require('./note-korogashi-presentation.cjs').parsePaidText(v6.paidText).modelTickets);
+    assert.equal(plain.modelProof(v7.paidText, 'a'.repeat(64)).label, '⭐ 中心の買い目');
+    assert.throws(() => plain.parsePaidText(v6.paidText), /plain_model_appendix_invalid/);
     let expected = v6.freeText;
     for (const [from, to] of PLAIN_WORDING) expected = expected.replace(from, to);
     assert.equal(v7.freeText, expected);

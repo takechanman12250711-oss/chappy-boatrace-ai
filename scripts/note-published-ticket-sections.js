@@ -70,6 +70,7 @@ function describe(sections, presentationVersion) {
 }
 
 function parsePaidSections(paidText, presentationVersion) {
+  if (presentationVersion === 'readable-v7') return require('./note-plain-presentation.cjs').parsePaidText(paidText).sections;
   if (modelPresentation(presentationVersion)) return modelV3.parsePaidText(paidText).sections;
   if (presentationVersion === categoryV2.PRESENTATION_VERSION) return categoryV2.parsePaidSections(paidText);
   requireValue(presentationVersion === 'readable-v1', 'published_presentation_version_unsupported');
@@ -140,7 +141,8 @@ function sectionProof(paidText, presentationVersion = 'readable-v1', { sourceSha
     publishedTicketCount: result.publishedTicketCount,
     sections: sections.map(section => ({ label: section.label, ticketCount: section.tickets.length,
       ticketsSha256: hash(JSON.stringify(section.tickets)), includedInPublishedResult: section.label !== reference })),
-    ...(modelPresentation(presentationVersion) ? { modelSubset: modelV3.modelProof(paidText, sourceSha256) } : {}) };
+    ...(modelPresentation(presentationVersion) ? { modelSubset: (presentationVersion === 'readable-v7'
+      ? require('./note-plain-presentation.cjs') : modelV3).modelProof(paidText, sourceSha256) } : {}) };
 }
 
 function removeAsides(text) {
@@ -252,7 +254,8 @@ function reconstructDisplay(source, presentationVersion, sourceSha256) {
   const { bundle, series, central } = source;
   const sections = categoryPresentation(presentationVersion)
     ? categoryV2.sourceSections(bundle, series) : sourceSections(bundle, series, central);
-  const paidText = modelPresentation(presentationVersion) ? modelV3.paidTextFromSource(bundle, series)
+  const paidText = presentationVersion === 'readable-v7' ? require('./note-plain-presentation.cjs').paidTextFromSource(bundle, series)
+    : modelPresentation(presentationVersion) ? modelV3.paidTextFromSource(bundle, series)
     : presentationVersion === categoryV2.PRESENTATION_VERSION ? categoryV2.paidTextFromSections(sections) : paidTextFromSections(sections);
   return { sections, paidText, proof: sectionProof(paidText, presentationVersion, { sourceSha256 }) };
 }
@@ -323,7 +326,8 @@ function verifiedModelSubset(row, bytes, receipt, now = Date.now()) {
   if (proof) requireValue(equal(proof, reconstructed.proof), 'published_display_proof_mismatch');
   const model = modelPresentation(presentationVersion) ? reconstructed.proof.modelSubset
     : { ...reconstructed.proof.sections[0], sourceSha256: row.sourceSha256 };
-  requireValue(model.label === (presentationVersion === 'readable-v1' ? LABELS[0] : modelV3.MODEL_LABEL) &&
+  requireValue(model.label === (presentationVersion === 'readable-v1' ? LABELS[0]
+    : presentationVersion === 'readable-v7' ? require('./note-plain-presentation.cjs').LABEL : modelV3.MODEL_LABEL) &&
     model.ticketCount === source.central.length && model.ticketsSha256 === hash(JSON.stringify(sorted(source.central))) &&
     model.sourceSha256 === row.sourceSha256, 'model_selection_source_mismatch');
   return Object.freeze({ version: 'note-korogashi-selection-evidence-v1', presentationVersion,

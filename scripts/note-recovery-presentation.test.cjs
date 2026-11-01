@@ -108,7 +108,7 @@ test('historical v1-v5 recovery pins exact old body and proof; new publication u
       assert.equal(current.price, 0);
       assert.equal(p.payload.price, 200);
       // The free v6 keeps the exact paid-section bytes of v5; only free wording and the paywall change.
-      if (version === 'readable-v5') assert.equal(current.paidText, p.payload.paidText);
+      if (version === 'readable-v5') assert.equal(require('./note-plain-presentation.cjs').toModelText(current.paidText), p.payload.paidText);
       // Only the free part gains the notice; the paid body and proof stay the v4 bytes.
       if (version === 'readable-v4' || version === 'readable-v5') assert.equal(p.payload.freeText.endsWith(require('./note-readable-article').FREE_NOTICE), version === 'readable-v5');
     }
@@ -968,7 +968,7 @@ test('free v6 claims recover with frozen v6 code while new publication uses v7',
     assert.equal(p.payload.freeText, v6.freeText, 'recovered v6 body is the frozen v6 body');
     const current = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime);
     assert.equal(current.presentationVersion, 'readable-v7');
-    assert.equal(current.paidText, p.payload.paidText, 'v7 keeps the v6 ticket section bytes');
+    assert.equal(current.paidText, require('./note-plain-presentation.cjs').fromModelText(p.payload.paidText), 'v7 keeps the v6 tickets; only the end heading and notice change');
     assert.notEqual(current.freeText, p.payload.freeText);
   } finally { f.cleanup(); }
 });

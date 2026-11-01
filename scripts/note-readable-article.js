@@ -256,8 +256,15 @@ function readableArticleV7(article, bundle) {
   }
   if (/保存済みの実戦厳選/.test(freeText)) throw Error('readable_plain_wording_left');
   if (mentions(freeText).length) throw new Error('readable_free_ticket_leak');
-  const fullText = freeText + base.fullText.slice(base.freeText.length);
-  return { ...base, presentationVersion: 'readable-v7', freeText, fullText };
+  // The end-of-article subset uses the same name ("⭐ 中心の買い目"). Only its
+  // heading and notice change; tickets and section bytes stay v6.
+  const plain = require('./note-plain-presentation.cjs');
+  const paidText = plain.fromModelText(base.paidText);
+  const rest = base.fullText.slice(base.freeText.length);
+  if (rest.split(base.paidText).length !== 2) throw Error('readable_free_prefix_invalid');
+  const fullText = freeText + rest.replace(base.paidText, paidText);
+  if (/コロがし|保存済みの実戦厳選/.test(fullText)) throw Error('readable_plain_wording_left');
+  return { ...base, presentationVersion: 'readable-v7', freeText, paidText, fullText };
 }
 function readableArticle(article, bundle, { presentationVersion = 'readable-v7' } = {}) {
   if (presentationVersion === 'readable-v4') return readableArticleV4(article, bundle);
