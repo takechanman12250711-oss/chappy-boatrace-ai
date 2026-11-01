@@ -3805,7 +3805,7 @@ function getPaperClassName(item) {
       ) ||
       {
           status: "skipped",
-          reason: "実戦厳選の共通処理を読み込めないため見送り。",
+          reason: "中心の買い目の共通処理を読み込めないため見送り。",
           tickets: []
       };
 

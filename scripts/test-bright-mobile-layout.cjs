@@ -15,7 +15,7 @@ const palette = fs.readFileSync('css/bright-mobile-layout.css','utf8');
 assert.match(palette, /#raceResultStatus \{background:#fff!important/,'asynchronous result panel must have a light surface with dark text');
 assert.match(palette, /\.home-header-actions button \{color:#0769cf!important/,'header refresh stays visible on white');
 for (const file of ['js/stats.js','js/result-ui-phase5.js','js/final-display-owner-v2.js']) {
-  assert(!fs.readFileSync(file,'utf8').includes('実戦厳選'), `${file}: UI-owned labels use 厳選`);
+  assert(!fs.readFileSync(file,'utf8').includes('実戦厳選'), `${file}: UI-owned labels use 中心の買い目`);
 }
 // Source records and internal practical keys are deliberately not rewritten.
 assert(fs.readFileSync('js/render.js','utf8').includes('prediction.practicalSelection'));
@@ -65,7 +65,7 @@ assert.equal(layout.querySelectorAll('.v3-manshu-newspaper').length,1);
 assert.match(layout.querySelector('.is-cover').textContent,/参考候補/);
 assert.equal(layout.querySelector('.chappy-final-buy-total').textContent,'7点');
 assert.equal(layout.querySelector('.is-manshu .chappy-final-buy-meta').textContent,'1点');
-assert.match(layout.querySelector('.chappy-practical-visible-head').textContent,/厳選/);
+assert.match(layout.querySelector('.chappy-practical-visible-head').textContent,/中心の買い目/);
 assert(!layout.querySelector('.chappy-practical-visible-head').textContent.includes('実戦厳選'));
 assert.equal(JSON.stringify(prediction),before,'presentation must not mutate source prediction');
 const ui = window.ChappyFinalMobileUi;

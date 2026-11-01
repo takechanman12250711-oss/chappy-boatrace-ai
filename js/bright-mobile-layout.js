@@ -115,9 +115,11 @@
     // Keep them as available evidence rather than ahead of the selected race.
     for (const child of [...area.children]) if (child !== layout && !child.contains(layout)) detailBody.appendChild(child);
     // Display name only. The internal practical category and stored tickets stay intact.
-    area.querySelectorAll('.chappy-practical-visible-head strong,.chappy-practical-tag,.is-practical-fallback .chappy-final-buy-label').forEach(node => {
-      if (node.textContent.includes('実戦厳選')) node.textContent = node.textContent.replaceAll('実戦厳選', '厳選');
-    });
+    // Owner: readers see "中心の買い目", never the internal term 実戦厳選.
+    const walker = area.ownerDocument.createTreeWalker(area, 4 /* NodeFilter.SHOW_TEXT */);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (node.nodeValue.includes('実戦厳選')) node.nodeValue = node.nodeValue.replaceAll('実戦厳選買い目', '中心の買い目').replaceAll('実戦厳選', '中心の買い目');
+    }
     const intro = layout.querySelector('.chappy-bright-intro');
     const link = intro?.querySelector('.chappy-open-evidence');
     if (link && !link.dataset.bound) { link.dataset.bound = '1'; link.addEventListener('click', openEvidence); }

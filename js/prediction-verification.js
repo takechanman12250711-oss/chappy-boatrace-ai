@@ -1238,7 +1238,7 @@
     if (detail.practicalHit) {
       return {
         primaryStage: "的中",
-        primaryEvidence: "実戦厳選の買い目が公式結果と一致しました。",
+        primaryEvidence: "中心の買い目が公式結果と一致しました。",
         stages: PRIORITY_STAGES.map(stage => reviewStage(stage, "対象外", "的中のため原因判定なし"))
       };
     }
