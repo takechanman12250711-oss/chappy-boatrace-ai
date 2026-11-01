@@ -4,7 +4,7 @@
   "monitorVersion": "outer-attack-ticket-central-monitor-v1",
   "sourceShadowVersion": "outer-attack-ticket-shadow-v1",
   "createdAt": "2026-08-31T07:23:49.270Z",
-  "updatedAt": "2026-11-01T02:16:43.308Z",
+  "updatedAt": "2026-11-01T04:06:10.564Z",
   "immutable": true,
   "productionChanged": false,
   "automaticApplication": false,
@@ -69571,35 +69571,967 @@
         "centralCapturedAt": "2026-11-01T02:01:10.821Z",
         "immutableFingerprint": "sha256:a1bbb2680b4c6f652b892d1ed411590d6d16ffa1e14de5ed007381d7a9dfbb03"
       }
+    },
+    "20261101-17-6|2026-11-01T03:21:36.624Z": {
+      "archiveKey": "20261101-17-6|2026-11-01T03:21:36.624Z",
+      "sourceRaceKey": "20261101-17-6",
+      "sourceKind": "verification-prediction",
+      "sourcePredictionCapturedAt": "2026-11-01T03:21:36.624Z",
+      "centralCapturedAt": "2026-11-01T04:06:10.564Z",
+      "immutableFingerprint": "sha256:91872f95e55def6549092bc5a74fe525ffa30ac74f338aa38535e71177440580",
+      "sourceShadowVersion": "outer-attack-ticket-shadow-v1",
+      "productionChanged": false,
+      "automaticApplication": false,
+      "snapshot": {
+        "schemaVersion": 1,
+        "experimentId": "outer-attack-ticket-shadow-v1",
+        "status": "shadow-only",
+        "productionChanged": false,
+        "automaticApplication": false,
+        "resultUsedForGeneration": false,
+        "retrospectiveBackfillAllowed": false,
+        "replacementPolicy": "category-tail-preserve-leading-order",
+        "sourceRaceKey": "20261101-17-6",
+        "captureAt": "2026-11-01T03:21:36.624Z",
+        "captureKey": "20261101-17-6|2026-11-01T03:21:36.624Z",
+        "generatedAt": "2026-11-01T03:21:36.624Z",
+        "signal": {
+          "status": "active",
+          "active": true,
+          "targetBoatNo": 3,
+          "basisValid": true,
+          "baselineTopBoatNo": 1,
+          "matchedBoatNos": [
+            3
+          ],
+          "pairs": [
+            {
+              "boatNo": 3,
+              "matched": true,
+              "attackSignal": true,
+              "flowSuppressed": true,
+              "weightedGaps": {
+                "st": 0.2200000000000003,
+                "roleAttack": 0.40699999999999875,
+                "exhibition": 1.368,
+                "raceFlow": -0.625
+              }
+            },
+            {
+              "boatNo": 4,
+              "matched": false,
+              "attackSignal": false,
+              "flowSuppressed": true,
+              "weightedGaps": {
+                "st": -0.33999999999999986,
+                "roleAttack": 0.06599999999999938,
+                "exhibition": 1.4489999999999994,
+                "raceFlow": -0.875
+              }
+            }
+          ],
+          "fixedThresholds": {
+            "st": 0,
+            "roleAttack": 0.25,
+            "exhibition": 0.5
+          },
+          "baselineProfileId": "p0-current"
+        },
+        "a": {
+          "formations": {
+            "main": [
+              {
+                "ticket": "3-1-5",
+                "amountYen": 100
+              },
+              {
+                "ticket": "3-2-5",
+                "amountYen": 100
+              },
+              {
+                "ticket": "3-1-6",
+                "amountYen": 100
+              }
+            ],
+            "cover": [
+              {
+                "ticket": "1-2-3",
+                "amountYen": 100
+              },
+              {
+                "ticket": "1-2-4",
+                "amountYen": 100
+              }
+            ],
+            "flow": [
+              {
+                "ticket": "3-2-1",
+                "amountYen": 100
+              },
+              {
+                "ticket": "3-2-6",
+                "amountYen": 100
+              }
+            ],
+            "possibility": [
+              {
+                "ticket": "4-1-2",
+                "amountYen": 100
+              },
+              {
+                "ticket": "3-1-4",
+                "amountYen": 100
+              }
+            ],
+            "検証済み救済": [
+              {
+                "ticket": "1-3-4",
+                "amountYen": 100
+              }
+            ]
+          },
+          "entries": [
+            {
+              "ticket": "3-1-5",
+              "amountYen": 100,
+              "sourceKey": "main",
+              "categoryKey": "main"
+            },
+            {
+              "ticket": "3-2-5",
+              "amountYen": 100,
+              "sourceKey": "main",
+              "categoryKey": "main"
+            },
+            {
+              "ticket": "3-1-6",
+              "amountYen": 100,
+              "sourceKey": "main",
+              "categoryKey": "main"
+            },
+            {
+              "ticket": "1-2-3",
+              "amountYen": 100,
+              "sourceKey": "cover",
+              "categoryKey": "cover"
+            },
+            {
+              "ticket": "1-2-4",
+              "amountYen": 100,
+              "sourceKey": "cover",
+              "categoryKey": "cover"
+            },
+            {
+              "ticket": "3-2-1",
+              "amountYen": 100,
+              "sourceKey": "flow",
+              "categoryKey": "flow"
+            },
+            {
+              "ticket": "3-2-6",
+              "amountYen": 100,
+              "sourceKey": "flow",
+              "categoryKey": "flow"
+            },
+            {
+              "ticket": "4-1-2",
+              "amountYen": 100,
+              "sourceKey": "possibility",
+              "categoryKey": "possibility"
+            },
+            {
+              "ticket": "3-1-4",
+              "amountYen": 100,
+              "sourceKey": "possibility",
+              "categoryKey": "possibility"
+            },
+            {
+              "ticket": "1-3-4",
+              "amountYen": 100,
+              "sourceKey": "検証済み救済",
+              "categoryKey": "検証済み救済"
+            }
+          ],
+          "ticketCount": 10,
+          "uniqueTicketCount": 10,
+          "totalStakeYen": 1000,
+          "fingerprint": "fnv1a32:0e46909c",
+          "inputUnchanged": true
+        },
+        "variants": {
+          "cover": {
+            "id": "cover-one-ticket-replacement",
+            "categoryKey": "cover",
+            "categoryLabel": "押さえ",
+            "targetBoatNo": 3,
+            "replacementPolicy": "category-tail-preserve-leading-order",
+            "status": "ready",
+            "candidateCount": 1,
+            "replacement": {
+              "sourceKey": "cover",
+              "validEntryIndex": 1,
+              "fromTicket": "1-2-4",
+              "toTicket": "1-4-3",
+              "carriedAmountYen": 100,
+              "targetPosition": 3,
+              "candidateId": "",
+              "candidateKind": "canonical-formation",
+              "purchaseEligible": false,
+              "evidenceQualified": true,
+              "priorityScore": 90
+            },
+            "b": {
+              "entries": [
+                {
+                  "ticket": "3-1-5",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "3-2-5",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "3-1-6",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "1-2-3",
+                  "amountYen": 100,
+                  "sourceKey": "cover",
+                  "categoryKey": "cover"
+                },
+                {
+                  "ticket": "1-4-3",
+                  "amountYen": 100,
+                  "sourceKey": "cover",
+                  "categoryKey": "cover"
+                },
+                {
+                  "ticket": "3-2-1",
+                  "amountYen": 100,
+                  "sourceKey": "flow",
+                  "categoryKey": "flow"
+                },
+                {
+                  "ticket": "3-2-6",
+                  "amountYen": 100,
+                  "sourceKey": "flow",
+                  "categoryKey": "flow"
+                },
+                {
+                  "ticket": "4-1-2",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                },
+                {
+                  "ticket": "3-1-4",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                },
+                {
+                  "ticket": "1-3-4",
+                  "amountYen": 100,
+                  "sourceKey": "検証済み救済",
+                  "categoryKey": "検証済み救済"
+                }
+              ],
+              "ticketCount": 10,
+              "totalStakeYen": 1000
+            },
+            "invariants": {
+              "sameTicketCount": true,
+              "sameStake": true,
+              "mainUnchanged": true,
+              "exactlyOneTicketReplaced": true,
+              "targetNotHead": true
+            }
+          },
+          "flow": {
+            "id": "flow-one-ticket-replacement",
+            "categoryKey": "flow",
+            "categoryLabel": "流し",
+            "targetBoatNo": 3,
+            "replacementPolicy": "category-tail-preserve-leading-order",
+            "status": "ready",
+            "candidateCount": 6,
+            "replacement": {
+              "sourceKey": "flow",
+              "validEntryIndex": 1,
+              "fromTicket": "3-2-6",
+              "toTicket": "1-3-2",
+              "carriedAmountYen": 100,
+              "targetPosition": 2,
+              "candidateId": "shadow-physical-1-3-2",
+              "candidateKind": "outer-attack-shadow-physical",
+              "purchaseEligible": true,
+              "evidenceQualified": true,
+              "priorityScore": 76.563
+            },
+            "b": {
+              "entries": [
+                {
+                  "ticket": "3-1-5",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "3-2-5",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "3-1-6",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "1-2-3",
+                  "amountYen": 100,
+                  "sourceKey": "cover",
+                  "categoryKey": "cover"
+                },
+                {
+                  "ticket": "1-2-4",
+                  "amountYen": 100,
+                  "sourceKey": "cover",
+                  "categoryKey": "cover"
+                },
+                {
+                  "ticket": "3-2-1",
+                  "amountYen": 100,
+                  "sourceKey": "flow",
+                  "categoryKey": "flow"
+                },
+                {
+                  "ticket": "1-3-2",
+                  "amountYen": 100,
+                  "sourceKey": "flow",
+                  "categoryKey": "flow"
+                },
+                {
+                  "ticket": "4-1-2",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                },
+                {
+                  "ticket": "3-1-4",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                },
+                {
+                  "ticket": "1-3-4",
+                  "amountYen": 100,
+                  "sourceKey": "検証済み救済",
+                  "categoryKey": "検証済み救済"
+                }
+              ],
+              "ticketCount": 10,
+              "totalStakeYen": 1000
+            },
+            "invariants": {
+              "sameTicketCount": true,
+              "sameStake": true,
+              "mainUnchanged": true,
+              "exactlyOneTicketReplaced": true,
+              "targetNotHead": true
+            }
+          },
+          "hole": {
+            "id": "hole-one-ticket-replacement",
+            "categoryKey": "hole",
+            "categoryLabel": "万舟",
+            "targetBoatNo": 3,
+            "replacementPolicy": "category-tail-preserve-leading-order",
+            "status": "no-source-ticket",
+            "replacement": null,
+            "b": {
+              "entries": [
+                {
+                  "ticket": "3-1-5",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "3-2-5",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "3-1-6",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "1-2-3",
+                  "amountYen": 100,
+                  "sourceKey": "cover",
+                  "categoryKey": "cover"
+                },
+                {
+                  "ticket": "1-2-4",
+                  "amountYen": 100,
+                  "sourceKey": "cover",
+                  "categoryKey": "cover"
+                },
+                {
+                  "ticket": "3-2-1",
+                  "amountYen": 100,
+                  "sourceKey": "flow",
+                  "categoryKey": "flow"
+                },
+                {
+                  "ticket": "3-2-6",
+                  "amountYen": 100,
+                  "sourceKey": "flow",
+                  "categoryKey": "flow"
+                },
+                {
+                  "ticket": "4-1-2",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                },
+                {
+                  "ticket": "3-1-4",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                },
+                {
+                  "ticket": "1-3-4",
+                  "amountYen": 100,
+                  "sourceKey": "検証済み救済",
+                  "categoryKey": "検証済み救済"
+                }
+              ],
+              "ticketCount": 10,
+              "totalStakeYen": 1000
+            },
+            "invariants": {
+              "sameTicketCount": true,
+              "sameStake": true,
+              "mainUnchanged": true,
+              "exactlyOneTicketReplaced": false,
+              "targetNotHead": true
+            }
+          }
+        },
+        "readyVariantCount": 2,
+        "comparisonStatus": "awaiting-official-result",
+        "persistenceRecommended": true,
+        "centralCapturedAt": "2026-11-01T04:06:10.564Z",
+        "immutableFingerprint": "sha256:91872f95e55def6549092bc5a74fe525ffa30ac74f338aa38535e71177440580"
+      }
+    },
+    "20261101-21-6|2026-11-01T02:04:40.837Z": {
+      "archiveKey": "20261101-21-6|2026-11-01T02:04:40.837Z",
+      "sourceRaceKey": "20261101-21-6",
+      "sourceKind": "immutable-live-note-shadow",
+      "sourcePredictionCapturedAt": "2026-11-01T02:04:40.837Z",
+      "centralCapturedAt": "2026-11-01T02:04:40.837Z",
+      "immutableFingerprint": "sha256:dde6259649896ff0a245b229a88b0a9137f859fac1252551ef487e2d2ff320fe",
+      "sourceShadowVersion": "outer-attack-ticket-shadow-v1",
+      "productionChanged": false,
+      "automaticApplication": false,
+      "snapshot": {
+        "schemaVersion": 1,
+        "experimentId": "outer-attack-ticket-shadow-v1",
+        "status": "shadow-only",
+        "productionChanged": false,
+        "automaticApplication": false,
+        "resultUsedForGeneration": false,
+        "retrospectiveBackfillAllowed": false,
+        "replacementPolicy": "category-tail-preserve-leading-order",
+        "sourceRaceKey": "20261101-21-6",
+        "captureAt": "2026-11-01T02:04:40.837Z",
+        "captureKey": "20261101-21-6|2026-11-01T02:04:40.837Z",
+        "generatedAt": "2026-11-01T02:04:40.837Z",
+        "signal": {
+          "status": "active",
+          "active": true,
+          "targetBoatNo": 3,
+          "basisValid": true,
+          "baselineTopBoatNo": 1,
+          "matchedBoatNos": [
+            3
+          ],
+          "pairs": [
+            {
+              "boatNo": 3,
+              "matched": true,
+              "attackSignal": true,
+              "flowSuppressed": true,
+              "weightedGaps": {
+                "st": 1.1699999999999997,
+                "roleAttack": 0.27499999999999925,
+                "exhibition": 1.4849999999999999,
+                "raceFlow": -4.550000000000001
+              }
+            },
+            {
+              "boatNo": 4,
+              "matched": false,
+              "attackSignal": false,
+              "flowSuppressed": true,
+              "weightedGaps": {
+                "st": -1.7200000000000004,
+                "roleAttack": -1.5180000000000005,
+                "exhibition": 1.575,
+                "raceFlow": -10.45
+              }
+            }
+          ],
+          "fixedThresholds": {
+            "st": 0,
+            "roleAttack": 0.25,
+            "exhibition": 0.5
+          },
+          "baselineProfileId": "p0-current"
+        },
+        "a": {
+          "formations": {
+            "main": [
+              {
+                "ticket": "2-1-3",
+                "amountYen": 100
+              },
+              {
+                "ticket": "2-5-3",
+                "amountYen": 100
+              },
+              {
+                "ticket": "2-3-5",
+                "amountYen": 100
+              }
+            ],
+            "cover": [
+              {
+                "ticket": "1-2-6",
+                "amountYen": 100
+              }
+            ],
+            "possibility": [
+              {
+                "ticket": "1-2-3",
+                "amountYen": 100
+              },
+              {
+                "ticket": "2-1-4",
+                "amountYen": 100
+              },
+              {
+                "ticket": "1-5-3",
+                "amountYen": 100
+              },
+              {
+                "ticket": "1-5-6",
+                "amountYen": 100
+              }
+            ],
+            "flow": [
+              {
+                "ticket": "2-1-5",
+                "amountYen": 100
+              },
+              {
+                "ticket": "2-1-6",
+                "amountYen": 100
+              }
+            ]
+          },
+          "entries": [
+            {
+              "ticket": "2-1-3",
+              "amountYen": 100,
+              "sourceKey": "main",
+              "categoryKey": "main"
+            },
+            {
+              "ticket": "2-5-3",
+              "amountYen": 100,
+              "sourceKey": "main",
+              "categoryKey": "main"
+            },
+            {
+              "ticket": "2-3-5",
+              "amountYen": 100,
+              "sourceKey": "main",
+              "categoryKey": "main"
+            },
+            {
+              "ticket": "1-2-6",
+              "amountYen": 100,
+              "sourceKey": "cover",
+              "categoryKey": "cover"
+            },
+            {
+              "ticket": "1-2-3",
+              "amountYen": 100,
+              "sourceKey": "possibility",
+              "categoryKey": "possibility"
+            },
+            {
+              "ticket": "2-1-4",
+              "amountYen": 100,
+              "sourceKey": "possibility",
+              "categoryKey": "possibility"
+            },
+            {
+              "ticket": "1-5-3",
+              "amountYen": 100,
+              "sourceKey": "possibility",
+              "categoryKey": "possibility"
+            },
+            {
+              "ticket": "1-5-6",
+              "amountYen": 100,
+              "sourceKey": "possibility",
+              "categoryKey": "possibility"
+            },
+            {
+              "ticket": "2-1-5",
+              "amountYen": 100,
+              "sourceKey": "flow",
+              "categoryKey": "flow"
+            },
+            {
+              "ticket": "2-1-6",
+              "amountYen": 100,
+              "sourceKey": "flow",
+              "categoryKey": "flow"
+            }
+          ],
+          "ticketCount": 10,
+          "uniqueTicketCount": 10,
+          "totalStakeYen": 1000,
+          "fingerprint": "fnv1a32:d374a370",
+          "inputUnchanged": true
+        },
+        "variants": {
+          "cover": {
+            "id": "cover-one-ticket-replacement",
+            "categoryKey": "cover",
+            "categoryLabel": "押さえ",
+            "targetBoatNo": 3,
+            "replacementPolicy": "category-tail-preserve-leading-order",
+            "status": "ready",
+            "candidateCount": 1,
+            "replacement": {
+              "sourceKey": "cover",
+              "validEntryIndex": 0,
+              "fromTicket": "1-2-6",
+              "toTicket": "1-3-5",
+              "carriedAmountYen": 100,
+              "targetPosition": 2,
+              "candidateId": "candidate:1-3-5",
+              "candidateKind": "canonical-formation",
+              "purchaseEligible": false,
+              "evidenceQualified": true,
+              "priorityScore": 88
+            },
+            "b": {
+              "entries": [
+                {
+                  "ticket": "2-1-3",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "2-5-3",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "2-3-5",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "1-3-5",
+                  "amountYen": 100,
+                  "sourceKey": "cover",
+                  "categoryKey": "cover"
+                },
+                {
+                  "ticket": "1-2-3",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                },
+                {
+                  "ticket": "2-1-4",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                },
+                {
+                  "ticket": "1-5-3",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                },
+                {
+                  "ticket": "1-5-6",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                },
+                {
+                  "ticket": "2-1-5",
+                  "amountYen": 100,
+                  "sourceKey": "flow",
+                  "categoryKey": "flow"
+                },
+                {
+                  "ticket": "2-1-6",
+                  "amountYen": 100,
+                  "sourceKey": "flow",
+                  "categoryKey": "flow"
+                }
+              ],
+              "ticketCount": 10,
+              "totalStakeYen": 1000
+            },
+            "invariants": {
+              "sameTicketCount": true,
+              "sameStake": true,
+              "mainUnchanged": true,
+              "exactlyOneTicketReplaced": true,
+              "targetNotHead": true
+            }
+          },
+          "flow": {
+            "id": "flow-one-ticket-replacement",
+            "categoryKey": "flow",
+            "categoryLabel": "流し",
+            "targetBoatNo": 3,
+            "replacementPolicy": "category-tail-preserve-leading-order",
+            "status": "ready",
+            "candidateCount": 2,
+            "replacement": {
+              "sourceKey": "flow",
+              "validEntryIndex": 1,
+              "fromTicket": "2-1-6",
+              "toTicket": "2-3-1",
+              "carriedAmountYen": 100,
+              "targetPosition": 2,
+              "candidateId": "candidate:2-3-1",
+              "candidateKind": "canonical-formation",
+              "purchaseEligible": false,
+              "evidenceQualified": true,
+              "priorityScore": 85
+            },
+            "b": {
+              "entries": [
+                {
+                  "ticket": "2-1-3",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "2-5-3",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "2-3-5",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "1-2-6",
+                  "amountYen": 100,
+                  "sourceKey": "cover",
+                  "categoryKey": "cover"
+                },
+                {
+                  "ticket": "1-2-3",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                },
+                {
+                  "ticket": "2-1-4",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                },
+                {
+                  "ticket": "1-5-3",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                },
+                {
+                  "ticket": "1-5-6",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                },
+                {
+                  "ticket": "2-1-5",
+                  "amountYen": 100,
+                  "sourceKey": "flow",
+                  "categoryKey": "flow"
+                },
+                {
+                  "ticket": "2-3-1",
+                  "amountYen": 100,
+                  "sourceKey": "flow",
+                  "categoryKey": "flow"
+                }
+              ],
+              "ticketCount": 10,
+              "totalStakeYen": 1000
+            },
+            "invariants": {
+              "sameTicketCount": true,
+              "sameStake": true,
+              "mainUnchanged": true,
+              "exactlyOneTicketReplaced": true,
+              "targetNotHead": true
+            }
+          },
+          "hole": {
+            "id": "hole-one-ticket-replacement",
+            "categoryKey": "hole",
+            "categoryLabel": "万舟",
+            "targetBoatNo": 3,
+            "replacementPolicy": "category-tail-preserve-leading-order",
+            "status": "no-source-ticket",
+            "replacement": null,
+            "b": {
+              "entries": [
+                {
+                  "ticket": "2-1-3",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "2-5-3",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "2-3-5",
+                  "amountYen": 100,
+                  "sourceKey": "main",
+                  "categoryKey": "main"
+                },
+                {
+                  "ticket": "1-2-6",
+                  "amountYen": 100,
+                  "sourceKey": "cover",
+                  "categoryKey": "cover"
+                },
+                {
+                  "ticket": "1-2-3",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                },
+                {
+                  "ticket": "2-1-4",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                },
+                {
+                  "ticket": "1-5-3",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                },
+                {
+                  "ticket": "1-5-6",
+                  "amountYen": 100,
+                  "sourceKey": "possibility",
+                  "categoryKey": "possibility"
+                },
+                {
+                  "ticket": "2-1-5",
+                  "amountYen": 100,
+                  "sourceKey": "flow",
+                  "categoryKey": "flow"
+                },
+                {
+                  "ticket": "2-1-6",
+                  "amountYen": 100,
+                  "sourceKey": "flow",
+                  "categoryKey": "flow"
+                }
+              ],
+              "ticketCount": 10,
+              "totalStakeYen": 1000
+            },
+            "invariants": {
+              "sameTicketCount": true,
+              "sameStake": true,
+              "mainUnchanged": true,
+              "exactlyOneTicketReplaced": false,
+              "targetNotHead": true
+            }
+          }
+        },
+        "readyVariantCount": 2,
+        "comparisonStatus": "awaiting-official-result",
+        "persistenceRecommended": true,
+        "centralCapturedAt": "2026-11-01T02:04:40.837Z",
+        "immutableFingerprint": "sha256:dde6259649896ff0a245b229a88b0a9137f859fac1252551ef487e2d2ff320fe"
+      }
     }
   },
   "conflicts": [],
-  "snapshotCount": 158,
+  "snapshotCount": 160,
   "conflictCount": 0,
   "lastCapture": {
     "date": "20261101",
-    "capturedAt": "2026-11-01T02:16:43.308Z",
+    "capturedAt": "2026-11-01T04:06:10.564Z",
     "diagnostics": {
-      "sourceRecordCount": 23,
-      "preDeadlineRecordCount": 23,
-      "duplicateRaceKeyCount": 1,
+      "sourceRecordCount": 47,
+      "preDeadlineRecordCount": 47,
+      "duplicateRaceKeyCount": 3,
       "excludedReasons": {},
-      "selectedRaceCount": 22,
+      "selectedRaceCount": 44,
       "beforeProspectiveStartCount": 0,
-      "notPersistenceRecommendedCount": 22,
+      "notPersistenceRecommendedCount": 43,
       "notReadyCount": 0,
-      "capturedCount": 0,
+      "capturedCount": 1,
       "preservedCount": 0,
       "conflictCount": 0
     }
   },
   "noteCollection": {
-    "checked": 2670,
+    "checked": 2684,
     "saved": 1,
-    "inactive": 2238,
-    "missing": 285,
+    "inactive": 2248,
+    "missing": 287,
     "invalid": 1,
     "missingBasis": 0,
-    "checkedAt": "2026-11-01T02:16:43.308Z"
+    "checkedAt": "2026-11-01T04:06:10.564Z"
   }
 }
