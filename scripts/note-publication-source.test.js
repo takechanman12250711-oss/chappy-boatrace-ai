@@ -46,7 +46,9 @@ async function main() {
   Date.now = () => clock;
   const freePayload = publicationPayload(sourcePath, root, clock);
   assert.equal(freePayload.canPublish, true);
-  assert.equal(freePayload.presentationVersion, 'readable-v6');
+  assert.equal(freePayload.presentationVersion, 'readable-v7');
+  assert.doesNotMatch(freePayload.freeText, /保存済みの実戦厳選/);
+  assert.equal(publicationPayload(sourcePath, root, clock, { presentationVersion: 'readable-v6' }).paidText, freePayload.paidText, 'v7 keeps the v6 ticket section bytes');
   assert.equal(freePayload.price, 0);
   assert.doesNotMatch(freePayload.freeText, /有料/);
   assert.ok(freePayload.freeText.includes(require('./note-readable-article').FREE_NOTICE));

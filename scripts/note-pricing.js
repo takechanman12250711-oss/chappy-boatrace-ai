@@ -5,7 +5,7 @@
 // The 200-yen era's exact module is frozen as note-recovery-pricing-v1.cjs for
 // proof-gated recovery of claims made before this change.
 const NOTE_PRICE_YEN = 0;
-const FREE_PRESENTATION_VERSIONS = Object.freeze(['readable-v6']);
+const FREE_PRESENTATION_VERSIONS = Object.freeze(['readable-v6', 'readable-v7']);
 const isRecordedPrice = price => price === 0 || price === 200 || price === 300;
 const isFreePrice = price => price === 0;
 // The price a publication of this presentation version was claimed with.

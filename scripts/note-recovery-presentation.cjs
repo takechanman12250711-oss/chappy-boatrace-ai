@@ -37,8 +37,10 @@ const FROZEN = Object.freeze({
   navigationSha256: 'scripts/note-recovery-marketing-content-v1.cjs',
   navigationConfigSha256: 'config/note-marketing.recovery-v1.json'
 });
-const CURRENT_VERSION = 'readable-v6';
+const CURRENT_VERSION = 'readable-v7';
 const HISTORICAL = Object.freeze({
+  // Frozen 2026-11-01 when readable-v7 reworded two free lines. Renderer copy: note-recovery-readable-v6.cjs.
+  'readable-v6': Object.freeze({"rendererSha256":"444ee57feb9410336a235ac03edf55865512f359076871f5ba0b2ff473084c11","publicationSourceSha256":"9a445164da6fcefbcbb2b80256290ab02983d4cfa20cb6d727173e3b3eaa5f4a","generatorSha256":"2f4b9769f34e29287e8b23bae208a694c39eca66700850397a64879619d48be3","categorySha256":"ee5b85c309ba1cb896c5b9efea46dc8a4a3bbdeaf781995faa6ec596a16c5f87","modelSha256":"992a8f844f90c3a22cb20cbcc6de4bb87d0d990d35e888495775973a146666d6","publishedSectionsSha256":"a78b48e95b4394b3f7fdc5f7a6a2ea01464aaf48609ae6ac703b6a3d783b0ce6","seriesSha256":"71c1b74fdb3008c69e1ece95620d5063fab824aab0f5522edce1b2a602b7a443","pricingSha256":"fff91db520c33f17e6886f2cbfb04a1905640200deef02886f25ec71ff9e53d6","navigationSha256":"ff8bfe63255042919160491dafd3ed591e23d717568efe21408830cd81423c4f","navigationConfigSha256":"71b0960e64ea111fe97e174c4dd090b69d23278aa1995eb0aaa25951e71101fe","freeExplanationSha256":"32d9ae3a503d277e68200c94b2dcbefd0fceac143aec8bd6606e39e91a2ef1bc"}),
   // Frozen 2026-10-28 when readable-v6 made new articles free. Renderer copy: note-recovery-readable-v5.cjs.
   'readable-v5': Object.freeze({"rendererSha256":"286cf7bafa10d6f923ff1d860a8bf3b9a3f0612a84b52afb0c7e7256a7b93781","publicationSourceSha256":"4cad42fd7857ab2ed16cdd3e76cfabb1bfccf4edda018007d54eeec44881dcde","generatorSha256":"2f4b9769f34e29287e8b23bae208a694c39eca66700850397a64879619d48be3","categorySha256":"ee5b85c309ba1cb896c5b9efea46dc8a4a3bbdeaf781995faa6ec596a16c5f87","modelSha256":"992a8f844f90c3a22cb20cbcc6de4bb87d0d990d35e888495775973a146666d6","publishedSectionsSha256":"0ac9a4853866878b3150a16a5569f0a572d7a3228f973c6aec7f563c5469a7b8","seriesSha256":"71c1b74fdb3008c69e1ece95620d5063fab824aab0f5522edce1b2a602b7a443","pricingSha256":"547d27c05376da818606369ea745cb5446e863ae11aac680ef1f1d1eea5d9f83","navigationSha256":"014e4cd1778d44c3d5a7aaf8a2a907f6db1a457618ed9354c2ceb7cf37b359d1","navigationConfigSha256":"4464274af39b8bb406b7e978d7175f0675399f7e76f8f7005c659fa0e7b740be","freeExplanationSha256":"32d9ae3a503d277e68200c94b2dcbefd0fceac143aec8bd6606e39e91a2ef1bc"}),
   // Frozen 2026-10-25 when readable-v5 added the free notice. Renderer copy: note-recovery-readable-v4.cjs.
@@ -133,6 +135,10 @@ async function verifyRecoveryPresentation(identity, claimSha, { base, options, r
     check(hash(fs.readFileSync(path.join(__dirname, 'note-recovery-readable-v1.cjs'))) === LEGACY_READABLE.rendererSha256,
       'publication_recovery_local_renderer_changed');
     check(frozen.navigationSha256 === HISTORICAL['readable-v2'].navigationSha256, 'publication_recovery_local_dependency_changed');
+    if (presentationVersion === 'readable-v6') {
+      for (const key of ['categorySha256', 'modelSha256', 'freeExplanationSha256']) check(current[key] === expected[key], 'publication_recovery_local_dependency_changed');
+      check(hash(fs.readFileSync(path.join(__dirname, 'note-recovery-readable-v6.cjs'))) === expected.rendererSha256, 'publication_recovery_local_renderer_changed');
+    }
     if (presentationVersion === 'readable-v5') {
       for (const key of ['categorySha256', 'modelSha256', 'freeExplanationSha256']) check(current[key] === expected[key], 'publication_recovery_local_dependency_changed');
       check(hash(fs.readFileSync(path.join(__dirname, 'note-recovery-readable-v5.cjs'))) === expected.rendererSha256, 'publication_recovery_local_renderer_changed');

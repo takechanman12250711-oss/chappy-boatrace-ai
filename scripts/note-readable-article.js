@@ -236,10 +236,34 @@ function readableArticleV6(article, bundle) {
   if (fullText.includes(marker)) throw Error('readable_free_paywall_left');
   return { ...base, presentationVersion: 'readable-v6', freeText, fullText };
 }
-function readableArticle(article, bundle, { presentationVersion = 'readable-v6' } = {}) {
+// 2026-11-01 owner decision: plain wording for two lines of the free
+// introduction. v7 is v6 with only these two paragraphs reworded; tickets,
+// sections, ticket bytes (paidText), notices and proofs stay exactly as in v6.
+// v6 is frozen in note-recovery-readable-v6.cjs for recovery of earlier claims.
+const PLAIN_WORDING = Object.freeze([
+  ['📊 的中した区分を明記します。\n保存済みの実戦厳選の成績は、従来どおり別に集計します。',
+    '📊 結果は当たりも外れも全部公開し、当たった区分を書きます。'],
+  ['🔄 コロがし検証対象は、この記事の末尾に掲載します。\n保存済みの実戦厳選を示す欄で、上の公開予想と重複します。追加購入を勧めるものではありません。',
+    '⭐ AIがいちばん自信のある「中心の買い目」は、記事の最後に載せています。上の買い目と同じものです。']
+]);
+function readableArticleV7(article, bundle) {
+  const base = readableArticleV6(article, bundle);
+  if (!base.fullText.startsWith(base.freeText)) throw Error('readable_free_prefix_invalid');
+  let freeText = base.freeText;
+  for (const [before, after] of PLAIN_WORDING) {
+    if (freeText.split(before).length !== 2) throw Error('readable_plain_wording_missing');
+    freeText = freeText.replace(before, after);
+  }
+  if (/保存済みの実戦厳選/.test(freeText)) throw Error('readable_plain_wording_left');
+  if (mentions(freeText).length) throw new Error('readable_free_ticket_leak');
+  const fullText = freeText + base.fullText.slice(base.freeText.length);
+  return { ...base, presentationVersion: 'readable-v7', freeText, fullText };
+}
+function readableArticle(article, bundle, { presentationVersion = 'readable-v7' } = {}) {
   if (presentationVersion === 'readable-v4') return readableArticleV4(article, bundle);
   if (presentationVersion === 'readable-v5') return readableArticleV5(article, bundle);
-  if (presentationVersion !== 'readable-v6') return readableArticleV3(article, bundle, { presentationVersion });
-  return readableArticleV6(article, bundle);
+  if (presentationVersion === 'readable-v6') return readableArticleV6(article, bundle);
+  if (presentationVersion !== 'readable-v7') return readableArticleV3(article, bundle, { presentationVersion });
+  return readableArticleV7(article, bundle);
 }
-module.exports = { readableArticle, ticketsIn, FREE_NOTICE, FREE_WORDING };
+module.exports = { readableArticle, ticketsIn, FREE_NOTICE, FREE_WORDING, PLAIN_WORDING };

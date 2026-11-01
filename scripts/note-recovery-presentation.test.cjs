@@ -104,7 +104,7 @@ test('historical v1-v5 recovery pins exact old body and proof; new publication u
       assert.equal(fs.readFileSync(path.join(f.rootDir, f.sourcePath), 'utf8'), before);
       assert.throws(() => requirePublicationGate(p.payload, f.rootDir, f.identity.sourceTime), /handoff_mismatch/);
       const current = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime);
-      assert.equal(current.presentationVersion, 'readable-v6');
+      assert.equal(current.presentationVersion, 'readable-v7');
       assert.equal(current.price, 0);
       assert.equal(p.payload.price, 200);
       // The free v6 keeps the exact paid-section bytes of v5; only free wording and the paywall change.
@@ -954,4 +954,21 @@ test('reader owner comparison stays unknown when observation has errors, drops o
     deferred.resolve(DETAIL_ACTION); await readerTick();
     assert.equal(result.viewer.ownerMatch, null);
   }
+});
+
+test('free v6 claims recover with frozen v6 code while new publication uses v7', async () => {
+  const f = original();
+  try {
+    const p = await pinned(f, 'readable-v6');
+    assert.equal(p.recoveryEvidence.presentationVersion, 'readable-v6');
+    assert.equal(p.payload.presentationVersion, 'readable-v6');
+    assert.equal(p.payload.price, 0);
+    assert.deepEqual(requireRecoveryPublicationGate(p.payload, p.recoveryEvidence, f.rootDir), p.payload);
+    const v6 = require('./note-recovery-readable-v6.cjs').readableArticle(f.bundle.article, f.bundle);
+    assert.equal(p.payload.freeText, v6.freeText, 'recovered v6 body is the frozen v6 body');
+    const current = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime);
+    assert.equal(current.presentationVersion, 'readable-v7');
+    assert.equal(current.paidText, p.payload.paidText, 'v7 keeps the v6 ticket section bytes');
+    assert.notEqual(current.freeText, p.payload.freeText);
+  } finally { f.cleanup(); }
 });
