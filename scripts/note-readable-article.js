@@ -263,7 +263,7 @@ function readableArticleV7(article, bundle) {
   const rest = base.fullText.slice(base.freeText.length);
   if (rest.split(base.paidText).length !== 2) throw Error('readable_free_prefix_invalid');
   const fullText = freeText + rest.replace(base.paidText, paidText);
-  if (/コロがし|保存済みの実戦厳選/.test(fullText)) throw Error('readable_plain_wording_left');
+  if (/コロがし|保存済みの実戦厳選|延べ/.test(fullText)) throw Error('readable_plain_wording_left');
   return { ...base, presentationVersion: 'readable-v7', freeText, paidText, fullText };
 }
 function readableArticle(article, bundle, { presentationVersion = 'readable-v7' } = {}) {
