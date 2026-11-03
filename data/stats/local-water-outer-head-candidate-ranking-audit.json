@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "local-water-outer-head-candidate-ranking-audit-v1",
-  "generatedAt": "2026-11-03T02:07:33.182Z",
+  "generatedAt": "2026-11-03T06:19:28.082Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
@@ -16,14 +16,14 @@
     "selectedThenFinalDroppedMinimum": 10
   },
   "metrics": {
-    "settledFormalEvidenceRaceCount": 3385,
-    "actualHead56Count": 309,
-    "actualHead5Count": 215,
+    "settledFormalEvidenceRaceCount": 3395,
+    "actualHead56Count": 310,
+    "actualHead5Count": 216,
     "actualHead6Count": 94,
-    "scenarioHeadCount": 294,
-    "selectedHeadCount": 83,
+    "scenarioHeadCount": 295,
+    "selectedHeadCount": 84,
     "unselectedScenarioHeadCount": 211,
-    "selectedThenFinalDroppedCount": 83,
+    "selectedThenFinalDroppedCount": 84,
     "finalAny56Count": 0,
     "finalCorrectCount": 0,
     "structuredRankingEvidenceCount": 211,
@@ -33,19 +33,19 @@
     "scoreRankLossCount": 211,
     "duplicateOverlapCount": 206,
     "missingStructuredReasonCount": 0,
-    "scenarioHeadCoverageRate": 95.1,
-    "selectedHeadCoverageRate": 26.9,
+    "scenarioHeadCoverageRate": 95.2,
+    "selectedHeadCoverageRate": 27.1,
     "structuredRankingCoverageRate": 100,
     "winnerOutscoredRate": 78.2,
     "quotaCapShareOfUnselected": 0,
     "scoreRankShareOfUnselected": 100,
     "duplicateShareOfUnselected": 97.6,
-    "selectedThenFinalDroppedRate": 26.9,
+    "selectedThenFinalDroppedRate": 27.1,
     "finalCorrectRate": 0
   },
   "classifications": {
     "duplicate-overlap-rejection": 206,
-    "selected-head-lost-at-final-handoff": 83,
+    "selected-head-lost-at-final-handoff": 84,
     "score-rank-loss": 5,
     "support-only-not-head-eligible": 6,
     "candidate-head-not-promoted": 9
@@ -109044,6 +109044,409 @@
           "stage": "candidate",
           "path": "evaluatedScenarioCandidates.candidatePool[84].ticket",
           "detail": "5-2-1"
+        }
+      ]
+    },
+    {
+      "date": "20261103",
+      "jcd": "06",
+      "raceNo": 1,
+      "actualHead": 5,
+      "finalHead": 1,
+      "candidate": true,
+      "scenario": true,
+      "selected": true,
+      "finalAny56": false,
+      "finalCorrect": false,
+      "supportOnly": false,
+      "structuredRankingEvidence": true,
+      "winnerOutscored": false,
+      "reasonCategories": [
+        "duplicate-overlap",
+        "other-structured",
+        "score-rank",
+        "support-role"
+      ],
+      "classification": "selected-head-lost-at-final-handoff",
+      "comparisons": [
+        {
+          "path": "practicalTickets",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 92,
+          "finalValue": 89,
+          "winnerLost": false,
+          "tied": false
+        },
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 92,
+          "finalValue": 89,
+          "winnerLost": false,
+          "tied": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[0].candidateDecisions",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 92,
+          "finalValue": 89,
+          "winnerLost": false,
+          "tied": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[1].candidateDecisions",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 92,
+          "finalValue": 80,
+          "winnerLost": false,
+          "tied": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[2].candidateDecisions",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 92,
+          "finalValue": 89,
+          "winnerLost": false,
+          "tied": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[3].candidateDecisions",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 92,
+          "finalValue": 89,
+          "winnerLost": false,
+          "tied": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[4].candidateDecisions",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 92,
+          "finalValue": 80,
+          "winnerLost": false,
+          "tied": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[5].candidateDecisions",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 92,
+          "finalValue": 80,
+          "winnerLost": false,
+          "tied": false
+        }
+      ],
+      "rankingArrays": [
+        {
+          "path": "practicalTickets",
+          "winnerRowCount": 1,
+          "finalRowCount": 6,
+          "comparison": {
+            "path": "practicalTickets",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 92,
+            "finalValue": 89,
+            "winnerLost": false,
+            "tied": false
+          },
+          "reasons": [
+            "5号艇が攻め切り、2号艇が2着に残り、3号艇が3着を拾う筋。・5号艇が攻め切り、2号艇が2着に残り、3号艇が3着を拾う筋。"
+          ],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalTickets[7].coverage",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalTickets[7].physicalCoverage",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalTickets[7].roleLabels",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "winnerRowCount": 20,
+          "finalRowCount": 20,
+          "comparison": {
+            "path": "evaluatedScenarioCandidates.candidatePool",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 92,
+            "finalValue": 89,
+            "winnerLost": false,
+            "tied": false
+          },
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions",
+          "winnerRowCount": 6,
+          "finalRowCount": 6,
+          "comparison": null,
+          "reasons": [
+            "評価された艇・着順役割を実戦買い目へ反映。",
+            "評価された艇・着順役割を実戦買い目へ反映。",
+            "評価された艇・着順役割を実戦買い目へ反映。",
+            "評価された艇・着順役割を実戦買い目へ反映。",
+            "評価された艇・着順役割を実戦買い目へ反映。",
+            "評価された艇・着順役割を実戦買い目へ反映。"
+          ],
+          "selected": true,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[0].candidateDecisions",
+          "winnerRowCount": 2,
+          "finalRowCount": 6,
+          "comparison": {
+            "path": "practicalSelection.targetDecisions[0].candidateDecisions",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 92,
+            "finalValue": 89,
+            "winnerLost": false,
+            "tied": false
+          },
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[0].candidateDecisions[8].roleLabels",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[0].candidateDecisions[9].roleLabels",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[1].candidateDecisions",
+          "winnerRowCount": 3,
+          "finalRowCount": 4,
+          "comparison": {
+            "path": "practicalSelection.targetDecisions[1].candidateDecisions",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 92,
+            "finalValue": 80,
+            "winnerLost": false,
+            "tied": false
+          },
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[1].candidateDecisions[4].roleLabels",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[1].candidateDecisions[5].roleLabels",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        }
+      ],
+      "winnerReasons": [
+        {
+          "stage": "selected",
+          "path": "practicalTickets[6].flowRoleEvidence[1]",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "category": "other-structured"
+        },
+        {
+          "stage": "selected",
+          "path": "practicalTickets[7]",
+          "reason": "5号艇が攻め切り、2号艇が2着に残り、3号艇が3着を拾う筋。・5号艇が攻め切り、2号艇が2着に残り、3号艇が3着を拾う筋。",
+          "category": "support-role"
+        },
+        {
+          "stage": "candidate",
+          "path": "candidate24Tickets[0]",
+          "reason": "4カド攻めでスタートから波乱。4号艇の攻めに5号艇が乗って先頭。1号艇が内で残って2着。2号艇が内で残って3着。5-1-2の攻め筋で決着。",
+          "category": "support-role"
+        },
+        {
+          "stage": "candidate",
+          "path": "candidate24Tickets[1]",
+          "reason": "1号艇逃げから作られた穴候補。5号艇1着、1号艇2着、4号艇3着の順で評価する。 5号艇が攻め切り、1号艇が2着に残り、4号艇が3着を拾う筋。",
+          "category": "support-role"
+        },
+        {
+          "stage": "candidate",
+          "path": "candidate24Tickets[2]",
+          "reason": "1号艇逃げから作られた穴候補。5号艇1着、2号艇2着、1号艇3着の順で評価する。 5号艇が攻め切り、2号艇が2着に残り、1号艇が3着を拾う筋。",
+          "category": "support-role"
+        },
+        {
+          "stage": "candidate",
+          "path": "candidate24Tickets[3]",
+          "reason": "1号艇逃げから作られた穴候補。5号艇1着、2号艇2着、4号艇3着の順で評価する。 5号艇が攻め切り、2号艇が2着に残り、4号艇が3着を拾う筋。",
+          "category": "support-role"
+        },
+        {
+          "stage": "candidate",
+          "path": "candidate24Tickets[4]",
+          "reason": "1号艇逃げから作られた穴候補。5号艇1着、4号艇2着、1号艇3着の順で評価する。 5号艇が攻め切り、4号艇が2着に残り、1号艇が3着を拾う筋。",
+          "category": "support-role"
+        },
+        {
+          "stage": "candidate",
+          "path": "candidate24Tickets[5]",
+          "reason": "1号艇逃げから作られた穴候補。5号艇1着、4号艇2着、2号艇3着の順で評価する。 5号艇が攻め切り、4号艇が2着に残り、2号艇が3着を拾う筋。",
+          "category": "support-role"
+        },
+        {
+          "stage": "candidate",
+          "path": "candidate24Tickets[6]",
+          "reason": "1号艇逃げから作られた穴候補。5号艇1着、6号艇2着、1号艇3着の順で評価する。",
+          "category": "support-role"
+        },
+        {
+          "stage": "candidate",
+          "path": "candidate24Tickets[7]",
+          "reason": "1号艇逃げから作られた穴候補。5号艇1着、6号艇2着、2号艇3着の順で評価する。",
+          "category": "support-role"
+        },
+        {
+          "stage": "candidate",
+          "path": "practicalSelection.targetDecisions[0]",
+          "reason": "評価された艇・着順役割を実戦買い目へ反映。",
+          "category": "other-structured"
+        },
+        {
+          "stage": "candidate",
+          "path": "practicalSelection.targetDecisions[1]",
+          "reason": "評価された艇・着順役割を実戦買い目へ反映。",
+          "category": "other-structured"
+        }
+      ],
+      "evidencePaths": [
+        {
+          "stage": "selected",
+          "path": "practicalTickets[7]",
+          "detail": "[object Object] [object Object] [object Object]"
+        },
+        {
+          "stage": "selected",
+          "path": "practicalTickets[7].ticket",
+          "detail": "5-2-3"
+        },
+        {
+          "stage": "selected",
+          "path": "practicalTickets[7].coverage[0]",
+          "detail": "alternate-head"
+        },
+        {
+          "stage": "selected",
+          "path": "practicalTickets[7].physicalCoverage[2]",
+          "detail": "head"
+        },
+        {
+          "stage": "selected",
+          "path": "practicalTickets[7].roleLabels[0]",
+          "detail": "alternate-head"
+        },
+        {
+          "stage": "candidate",
+          "path": "candidate24Tickets[0]",
+          "detail": "4カド攻めでスタートから波乱。4号艇の攻めに5号艇が乗って先頭。1号艇が内で残って2着。2号艇が内で残って3着。5-1-2の攻め筋で決着。"
+        },
+        {
+          "stage": "candidate",
+          "path": "candidate24Tickets[0].ticket",
+          "detail": "5-1-2"
+        },
+        {
+          "stage": "candidate",
+          "path": "candidate24Tickets[1]",
+          "detail": "1号艇逃げから作られた穴候補。5号艇1着、1号艇2着、4号艇3着の順で評価する。 5号艇が攻め切り、1号艇が2着に残り、4号艇が3着を拾う筋。"
+        },
+        {
+          "stage": "candidate",
+          "path": "candidate24Tickets[1].ticket",
+          "detail": "5-1-4"
+        },
+        {
+          "stage": "candidate",
+          "path": "candidate24Tickets[2]",
+          "detail": "1号艇逃げから作られた穴候補。5号艇1着、2号艇2着、1号艇3着の順で評価する。 5号艇が攻め切り、2号艇が2着に残り、1号艇が3着を拾う筋。"
+        },
+        {
+          "stage": "candidate",
+          "path": "candidate24Tickets[2].ticket",
+          "detail": "5-2-1"
+        },
+        {
+          "stage": "candidate",
+          "path": "candidate24Tickets[3]",
+          "detail": "1号艇逃げから作られた穴候補。5号艇1着、2号艇2着、4号艇3着の順で評価する。 5号艇が攻め切り、2号艇が2着に残り、4号艇が3着を拾う筋。"
+        },
+        {
+          "stage": "candidate",
+          "path": "candidate24Tickets[3].ticket",
+          "detail": "5-2-4"
+        },
+        {
+          "stage": "candidate",
+          "path": "candidate24Tickets[4]",
+          "detail": "1号艇逃げから作られた穴候補。5号艇1着、4号艇2着、1号艇3着の順で評価する。 5号艇が攻め切り、4号艇が2着に残り、1号艇が3着を拾う筋。"
+        },
+        {
+          "stage": "candidate",
+          "path": "candidate24Tickets[4].ticket",
+          "detail": "5-4-1"
+        },
+        {
+          "stage": "candidate",
+          "path": "candidate24Tickets[5]",
+          "detail": "1号艇逃げから作られた穴候補。5号艇1着、4号艇2着、2号艇3着の順で評価する。 5号艇が攻め切り、4号艇が2着に残り、2号艇が3着を拾う筋。"
         }
       ]
     }
