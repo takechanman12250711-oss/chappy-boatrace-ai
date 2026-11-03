@@ -1,23 +1,23 @@
 {
   "schemaVersion": 2,
   "version": "local-water-v2-post-adoption-monitor-v2",
-  "generatedAt": "2026-11-03T00:52:57.831Z",
+  "generatedAt": "2026-11-03T04:27:38.146Z",
   "adoptionPr": 614,
   "adoptionCommit": "b230d52969b3aa612498e4c994d840c9b7120abc",
   "startDate": "20260824",
-  "latestDate": "20261102",
+  "latestDate": "20261103",
   "method": "2026-08-24以降の確定レースだけを対象に、A=本番Local/Water V2 gap<=3タイブレーク、B=同じ未適用base coreの旧展開のまま、固定5点で比較。本番と同じrace trend ready条件を満たす公式入力だけをfingerprint世代別cacheで再利用し、評価レポートは全件揃った場合だけ保存。",
   "productionChanged": false,
   "automaticApplication": false,
   "sourceCompleteness": {
-    "expectedRaces": 3021,
-    "completedRaces": 3021,
+    "expectedRaces": 3031,
+    "completedRaces": 3031,
     "cachedRaces": 3021,
-    "fetchedRaces": 0,
+    "fetchedRaces": 10,
     "complete": true
   },
   "total": {
-    "sourceRaces": 3021,
+    "sourceRaces": 3031,
     "comparableRaces": 174,
     "appliedRaces": 174,
     "productionHits": 34,
@@ -900,6 +900,19 @@
       "counterfactualReturn": 0,
       "hitDelta": 2,
       "returnDelta": 6250
+    },
+    "20261103": {
+      "sourceRaces": 10,
+      "comparableRaces": 0,
+      "appliedRaces": 0,
+      "productionHits": 0,
+      "counterfactualHits": 0,
+      "gains": 0,
+      "losses": 0,
+      "productionReturn": 0,
+      "counterfactualReturn": 0,
+      "hitDelta": 0,
+      "returnDelta": 0
     }
   },
   "appliedSamples": [

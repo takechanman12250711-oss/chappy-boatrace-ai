@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "version": "race-flow-3course-internal-v1",
-  "generatedAt": "2026-11-02T23:51:24.348Z",
+  "generatedAt": "2026-11-03T03:18:22.683Z",
   "targetLabel": "3コース攻め",
   "source": "saved 3course attack records + verificationEvidence + official results",
   "productionChanged": false,
   "diagnostics": {
-    "selectedSourceCount": 94,
+    "selectedSourceCount": 95,
     "verificationSourceCount": 1130,
     "deduplicatedRaceCount": 1130,
     "detailedEvidenceRaceCount": 911,
@@ -15,23 +15,23 @@
   "summaries": {
     "all": {
       "raceCount": 1130,
-      "settledCount": 1122,
+      "settledCount": 1124,
       "hitCount": 228,
       "hitRate": 20.3,
-      "stake": 1044400,
+      "stake": 1046100,
       "return": 785920,
-      "profit": -258480,
-      "recoveryRate": 75.3
+      "profit": -260180,
+      "recoveryRate": 75.1
     },
     "detailedEvidence": {
       "raceCount": 911,
-      "settledCount": 903,
+      "settledCount": 905,
       "hitCount": 195,
-      "hitRate": 21.6,
-      "stake": 850700,
+      "hitRate": 21.5,
+      "stake": 852400,
       "return": 663110,
-      "profit": -187590,
-      "recoveryRate": 77.9
+      "profit": -189290,
+      "recoveryRate": 77.8
     },
     "slit_positive": {
       "raceCount": 237,
@@ -45,13 +45,13 @@
     },
     "slit_neutral": {
       "raceCount": 523,
-      "settledCount": 516,
+      "settledCount": 518,
       "hitCount": 116,
-      "hitRate": 22.5,
-      "stake": 475400,
+      "hitRate": 22.4,
+      "stake": 477100,
       "return": 400790,
-      "profit": -74610,
-      "recoveryRate": 84.3
+      "profit": -76310,
+      "recoveryRate": 84
     },
     "slit_negative": {
       "raceCount": 151,
@@ -105,33 +105,33 @@
     },
     "wall_missing": {
       "raceCount": 304,
-      "settledCount": 302,
+      "settledCount": 304,
       "hitCount": 59,
-      "hitRate": 19.5,
-      "stake": 265100,
+      "hitRate": 19.4,
+      "stake": 266800,
       "return": 221470,
-      "profit": -43630,
-      "recoveryRate": 83.5
+      "profit": -45330,
+      "recoveryRate": 83
     },
     "st_formal_support": {
-      "raceCount": 401,
-      "settledCount": 399,
+      "raceCount": 402,
+      "settledCount": 400,
       "hitCount": 77,
       "hitRate": 19.3,
-      "stake": 386500,
+      "stake": 387500,
       "return": 245400,
-      "profit": -141100,
-      "recoveryRate": 63.5
+      "profit": -142100,
+      "recoveryRate": 63.3
     },
     "st_unconfirmed": {
-      "raceCount": 510,
-      "settledCount": 504,
+      "raceCount": 509,
+      "settledCount": 505,
       "hitCount": 118,
       "hitRate": 23.4,
-      "stake": 464200,
+      "stake": 464900,
       "return": 417710,
-      "profit": -46490,
-      "recoveryRate": 90
+      "profit": -47190,
+      "recoveryRate": 89.8
     },
     "st_missing": {
       "raceCount": 219,
@@ -147,6 +147,18 @@
   "weakBranchRanking": [
     {
       "rank": 1,
+      "branch": "st_formal_support",
+      "raceCount": 402,
+      "settledCount": 400,
+      "hitCount": 77,
+      "hitRate": 19.3,
+      "stake": 387500,
+      "return": 245400,
+      "profit": -142100,
+      "recoveryRate": 63.3
+    },
+    {
+      "rank": 2,
       "branch": "slit_missing",
       "raceCount": 219,
       "settledCount": 219,
@@ -158,7 +170,7 @@
       "recoveryRate": 63.4
     },
     {
-      "rank": 2,
+      "rank": 3,
       "branch": "st_missing",
       "raceCount": 219,
       "settledCount": 219,
@@ -168,18 +180,6 @@
       "return": 122810,
       "profit": -70890,
       "recoveryRate": 63.4
-    },
-    {
-      "rank": 3,
-      "branch": "st_formal_support",
-      "raceCount": 401,
-      "settledCount": 399,
-      "hitCount": 77,
-      "hitRate": 19.3,
-      "stake": 386500,
-      "return": 245400,
-      "profit": -141100,
-      "recoveryRate": 63.5
     },
     {
       "rank": 4,
@@ -233,37 +233,37 @@
       "rank": 8,
       "branch": "wall_missing",
       "raceCount": 304,
-      "settledCount": 302,
+      "settledCount": 304,
       "hitCount": 59,
-      "hitRate": 19.5,
-      "stake": 265100,
+      "hitRate": 19.4,
+      "stake": 266800,
       "return": 221470,
-      "profit": -43630,
-      "recoveryRate": 83.5
+      "profit": -45330,
+      "recoveryRate": 83
     },
     {
       "rank": 9,
       "branch": "slit_neutral",
       "raceCount": 523,
-      "settledCount": 516,
+      "settledCount": 518,
       "hitCount": 116,
-      "hitRate": 22.5,
-      "stake": 475400,
+      "hitRate": 22.4,
+      "stake": 477100,
       "return": 400790,
-      "profit": -74610,
-      "recoveryRate": 84.3
+      "profit": -76310,
+      "recoveryRate": 84
     },
     {
       "rank": 10,
       "branch": "st_unconfirmed",
-      "raceCount": 510,
-      "settledCount": 504,
+      "raceCount": 509,
+      "settledCount": 505,
       "hitCount": 118,
       "hitRate": 23.4,
-      "stake": 464200,
+      "stake": 464900,
       "return": 417710,
-      "profit": -46490,
-      "recoveryRate": 90
+      "profit": -47190,
+      "recoveryRate": 89.8
     }
   ],
   "interpretation": {
