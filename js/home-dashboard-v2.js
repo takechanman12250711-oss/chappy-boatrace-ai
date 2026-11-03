@@ -750,6 +750,7 @@
   root.ChappyHomeDashboardV2 = Object.freeze({
     refresh,
     setView,
+    openRace: syncAndOpen,
     getSchedule: () => state.schedule.slice(),
     getDate: () => state.scheduleDate || jstDate(),
     showPredictionLoading,
