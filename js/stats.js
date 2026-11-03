@@ -2929,6 +2929,42 @@
         ? `自動履歴を取得できません：${automaticStatsError}`
         : "自動履歴を読み込んでいます";
 
+  // 期間別のまとめ（直近7日・30日・表示中全体）。成績の要点と同じ行・同じ集計方法を使う。
+  const jstDayKey = ms => {
+    const d = new Date(ms + 9 * 60 * 60 * 1000);
+    return `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, "0")}${String(d.getUTCDate()).padStart(2, "0")}`;
+  };
+  const dayDigits = value => String(value || "").replace(/\D/g, "").slice(0, 8);
+  const periodHeadline = days => {
+    const from = days ? jstDayKey(Date.now() - (days - 1) * 86400000) : "";
+    const rows = realSettledRows.filter(item => !from || dayDigits(item.date) >= from);
+    const summary = V?.buildSummary
+      ? V.buildSummary(rows.map(item => item.verification).filter(Boolean))
+      : null;
+    const headline = summary && A?.buildResultHeadline ? A.buildResultHeadline(summary) : null;
+    const oldest = realSettledRows.map(item => dayDigits(item.date)).filter(Boolean).sort()[0] || "";
+    // 表示用の履歴は件数に上限があるため、期間の始まりより古い分が無いときは「表示中の範囲まで」と示す。
+    if (headline) headline.truncated = Boolean(from && oldest && from < oldest);
+    return headline;
+  };
+  const periodCellHtml = (label, headline) => {
+    if (!headline || !headline.practicalCount) {
+      return `<div class="result-period-cell is-empty"><span>${E(label)}</span><strong>対象なし</strong><small>結果が確定した予想がありません</small></div>`;
+    }
+    const recovery = headline.totalStake ? `${headline.simulatedRecoveryRate}%` : "—";
+    const tone = headline.simulatedRecoveryRate >= 100 ? "is-plus" : "";
+    return `<div class="result-period-cell"><span>${E(label)}</span>` +
+      `<strong>${headline.practicalHits}<small>/${headline.practicalCount}R 的中</small></strong>` +
+      `<small>的中率 ${headline.practicalHitRate}%・回収率 <b class="${tone}">${recovery}</b></small>` +
+      (headline.truncated ? `<small class="result-period-limit">※表示中の範囲まで</small>` : "") + `</div>`;
+  };
+  const periodSummaryHtml = `
+        <div class="result-period-summary" data-result-period-summary aria-label="期間別のまとめ">
+          ${periodCellHtml("直近7日", periodHeadline(7))}
+          ${periodCellHtml("直近30日", periodHeadline(30))}
+          ${periodCellHtml("表示中の全体", periodHeadline(0))}
+        </div>`;
+
   U.setHtml("statsArea", `
     <div
       class="results-analysis-dashboard"
@@ -2962,6 +2998,7 @@
           </span>
         </header>
 
+        ${periodSummaryHtml}
         <div class="result-kpi-grid result-kpi-grid-five">
           ${renderMetricCard({
             icon: "🎯",
