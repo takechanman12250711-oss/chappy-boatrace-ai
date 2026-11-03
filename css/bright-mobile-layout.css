@@ -142,3 +142,14 @@ body.chappy-bright-ui.chappy-final-mobile-ui #noteAssistantSection :is(input,tex
 body.chappy-bright-ui.chappy-final-mobile-ui .official-race-picker {background:transparent!important;border:0!important;padding:0!important;box-shadow:none!important;}
 body.chappy-bright-ui.chappy-final-mobile-ui .race-main-action {position:static!important;inset:auto!important;transform:none!important;width:auto!important;margin-top:14px!important;}
 body.chappy-bright-ui.chappy-final-mobile-ui .prediction-empty-state {background:#fff!important;color:#496982!important;border:1px solid #cfdfed!important;border-radius:14px!important;padding:18px!important;}
+/* 成績：期間別のまとめ（直近7日・30日・表示中の全体） */
+.result-period-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:10px 0 12px}
+.result-period-cell{display:flex;flex-direction:column;gap:3px;min-width:0;padding:10px 8px;background:#fff;border:1px solid #cfdfed;border-radius:12px;color:#173650}
+.result-period-cell>span{font-size:12px;font-weight:800;color:#496982}
+.result-period-cell>strong{font-size:22px;font-weight:800;line-height:1.15;color:#173650}
+.result-period-cell>strong small{font-size:11px;font-weight:700;color:#496982;margin-left:2px}
+.result-period-cell>small{font-size:11px;line-height:1.45;color:#496982}
+.result-period-cell>small b{color:#173650}
+.result-period-cell>small b.is-plus{color:#1d6b3c}
+.result-period-cell.is-empty>strong{font-size:15px;color:#526e86}
+.result-period-cell>small.result-period-limit{color:#8a4b00}

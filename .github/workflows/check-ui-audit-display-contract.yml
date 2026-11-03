@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "index.html"
+      - "scripts/test-result-period-summary.js"
+      - "css/bright-mobile-layout.css"
       - "js/ai-core.js"
       - "js/render.js"
       - "js/stats.js"
@@ -34,6 +36,7 @@ jobs:
           node --check js/home-dashboard-v2.js
           node --check js/race-flow-result-panel.js
           node scripts/test-ui-audit-display-contract.js
+          node scripts/test-result-period-summary.js
           node scripts/test-home-dashboard-v2.js
           node scripts/test-race-flow-result-panel.js
           node scripts/test-result-ui-phase5.js
