@@ -1,0 +1,29 @@
+name: Check no orphan assets
+
+# js/ と css/ に、どこからも読み込まれないファイルが増えていないかを確認する（PRのときだけ）。
+on:
+  pull_request:
+    paths:
+      - "js/**"
+      - "css/**"
+      - "index.html"
+      - "purchase-import.html"
+      - "scripts/test-no-orphan-assets.js"
+      - ".github/workflows/check-no-orphan-assets.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 保存データ（data/）は大きく、検査にも使わないので取得しない。
+          sparse-checkout: |
+            /*
+            !/data/
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify every js/css file is referenced
+        run: node scripts/test-no-orphan-assets.js
