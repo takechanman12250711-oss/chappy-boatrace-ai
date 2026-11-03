@@ -126,7 +126,10 @@ jobs:
     outputs:
       saved_sha: ${{ steps.saved-checkpoint.outputs.sha }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Successful runs now take 25-30 minutes (checkout ~4m, source check ~6m,
+    # artifact validation ~12m). At 30 minutes some runs were cancelled during
+    # validation or while saving, so allow a bounded 45-minute budget.
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository

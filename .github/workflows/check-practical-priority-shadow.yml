@@ -30,7 +30,8 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Full checkout alone can take ~10 minutes as data grows; the checks need ~6.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
