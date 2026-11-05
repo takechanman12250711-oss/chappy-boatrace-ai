@@ -41,11 +41,15 @@ const parsedWeather =
     beforeHtml
   ).weather;
 
+// is-wind5 points right (toward the 1マーク, seen from the stand): 追い風.
 assert.equal(
   parsedWeather.windDirection,
-  "向かい風",
+  "追い風",
   "公式風向アイコンを相対風向へ変換する"
 );
+for (const [code, expected] of [[4, "追い風"], [6, "追い風"], [12, "向かい風"], [13, "向かい風"], [14, "向かい風"], [1, "横風"], [9, "横風"], [17, "無風"]]) {
+  assert.equal(parseOfficialRaceHtml("", beforeHtml.replace("is-wind5", `is-wind${code}`)).weather.windDirection, expected, `is-wind${code}`);
+}
 assert.equal(
   parsedWeather.windDirectionCode,
   5
