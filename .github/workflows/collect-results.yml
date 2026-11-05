@@ -222,13 +222,24 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
+      # 検査に必要な範囲だけ取得する。data/全体（約12GB）の取得で15分を超え、
+      # 2026-11-03分の結果収集が検査前に取り消された。
+      # data/stats・data/experiments・data/predictions直下の日次JSONは検査が読む。
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 1
+          persist-credentials: false
+          sparse-checkout: |
+            /*
+            !/data/
+            /data/stats/
+            /data/experiments/
+            /data/predictions/*.json
+          sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
