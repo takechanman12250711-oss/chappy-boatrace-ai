@@ -76,6 +76,47 @@ assert.strictEqual(recent[0].label, "11/2(月)");
 assert.strictEqual(recent[1].races.length, 0);
 assert(panel.renderHtml(model, recent).includes("見送り"));
 
+
+// 公式結果（着順）の表示。的中判定はせず、着順だけを見せる。
+const results = {
+  date: "20261103",
+  races: [
+    { jcd: "02", raceNo: 1, status: "finished", resultAvailable: true, void: false,
+      finishers: [{ rank: 1, boat: 3 }, { rank: 2, boat: 1 }, { rank: 3, boat: 5 }, { rank: 4, boat: 2 }] },
+    { jcd: "21", raceNo: 9, status: "not_finished", resultAvailable: false, void: false, finishers: [] },
+    { jcd: "01", raceNo: 12, status: "void", resultAvailable: false, void: true, finishers: [] },
+    { jcd: "05", raceNo: 2, status: "finished", resultAvailable: true, void: false,
+      finishers: [{ rank: 1, boat: 2 }, { rank: 2, boat: 4 }, { rank: 2, boat: 6 }] }
+  ]
+};
+assert.deepStrictEqual(panel.resultOf(results, "02", 1), { kind: "finished", text: "公式結果 3-1-5" });
+assert.strictEqual(panel.resultOf(results, "21", 9).kind, "pending");
+assert.strictEqual(panel.resultOf(results, "01", 12).kind, "void");
+assert.strictEqual(panel.resultOf(results, "05", 2).kind, "check", "同着は着順を作らない");
+assert.strictEqual(panel.resultOf(results, "03", 1), null, "結果が無いレースは何も出さない");
+assert.strictEqual(panel.resultOf(null, "02", 1), null);
+
+const withJcd = { ...summary, predictions: [
+  { raceKey: "20261103-02-1", place: "戸田", raceNo: 1, deadlineAt: "2026-11-03T10:45:00+09:00", selection: {} },
+  { raceKey: "20261103-01-12", jcd: "01", place: "桐生", raceNo: 12, deadlineAt: "2026-11-03T20:40:00+09:00", selection: {} }
+] };
+let rm = panel.buildModel({ summary: withJcd, results, nowMs: at("2026-11-03T12:58:00+09:00") });
+const toda = rm.races.find(r => r.place === "戸田");
+assert.strictEqual(toda.result.text, "公式結果 3-1-5", "raceKey から場コードを読む");
+let rhtml = panel.renderHtml(rm, []);
+assert(rhtml.includes("公式結果 3-1-5"), "締切済みのカードに着順を出す");
+assert.strictEqual((rhtml.match(/ct-result /g) || []).length, 1, "締切前のレースには結果欄を出さない");
+// 日付がちがう結果ファイルは使わない。
+rm = panel.buildModel({ summary: withJcd, results: { ...results, date: "20261102" }, nowMs: at("2026-11-03T12:58:00+09:00") });
+assert.strictEqual(rm.races.find(r => r.place === "戸田").result, null, "別の日の結果を混ぜない");
+// 最近の予想にも着順を出す。
+const recentWithResult = panel.buildRecent([{ date: "20261103", summary: withJcd, results }], at("2026-11-04T12:00:00+09:00"));
+rhtml = panel.renderHtml(model, recentWithResult);
+assert(rhtml.includes("→ 公式結果 3-1-5") && rhtml.includes("レース不成立"));
+// 着順の値もエスケープ対象の外部データとして扱い、1〜6以外は着順にしない。
+assert.strictEqual(panel.resultOf({ races: [{ jcd: "02", raceNo: 1, status: "finished", resultAvailable: true,
+  finishers: [{ rank: 1, boat: "<b>" }, { rank: 2, boat: 1 }, { rank: 3, boat: 2 }] }] }, "02", 1).kind, "check");
+
 // 実データ（手元にあれば）で例外なく組み立てられる。
 const dir = "data/predictions/summaries";
 if (fs.existsSync(dir)) {
@@ -83,7 +124,12 @@ if (fs.existsSync(dir)) {
     const data = JSON.parse(fs.readFileSync(`${dir}/${name}`, "utf8"));
     const d = name.slice(0, 8);
     const noon = Date.parse(`${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}T12:00:00+09:00`);
-    const m = panel.buildModel({ summary: data, nowMs: noon });
+    const resultPath = `data/results/${d}.json`;
+    const dayResults = fs.existsSync(resultPath) ? JSON.parse(fs.readFileSync(resultPath, "utf8")) : null;
+    const m = panel.buildModel({ summary: data, nowMs: noon + 11.5 * 3600000, results: dayResults });
+    for (const race of m.races) {
+      if (dayResults && race.state === "closed") assert(race.result, `${name} ${race.place}${race.raceNo}R の公式結果を引ける`);
+    }
     assert.strictEqual(m.freshness.kind, "ok", `${name} を今日のデータとして読める`);
     assert(panel.renderHtml(m).includes("今日のチャッピー"));
   }
