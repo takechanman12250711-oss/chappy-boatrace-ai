@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
   "version": "local-water-outer-head-bottleneck-audit-v1",
-  "generatedAt": "2026-11-05T04:23:52.563Z",
+  "generatedAt": "2026-11-05T17:10:16.708Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
   "methodology": "締切前に保存済みの当地・水面正式証拠と公式結果だけを使い、実際に5・6号艇が勝ったレースを頭候補・頭シナリオ・選択済み頭・最終頭へ追跡する。2着・3着・hold・pickupは頭候補へ数えない。",
-  "actualHead56RaceCount": 317,
+  "actualHead56RaceCount": 318,
   "upstream": {
     "version": "local-water-main-head-selection-audit-v1",
     "nextStep": "audit-local-water-outer-head-candidate-ranking",
     "metrics": {
-      "settledFormalEvidenceRaceCount": 3467,
+      "settledFormalEvidenceRaceCount": 3469,
       "actualHead56Count": 317,
       "actualHead5Count": 220,
       "actualHead6Count": 97,
@@ -34,25 +34,25 @@
     }
   },
   "classifications": {
-    "scenario-head-not-selected": 223,
+    "scenario-head-not-selected": 224,
     "selected-head-not-final": 88,
     "support-only-not-head-eligible": 6
   },
   "blockerSignals": {
-    "candidate-rejected-or-not-selected": 317,
-    "no-explicit-head-role-contract": 317,
-    "role-intent-without-head": 317,
-    "support-role-only": 317,
-    "position-1-not-eligible": 310,
-    "head-scenario-not-selected": 223,
+    "candidate-rejected-or-not-selected": 318,
+    "no-explicit-head-role-contract": 318,
+    "role-intent-without-head": 318,
+    "support-role-only": 318,
+    "position-1-not-eligible": 311,
+    "head-scenario-not-selected": 224,
     "support-visible-but-no-head-role": 117,
     "selected-head-not-final-handoff": 88
   },
   "strongestScoreBands": {
-    "80plus": 317
+    "80plus": 318
   },
   "actualHeadByBoat": {
-    "5": 220,
+    "5": 221,
     "6": 97
   },
   "actualHeadByVenue": {
@@ -77,12 +77,12 @@
     "丸亀": 10,
     "若松": 10,
     "唐津": 9,
-    "宮島": 7,
+    "宮島": 8,
     "大村": 6,
     "福岡": 4
   },
   "actualHeadByConditionBand": {
-    "calm": 168,
+    "calm": 169,
     "medium": 105,
     "strong": 44
   },
@@ -90,7 +90,7 @@
     "1": 90,
     "2": 93,
     "3": 77,
-    "4": 57
+    "4": 58
   },
   "topHeadEvidencePaths": [
     {
@@ -233,7 +233,7 @@
     },
     {
       "path": "practicalSelection.targetDecisions[2].candidateDecisions[0].roleLabels[2]",
-      "count": 108
+      "count": 109
     },
     {
       "path": "practicalSelection.targetDecisions[0].candidateDecisions[6].roleLabels[2]",
@@ -241,11 +241,11 @@
     },
     {
       "path": "practicalSelection.targetDecisions[2].candidateDecisions[1].roleLabels[2]",
-      "count": 97
+      "count": 98
     },
     {
       "path": "practicalSelection.targetDecisions[2].candidateDecisions[2].roleLabels[2]",
-      "count": 96
+      "count": 97
     },
     {
       "path": "practicalSelection.targetDecisions[4].candidateDecisions[2].roleLabels[2]",
@@ -261,7 +261,7 @@
     },
     {
       "path": "practicalSelection.targetDecisions[1].candidateDecisions[4].roleLabels[2]",
-      "count": 89
+      "count": 90
     },
     {
       "path": "practicalSelection.targetDecisions[0].candidateDecisions[5].roleLabels[2]",
@@ -273,14 +273,14 @@
     },
     {
       "path": "practicalSelection.targetDecisions[0].candidateDecisions[4].roleLabels[2]",
+      "count": 85
+    },
+    {
+      "path": "practicalSelection.targetDecisions[0].candidateDecisions[0].roleLabels[2]",
       "count": 84
     },
     {
       "path": "practicalSelection.targetDecisions[2].candidateDecisions[3].roleLabels[2]",
-      "count": 83
-    },
-    {
-      "path": "practicalSelection.targetDecisions[0].candidateDecisions[0].roleLabels[2]",
       "count": 83
     },
     {
@@ -308,16 +308,16 @@
       "count": 80
     },
     {
+      "path": "practicalSelection.targetDecisions[3].candidateDecisions[0].roleLabels[2]",
+      "count": 79
+    },
+    {
       "path": "practicalSelection.targetDecisions[4].candidateDecisions[3].roleLabels[2]",
       "count": 79
     },
     {
-      "path": "practicalSelection.targetDecisions[3].candidateDecisions[0].roleLabels[2]",
-      "count": 78
-    },
-    {
       "path": "practicalSelection.targetDecisions[2].candidateDecisions[4].roleLabels[2]",
-      "count": 75
+      "count": 76
     },
     {
       "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[19].roles[0]",
@@ -338,153 +338,6 @@
   ],
   "diagnosisFocus": "inspect-selected-head-ranking-blockers",
   "examples": [
-    {
-      "date": "20261024",
-      "jcd": "14",
-      "raceNo": 5,
-      "venue": "鳴門",
-      "wind": 1,
-      "wave": 1,
-      "conditionBand": "calm",
-      "actualHead": 6,
-      "finalHead": 3,
-      "classification": "scenario-head-not-selected",
-      "candidateHead": true,
-      "scenarioHead": true,
-      "selectedHead": false,
-      "supportVisible": true,
-      "strongestScore": {
-        "field": "score",
-        "value": 88
-      },
-      "blockerFlags": [
-        "position-1-not-eligible",
-        "role-intent-without-head",
-        "support-role-only",
-        "no-explicit-head-role-contract",
-        "candidate-rejected-or-not-selected",
-        "head-scenario-not-selected"
-      ],
-      "roles": [
-        "position",
-        "pickup",
-        "暫定・現行枠番評価",
-        "暫定・現行st評価",
-        "暫定・中立50点",
-        "拾い",
-        "役割分離",
-        "参考",
-        "暫定",
-        "正式採用",
-        "対象外",
-        "適性不足・根拠不足",
-        "hole-ticket",
-        "⚡道中艇",
-        "/",
-        "💣外コース妙味"
-      ],
-      "eligiblePositionsSeen": [
-        3
-      ],
-      "reasons": [
-        "最有力展開連動40/40 / 差し場・空き水面15/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
-        "展示進入6コース / 基本構造8/35 / 場別1着率0/20 / 場別3連率0/15 / 期間推移0/10 / 進入変動0/10 / 取得信頼度0/10 / 進入未確定のため枠番評価を維持 / 場×コース0走で正式数未達",
-        "今節ST14.7/25 / 直近1年コース別ST3.5/20 / 期間推移8/15 / 3年コース別ST2.6/15 / 全国平均ST1.7/10 / Fリスク2/5 / 取得信頼度10/10 / 実進入未確定 / 実進入6コース142走",
-        "展示0/6艇・一周0/6艇のため中立50点",
-        "公式の実進入6艇が揃わず内隣を確定できない",
-        "6コースは拾いとして評価",
-        "攻め艇とのST比較7/25 / ST安定性2/15 / 展示進入・隣接0/15 / 展示・一周は9％枠へ分離 / 残し・回り足・道中12/15 / 技量・コース適性7/10 / 場・水面・風適応4/5 / 攻め艇の内側隣接艇ではない / 攻め艇より明確にSTが遅い",
-        "展開一致34/40 / 位置・コース14/20 / 残し・拾い10.8/15 / ST・スリット5/10 / 展示・足は9％枠へ分離 / 場・水面2.8/5 / 展示6艇未取得のため役割判定は暫定",
-        "ゴール想定24/30 / 展示・一周は9％枠へ分離 / 今節安定0/15 / 進入・位置7/15 / 当地・水面6.1/10 / 技量3.7/5 / 今節成績不足のため暫定",
-        "当地・全国比較25/25 / 当地成績13/20 / 展開役割15/20 / 進入適合8.3/15 / 場・水面10.5/15 / 技量3.7/5",
-        "展示・足は9％枠へ分離 / 今節ST・スリット6/20 / 今節・道中2/20 / 展開役割11/15 / 技量7.5/10 / 当地・水面3.7/5",
-        "風向・風速とコース10/20 / 波・展示・回り足0/20 / 水面・潮汐3.7/15 / 展開役割16/20 / 当地・道中10.8/15 / ST・技量5.5/10 / 潮汐場の現在潮位・潮流が不足 / 展示・一周・回り足の裏付け不足"
-      ],
-      "headPaths": [
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[22]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[23]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[24]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[25]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[26]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[27]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[103]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[104]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[105]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[106]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[107]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[108]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[109]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[110]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[111]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[112]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[113]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[114]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[115]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[116]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[121].ticket",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[122].ticket",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[123].ticket",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[124].ticket",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[125].ticket",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[126].ticket",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[127].ticket",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[128].ticket",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[129].ticket",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[130].ticket",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[131].ticket",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[132].ticket",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[133].ticket",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[134].ticket",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[135].ticket",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[136].ticket",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.observations[97].ticket",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.observations[98].ticket",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.observations[99].ticket",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.observations[100].ticket"
-      ],
-      "supportPaths": [
-        "practicalSelection.targetDecisions[0].candidateDecisions[5].roleLabels[2]",
-        "practicalSelection.targetDecisions[0].candidateDecisions[6].roleLabels[2]",
-        "practicalSelection.targetDecisions[1].candidateDecisions[6].roleLabels[2]",
-        "practicalSelection.targetDecisions[1].candidateDecisions[9].roleLabels[2]",
-        "practicalSelection.targetDecisions[3].candidateDecisions[6].roleLabels[2]",
-        "practicalSelection.targetDecisions[4].candidateDecisions[3].roleLabels[2]",
-        "practicalSelection.frameRiseFallReplayBasis.raceFlow.attackBoats[0].raw.entry.raw.skillHistory.windows.all3Years.byCourse.1.thirds",
-        "practicalSelection.frameRiseFallReplayBasis.raceFlow.attackBoats[0].raw.entry.raw.skillHistory.windows.all3Years.byCourse.6.seconds",
-        "practicalSelection.frameRiseFallReplayBasis.raceFlow.attackBoats[0].raw.entry.raw.skillHistory.windows.previous2Years.byCourse.6.seconds",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[16].evidenceChecks[2]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[52].evidenceChecks[5]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[77].evidenceChecks[2]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[88].evidenceChecks[2]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[101].evidenceChecks[2]",
-        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[114].evidenceChecks[2]",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates[1].boatNo",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates[1].course",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[123].evidenceChecks[5]",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[126].evidenceChecks[2]",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[126].phaseEvidence.partners.third.boatNo",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[126].phaseEvidence.partners.third.course",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[127].evidenceChecks[2]",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[127].phaseEvidence.partners.third.boatNo",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[127].phaseEvidence.partners.third.course",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[129].evidenceChecks[2]",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[129].phaseEvidence.partners.third.boatNo",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[129].phaseEvidence.partners.third.course",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[132].evidenceChecks[2]",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[132].phaseEvidence.partners.third.boatNo",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[132].phaseEvidence.partners.third.course",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[135].evidenceChecks[2]",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[135].phaseEvidence.partners.third.boatNo",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[135].phaseEvidence.partners.third.course",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.thirdCandidates",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.thirdCandidates[1].boatNo",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.thirdCandidates[1].course",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[123].evidenceChecks[5]",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[126].evidenceChecks[2]",
-        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[126].phaseEvidence.partners.third.boatNo"
-      ]
-    },
     {
       "date": "20261025",
       "jcd": "01",
@@ -9557,6 +9410,157 @@
         "practicalSelection.candidateValidationEvidence.branches[87].evidenceChecks[0]",
         "practicalSelection.candidateValidationEvidence.branches[98].roles[0]",
         "practicalSelection.candidateValidationEvidence.branches[98].evidenceChecks[0]"
+      ]
+    },
+    {
+      "date": "20261105",
+      "jcd": "17",
+      "raceNo": 7,
+      "venue": "宮島",
+      "wind": 1,
+      "wave": 1,
+      "conditionBand": "calm",
+      "actualHead": 5,
+      "finalHead": 4,
+      "classification": "scenario-head-not-selected",
+      "candidateHead": true,
+      "scenarioHead": true,
+      "selectedHead": false,
+      "supportVisible": true,
+      "strongestScore": {
+        "field": "score",
+        "value": 95
+      },
+      "blockerFlags": [
+        "no-explicit-head-role-contract",
+        "support-role-only",
+        "position-1-not-eligible",
+        "role-intent-without-head",
+        "candidate-rejected-or-not-selected",
+        "head-scenario-not-selected"
+      ],
+      "roles": [
+        "pickup",
+        "hold",
+        "alternate-head",
+        "暫定・現行枠番評価",
+        "暫定・現行st評価",
+        "暫定・中立50点",
+        "拾い",
+        "役割分離",
+        "参考",
+        "残し",
+        "暫定",
+        "不成立",
+        "対象外",
+        "適性不足・根拠不足",
+        "正式採用",
+        "hole-ticket",
+        "alternate-head-attack",
+        "💣外コース妙味"
+      ],
+      "eligiblePositionsSeen": [
+        1,
+        2,
+        3
+      ],
+      "reasons": [
+        "評価された艇・着順役割を実戦買い目へ反映。",
+        "展示進入5コース / 基本構造12/35 / 場別1着率0/20 / 場別3連率0/15 / 期間推移0/10 / 進入変動0/10 / 取得信頼度0/10 / 進入未確定のため枠番評価を維持 / 場×コース0走で正式数未達",
+        "今節ST16.4/25 / 直近1年コース別ST12.1/20 / 期間推移8.8/15 / 3年コース別ST9/15 / 全国平均ST7.5/10 / Fリスク5/5 / 取得信頼度10/10 / 実進入未確定 / 実進入5コース57走",
+        "展示0/6艇・一周0/6艇のため中立50点",
+        "公式の実進入6艇が揃わず内隣を確定できない",
+        "5コースは拾いとして評価",
+        "攻め艇とのST比較17/25 / ST安定性15/15 / 展示進入・隣接0/15 / 展示・一周は9％枠へ分離 / 残し・回り足・道中11/15 / 技量・コース適性4/10 / 場・水面・風適応3/5 / 攻め艇の内側隣接艇ではない",
+        "展開一致40/40 / 位置・コース20/20 / 残し・拾い8.9/15 / ST・スリット5/10 / 展示・足は9％枠へ分離 / 場・水面3.2/5 / 展示6艇未取得のため役割判定は暫定",
+        "ゴール想定28/30 / 展示・一周は9％枠へ分離 / 今節安定0/15 / 進入・位置9/15 / 当地・水面2.5/10 / 技量3/5 / 今節成績不足のため暫定",
+        "当地・全国比較5/25 / 当地成績0/20 / 展開役割18/20 / 進入適合9.5/15 / 場・水面11.3/15 / 技量3/5",
+        "展示・足は9％枠へ分離 / 今節ST・スリット8/20 / 今節・道中2/20 / 展開役割13/15 / 技量6/10 / 当地・水面2.3/5",
+        "風向・風速とコース12/20 / 波・展示・回り足0/20 / 水面・潮汐3.8/15 / 展開役割18/20 / 当地・道中6.7/15 / ST・技量7.2/10 / 潮汐場の現在潮位・潮流が不足 / 展示・一周・回り足の裏付け不足"
+      ],
+      "headPaths": [
+        "candidate24Tickets[12].ticket",
+        "candidate24Tickets[13].ticket",
+        "candidate24Tickets[14].ticket",
+        "candidate24Tickets[15].ticket",
+        "practicalSelection.targetDecisions[1].candidateDecisions[8].ticket",
+        "practicalSelection.targetDecisions[1].candidateDecisions[8].roleLabels[0]",
+        "practicalSelection.targetDecisions[4].candidateDecisions[4].ticket",
+        "practicalSelection.targetDecisions[4].candidateDecisions[4].roleLabels[0]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[30]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[31]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[32]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[33]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[88]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[89]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[90]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[91]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[92]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[93]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[94]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[95]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[96]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[97]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[98]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[99]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[100]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[101]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[102]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.poolTickets[103]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[158].ticket",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[159].ticket",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[159].roles[0]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[159].evidenceChecks[0]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[160].ticket",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[161].ticket",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[162].ticket",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[162].roles[0]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[162].evidenceChecks[0]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[163].ticket",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[163].roles[0]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[163].evidenceChecks[0]"
+      ],
+      "supportPaths": [
+        "practicalSelection.targetDecisions[0].candidateDecisions[0].roleLabels[2]",
+        "practicalSelection.targetDecisions[0].candidateDecisions[4].roleLabels[2]",
+        "practicalSelection.targetDecisions[0].candidateDecisions[6].roleLabels[1]",
+        "practicalSelection.targetDecisions[0].candidateDecisions[8].roleLabels[1]",
+        "practicalSelection.targetDecisions[0].candidateDecisions[9].roleLabels[1]",
+        "practicalSelection.targetDecisions[1].candidateDecisions[0].roleLabels[2]",
+        "practicalSelection.targetDecisions[1].candidateDecisions[4].roleLabels[2]",
+        "practicalSelection.targetDecisions[1].candidateDecisions[7].roleLabels[2]",
+        "practicalSelection.targetDecisions[2].candidateDecisions[0].roleLabels[2]",
+        "practicalSelection.targetDecisions[2].candidateDecisions[1].roleLabels[2]",
+        "practicalSelection.targetDecisions[2].candidateDecisions[2].roleLabels[2]",
+        "practicalSelection.targetDecisions[2].candidateDecisions[3].roleLabels[1]",
+        "practicalSelection.targetDecisions[2].candidateDecisions[4].roleLabels[2]",
+        "practicalSelection.targetDecisions[2].candidateDecisions[5].roleLabels[2]",
+        "practicalSelection.targetDecisions[3].candidateDecisions[0].roleLabels[2]",
+        "practicalSelection.targetDecisions[3].candidateDecisions[1].roleLabels[2]",
+        "practicalSelection.targetDecisions[3].candidateDecisions[6].roleLabels[2]",
+        "practicalSelection.targetDecisions[4].candidateDecisions[1].roleLabels[1]",
+        "practicalSelection.targetDecisions[5].candidateDecisions[1].roleLabels[2]",
+        "practicalSelection.targetDecisions[5].candidateDecisions[2].roleLabels[2]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[9].roles[0]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[9].evidenceChecks[0]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[17].evidenceChecks[2]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[19].evidenceChecks[1]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[20].evidenceChecks[1]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[21].evidenceChecks[1]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[33].roles[0]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[33].evidenceChecks[0]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[35].evidenceChecks[2]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[51].roles[0]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[51].evidenceChecks[0]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[63].evidenceChecks[1]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[64].evidenceChecks[1]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[65].evidenceChecks[1]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[85].roles[0]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[85].evidenceChecks[0]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[89].roles[0]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[89].evidenceChecks[0]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[113].roles[0]",
+        "practicalSelection.candidateValidationEvidence.diagnostic.originalGeneratorSnapshot.branches[113].evidenceChecks[0]"
       ]
     }
   ]
