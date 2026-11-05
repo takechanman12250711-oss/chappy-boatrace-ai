@@ -439,7 +439,7 @@
     const count = accordion.querySelector(".v3-ticket-accordion-count");
     if (count) count.textContent = `${models.reduce((sum, model) => sum + model.pointCount, 0)}点`;
     const aim = accordion.querySelector(".v3-ticket-accordion-aim p");
-    if (aim) aim.textContent = "フォーメーション全点のオッズを表示します。★は実戦厳選の購入対象です。";
+    if (aim) aim.textContent = "フォーメーション全点のオッズを表示します。★は中心の買い目です。";
     void hydrateFetchedOdds(display, prediction);
     return true;
   }

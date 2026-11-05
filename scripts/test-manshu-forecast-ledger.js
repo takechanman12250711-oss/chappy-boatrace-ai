@@ -311,7 +311,7 @@ assert.match(
 );
 assert.match(
   noteText,
-  /通常予想・実戦厳選・購入保存には自動追加しません/
+  /通常予想・中心の買い目・購入保存には自動追加しません/
 );
 assert.match(noteText, /4-12-16/);
 assert.match(noteText, /6-13-12/);

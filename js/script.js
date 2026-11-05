@@ -4371,7 +4371,7 @@
       return practicalSelection;
     } catch (selectionError) {
       console.warn(
-        "実戦厳選の確定に失敗",
+        "中心の買い目の確定に失敗",
         selectionError?.message ||
           selectionError
       );

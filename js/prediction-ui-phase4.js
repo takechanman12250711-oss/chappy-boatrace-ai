@@ -6,7 +6,7 @@
     {key:"manshu",label:"万舟",words:["万舟","波乱"]},
     {key:"tickets",label:"買い目",words:["買い目","フォーメーション","ランキング"]},
     {key:"reason",label:"AI根拠",words:["AI根拠","理論","展開理由"]},
-    {key:"practical",label:"実戦厳選",words:["実戦厳選"]}
+    {key:"practical",label:"中心の買い目",words:["実戦厳選","中心の買い目"]}
   ];
   let observer=null;
   function text(el){return String(el?.textContent||"").replace(/\s+/g," ").trim();}

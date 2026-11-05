@@ -1123,7 +1123,7 @@
 
       return [
         "【本命とは別会計の参考予想】",
-        "通常予想・実戦厳選・購入保存には自動追加しません。レース前に固定し、公式結果とは別会計で検証します。",
+        "通常予想・中心の買い目・購入保存には自動追加しません。レース前に固定し、公式結果とは別会計で検証します。",
         ...sections,
         `参考合計 ${number(ledger.totalTicketCount, 0)}点／${formatYen(ledger.totalReferenceStakeYen)}`
       ].join("\n\n");
@@ -1512,7 +1512,7 @@
       panel.dataset.signature = signature;
       panel.innerHTML = `
         <h3>💣 別会計予想の検証</h3>
-        <p>通常予想・実戦厳選とは混ぜず、波乱・道中変化・万舟の参考筋だけを集計します。</p>
+        <p>通常予想・中心の買い目とは混ぜず、波乱・道中変化・万舟の参考筋だけを集計します。</p>
         <div class="result-dashboard-grid">
           <div><strong>${escapeHtml(summary.overall.raceCount)}</strong><small>確定レース</small></div>
           <div><strong>${escapeHtml(summary.overall.hitRaceCount)}</strong><small>的中レース</small></div>
