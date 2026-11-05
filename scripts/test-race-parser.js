@@ -125,6 +125,17 @@ assert.ok(
   "6艇すべてを公式進入として記録する"
 );
 
+
+// 天候：公式の表示（気温の直後）だけを取り込み、無ければ空欄のまま。
+{
+  const sky = label => parseOfficialRaceHtml("", `<div>水面気象情報 16:23現在 気温 23.0℃ ${label} 風速 1m 水温 24.0℃ 波高 3cm</div>`).weather.weather;
+  assert.equal(sky("曇り"), "曇り");
+  assert.equal(sky("晴"), "晴");
+  assert.equal(sky("雨"), "雨");
+  assert.equal(sky("不明な表示"), "", "公式の天候名以外は取り込まない");
+  assert.equal(parseOfficialRaceHtml("", "<div>風速 1m</div>").weather.weather, "", "天候が無いときは空欄");
+}
+
 async function testFetchedAt() {
   const originalFetch = global.fetch;
   const fetchedUrls = [];

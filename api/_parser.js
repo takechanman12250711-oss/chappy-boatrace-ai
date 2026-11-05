@@ -412,6 +412,9 @@ function parseWeatherFromBeforeHtml(html) {
   const text = getBeforeText(html);
 
   const temperatureMatch = text.match(/気温\s+([\d.]+)℃/);
+  // The official page prints the sky condition right after the temperature
+  // (e.g. "気温 23.0℃ 曇り 風速 1m"). Only the official labels are accepted.
+  const skyMatch = text.match(/気温\s+[\d.]+℃\s+(晴|曇り|雨|雪|霧|台風)(?=\s)/);
   const windSpeedMatch = text.match(/風速\s+([\d.]+)m/);
   const waterTemperatureMatch = text.match(/水温\s+([\d.]+)℃/);
   const waveHeightMatch = text.match(/波高\s+([\d.]+)cm/);
@@ -460,6 +463,7 @@ function parseWeatherFromBeforeHtml(html) {
     Boolean(tideFlow);
 
   return {
+    weather: skyMatch ? skyMatch[1] : "",
     temperature: temperatureMatch ? toNumber(temperatureMatch[1]) : null,
     windSpeed: windSpeedMatch ? toNumber(windSpeedMatch[1]) : null,
     waterTemperature: waterTemperatureMatch ? toNumber(waterTemperatureMatch[1]) : null,
