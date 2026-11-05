@@ -423,11 +423,18 @@ function parseWeatherFromBeforeHtml(html) {
     : null;
   const windDirection = (() => {
     if (windDirectionCode === 17) return "無風";
+    // is-windN is an arrow on the official water diagram (スタンド at the
+    // bottom), pointing where the wind blows TO; N=1 points up and the
+    // numbers go clockwise in 22.5° steps, so 5 points right. Boats run
+    // counter-clockwise, so the start/1マーク straight runs left→right in
+    // front of the stand and the 1マーク is on the right: wind blowing to
+    // the right (4-6) is 追い風, to the left (12-14) is 向かい風.
+    // Before 2026-11-05 these two groups were swapped.
     if ([4, 5, 6].includes(windDirectionCode)) {
-      return "向かい風";
+      return "追い風";
     }
     if ([12, 13, 14].includes(windDirectionCode)) {
-      return "追い風";
+      return "向かい風";
     }
     if (
       windDirectionCode !== null &&
