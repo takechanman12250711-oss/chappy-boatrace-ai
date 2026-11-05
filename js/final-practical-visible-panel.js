@@ -49,7 +49,7 @@
     const selected=selectedRows(pred);
     if(!selected.length){previous?.remove();return;}
     const map=oddsMap(pred);
-    const html=`<details class="chappy-practical-visible-panel"><summary class="chappy-practical-visible-head"><strong>厳選</strong><span>${selected.length}点</span></summary><div class="chappy-practical-visible-list">${root.ChappyFinalMobileUi?.compactTickets ? root.ChappyFinalMobileUi.compactTickets(selected.map(row=>row.ticket)).map(row=>root.ChappyFinalMobileUi.compactLine(row,map)).join("") : selected.map(row=>{const odds=Number(map.get(row.ticket));return`<div class="chappy-practical-visible-row"><strong>${esc(row.ticket)}</strong><span>${Number.isFinite(odds)&&odds>0?`${odds.toFixed(1)}倍`:"オッズ未取得"}</span></div>`;}).join("")}</div></details>`;
+    const html=`<details class="chappy-practical-visible-panel"><summary class="chappy-practical-visible-head"><strong>中心の買い目</strong><span>${selected.length}点</span></summary><div class="chappy-practical-visible-list">${root.ChappyFinalMobileUi?.compactTickets ? root.ChappyFinalMobileUi.compactTickets(selected.map(row=>row.ticket)).map(row=>root.ChappyFinalMobileUi.compactLine(row,map)).join("") : selected.map(row=>{const odds=Number(map.get(row.ticket));return`<div class="chappy-practical-visible-row"><strong>${esc(row.ticket)}</strong><span>${Number.isFinite(odds)&&odds>0?`${odds.toFixed(1)}倍`:"オッズ未取得"}</span></div>`;}).join("")}</div></details>`;
     if(previous&&previous===lastPanel&&html===lastPanelHtml)return;
     const wasOpen=Boolean(previous?.open);
     const hadFocus=Boolean(previous?.contains?.(root.document.activeElement));
