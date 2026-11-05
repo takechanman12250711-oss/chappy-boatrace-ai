@@ -113,12 +113,12 @@ test('v5 adds only the free notice; frozen v4 reproduces the earlier bytes exact
   assert.doesNotMatch(FREE_NOTICE, /必勝|絶対|確実|儲か|保証/);
 });
 
-test('v6 (default) is fully free: no paywall, no paid wording, same tickets as v5; frozen v5 reproduces v5 bytes', () => {
+test('v6 is fully free: no paywall, no paid wording, same tickets as v5; frozen v5 reproduces v5 bytes', () => {
   const { FREE_NOTICE } = require('./note-readable-article');
   const frozenV5 = require('./note-recovery-readable-v5.cjs');
   for (const make of [fixture, ...['escape', 'manshu'].map(kind => () => { const b = independentFixture(); b.monitor.kind = kind; return b; })]) {
     const b = make(), before = JSON.stringify(b);
-    const v5 = readableArticle(b.article, b, { presentationVersion: 'readable-v5' }), v6 = readableArticle(b.article, b);
+    const v5 = readableArticle(b.article, b, { presentationVersion: 'readable-v5' }), v6 = readableArticle(b.article, b, { presentationVersion: 'readable-v6' });
     assert.deepEqual(v5, frozenV5.readableArticle(b.article, b));
     assert.equal(v6.presentationVersion, 'readable-v6');
     assert.equal(v6.paidText, v5.paidText);
@@ -129,4 +129,33 @@ test('v6 (default) is fully free: no paywall, no paid wording, same tickets as v
     assert.ok(v6.fullText.includes(v6.paidText.trim().split('\n')[0]), 'tickets are in the readable body');
     assert.equal(JSON.stringify(b), before);
   }
+});
+
+test('v7 (default) rewords only two free lines of v6; frozen v6 reproduces v6 bytes', () => {
+  const { PLAIN_WORDING } = require('./note-readable-article');
+  const frozenV6 = require('./note-recovery-readable-v6.cjs');
+  for (const make of [fixture, ...['escape', 'manshu'].map(kind => () => { const b = independentFixture(); b.monitor.kind = kind; return b; })]) {
+    const b = make(), before = JSON.stringify(b);
+    const v6 = readableArticle(b.article, b, { presentationVersion: 'readable-v6' }), v7 = readableArticle(b.article, b);
+    assert.deepEqual(v6, frozenV6.readableArticle(b.article, b));
+    assert.equal(v7.presentationVersion, 'readable-v7');
+    const plain = require('./note-plain-presentation.cjs');
+    assert.equal(v7.paidText, plain.fromModelText(v6.paidText), 'only the end heading and notice change');
+    assert.equal(plain.toModelText(v7.paidText), v6.paidText);
+    assert.equal(v7.fullText.slice(v7.freeText.length), v6.fullText.slice(v6.freeText.length).replace(v6.paidText, v7.paidText));
+    assert.ok(v7.paidText.includes('\n\n⭐ 中心の買い目\n\n') && v7.paidText.includes('追加で買うことを勧めるものではありません'));
+    assert.doesNotMatch(v7.fullText, /コロがし|実戦厳選|延べ/);
+    assert.match(v7.paidText, /区分ごとの点数を足すと\d+点です/);
+    assert.deepEqual(plain.parsePaidText(v7.paidText).modelTickets, require('./note-korogashi-presentation.cjs').parsePaidText(v6.paidText).modelTickets);
+    assert.equal(plain.modelProof(v7.paidText, 'a'.repeat(64)).label, '⭐ 中心の買い目');
+    assert.throws(() => plain.parsePaidText(v6.paidText), /plain_model_appendix_invalid/);
+    let expected = v6.freeText;
+    for (const [from, to] of PLAIN_WORDING) expected = expected.replace(from, to);
+    assert.equal(v7.freeText, expected);
+    assert.doesNotMatch(v7.freeText, /保存済みの実戦厳選|有料/);
+    assert.ok(v7.freeText.includes('当たりも外れも全部公開') && v7.freeText.includes('「中心の買い目」'));
+    assert.deepEqual(ticketsIn(v7.freeText), []);
+    assert.equal(JSON.stringify(b), before);
+  }
+  for (const [, to] of PLAIN_WORDING) assert.doesNotMatch(to, /必勝|絶対|確実|儲か|保証/);
 });

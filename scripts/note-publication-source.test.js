@@ -46,13 +46,15 @@ async function main() {
   Date.now = () => clock;
   const freePayload = publicationPayload(sourcePath, root, clock);
   assert.equal(freePayload.canPublish, true);
-  assert.equal(freePayload.presentationVersion, 'readable-v6');
+  assert.equal(freePayload.presentationVersion, 'readable-v7');
+  assert.doesNotMatch(freePayload.freeText, /保存済みの実戦厳選/);
+  assert.equal(require('./note-plain-presentation.cjs').fromModelText(publicationPayload(sourcePath, root, clock, { presentationVersion: 'readable-v6' }).paidText), freePayload.paidText, 'v7 keeps the v6 tickets; only the end heading and notice change');
   assert.equal(freePayload.price, 0);
   assert.doesNotMatch(freePayload.freeText, /有料/);
   assert.ok(freePayload.freeText.includes(require('./note-readable-article').FREE_NOTICE));
   // The paid publication flow below stays covered with the claimed v5 era.
   const payload = publicationPayload(sourcePath, root, clock, { presentationVersion: 'readable-v5' });
-  assert.equal(payload.paidText, freePayload.paidText, 'free v6 keeps the v5 ticket section bytes');
+  assert.equal(payload.paidText, require('./note-plain-presentation.cjs').toModelText(freePayload.paidText), 'free v7 keeps the v5 tickets; only the end heading and notice change');
   assert.equal(payload.price, 200);
   assert.equal(payload.canPublish, true);
   assert.equal(payload.practicalTicketCount, 1);
