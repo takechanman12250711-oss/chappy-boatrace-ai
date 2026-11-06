@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "analysisId": "phase9-live-improvement-cycle-v1",
-  "generatedAt": "2026-11-05T15:20:54.606Z",
+  "generatedAt": "2026-11-06T02:45:42.120Z",
   "productionChanged": false,
   "summary": {
-    "matchedRows": 4968,
-    "hits": 1238,
-    "misses": 3730,
+    "matchedRows": 4970,
+    "hits": 1239,
+    "misses": 3731,
     "duplicates": 0,
     "patterns": 123,
     "eligibleCandidates": 0
@@ -111694,6 +111694,49 @@
         "1-4-3"
       ],
       "result": "152"
+    },
+    {
+      "raceKey": "20261106-10-1",
+      "hit": true,
+      "missReason": "HIT",
+      "reason": "official trifecta is present in final tickets",
+      "logicFingerprint": "d691a612f3874582b925",
+      "theoryIds": [
+        "flow",
+        "holdPickup"
+      ],
+      "finalTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6"
+      ],
+      "result": "134"
+    },
+    {
+      "raceKey": "20261106-23-1",
+      "hit": false,
+      "missReason": "HEAD_MISS",
+      "reason": "predicted first-place axis differs from official result",
+      "logicFingerprint": "d691a612f3874582b925",
+      "theoryIds": [
+        "flow",
+        "holdPickup"
+      ],
+      "finalTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-5",
+        "1-2-6",
+        "3-2-1",
+        "3-2-6",
+        "1-3-4"
+      ],
+      "result": "214"
     }
   ],
   "patterns": [
@@ -117837,12 +117880,13 @@
       "reason": "No pre-existing formal minimum-count gate is attached to this observed pattern; phase9 must not invent one."
     },
     {
-      "patternId": "4d9645b77a531f26163f270bfba1fbda4111c135d89ccbb8511d98ab98c1c6ac",
+      "patternId": "6135303b45027834dffac8d00db5f77d26941a1dc5e66df6ba04c19d6a290737",
       "key": "d691a612f3874582b925::HEAD_MISS",
-      "count": 2,
+      "count": 3,
       "races": [
         "20261105-01-11",
-        "20261105-15-8"
+        "20261105-15-8",
+        "20261106-23-1"
       ],
       "status": "INSUFFICIENT_EVIDENCE",
       "candidate": null,
@@ -117861,12 +117905,13 @@
       "reason": "No pre-existing formal minimum-count gate is attached to this observed pattern; phase9 must not invent one."
     },
     {
-      "patternId": "52ff259734c023cb2b811b1d58cfe594346ec8f81eef694d71be4aaeb8720ea7",
+      "patternId": "b1516dc8bc2ba178d5edca315bb1bb2531eef40337116017cc35c2736f5d607b",
       "key": "d691a612f3874582b925::HIT",
-      "count": 2,
+      "count": 3,
       "races": [
         "20261105-01-8",
-        "20261105-15-11"
+        "20261105-15-11",
+        "20261106-10-1"
       ],
       "status": "INSUFFICIENT_EVIDENCE",
       "candidate": null,
