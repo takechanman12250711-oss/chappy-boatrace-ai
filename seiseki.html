@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#f3f8ff"/>
+<meta name="description" content="チャッピーボートレースAIの全成績。締切前に保存した予想だけを、外れも含めて毎日公式結果と照合しています。"/>
+<title>全成績｜チャッピーボートレースAI</title>
+<style>
+:root{--bg:#f3f8ff;--card:#fff;--ink:#14263d;--sub:#5a6b80;--line:#dbe5f1;--hit:#d9480f;--hitbg:#fff1e8;--miss:#8a96a6;--accent:#1c64c8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;line-height:1.6;-webkit-text-size-adjust:100%}
+header{padding:20px 16px 8px;max-width:720px;margin:0 auto}
+header a{color:var(--accent);font-size:14px;text-decoration:none}
+h1{font-size:22px;margin:8px 0 4px}
+.lead{color:var(--sub);font-size:14px;margin:0}
+main{max-width:720px;margin:0 auto;padding:0 16px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+h2{font-size:17px;margin:0 0 10px}
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.tile{background:var(--bg);border-radius:10px;padding:10px 12px}
+.tile small{display:block;color:var(--sub);font-size:12px}
+.tile b{font-size:24px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tile.money b{font-size:19px}
+.tile span{font-size:13px;color:var(--sub);margin-left:2px}
+.note{font-size:13px;color:var(--sub);margin:10px 0 0}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-size:12px;color:var(--sub);font-weight:600}
+tr.hit td{background:var(--hitbg)}
+.badge{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:1px 9px}
+.badge.hit{background:var(--hit);color:#fff}
+.badge.miss{background:#eef1f5;color:var(--miss)}
+.plus{color:var(--hit);font-weight:700}
+.filters{display:flex;gap:8px;margin:0 0 10px;flex-wrap:wrap}
+.filters button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 14px;font-size:14px}
+.filters button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.more{display:block;width:100%;margin-top:12px;padding:10px;border:1px solid var(--line);background:var(--bg);border-radius:10px;font-size:15px;color:var(--ink)}
+details summary{cursor:pointer;font-weight:700}
+details p,details li{font-size:14px}
+.status{color:var(--sub);font-size:14px}
+footer{text-align:center;color:var(--sub);font-size:12px;padding:0 16px 32px}
+</style>
+</head>
+<body>
+<header>
+<a href="./">← アプリに戻る</a>
+<h1>📈 チャッピーの全成績</h1>
+<p class="lead">締切前に保存した予想だけを、外れも全部含めて公式結果と照合しています。</p>
+</header>
+<main>
+<p id="status" class="status">成績を読み込んでいます…</p>
+
+<section class="card" id="summaryCard" hidden>
+<h2>これまでの成績</h2>
+<div class="tiles" id="cumTiles"></div>
+<h2 style="margin-top:16px">直近100レース</h2>
+<div class="tiles" id="recentTiles"></div>
+<p class="note" id="updatedAt"></p>
+</section>
+
+<section class="card" id="dailyCard" hidden>
+<h2>日ごとの成績（直近30日）</h2>
+<div style="overflow-x:auto"><table id="dailyTable"><thead><tr><th>日付</th><th>レース</th><th>的中</th><th>的中率</th><th>回収率</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section class="card" id="listCard" hidden>
+<h2>レースごとの記録</h2>
+<div class="filters" role="group" aria-label="表示の切り替え">
+<button type="button" data-filter="all" aria-pressed="true">すべて</button>
+<button type="button" data-filter="hit" aria-pressed="false">的中だけ</button>
+<button type="button" data-filter="miss" aria-pressed="false">外れだけ</button>
+</div>
+<div style="overflow-x:auto"><table id="raceTable"><thead><tr><th>レース</th><th>結果</th><th>点数</th><th>確定</th><th>払戻</th></tr></thead><tbody></tbody></table></div>
+<button type="button" class="more" id="moreBtn">もっと見る</button>
+</section>
+
+<section class="card" id="methodCard" hidden>
+<details>
+<summary>数え方</summary>
+<ul>
+<li>対象は、<b>レースの締切より前に保存した予想</b>だけです。締切後に保存されたものや、保存時刻が分からないものは除いています（<span id="excluded"></span>）。</li>
+<li>買い目は保存した「実戦厳選」だけで判定し、追加候補や参考の買い目は混ぜていません。</li>
+<li>1点100円で買ったとして計算しています。回収率＝払戻÷購入額です。</li>
+<li>外れも除かずに、全部を分母に入れています。結果が出たあとに予想を直すことはしていません。</li>
+<li>予想の仕組みを変えた日も、記録は続けて数えています。</li>
+</ul>
+</details>
+</section>
+</main>
+<footer>舟券の購入は20歳になってから。無理のない範囲で楽しみましょう。</footer>
+<script>
+(function(){
+  "use strict";
+  var LEDGER_URL = "data/stats/continuous-performance-ledger.json";
+  var VENUES = ["","桐生","戸田","江戸川","平和島","多摩川","浜名湖","蒲郡","常滑","津","三国","びわこ","住之江","尼崎","鳴門","丸亀","児島","宮島","徳山","下関","若松","芦屋","福岡","唐津","大村"];
+  var PAGE = 50;
+  var rows = [], filter = "all", shown = PAGE;
+
+  function $(id){ return document.getElementById(id); }
+  function yen(n){ return Number(n || 0).toLocaleString("ja-JP") + "円"; }
+  function pct(n){ return (Math.round(Number(n || 0) * 10) / 10).toFixed(1) + "%"; }
+  function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]; }); }
+  function parseKey(key){
+    var p = String(key || "").split("-");
+    var d = p[0] || "";
+    return { date: d, md: d.length === 8 ? Number(d.slice(4,6)) + "/" + Number(d.slice(6,8)) : d, venue: VENUES[Number(p[1])] || ("場" + p[1]), race: p[2] };
+  }
+  function tile(label, value, unit, cls){
+    return '<div class="tile' + (cls ? " " + cls : "") + '"><small>' + esc(label) + '</small><b>' + esc(value) + '</b>' + (unit ? '<span>' + esc(unit) + '</span>' : '') + '</div>';
+  }
+  function tiles(s){
+    var profit = Number(s.profitYen || 0);
+    return tile("レース数", Number(s.races).toLocaleString("ja-JP"), "R") +
+      tile("的中", Number(s.hits).toLocaleString("ja-JP"), "本") +
+      tile("的中率", pct(s.hitRate)) +
+      tile("回収率", pct(s.roi)) +
+      tile("購入額（1点100円）", yen(s.stakeYen), "", "money") +
+      tile("収支", (profit > 0 ? "+" : "") + yen(profit), "", "money");
+  }
+  function renderDaily(){
+    var byDay = {};
+    rows.forEach(function(r){
+      var d = parseKey(r.raceKey).date;
+      var b = byDay[d] || (byDay[d] = { races:0, hits:0, stake:0, ret:0 });
+      b.races++; if (r.hit) b.hits++;
+      b.stake += Number(r.stakeYen || 0); b.ret += Number(r.returnYen || 0);
+    });
+    var days = Object.keys(byDay).sort().reverse().slice(0, 30);
+    $("dailyTable").tBodies[0].innerHTML = days.map(function(d){
+      var b = byDay[d], roi = b.stake ? b.ret / b.stake * 100 : 0;
+      return '<tr><td>' + esc(parseKey(d).md) + '</td><td>' + b.races + '</td><td>' + b.hits + '</td><td>' + pct(b.hits / b.races * 100) + '</td><td' + (roi >= 100 ? ' class="plus"' : '') + '>' + pct(roi) + '</td></tr>';
+    }).join("");
+  }
+  function renderList(){
+    var list = rows.filter(function(r){ return filter === "all" || (filter === "hit" ? r.hit : !r.hit); });
+    $("raceTable").tBodies[0].innerHTML = list.slice(0, shown).map(function(r){
+      var k = parseKey(r.raceKey);
+      return '<tr class="' + (r.hit ? "hit" : "") + '"><td>' + esc(k.md + " " + k.venue + k.race + "R") + '</td><td><span class="badge ' + (r.hit ? "hit" : "miss") + '">' + (r.hit ? "的中" : "外れ") + '</span></td><td>' + esc(r.ticketCount) + '点</td><td>' + esc(r.actualTicket || "-") + '</td><td>' + (r.hit ? '<span class="plus">' + yen(r.returnYen) + '</span>' : "-") + '</td></tr>';
+    }).join("") || '<tr><td colspan="5">該当するレースはありません</td></tr>';
+    $("moreBtn").hidden = list.length <= shown;
+  }
+  function render(data){
+    rows = (data.rows || []).slice().sort(function(a, b){
+      var ka = String(a.raceKey).split("-"), kb = String(b.raceKey).split("-");
+      return (kb[0] - ka[0]) || (String(b.selectedAt).localeCompare(String(a.selectedAt))) || (kb[2] - ka[2]);
+    });
+    $("cumTiles").innerHTML = tiles(data.cumulative || {});
+    $("recentTiles").innerHTML = tiles(data.rolling100 || {});
+    var g = new Date(data.generatedAt);
+    $("updatedAt").textContent = isNaN(g) ? "" : g.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) + " 時点の集計（毎日自動で更新）";
+    var dg = data.diagnostics || {};
+    $("excluded").textContent = "これまでに" + Number(dg.excludedPredictionCount || 0) + "件";
+    renderDaily(); renderList();
+    ["summaryCard","dailyCard","listCard","methodCard"].forEach(function(id){ $(id).hidden = false; });
+    $("status").hidden = true;
+  }
+  document.querySelectorAll("[data-filter]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      filter = btn.getAttribute("data-filter"); shown = PAGE;
+      document.querySelectorAll("[data-filter]").forEach(function(b){ b.setAttribute("aria-pressed", String(b === btn)); });
+      renderList();
+    });
+  });
+  $("moreBtn").addEventListener("click", function(){ shown += PAGE; renderList(); });
+  fetch(LEDGER_URL, { cache: "no-cache" })
+    .then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(render)
+    .catch(function(){ $("status").textContent = "成績を読み込めませんでした。時間をおいて開き直してください。"; });
+})();
+</script>
+</body>
+</html>
