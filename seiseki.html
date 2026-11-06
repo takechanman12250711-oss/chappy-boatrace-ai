@@ -40,6 +40,20 @@ tr.hit td{background:var(--hitbg)}
 details summary{cursor:pointer;font-weight:700}
 details p,details li{font-size:14px}
 .status{color:var(--sub);font-size:14px}
+.bar{position:relative;height:10px;background:#eef1f5;border-radius:5px;margin:4px 0 2px}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--accent)}
+.bar b{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink)}
+.big{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.vs{font-size:13px;color:var(--sub)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.box{background:var(--bg);border-radius:10px;padding:10px 12px}
+.box small{display:block;color:var(--sub);font-size:12px}
+.good{color:var(--hit);font-weight:700}
+.weak{color:#1c64c8;font-weight:700}
+.dim{color:var(--miss)}
+.tag{display:inline-block;font-size:11px;border-radius:6px;padding:0 6px;margin-left:4px;vertical-align:1px}
+.tag.better{background:var(--hitbg);color:var(--hit)}
+.tag.worse{background:#e8f0fb;color:#1c64c8}
 footer{text-align:center;color:var(--sub);font-size:12px;padding:0 16px 32px}
 </style>
 </head>
@@ -74,6 +88,28 @@ footer{text-align:center;color:var(--sub);font-size:12px;padding:0 16px 32px}
 </div>
 <div style="overflow-x:auto"><table id="raceTable"><thead><tr><th>レース</th><th>結果</th><th>点数</th><th>確定</th><th>払戻</th></tr></thead><tbody></tbody></table></div>
 <button type="button" class="more" id="moreBtn">もっと見る</button>
+</section>
+
+<section class="card" id="roughCard" hidden>
+<h2>🌊 荒れる？堅い？ レース前の見立てと答え合わせ</h2>
+<p class="note" style="margin:0 0 10px">締切前に保存したデータだけで各レースを「荒れる／混戦／堅め」に分け、レース後に公式の払戻で採点しています（3連単5,000円以上＝荒れた）。<b>買い目には使っていない研究用</b>です。</p>
+<div id="roughBody"></div>
+</section>
+
+<section class="card" id="tiltCard" hidden>
+<h2>📐 チルトの検証</h2>
+<p class="note" style="margin:0 0 10px">チルト（エンジンの角度）を跳ねた艇が本当に来ているかを、実際の進入コースごとに数えました。<span class="tag better">上</span>はそのコースの平均よりはっきり良い、<span class="tag worse">下</span>ははっきり悪い（偶然では説明しにくい差）です。</p>
+<div id="tiltBody"></div>
+</section>
+
+<section class="card" id="motorCard" hidden>
+<h2>🔧 モーターの効き方</h2>
+<div id="motorBody"></div>
+</section>
+
+<section class="card" id="venueCard" hidden>
+<h2>🏟 場ごとのチャッピーの的中率</h2>
+<div id="venueBody"></div>
 </section>
 
 <section class="card" id="methodCard" hidden>
@@ -168,6 +204,69 @@ footer{text-align:center;color:var(--sub);font-size:12px;padding:0 16px 32px}
     .then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(render)
     .catch(function(){ $("status").textContent = "成績を読み込めませんでした。時間をおいて開き直してください。"; });
+  // ---- 研究レポート（荒れ見立て・チルト・モーター・場） ----
+  var INSIGHT_URL = "data/stats/race-insight-report.json";
+  function md(d){ d = String(d || ""); return d.length === 8 ? Number(d.slice(4,6)) + "/" + Number(d.slice(6,8)) : d; }
+  function bar(val, base){ return '<div class="bar"><i style="width:' + Math.min(100, val) + '%"></i><b style="left:' + Math.min(100, base) + '%"></b></div>'; }
+  function roughBlock(w, title){
+    if (!w || !w.races) return "";
+    var r = w.rough, s = w.solid;
+    return '<h3 style="font-size:15px;margin:14px 0 6px">' + title + '（' + w.races.toLocaleString("ja-JP") + 'レース）</h3>' +
+      '<div class="pair">' +
+      '<div class="box"><small>「荒れる」と見た ' + r.races + ' 本</small><span class="big">' + pct(r.roughRate) + '</span> が荒れた' + bar(r.roughRate, w.baseRoughRate) + '<span class="vs">いつもは ' + pct(w.baseRoughRate) + '</span></div>' +
+      '<div class="box"><small>「堅め」と見た ' + s.races + ' 本</small><span class="big">' + pct(s.solidRate) + '</span> が堅く決着' + bar(s.solidRate, w.baseSolidRate) + '<span class="vs">いつもは ' + pct(w.baseSolidRate) + '</span></div>' +
+      '</div>' +
+      '<table style="margin-top:10px"><thead><tr><th>見立て</th><th>レース</th><th>チャッピー的中率</th><th>回収率</th></tr></thead><tbody>' +
+      [["荒れる", r], ["混戦", w.mixed], ["堅め", s]].map(function(x){ var c = x[1].chappy; return '<tr><td>' + x[0] + '</td><td>' + x[1].races + '</td><td>' + pct(c.hitRate) + '</td><td>' + pct(c.roi) + '</td></tr>'; }).join("") +
+      '</tbody></table>';
+  }
+  function renderInsight(d){
+    var R = d.roughness;
+    var html = "";
+    if (R.forwardWindow && R.forwardWindow.races) html += roughBlock(R.forwardWindow, "公開後（" + md(R.frozenAfterRaceDate) + "より後）の答え合わせ");
+    html += roughBlock(R.holdoutWindow, "検証期間（" + md(R.trainedOnRaceDatesBefore) + "以降・式づくりに使っていない期間）");
+    if (R.latestDay && R.latestDay.races) {
+      var L = R.latestDay;
+      html += '<p class="note">' + md(L.date) + ' の分：「荒れる」' + L.rough.races + '本中 ' + L.rough.roughRaces + '本が荒れ、「堅め」' + L.solid.races + '本中 ' + (L.solid.races - L.solid.roughRaces) + '本が堅く決着。</p>';
+    }
+    html += '<details style="margin-top:10px"><summary>しくみ</summary><ul>' +
+      '<li>使う材料：1コースの選手の級別・勝率・平均ST、6艇の勝率のばらつき、外枠の強さ、モーター、風・波、場のイン1着率（過去3年）、1R/12R。</li>' +
+      '<li>式は ' + md(R.trainedOnRaceDatesBefore) + ' より前のレースだけで作り、それ以降は式を変えずに採点しています。' + md(R.frozenAfterRaceDate) + 'より後は完全に未来のレースです。</li>' +
+      '<li>「荒れる」と見ても、6割ほどは荒れません。荒れやすさを伝える目安です。</li></ul></details>';
+    $("roughBody").innerHTML = html;
+
+    var T = d.tilt;
+    $("tiltBody").innerHTML = '<div style="overflow-x:auto"><table><thead><tr><th>コース</th><th>チルト</th><th>件数</th><th>1着率</th><th>3着内</th></tr></thead><tbody>' +
+      T.byCourse.map(function(c){
+        var head = '<tr><td><b>' + c.course + 'コース</b></td><td class="dim">平均</td><td class="dim">' + c.entries + '</td><td class="dim">' + pct(c.winRate) + '</td><td class="dim">' + pct(c.top3Rate) + '</td></tr>';
+        return head + c.buckets.filter(function(b){ return b.tilt !== "0"; }).map(function(b){
+          var tag = b.signal === "better" ? '<span class="tag better">上</span>' : b.signal === "worse" ? '<span class="tag worse">下</span>' : "";
+          return '<tr><td></td><td>' + esc(b.tilt) + tag + '</td><td>' + b.entries + (b.signal === "too-few" ? '<span class="dim">（少）</span>' : "") + '</td><td>' + pct(b.winRate) + '</td><td>' + pct(b.top3Rate) + '</td></tr>';
+        }).join("");
+      }).join("") + '</tbody></table></div>' +
+      '<p class="note">' + T.entries.toLocaleString("ja-JP") + '艇分（' + T.races.toLocaleString("ja-JP") + 'レース）。「（少）」は25艇未満で、まだ判断できない数です。</p>';
+
+    var M = d.motor.official, I = d.motor["internal-score"];
+    var useM = M && M.races >= 100 ? M : I;
+    $("motorBody").innerHTML = '<p class="note" style="margin:0 0 8px">1コースの艇のモーターが、6艇の中で何番目に良いかで、イン1着率がどう変わるか。</p>' +
+      '<table><thead><tr><th>1コースのモーター</th><th>レース</th><th>イン1着率</th></tr></thead><tbody>' +
+      useM.inCourseWinByMotorRank.map(function(x){ return '<tr><td>6艇中 ' + x.motorRank + '番目</td><td>' + x.races + '</td><td>' + pct(x.inWinRate) + '</td></tr>'; }).join("") +
+      '</tbody></table>' +
+      '<p class="note">' + (useM === M ? '公式のモーター2連率で数えた ' + M.races + 'レース分です。' : '') + '10/27までに保存した予想は、モーター欄が公式の数字ではなく内部の点数に置き換わっていたため、別に数えています（' + I.races.toLocaleString("ja-JP") + 'レース）。</p>';
+
+    var V = d.venue;
+    var list = V.byVenue.slice().sort(function(a, b){ return b.all.hitRate - a.all.hitRate; });
+    $("venueBody").innerHTML = '<div style="overflow-x:auto"><table><thead><tr><th>場</th><th>レース</th><th>的中率</th><th>前半</th><th>後半</th></tr></thead><tbody>' +
+      list.map(function(v){ return '<tr><td>' + esc(v.venue) + '</td><td>' + v.all.races + '</td><td>' + pct(v.all.hitRate) + '</td><td>' + (v.early.races ? pct(v.early.hitRate) : "-") + '</td><td>' + (v.late.races ? pct(v.late.hitRate) : "-") + '</td></tr>'; }).join("") +
+      '</tbody></table></div>' +
+      '<p class="note">前半＝' + md(V.splitDate) + 'より前、後半＝それ以降。的中率は前半と後半で似た傾向が続きます（相関 ' + V.hitRateStabilityCorrelation + '）。一方、場ごとの回収率は前半と後半でほぼ関係がなく（相関 ' + V.roiStabilityCorrelation + '）、たまたまの大当たりに左右されるため、ここには載せていません。</p>';
+
+    ["roughCard","tiltCard","motorCard","venueCard"].forEach(function(id){ $(id).hidden = false; });
+  }
+  fetch(INSIGHT_URL, { cache: "no-cache" })
+    .then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(renderInsight)
+    .catch(function(){ /* 研究レポートが無くても成績は表示する */ });
 })();
 </script>
 </body>

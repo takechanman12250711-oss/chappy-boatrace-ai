@@ -1,0 +1,1311 @@
+{
+  "schemaVersion": 1,
+  "analysisId": "race-insight-report-v1",
+  "generatedAt": "2026-11-06T10:45:18.367Z",
+  "productionChanged": false,
+  "automaticProductionChange": false,
+  "usableForPrediction": false,
+  "sourceCohort": {
+    "canonicalPredictionCount": 4518,
+    "preDeadlinePredictionCount": 4500,
+    "excludedPredictionCount": 18,
+    "excludedReasons": {
+      "captured-at-or-after-deadline": 6,
+      "source-fetched-at-or-after-deadline": 5,
+      "timestamp-missing": 7
+    },
+    "officialResultCount": 4424,
+    "settledJoinCount": 4424,
+    "deduplication": "predictions-preferred-over-verificationPredictions",
+    "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json",
+    "analyzedRaces": 4424,
+    "firstDate": "20260722",
+    "lastDate": "20261106"
+  },
+  "roughness": {
+    "modelId": "race-roughness-v1",
+    "definition": "3連単の払戻が5,000円以上なら「荒れた」",
+    "trainedOnRaceDatesBefore": "20260928",
+    "frozenAfterRaceDate": "20261106",
+    "fitWindow": {
+      "races": 2682,
+      "baseRoughRate": 30.8,
+      "baseSolidRate": 69.2,
+      "chappy": {
+        "races": 2682,
+        "hits": 646,
+        "hitRate": 24.1,
+        "roi": 81.9
+      },
+      "rough": {
+        "races": 805,
+        "roughRaces": 322,
+        "roughRate": 40,
+        "solidRate": 60,
+        "chappy": {
+          "races": 805,
+          "hits": 146,
+          "hitRate": 18.1,
+          "roi": 74.1
+        }
+      },
+      "mixed": {
+        "races": 750,
+        "roughRaces": 260,
+        "roughRate": 34.7,
+        "solidRate": 65.3,
+        "chappy": {
+          "races": 750,
+          "hits": 176,
+          "hitRate": 23.5,
+          "roi": 113.4
+        }
+      },
+      "solid": {
+        "races": 1127,
+        "roughRaces": 243,
+        "roughRate": 21.6,
+        "solidRate": 78.4,
+        "chappy": {
+          "races": 1127,
+          "hits": 324,
+          "hitRate": 28.7,
+          "roi": 66.4
+        }
+      }
+    },
+    "holdoutWindow": {
+      "races": 1742,
+      "baseRoughRate": 30.3,
+      "baseSolidRate": 69.7,
+      "chappy": {
+        "races": 1742,
+        "hits": 425,
+        "hitRate": 24.4,
+        "roi": 65.2
+      },
+      "rough": {
+        "races": 536,
+        "roughRaces": 221,
+        "roughRate": 41.2,
+        "solidRate": 58.8,
+        "chappy": {
+          "races": 536,
+          "hits": 89,
+          "hitRate": 16.6,
+          "roi": 65.5
+        }
+      },
+      "mixed": {
+        "races": 456,
+        "roughRaces": 147,
+        "roughRate": 32.2,
+        "solidRate": 67.8,
+        "chappy": {
+          "races": 456,
+          "hits": 106,
+          "hitRate": 23.2,
+          "roi": 67
+        }
+      },
+      "solid": {
+        "races": 750,
+        "roughRaces": 159,
+        "roughRate": 21.2,
+        "solidRate": 78.8,
+        "chappy": {
+          "races": 750,
+          "hits": 230,
+          "hitRate": 30.7,
+          "roi": 63.9
+        }
+      }
+    },
+    "forwardWindow": {
+      "races": 0,
+      "baseRoughRate": null,
+      "baseSolidRate": null,
+      "chappy": {
+        "races": 0,
+        "hits": 0,
+        "hitRate": null,
+        "roi": null
+      },
+      "rough": {
+        "races": 0,
+        "roughRaces": 0,
+        "roughRate": null,
+        "solidRate": null,
+        "chappy": {
+          "races": 0,
+          "hits": 0,
+          "hitRate": null,
+          "roi": null
+        }
+      },
+      "mixed": {
+        "races": 0,
+        "roughRaces": 0,
+        "roughRate": null,
+        "solidRate": null,
+        "chappy": {
+          "races": 0,
+          "hits": 0,
+          "hitRate": null,
+          "roi": null
+        }
+      },
+      "solid": {
+        "races": 0,
+        "roughRaces": 0,
+        "roughRate": null,
+        "solidRate": null,
+        "chappy": {
+          "races": 0,
+          "hits": 0,
+          "hitRate": null,
+          "roi": null
+        }
+      }
+    },
+    "latestDay": {
+      "date": "20261106",
+      "races": 2,
+      "baseRoughRate": 0,
+      "baseSolidRate": 100,
+      "chappy": {
+        "races": 2,
+        "hits": 1,
+        "hitRate": 50,
+        "roi": 24
+      },
+      "rough": {
+        "races": 0,
+        "roughRaces": 0,
+        "roughRate": null,
+        "solidRate": null,
+        "chappy": {
+          "races": 0,
+          "hits": 0,
+          "hitRate": null,
+          "roi": null
+        }
+      },
+      "mixed": {
+        "races": 0,
+        "roughRaces": 0,
+        "roughRate": null,
+        "solidRate": null,
+        "chappy": {
+          "races": 0,
+          "hits": 0,
+          "hitRate": null,
+          "roi": null
+        }
+      },
+      "solid": {
+        "races": 2,
+        "roughRaces": 0,
+        "roughRate": 0,
+        "solidRate": 100,
+        "chappy": {
+          "races": 2,
+          "hits": 1,
+          "hitRate": 50,
+          "roi": 24
+        }
+      }
+    }
+  },
+  "tilt": {
+    "entries": 15474,
+    "races": 2721,
+    "byCourse": [
+      {
+        "course": 1,
+        "entries": 2692,
+        "winRate": 53.6,
+        "top3Rate": 80.9,
+        "buckets": [
+          {
+            "tilt": "-0.5",
+            "entries": 631,
+            "winRate": 50.7,
+            "top3Rate": 79.1,
+            "signal": "same"
+          },
+          {
+            "tilt": "0",
+            "entries": 1852,
+            "winRate": 55.3,
+            "top3Rate": 81.6,
+            "signal": "same"
+          },
+          {
+            "tilt": "+0.5",
+            "entries": 119,
+            "winRate": 47.1,
+            "top3Rate": 84,
+            "signal": "same"
+          },
+          {
+            "tilt": "+1〜1.5",
+            "entries": 62,
+            "winRate": 46.8,
+            "top3Rate": 77.4,
+            "signal": "same"
+          },
+          {
+            "tilt": "+2以上",
+            "entries": 28,
+            "winRate": 46.4,
+            "top3Rate": 75,
+            "signal": "same"
+          }
+        ]
+      },
+      {
+        "course": 2,
+        "entries": 2696,
+        "winRate": 13.5,
+        "top3Rate": 57.6,
+        "buckets": [
+          {
+            "tilt": "-0.5",
+            "entries": 642,
+            "winRate": 11.7,
+            "top3Rate": 57.6,
+            "signal": "same"
+          },
+          {
+            "tilt": "0",
+            "entries": 1845,
+            "winRate": 14,
+            "top3Rate": 57.8,
+            "signal": "same"
+          },
+          {
+            "tilt": "+0.5",
+            "entries": 114,
+            "winRate": 15.8,
+            "top3Rate": 57,
+            "signal": "same"
+          },
+          {
+            "tilt": "+1〜1.5",
+            "entries": 68,
+            "winRate": 10.3,
+            "top3Rate": 55.9,
+            "signal": "same"
+          },
+          {
+            "tilt": "+2以上",
+            "entries": 27,
+            "winRate": 14.8,
+            "top3Rate": 51.9,
+            "signal": "same"
+          }
+        ]
+      },
+      {
+        "course": 3,
+        "entries": 2667,
+        "winRate": 14.2,
+        "top3Rate": 54.7,
+        "buckets": [
+          {
+            "tilt": "-0.5",
+            "entries": 602,
+            "winRate": 13.1,
+            "top3Rate": 54.8,
+            "signal": "same"
+          },
+          {
+            "tilt": "0",
+            "entries": 1836,
+            "winRate": 14.1,
+            "top3Rate": 54.4,
+            "signal": "same"
+          },
+          {
+            "tilt": "+0.5",
+            "entries": 117,
+            "winRate": 15.4,
+            "top3Rate": 55.6,
+            "signal": "same"
+          },
+          {
+            "tilt": "+1〜1.5",
+            "entries": 85,
+            "winRate": 21.2,
+            "top3Rate": 61.2,
+            "signal": "same"
+          },
+          {
+            "tilt": "+2以上",
+            "entries": 27,
+            "winRate": 22.2,
+            "top3Rate": 44.4,
+            "signal": "same"
+          }
+        ]
+      },
+      {
+        "course": 4,
+        "entries": 2133,
+        "winRate": 11.6,
+        "top3Rate": 49.5,
+        "buckets": [
+          {
+            "tilt": "-0.5",
+            "entries": 484,
+            "winRate": 9.3,
+            "top3Rate": 51.2,
+            "signal": "same"
+          },
+          {
+            "tilt": "0",
+            "entries": 1461,
+            "winRate": 11.6,
+            "top3Rate": 48.1,
+            "signal": "same"
+          },
+          {
+            "tilt": "+0.5",
+            "entries": 101,
+            "winRate": 12.9,
+            "top3Rate": 49.5,
+            "signal": "same"
+          },
+          {
+            "tilt": "+1〜1.5",
+            "entries": 58,
+            "winRate": 15.5,
+            "top3Rate": 58.6,
+            "signal": "same"
+          },
+          {
+            "tilt": "+2以上",
+            "entries": 29,
+            "winRate": 34.5,
+            "top3Rate": 69,
+            "signal": "better"
+          }
+        ]
+      },
+      {
+        "course": 5,
+        "entries": 2640,
+        "winRate": 6.4,
+        "top3Rate": 39.1,
+        "buckets": [
+          {
+            "tilt": "-0.5",
+            "entries": 612,
+            "winRate": 6.4,
+            "top3Rate": 39.2,
+            "signal": "same"
+          },
+          {
+            "tilt": "0",
+            "entries": 1791,
+            "winRate": 6.4,
+            "top3Rate": 39.2,
+            "signal": "same"
+          },
+          {
+            "tilt": "+0.5",
+            "entries": 129,
+            "winRate": 9.3,
+            "top3Rate": 47.3,
+            "signal": "same"
+          },
+          {
+            "tilt": "+1〜1.5",
+            "entries": 72,
+            "winRate": 4.2,
+            "top3Rate": 27.8,
+            "signal": "worse"
+          },
+          {
+            "tilt": "+2以上",
+            "entries": 36,
+            "winRate": 5.6,
+            "top3Rate": 27.8,
+            "signal": "same"
+          }
+        ]
+      },
+      {
+        "course": 6,
+        "entries": 2646,
+        "winRate": 2.1,
+        "top3Rate": 22.8,
+        "buckets": [
+          {
+            "tilt": "-0.5",
+            "entries": 581,
+            "winRate": 1.2,
+            "top3Rate": 18.2,
+            "signal": "worse"
+          },
+          {
+            "tilt": "0",
+            "entries": 1746,
+            "winRate": 2.1,
+            "top3Rate": 23.7,
+            "signal": "same"
+          },
+          {
+            "tilt": "+0.5",
+            "entries": 167,
+            "winRate": 4.8,
+            "top3Rate": 31.1,
+            "signal": "better"
+          },
+          {
+            "tilt": "+1〜1.5",
+            "entries": 83,
+            "winRate": 1.2,
+            "top3Rate": 20.5,
+            "signal": "same"
+          },
+          {
+            "tilt": "+2以上",
+            "entries": 69,
+            "winRate": 4.3,
+            "top3Rate": 18.8,
+            "signal": "same"
+          }
+        ]
+      }
+    ]
+  },
+  "motor": {
+    "official": {
+      "races": 690,
+      "inCourseWinByMotorRank": [
+        {
+          "motorRank": 1,
+          "races": 132,
+          "inWinRate": 58.3
+        },
+        {
+          "motorRank": 2,
+          "races": 122,
+          "inWinRate": 55.7
+        },
+        {
+          "motorRank": 3,
+          "races": 105,
+          "inWinRate": 61.9
+        },
+        {
+          "motorRank": 4,
+          "races": 111,
+          "inWinRate": 48.6
+        },
+        {
+          "motorRank": 5,
+          "races": 110,
+          "inWinRate": 49.1
+        },
+        {
+          "motorRank": 6,
+          "races": 110,
+          "inWinRate": 42.7
+        }
+      ],
+      "byCourse": [
+        {
+          "course": 1,
+          "strong": {
+            "entries": 222,
+            "winRate": 61.7,
+            "top3Rate": 86.9
+          },
+          "even": {
+            "entries": 248,
+            "winRate": 52,
+            "top3Rate": 77.8
+          },
+          "weak": {
+            "entries": 220,
+            "winRate": 45,
+            "top3Rate": 80
+          }
+        },
+        {
+          "course": 2,
+          "strong": {
+            "entries": 196,
+            "winRate": 19.4,
+            "top3Rate": 63.8
+          },
+          "even": {
+            "entries": 267,
+            "winRate": 11.6,
+            "top3Rate": 55.4
+          },
+          "weak": {
+            "entries": 229,
+            "winRate": 12.7,
+            "top3Rate": 47.2
+          }
+        },
+        {
+          "course": 3,
+          "strong": {
+            "entries": 212,
+            "winRate": 18.4,
+            "top3Rate": 60.8
+          },
+          "even": {
+            "entries": 251,
+            "winRate": 17.1,
+            "top3Rate": 55.8
+          },
+          "weak": {
+            "entries": 231,
+            "winRate": 10.4,
+            "top3Rate": 45.5
+          }
+        },
+        {
+          "course": 4,
+          "strong": {
+            "entries": 230,
+            "winRate": 14.8,
+            "top3Rate": 58.7
+          },
+          "even": {
+            "entries": 235,
+            "winRate": 8.9,
+            "top3Rate": 49.8
+          },
+          "weak": {
+            "entries": 226,
+            "winRate": 8,
+            "top3Rate": 46.5
+          }
+        },
+        {
+          "course": 5,
+          "strong": {
+            "entries": 205,
+            "winRate": 6.8,
+            "top3Rate": 41
+          },
+          "even": {
+            "entries": 252,
+            "winRate": 4,
+            "top3Rate": 39.3
+          },
+          "weak": {
+            "entries": 235,
+            "winRate": 5.5,
+            "top3Rate": 32.3
+          }
+        },
+        {
+          "course": 6,
+          "strong": {
+            "entries": 209,
+            "winRate": 1.9,
+            "top3Rate": 19.1
+          },
+          "even": {
+            "entries": 254,
+            "winRate": 2,
+            "top3Rate": 21.7
+          },
+          "weak": {
+            "entries": 218,
+            "winRate": 0.9,
+            "top3Rate": 19.7
+          }
+        }
+      ]
+    },
+    "internal-score": {
+      "races": 3337,
+      "inCourseWinByMotorRank": [
+        {
+          "motorRank": 1,
+          "races": 618,
+          "inWinRate": 56.5
+        },
+        {
+          "motorRank": 2,
+          "races": 611,
+          "inWinRate": 56.6
+        },
+        {
+          "motorRank": 3,
+          "races": 579,
+          "inWinRate": 56.5
+        },
+        {
+          "motorRank": 4,
+          "races": 538,
+          "inWinRate": 51.5
+        },
+        {
+          "motorRank": 5,
+          "races": 528,
+          "inWinRate": 53.6
+        },
+        {
+          "motorRank": 6,
+          "races": 470,
+          "inWinRate": 48.5
+        }
+      ],
+      "byCourse": [
+        {
+          "course": 1,
+          "strong": {
+            "entries": 319,
+            "winRate": 58.3,
+            "top3Rate": 84.3
+          },
+          "even": {
+            "entries": 2816,
+            "winRate": 54,
+            "top3Rate": 81.1
+          },
+          "weak": {
+            "entries": 209,
+            "winRate": 49.8,
+            "top3Rate": 74.6
+          }
+        },
+        {
+          "course": 2,
+          "strong": {
+            "entries": 283,
+            "winRate": 12.7,
+            "top3Rate": 58.3
+          },
+          "even": {
+            "entries": 2823,
+            "winRate": 13.2,
+            "top3Rate": 57
+          },
+          "weak": {
+            "entries": 238,
+            "winRate": 10.9,
+            "top3Rate": 47.9
+          }
+        },
+        {
+          "course": 3,
+          "strong": {
+            "entries": 281,
+            "winRate": 16,
+            "top3Rate": 68.3
+          },
+          "even": {
+            "entries": 2833,
+            "winRate": 13.4,
+            "top3Rate": 54.1
+          },
+          "weak": {
+            "entries": 227,
+            "winRate": 11.9,
+            "top3Rate": 45.8
+          }
+        },
+        {
+          "course": 4,
+          "strong": {
+            "entries": 275,
+            "winRate": 14.2,
+            "top3Rate": 48
+          },
+          "even": {
+            "entries": 2858,
+            "winRate": 10.4,
+            "top3Rate": 46.2
+          },
+          "weak": {
+            "entries": 207,
+            "winRate": 10.1,
+            "top3Rate": 43
+          }
+        },
+        {
+          "course": 5,
+          "strong": {
+            "entries": 316,
+            "winRate": 9.8,
+            "top3Rate": 46.2
+          },
+          "even": {
+            "entries": 2781,
+            "winRate": 6.2,
+            "top3Rate": 37.6
+          },
+          "weak": {
+            "entries": 244,
+            "winRate": 8.2,
+            "top3Rate": 40.2
+          }
+        },
+        {
+          "course": 6,
+          "strong": {
+            "entries": 255,
+            "winRate": 3.1,
+            "top3Rate": 30.6
+          },
+          "even": {
+            "entries": 2706,
+            "winRate": 1.7,
+            "top3Rate": 22.4
+          },
+          "weak": {
+            "entries": 351,
+            "winRate": 2,
+            "top3Rate": 19.1
+          }
+        }
+      ]
+    }
+  },
+  "venue": {
+    "splitDate": "20260928",
+    "hitRateStabilityCorrelation": 0.45,
+    "roiStabilityCorrelation": -0.16,
+    "byVenue": [
+      {
+        "jcd": "01",
+        "venue": "桐生",
+        "all": {
+          "races": 157,
+          "hits": 38,
+          "hitRate": 24.2,
+          "roi": 65.6
+        },
+        "early": {
+          "races": 103,
+          "hits": 24,
+          "hitRate": 23.3,
+          "roi": 72.9
+        },
+        "late": {
+          "races": 54,
+          "hits": 14,
+          "hitRate": 25.9,
+          "roi": 52
+        }
+      },
+      {
+        "jcd": "02",
+        "venue": "戸田",
+        "all": {
+          "races": 176,
+          "hits": 43,
+          "hitRate": 24.4,
+          "roi": 115.5
+        },
+        "early": {
+          "races": 111,
+          "hits": 28,
+          "hitRate": 25.2,
+          "roi": 143.6
+        },
+        "late": {
+          "races": 65,
+          "hits": 15,
+          "hitRate": 23.1,
+          "roi": 66.5
+        }
+      },
+      {
+        "jcd": "03",
+        "venue": "江戸川",
+        "all": {
+          "races": 152,
+          "hits": 34,
+          "hitRate": 22.4,
+          "roi": 82.9
+        },
+        "early": {
+          "races": 80,
+          "hits": 15,
+          "hitRate": 18.8,
+          "roi": 75.7
+        },
+        "late": {
+          "races": 72,
+          "hits": 19,
+          "hitRate": 26.4,
+          "roi": 90.7
+        }
+      },
+      {
+        "jcd": "04",
+        "venue": "平和島",
+        "all": {
+          "races": 190,
+          "hits": 35,
+          "hitRate": 18.4,
+          "roi": 49.9
+        },
+        "early": {
+          "races": 109,
+          "hits": 21,
+          "hitRate": 19.3,
+          "roi": 46.5
+        },
+        "late": {
+          "races": 81,
+          "hits": 14,
+          "hitRate": 17.3,
+          "roi": 54.3
+        }
+      },
+      {
+        "jcd": "05",
+        "venue": "多摩川",
+        "all": {
+          "races": 180,
+          "hits": 39,
+          "hitRate": 21.7,
+          "roi": 84.7
+        },
+        "early": {
+          "races": 125,
+          "hits": 26,
+          "hitRate": 20.8,
+          "roi": 93.2
+        },
+        "late": {
+          "races": 55,
+          "hits": 13,
+          "hitRate": 23.6,
+          "roi": 65.2
+        }
+      },
+      {
+        "jcd": "06",
+        "venue": "浜名湖",
+        "all": {
+          "races": 178,
+          "hits": 30,
+          "hitRate": 16.9,
+          "roi": 48.8
+        },
+        "early": {
+          "races": 99,
+          "hits": 18,
+          "hitRate": 18.2,
+          "roi": 44.3
+        },
+        "late": {
+          "races": 79,
+          "hits": 12,
+          "hitRate": 15.2,
+          "roi": 54.3
+        }
+      },
+      {
+        "jcd": "07",
+        "venue": "蒲郡",
+        "all": {
+          "races": 129,
+          "hits": 36,
+          "hitRate": 27.9,
+          "roi": 46.3
+        },
+        "early": {
+          "races": 81,
+          "hits": 23,
+          "hitRate": 28.4,
+          "roi": 56.6
+        },
+        "late": {
+          "races": 48,
+          "hits": 13,
+          "hitRate": 27.1,
+          "roi": 28.7
+        }
+      },
+      {
+        "jcd": "08",
+        "venue": "常滑",
+        "all": {
+          "races": 191,
+          "hits": 38,
+          "hitRate": 19.9,
+          "roi": 76.2
+        },
+        "early": {
+          "races": 112,
+          "hits": 20,
+          "hitRate": 17.9,
+          "roi": 41.9
+        },
+        "late": {
+          "races": 79,
+          "hits": 18,
+          "hitRate": 22.8,
+          "roi": 123
+        }
+      },
+      {
+        "jcd": "09",
+        "venue": "津",
+        "all": {
+          "races": 223,
+          "hits": 67,
+          "hitRate": 30,
+          "roi": 64.4
+        },
+        "early": {
+          "races": 121,
+          "hits": 36,
+          "hitRate": 29.8,
+          "roi": 77.6
+        },
+        "late": {
+          "races": 102,
+          "hits": 31,
+          "hitRate": 30.4,
+          "roi": 48.8
+        }
+      },
+      {
+        "jcd": "10",
+        "venue": "三国",
+        "all": {
+          "races": 211,
+          "hits": 63,
+          "hitRate": 29.9,
+          "roi": 79
+        },
+        "early": {
+          "races": 117,
+          "hits": 33,
+          "hitRate": 28.2,
+          "roi": 66.4
+        },
+        "late": {
+          "races": 94,
+          "hits": 30,
+          "hitRate": 31.9,
+          "roi": 94.9
+        }
+      },
+      {
+        "jcd": "11",
+        "venue": "びわこ",
+        "all": {
+          "races": 180,
+          "hits": 31,
+          "hitRate": 17.2,
+          "roi": 181.2
+        },
+        "early": {
+          "races": 111,
+          "hits": 19,
+          "hitRate": 17.1,
+          "roi": 271.7
+        },
+        "late": {
+          "races": 69,
+          "hits": 12,
+          "hitRate": 17.4,
+          "roi": 37.6
+        }
+      },
+      {
+        "jcd": "12",
+        "venue": "住之江",
+        "all": {
+          "races": 148,
+          "hits": 37,
+          "hitRate": 25,
+          "roi": 70
+        },
+        "early": {
+          "races": 99,
+          "hits": 28,
+          "hitRate": 28.3,
+          "roi": 89.9
+        },
+        "late": {
+          "races": 49,
+          "hits": 9,
+          "hitRate": 18.4,
+          "roi": 31.3
+        }
+      },
+      {
+        "jcd": "13",
+        "venue": "尼崎",
+        "all": {
+          "races": 233,
+          "hits": 50,
+          "hitRate": 21.5,
+          "roi": 62.7
+        },
+        "early": {
+          "races": 146,
+          "hits": 30,
+          "hitRate": 20.5,
+          "roi": 61
+        },
+        "late": {
+          "races": 87,
+          "hits": 20,
+          "hitRate": 23,
+          "roi": 65.3
+        }
+      },
+      {
+        "jcd": "14",
+        "venue": "鳴門",
+        "all": {
+          "races": 230,
+          "hits": 55,
+          "hitRate": 23.9,
+          "roi": 62.3
+        },
+        "early": {
+          "races": 108,
+          "hits": 25,
+          "hitRate": 23.1,
+          "roi": 54
+        },
+        "late": {
+          "races": 122,
+          "hits": 30,
+          "hitRate": 24.6,
+          "roi": 69.5
+        }
+      },
+      {
+        "jcd": "15",
+        "venue": "丸亀",
+        "all": {
+          "races": 156,
+          "hits": 36,
+          "hitRate": 23.1,
+          "roi": 65.7
+        },
+        "early": {
+          "races": 103,
+          "hits": 24,
+          "hitRate": 23.3,
+          "roi": 70.3
+        },
+        "late": {
+          "races": 53,
+          "hits": 12,
+          "hitRate": 22.6,
+          "roi": 57.4
+        }
+      },
+      {
+        "jcd": "16",
+        "venue": "児島",
+        "all": {
+          "races": 206,
+          "hits": 36,
+          "hitRate": 17.5,
+          "roi": 68.3
+        },
+        "early": {
+          "races": 124,
+          "hits": 26,
+          "hitRate": 21,
+          "roi": 81.5
+        },
+        "late": {
+          "races": 82,
+          "hits": 10,
+          "hitRate": 12.2,
+          "roi": 49.5
+        }
+      },
+      {
+        "jcd": "17",
+        "venue": "宮島",
+        "all": {
+          "races": 156,
+          "hits": 36,
+          "hitRate": 23.1,
+          "roi": 86.6
+        },
+        "early": {
+          "races": 114,
+          "hits": 24,
+          "hitRate": 21.1,
+          "roi": 90
+        },
+        "late": {
+          "races": 42,
+          "hits": 12,
+          "hitRate": 28.6,
+          "roi": 77.3
+        }
+      },
+      {
+        "jcd": "18",
+        "venue": "徳山",
+        "all": {
+          "races": 253,
+          "hits": 76,
+          "hitRate": 30,
+          "roi": 51.3
+        },
+        "early": {
+          "races": 138,
+          "hits": 42,
+          "hitRate": 30.4,
+          "roi": 46.9
+        },
+        "late": {
+          "races": 115,
+          "hits": 34,
+          "hitRate": 29.6,
+          "roi": 56.5
+        }
+      },
+      {
+        "jcd": "19",
+        "venue": "下関",
+        "all": {
+          "races": 168,
+          "hits": 39,
+          "hitRate": 23.2,
+          "roi": 46.3
+        },
+        "early": {
+          "races": 120,
+          "hits": 28,
+          "hitRate": 23.3,
+          "roi": 45.6
+        },
+        "late": {
+          "races": 48,
+          "hits": 11,
+          "hitRate": 22.9,
+          "roi": 48
+        }
+      },
+      {
+        "jcd": "20",
+        "venue": "若松",
+        "all": {
+          "races": 158,
+          "hits": 43,
+          "hitRate": 27.2,
+          "roi": 116.9
+        },
+        "early": {
+          "races": 128,
+          "hits": 32,
+          "hitRate": 25,
+          "roi": 114
+        },
+        "late": {
+          "races": 30,
+          "hits": 11,
+          "hitRate": 36.7,
+          "roi": 128.9
+        }
+      },
+      {
+        "jcd": "21",
+        "venue": "芦屋",
+        "all": {
+          "races": 181,
+          "hits": 47,
+          "hitRate": 26,
+          "roi": 61.5
+        },
+        "early": {
+          "races": 103,
+          "hits": 30,
+          "hitRate": 29.1,
+          "roi": 84.1
+        },
+        "late": {
+          "races": 78,
+          "hits": 17,
+          "hitRate": 21.8,
+          "roi": 32.8
+        }
+      },
+      {
+        "jcd": "22",
+        "venue": "福岡",
+        "all": {
+          "races": 186,
+          "hits": 51,
+          "hitRate": 27.4,
+          "roi": 70.8
+        },
+        "early": {
+          "races": 105,
+          "hits": 32,
+          "hitRate": 30.5,
+          "roi": 78.9
+        },
+        "late": {
+          "races": 81,
+          "hits": 19,
+          "hitRate": 23.5,
+          "roi": 60.8
+        }
+      },
+      {
+        "jcd": "23",
+        "venue": "唐津",
+        "all": {
+          "races": 198,
+          "hits": 57,
+          "hitRate": 28.8,
+          "roi": 78.9
+        },
+        "early": {
+          "races": 92,
+          "hits": 22,
+          "hitRate": 23.9,
+          "roi": 52.3
+        },
+        "late": {
+          "races": 106,
+          "hits": 35,
+          "hitRate": 33,
+          "roi": 100.7
+        }
+      },
+      {
+        "jcd": "24",
+        "venue": "大村",
+        "all": {
+          "races": 184,
+          "hits": 54,
+          "hitRate": 29.3,
+          "roi": 78.8
+        },
+        "early": {
+          "races": 133,
+          "hits": 40,
+          "hitRate": 30.1,
+          "roi": 82.8
+        },
+        "late": {
+          "races": 51,
+          "hits": 14,
+          "hitRate": 27.5,
+          "roi": 68.7
+        }
+      }
+    ]
+  }
+}

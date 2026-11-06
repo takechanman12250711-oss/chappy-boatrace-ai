@@ -1,0 +1,234 @@
+{
+  "schemaVersion": 1,
+  "modelId": "race-roughness-v1",
+  "description": "締切前に保存した出走データだけで、レースを「荒れる／混戦／堅め」に分ける研究用の分類。予想・買い目には使わない。",
+  "roughDefinition": {
+    "field": "trifecta.payout",
+    "roughAtOrAboveYen": 5000
+  },
+  "fit": {
+    "method": "logistic-regression-l2",
+    "C": 0.5,
+    "trainedOnRaceDatesBefore": "20260928",
+    "trainRaceCount": 2682,
+    "fittedAt": "2026-11-06",
+    "sourceCohort": "continuous-performance-ledger-v1 cohort (pre-deadline saved predictions with official results)",
+    "frozenAfterRaceDate": "20261106"
+  },
+  "venuePrior": {
+    "source": "data/results official trifecta and starts",
+    "raceDatesFrom": "20230722",
+    "raceDatesBefore": "20260722",
+    "byJcd": {
+      "01": {
+        "races": 6663,
+        "inCourseWinRate": 0.5146,
+        "roughRate": 0.3471
+      },
+      "02": {
+        "races": 6711,
+        "inCourseWinRate": 0.4254,
+        "roughRate": 0.3739
+      },
+      "03": {
+        "races": 5923,
+        "inCourseWinRate": 0.4734,
+        "roughRate": 0.3603
+      },
+      "04": {
+        "races": 6138,
+        "inCourseWinRate": 0.4443,
+        "roughRate": 0.3702
+      },
+      "05": {
+        "races": 6633,
+        "inCourseWinRate": 0.5337,
+        "roughRate": 0.3199
+      },
+      "06": {
+        "races": 6901,
+        "inCourseWinRate": 0.5259,
+        "roughRate": 0.3175
+      },
+      "07": {
+        "races": 6973,
+        "inCourseWinRate": 0.5666,
+        "roughRate": 0.2868
+      },
+      "08": {
+        "races": 7110,
+        "inCourseWinRate": 0.58,
+        "roughRate": 0.2792
+      },
+      "09": {
+        "races": 6364,
+        "inCourseWinRate": 0.5624,
+        "roughRate": 0.2945
+      },
+      "10": {
+        "races": 6578,
+        "inCourseWinRate": 0.5257,
+        "roughRate": 0.3264
+      },
+      "11": {
+        "races": 6543,
+        "inCourseWinRate": 0.5342,
+        "roughRate": 0.3025
+      },
+      "12": {
+        "races": 6808,
+        "inCourseWinRate": 0.5812,
+        "roughRate": 0.2961
+      },
+      "13": {
+        "races": 6406,
+        "inCourseWinRate": 0.5835,
+        "roughRate": 0.2868
+      },
+      "14": {
+        "races": 6392,
+        "inCourseWinRate": 0.4739,
+        "roughRate": 0.3691
+      },
+      "15": {
+        "races": 6937,
+        "inCourseWinRate": 0.5618,
+        "roughRate": 0.3187
+      },
+      "16": {
+        "races": 6604,
+        "inCourseWinRate": 0.5601,
+        "roughRate": 0.3259
+      },
+      "17": {
+        "races": 6906,
+        "inCourseWinRate": 0.5544,
+        "roughRate": 0.3132
+      },
+      "18": {
+        "races": 6532,
+        "inCourseWinRate": 0.6314,
+        "roughRate": 0.2619
+      },
+      "19": {
+        "races": 6476,
+        "inCourseWinRate": 0.6016,
+        "roughRate": 0.2937
+      },
+      "20": {
+        "races": 6550,
+        "inCourseWinRate": 0.578,
+        "roughRate": 0.3165
+      },
+      "21": {
+        "races": 6668,
+        "inCourseWinRate": 0.591,
+        "roughRate": 0.3082
+      },
+      "22": {
+        "races": 6611,
+        "inCourseWinRate": 0.5644,
+        "roughRate": 0.2885
+      },
+      "23": {
+        "races": 6614,
+        "inCourseWinRate": 0.5567,
+        "roughRate": 0.2982
+      },
+      "24": {
+        "races": 7147,
+        "inCourseWinRate": 0.6194,
+        "roughRate": 0.2686
+      }
+    }
+  },
+  "defaults": {
+    "nationalWinRate": 5.0,
+    "motor2Rate": 33.0,
+    "avgST": 0.17,
+    "windSpeed": 3.0,
+    "waveHeight": 3.0,
+    "classScore": 2,
+    "venueInCourseWinRate": 0.55,
+    "venueRoughRate": 0.31
+  },
+  "classScore": {
+    "A1": 4,
+    "A2": 3,
+    "B1": 2,
+    "B2": 1
+  },
+  "features": [
+    "b1_nw",
+    "b1_cls",
+    "b1_gap",
+    "b1_m2",
+    "a1_others",
+    "nw_std",
+    "b1_st",
+    "wind",
+    "wave",
+    "v_in1",
+    "v_rough",
+    "race12",
+    "race1",
+    "outer_strong"
+  ],
+  "mean": [
+    5.5038255,
+    2.78225205,
+    -0.82224832,
+    0.1484048,
+    0.9906786,
+    0.95302844,
+    0.1645041,
+    2.62788963,
+    2.38255034,
+    0.55051447,
+    0.31201995,
+    0.08501119,
+    0.2393736,
+    0.22804251
+  ],
+  "scale": [
+    1.15506471,
+    0.89426777,
+    1.29523779,
+    2.77457551,
+    1.18980992,
+    0.43452137,
+    0.02211075,
+    1.53028511,
+    1.54034766,
+    0.05093031,
+    0.03099993,
+    0.27889834,
+    0.42670116,
+    1.78419447
+  ],
+  "coefficients": [
+    -0.07401311,
+    -0.12096509,
+    0.01952111,
+    -0.0108388,
+    -0.00395245,
+    -0.30529478,
+    0.01617902,
+    0.06452331,
+    -0.01715669,
+    -0.11089178,
+    0.03499482,
+    -0.01376815,
+    -0.01866503,
+    0.25695965
+  ],
+  "intercept": -0.84476865,
+  "thresholds": {
+    "roughAtOrAbove": 0.35523134,
+    "solidBelow": 0.28683189,
+    "trainShareRough": 0.3,
+    "trainShareSolid": 0.42
+  },
+  "usableForPrediction": false,
+  "automaticApplication": false
+}
