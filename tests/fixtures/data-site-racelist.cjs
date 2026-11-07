@@ -4,7 +4,7 @@ const ROW = (boat, reg, cls, name, nw, motorNo, m2) =>
   `<tr><td>${boat}</td><td>${reg} / ${cls}</td><td>${name}</td><td>福岡/福岡</td><td>30歳/52.0kg</td>` +
   `<td>F0 L0 0.15</td><td>${nw} 40.00 60.00</td><td>6.00 40.00 60.00</td><td>${motorNo} ${m2} 50.00</td><td>41 33.00 50.00</td></tr>`;
 function racelist(rows) {
-  return '<html><body><div>本日のレース 一般戦 出走表</div><div>締切予定時刻 15:00 15:30</div>' +
+  return '<html><body><div>本日のレース 一般戦 出走表</div><div>締切予定時刻 15:00 15:30 16:00 16:30 17:00 17:30 18:00 18:30 19:00 19:30 20:00 20:30</div>' +
     '<table><tr><th>枠</th><th>ボートレーサー</th><th>全国</th><th>当地</th><th>モーター</th><th>ボート</th></tr>' +
     rows.join('') + '</table><p>モーター・ボート変更時</p></body></html>';
 }
