@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "wall-established-attacker2-skip-ab-v1-prospective",
-  "generatedAt": "2026-11-07T19:39:17.042Z",
+  "generatedAt": "2026-11-07T22:05:37.691Z",
   "source": "post-preregistration saved predictions + official results",
   "productionChanged": false,
   "automaticApplication": false,
@@ -32,29 +32,29 @@
     "prospectiveRaceCountAfterDedup": 3126,
     "targetRaceCount": 388,
     "excludedVoidTargetRaceCount": 1,
-    "targetSettledRaceCount": 384,
-    "targetUnsettledRaceCount": 4,
-    "targetSettledBetRaceCount": 384,
+    "targetSettledRaceCount": 387,
+    "targetUnsettledRaceCount": 1,
+    "targetSettledBetRaceCount": 387,
     "targetSettledNoTicketRaceCount": 0,
-    "distinctSettledDates": 66
+    "distinctSettledDates": 67
   },
   "a": {
     "label": "current-production-A",
-    "settledCount": 384,
-    "betRaceCount": 384,
+    "settledCount": 387,
+    "betRaceCount": 387,
     "noTicketRaceCount": 0,
-    "hitCount": 103,
-    "hitRate": 26.8,
-    "stake": 344400,
-    "return": 252230,
-    "profit": -92170,
-    "recoveryRate": 73.2
+    "hitCount": 104,
+    "hitRate": 26.9,
+    "stake": 347200,
+    "return": 253470,
+    "profit": -93730,
+    "recoveryRate": 73
   },
   "b": {
     "label": "skip-wall-established-attacker2-B",
-    "settledCount": 384,
+    "settledCount": 387,
     "betRaceCount": 0,
-    "skippedRaceCount": 384,
+    "skippedRaceCount": 387,
     "noTicketRaceCount": 0,
     "hitCount": 0,
     "hitRate": null,
@@ -64,32 +64,32 @@
     "recoveryRate": null
   },
   "delta": {
-    "stake": -344400,
-    "return": -252230,
-    "profit": 92170,
-    "avoidedLoss": 92170,
-    "missedHitCount": 103,
-    "missedPayout": 252230
+    "stake": -347200,
+    "return": -253470,
+    "profit": 93730,
+    "avoidedLoss": 93730,
+    "missedHitCount": 104,
+    "missedPayout": 253470
   },
   "robustness": {
     "chronologicalSplit": {
       "firstHalf": {
-        "raceCount": 192,
+        "raceCount": 194,
         "a": {
-          "settledCount": 192,
-          "betRaceCount": 192,
+          "settledCount": 194,
+          "betRaceCount": 194,
           "noTicketRaceCount": 0,
-          "hitCount": 47,
-          "hitRate": 24.5,
-          "stake": 174600,
-          "return": 122360,
-          "profit": -52240,
-          "recoveryRate": 70.1
+          "hitCount": 48,
+          "hitRate": 24.7,
+          "stake": 176400,
+          "return": 124590,
+          "profit": -51810,
+          "recoveryRate": 70.6
         },
         "b": {
-          "settledCount": 192,
+          "settledCount": 194,
           "betRaceCount": 0,
-          "skippedRaceCount": 192,
+          "skippedRaceCount": 194,
           "noTicketRaceCount": 0,
           "hitCount": 0,
           "hitRate": null,
@@ -99,31 +99,31 @@
           "recoveryRate": null
         },
         "delta": {
-          "stake": -174600,
-          "return": -122360,
-          "profit": 52240,
-          "avoidedLoss": 52240,
-          "missedHitCount": 47,
-          "missedPayout": 122360
+          "stake": -176400,
+          "return": -124590,
+          "profit": 51810,
+          "avoidedLoss": 51810,
+          "missedHitCount": 48,
+          "missedPayout": 124590
         }
       },
       "secondHalf": {
-        "raceCount": 192,
+        "raceCount": 193,
         "a": {
-          "settledCount": 192,
-          "betRaceCount": 192,
+          "settledCount": 193,
+          "betRaceCount": 193,
           "noTicketRaceCount": 0,
           "hitCount": 56,
-          "hitRate": 29.2,
-          "stake": 169800,
-          "return": 129870,
-          "profit": -39930,
-          "recoveryRate": 76.5
+          "hitRate": 29,
+          "stake": 170800,
+          "return": 128880,
+          "profit": -41920,
+          "recoveryRate": 75.5
         },
         "b": {
-          "settledCount": 192,
+          "settledCount": 193,
           "betRaceCount": 0,
-          "skippedRaceCount": 192,
+          "skippedRaceCount": 193,
           "noTicketRaceCount": 0,
           "hitCount": 0,
           "hitRate": null,
@@ -133,20 +133,20 @@
           "recoveryRate": null
         },
         "delta": {
-          "stake": -169800,
-          "return": -129870,
-          "profit": 39930,
-          "avoidedLoss": 39930,
+          "stake": -170800,
+          "return": -128880,
+          "profit": 41920,
+          "avoidedLoss": 41920,
           "missedHitCount": 56,
-          "missedPayout": 129870
+          "missedPayout": 128880
         }
       }
     },
     "leaveOneOut": {
       "evaluated": true,
-      "raceCount": 384,
-      "minimumRemainingAvoidedLoss": 91170,
-      "maximumRemainingAvoidedLoss": 110670,
+      "raceCount": 387,
+      "minimumRemainingAvoidedLoss": 92730,
+      "maximumRemainingAvoidedLoss": 112230,
       "worstRemovedRaceKey": "20260903-02-2",
       "bestRemovedRaceKey": "20261030-06-2"
     }
@@ -169,42 +169,42 @@
       "checks": [
         {
           "name": "aRecoveryRate",
-          "actual": 73.2,
+          "actual": 73,
           "operator": "atMost",
           "threshold": 80,
           "passed": true
         },
         {
           "name": "avoidedLoss",
-          "actual": 92170,
+          "actual": 93730,
           "operator": "atLeast",
           "threshold": 10000,
           "passed": true
         },
         {
           "name": "distinctDates",
-          "actual": 66,
+          "actual": 67,
           "operator": "atLeast",
           "threshold": 10,
           "passed": true
         },
         {
           "name": "firstHalfAvoidedLoss",
-          "actual": 52240,
+          "actual": 51810,
           "operator": "atLeast",
           "threshold": 0,
           "passed": true
         },
         {
           "name": "secondHalfAvoidedLoss",
-          "actual": 39930,
+          "actual": 41920,
           "operator": "atLeast",
           "threshold": 0,
           "passed": true
         },
         {
           "name": "leaveOneOutMinimumAvoidedLoss",
-          "actual": 91170,
+          "actual": 92730,
           "operator": "atLeast",
           "threshold": 0,
           "passed": true
@@ -227,42 +227,42 @@
       "checks": [
         {
           "name": "aRecoveryRate",
-          "actual": 73.2,
+          "actual": 73,
           "operator": "atMost",
           "threshold": 80,
           "passed": true
         },
         {
           "name": "avoidedLoss",
-          "actual": 92170,
+          "actual": 93730,
           "operator": "atLeast",
           "threshold": 25000,
           "passed": true
         },
         {
           "name": "distinctDates",
-          "actual": 66,
+          "actual": 67,
           "operator": "atLeast",
           "threshold": 20,
           "passed": true
         },
         {
           "name": "firstHalfAvoidedLoss",
-          "actual": 52240,
+          "actual": 51810,
           "operator": "atLeast",
           "threshold": 0,
           "passed": true
         },
         {
           "name": "secondHalfAvoidedLoss",
-          "actual": 39930,
+          "actual": 41920,
           "operator": "atLeast",
           "threshold": 0,
           "passed": true
         },
         {
           "name": "leaveOneOutMinimumAvoidedLoss",
-          "actual": 91170,
+          "actual": 92730,
           "operator": "atLeast",
           "threshold": 0,
           "passed": true
