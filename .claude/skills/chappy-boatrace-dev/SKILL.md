@@ -111,3 +111,12 @@ Workからの切り離しはGitHub側の稼働だけで完了とせず、既存C
 ## 2026-10-16 通常AIコロがしの毎日開始
 
 `config/note-korogashi.json` の明示autoStart設定と `scripts/note-korogashi-autostart.cjs` を確認する。既存Update note marketing内でJST当日の公開済み通常AIから、締切順に既存の公開原本・検証対象検査を通る最初の1件を使う。1日1コース、目標10万円、最大3段。適格なしは見送り、当日既存normalコースが未登録・失効・終了でも自動再開始しない。独立研究候補の流用、追加入金、別cron、実購入を追加しない。main反映・事前登録・匿名掲載確認・公式照合は別々に確認する。詳細は `docs/note-korogashi-draft.md`。
+
+
+## 2026-11-06〜07 成績公開・研究レポート・データ帳
+
+- 全成績ページ `seiseki.html` は `data/stats/continuous-performance-ledger.json` をそのまま表示（外れ・回収率も公開する本人方針）。チャッピー画面の「成績」からのリンクは、Vercel停止でWebKitチェックが落ちるため一時的に外している。
+- 研究レポート `data/stats/race-insight-report.json`（`scripts/build-race-insight-report.cjs`、ledger の後に毎晩）：荒れ／堅め見立て（固定式 `config/race-roughness-v1.json`）、チルト、モーター、場、比較テスト `shadowAb`（`config/datazeme-shadow-ab-v1.json`、11/7以降が holdout）。すべて `usableForPrediction=false`。予想へ取り入れるのは holdout の回収率を見て本人の別承認を得てから。
+- 2026-10-27（#1385）より前の保存予想は、`motor2Rate`/`motor3Rate` が公式値ではなく内部点数（motor3 = motor2 + 15）。モーターの検証では `motorSource()` で分ける。
+- 買い目なしのデータ専門サイトは `chappy-boatdata-site`、PRのボタン承認と積み重ねPRは `chappy-pr-merge-chain` を使う。
+- GitHub Pages は数分おきのデータ保存で作り直しが止められ、反映が30〜40分遅れることがある。新しいデータをすぐ見せたい画面は raw から読む。
