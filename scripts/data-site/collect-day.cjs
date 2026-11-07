@@ -106,18 +106,26 @@ async function collect(options = {}) {
   const gap = options.gapMs ?? REQUEST_GAP_MS;
   const config = options.config || JSON.parse(fs.readFileSync(ROUGHNESS_CONFIG, 'utf8'));
   const schedule = options.schedule || await callApi(scheduleApi, { date });
+  // 取り直しの実行では、前に保存できたレースは見立てごとそのまま残す（後から書き換えない）。
+  const kept = new Map();
+  if (options.existing?.date === date) {
+    for (const v of options.existing.venues || []) for (const r of v.races || []) if (r.boats?.length) kept.set(`${v.jcd}-${r.raceNo}`, r);
+  }
+  const now = new Date().toISOString();
   const venues = [];
   let failed = 0;
   for (const venue of schedule.venues || []) {
     const races = [];
     for (let raceNo = 1; raceNo <= 12; raceNo++) {
       const planned = (venue.races || []).find(r => r.raceNo === raceNo) || {};
+      const previous = kept.get(`${venue.jcd}-${raceNo}`);
+      if (previous) { races.push(previous); continue; }
       try {
         const html = await fetchText(`${OFFICIAL}?rno=${raceNo}&jcd=${venue.jcd}&hd=${date}`, fetchImpl);
         const parsed = parseOfficialRaceHtml(html, '');
         const boats = parsed.entries.map(compactBoat);
         if (boats.filter(x => x.reg).length < 6) throw new Error('entries-incomplete');
-        const race = { raceNo, deadline: planned.deadline || '', title: parsed.raceInfo?.title || '', boats };
+        const race = { raceNo, deadline: planned.deadline || '', title: parsed.raceInfo?.title || '', savedAt: now, boats };
         race.lookout = lookout(race, config, venue.jcd);
         races.push(race);
       } catch (error) {
@@ -147,7 +155,10 @@ function isDayFile(day) {
 
 if (require.main === module) {
   const date = process.argv[2] || process.env.BOAT_DATA_DATE || jstDate();
-  collect({ date }).then(day => {
+  const existingFile = path.join(ROOT, outputPath(date));
+  let existing = null;
+  try { existing = JSON.parse(fs.readFileSync(existingFile, 'utf8')); } catch { existing = null; }
+  collect({ date, existing }).then(day => {
     if (!isDayFile(day)) throw new Error('no-races-collected');
     const out = path.join(ROOT, outputPath(date));
     fs.mkdirSync(path.dirname(out), { recursive: true });

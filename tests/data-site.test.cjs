@@ -77,3 +77,39 @@ test('the published venue file covers all 24 venues', () => {
   assert.ok(venues.isVenuesFile(file));
   assert.equal(file.venues.length, 24);
 });
+
+test('a re-run keeps races already saved in the morning and only fills the missing ones', async () => {
+  const first = await day.collect({ date: '20261107', schedule, fetch: fakeFetch(rno => (rno === 12 ? null : SOLID)), gapMs: 0 });
+  const second = fakeFetch(() => ROUGH);
+  const out = await day.collect({ date: '20261107', schedule, fetch: second, gapMs: 0, existing: first });
+  assert.equal(second.seen.length, 1); // only 12R was fetched again
+  assert.ok(second.seen[0].includes('rno=12'));
+  assert.deepEqual(out.venues[0].races[0], first.venues[0].races[0]);
+  assert.equal(out.venues[0].races[11].lookout.label, 'rough');
+  assert.equal(out.raceCount, 12);
+  const other = await day.collect({ date: '20261108', schedule, fetch: fakeFetch(() => ROUGH), gapMs: 0, existing: first });
+  assert.equal(other.venues[0].races[0].lookout.label, 'rough'); // another day's file is never reused
+});
+
+test('nightly check grades only saved lookouts against official payouts', t => {
+  const checks = require('../scripts/data-site/build-checks.cjs');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'checks-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(dir, 'days')); fs.mkdirSync(path.join(dir, 'results'));
+  const race = (raceNo, label) => ({ raceNo, boats: [{}], lookout: label ? { label } : null });
+  fs.writeFileSync(path.join(dir, 'days', '20261107.json'), JSON.stringify({ date: '20261107', venues: [{ jcd: '02', place: '戸田',
+    races: [race(1, 'rough'), race(2, 'rough'), race(3, 'solid'), race(4, 'mixed'), race(5, null), race(6, 'solid')] }] }));
+  fs.writeFileSync(path.join(dir, 'days', '20261108.json'), JSON.stringify({ date: '20261108', venues: [] })); // no results yet
+  const res = (raceNo, payout) => ({ jcd: '02', raceNo, resultAvailable: true, void: false, trifecta: { payout, combination: '1-2-3' } });
+  fs.writeFileSync(path.join(dir, 'results', '20261107.json'), JSON.stringify({ races: [res(1, 12000), res(2, 900), res(3, 1500), res(4, 7000), res(5, 30000),
+    { jcd: '02', raceNo: 6, resultAvailable: true, void: true }] }));
+  const out = checks.build({ daysDir: path.join(dir, 'days'), resultsDir: path.join(dir, 'results') });
+  assert.ok(checks.isChecksFile(out));
+  assert.equal(out.days.length, 1);
+  assert.equal(out.cumulative.races, 4); // unlabelled 5R and void 6R are not counted
+  assert.deepEqual(out.cumulative.rough, { races: 2, hit: 1, rate: 50 });
+  assert.deepEqual(out.cumulative.solid, { races: 1, hit: 1, rate: 100 });
+  assert.equal(out.cumulative.baseRoughRate, 50);
+  assert.equal(out.latest.races.find(r => r.raceNo === 2).correct, false);
+  assert.equal(out.latest.races.find(r => r.raceNo === 4).correct, null);
+});

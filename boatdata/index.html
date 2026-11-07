@@ -86,6 +86,9 @@ nav.bottom{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px
 nav.bottom a{flex:1;text-align:center;text-decoration:none;font-size:11px;color:var(--sub);padding:2px 0}
 nav.bottom a b{display:block;font-size:18px;line-height:1.2}
 nav.bottom a.on{color:var(--brand);font-weight:700}
+.vs{font-size:12px;color:var(--sub)}
+.big{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.mark{font-weight:800}.mark.ok{color:var(--solid)}.mark.ng{color:var(--sub)}
 .back{display:inline-block;margin:10px 0 0;font-size:14px;color:var(--brand2);text-decoration:none}
 footer{text-align:center;color:var(--sub);font-size:11.5px;padding:8px 16px 20px}
 </style>
@@ -99,13 +102,14 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;padding:8px 16px 20px
 <a href="#/races" data-nav="races"><b>▤</b>出走表</a>
 <a href="#/motor" data-nav="motor"><b>⚙</b>モーター</a>
 <a href="#/venues" data-nav="venues"><b>◎</b>24場</a>
+<a href="#/check" data-nav="check"><b>✓</b>答え合わせ</a>
 </nav>
 <script>
 (function(){
   "use strict";
   var DATA = "../data/site/";
   var LABEL = { rough: "荒れそう", mixed: "混戦", solid: "堅そう" };
-  var state = { day: null, venues: null, today: "" };
+  var state = { day: null, venues: null, checks: null, today: "" };
   var app = document.getElementById("app");
 
   function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]; }); }
@@ -157,7 +161,7 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;padding:8px 16px 20px
     }
     html += list(rough, "🌊 今日の荒れそうなレース", "出走表の数字から「荒れそう」と出た上位です。");
     html += list(solid, "⚓ 今日の堅そうなレース", "インの選手が抜けていて、堅く決まりやすい形です。");
-    html += '<section class="card"><h2>見立ての読み方</h2><p class="note" style="margin:0">「荒れそう」は3連単が5,000円以上になりやすい形、「堅そう」はその逆です。チャッピーで1,742レースを答え合わせした結果、「荒れる」と見たレースは41%が荒れました（ふだんは30%）。荒れそうでも、6割は荒れません。あくまで目安です。</p></section>';
+    html += checkSummary(true);
     app.innerHTML = html;
   }
 
@@ -257,6 +261,39 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;padding:8px 16px 20px
     app.innerHTML = v ? '<a class="back" href="#/venues">← 24場の一覧へ</a>' + venueDetail(v) + (state.day && state.day.venues.some(function(x){ return x.jcd === jcd; }) ? '<p><a class="back" href="#/v/' + jcd + '">今日の' + esc(v.place) + 'の出走表へ →</a></p>' : "") : venuesBlock();
   }
 
+
+  // ---------- 答え合わせ ----------
+  function checkBoxes(c){
+    return '<div class="grid" style="grid-template-columns:1fr 1fr">' +
+      '<div class="kpi"><small>「荒れそう」と見た ' + c.rough.races + ' 本</small><span class="big">' + p1(c.rough.rate) + '</span> が荒れた<div class="vs">ふだんは ' + p1(c.baseRoughRate) + '</div></div>' +
+      '<div class="kpi"><small>「堅そう」と見た ' + c.solid.races + ' 本</small><span class="big">' + p1(c.solid.rate) + '</span> が堅く決着<div class="vs">ふだんは ' + p1(c.baseSolidRate) + '</div></div></div>';
+  }
+  function checkSummary(onHome){
+    var C = state.checks;
+    var lead = '「荒れそう」は3連単が5,000円以上になりやすい形、「堅そう」はその逆です。朝に保存した見立てを、夜に公式の払戻で採点しています（外れも全部数えます）。';
+    if (!C) return '<section class="card"><h2>✓ 答え合わせ</h2><p class="note" style="margin:0">' + lead + '最初の答え合わせは、出走表がそろった日の夜に出ます。参考までに、同じ式をチャッピーの1,742レースで試したときは、「荒れる」と見たレースの41%が荒れました（ふだんは30%）。</p></section>';
+    var L = C.days[0];
+    return '<section class="card"><h2>✓ ' + (onHome ? md(L.date) + 'の答え合わせ' : 'これまでの答え合わせ') + '</h2>' +
+      checkBoxes(onHome ? L : C.cumulative) +
+      '<p class="note">' + (onHome ? 'これまでの合計：「荒れそう」' + p1(C.cumulative.rough.rate) + '・「堅そう」' + p1(C.cumulative.solid.rate) + '（' + C.cumulative.races.toLocaleString("ja-JP") + 'レース）。<a href="#/check">くわしく →</a>' : lead + '荒れそうと見ても、半分以上は荒れません。あくまで目安です。') + '</p></section>';
+  }
+  function checkPage(){
+    var C = state.checks;
+    if (!C) { app.innerHTML = checkSummary(false); return; }
+    var html = checkSummary(false);
+    html += '<section class="card"><h2>日ごとの答え合わせ</h2><div style="overflow-x:auto"><table><thead><tr><th>日付</th><th>荒れそう</th><th>当たり</th><th>堅そう</th><th>当たり</th></tr></thead><tbody>' +
+      C.days.slice(0, 30).map(function(d){ return '<tr><td>' + md(d.date) + '</td><td>' + d.rough.races + '本</td><td>' + p1(d.rough.rate) + '</td><td>' + d.solid.races + '本</td><td>' + p1(d.solid.rate) + '</td></tr>'; }).join("") +
+      '</tbody></table></div></section>';
+    var L = C.latest;
+    if (L) {
+      var rows = L.races.filter(function(r){ return r.correct !== null; }).sort(function(a, b){ return a.jcd.localeCompare(b.jcd) || a.raceNo - b.raceNo; });
+      html += '<section class="card"><h2>' + md(L.date) + ' のレースごとの結果</h2><div style="overflow-x:auto"><table><thead><tr><th>レース</th><th>見立て</th><th>3連単</th><th>払戻</th><th></th></tr></thead><tbody>' +
+        rows.map(function(r){ return '<tr><td>' + esc(r.place) + ' ' + r.raceNo + 'R</td><td>' + pill(r.label) + '</td><td>' + esc(r.combination) + '</td><td>' + r.payout.toLocaleString("ja-JP") + '円</td><td class="mark ' + (r.correct ? "ok" : "ng") + '">' + (r.correct ? "◯" : "×") + '</td></tr>'; }).join("") +
+        '</tbody></table></div><p class="note">「混戦」と見たレースは、どちらとも言っていないので採点に入れていません。</p></section>';
+    }
+    app.innerHTML = html;
+  }
+
   // ---------- 画面の切り替え ----------
   function route(){
     var h = location.hash.replace(/^#\/?/, "").split("/");
@@ -265,14 +302,15 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;padding:8px 16px 20px
     else if (h[0] === "races") { nav = "races"; racesIndex(); }
     else if (h[0] === "motor") { nav = "motor"; motorPage(h[1]); }
     else if (h[0] === "venues" || h[0] === "venue") { nav = "venues"; venuesPage(h[1]); }
+    else if (h[0] === "check") { nav = "check"; checkPage(); }
     else home();
     document.querySelectorAll("[data-nav]").forEach(function(a){ a.classList.toggle("on", a.getAttribute("data-nav") === nav); });
     window.scrollTo(0, 0);
   }
   state.today = jst(0);
   document.getElementById("dateLabel").textContent = md(state.today) + "（" + "日月火水木金土"[new Date(Date.now() + 9 * 3600 * 1000).getUTCDay()] + "）";
-  Promise.all([loadDay(0), getJSON(DATA + "venues.json").catch(function(){ return null; })]).then(function(res){
-    state.day = res[0]; state.venues = res[1];
+  Promise.all([loadDay(0), getJSON(DATA + "venues.json").catch(function(){ return null; }), getJSON(DATA + "checks.json").catch(function(){ return null; })]).then(function(res){
+    state.day = res[0]; state.venues = res[1]; state.checks = res[2];
     window.addEventListener("hashchange", route);
     route();
   });
