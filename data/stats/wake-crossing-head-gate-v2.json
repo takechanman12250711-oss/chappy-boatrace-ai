@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "analysisId": "wake-crossing-head-gate-v2",
-  "generatedAt": "2026-11-06T20:13:22.897Z",
+  "generatedAt": "2026-11-07T02:06:19.129Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
@@ -39,16 +39,16 @@
     },
     "excluded": {
       "reasons": {
-        "refund-or-missing-start": 15,
-        "incomplete-result-day": 2
+        "refund-or-missing-start": 16,
+        "incomplete-result-day": 1
       },
       "incompleteResultDays": [
-        "20261106"
+        "20261107"
       ]
     },
     "verdict": {
       "status": "collecting",
-      "changedRaces": 76,
+      "changedRaces": 90,
       "checks": {
         "enoughChangedRaces": false,
         "bBeatsA": true,
@@ -63,31 +63,31 @@
   },
   "note": "B案は降格艇が頭の実戦厳選券を除外。C案は降格艇を2着へ回した券に置き換え（x-h-y）。いずれも採用には本人承認が必要。",
   "cohort": {
-    "canonicalPredictionCount": 4529,
-    "preDeadlinePredictionCount": 4511,
+    "canonicalPredictionCount": 4534,
+    "preDeadlinePredictionCount": 4516,
     "excludedPredictionCount": 18,
     "excludedReasons": {
       "captured-at-or-after-deadline": 6,
       "source-fetched-at-or-after-deadline": 5,
       "timestamp-missing": 7
     },
-    "officialResultCount": 4424,
-    "settledJoinCount": 4424,
+    "officialResultCount": 4471,
+    "settledJoinCount": 4471,
     "deduplication": "predictions-preferred-over-verificationPredictions",
     "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json"
   },
   "resultIndex": {
-    "races": 177655
+    "races": 177795
   },
   "counts": {
-    "settled": 4424,
-    "basisValid": 4405,
+    "settled": 4471,
+    "basisValid": 4452,
     "basisInvalid": {
       "practical-tickets-missing": 2
     },
     "refundedOrNoPayout": 0,
     "rolesSource": {
-      "saved": 1937,
+      "saved": 1984,
       "pointInTime": 2468
     },
     "pointInTimeCourseMapping": {
@@ -96,15 +96,15 @@
     }
   },
   "pointInTimeAgreement": {
-    "total": 11622,
+    "total": 11904,
     "sameStatusRate": 99.4,
     "matrix": {
-      "exempt-inside->exempt-inside": 1937,
-      "qualified->qualified": 6485,
-      "demote->demote": 2937,
+      "exempt-inside->exempt-inside": 1984,
+      "qualified->qualified": 6628,
+      "demote->demote": 3017,
       "history-missing->history-missing": 35,
-      "insufficient-samples->insufficient-samples": 161,
-      "history-missing->insufficient-samples": 65,
+      "insufficient-samples->insufficient-samples": 170,
+      "history-missing->insufficient-samples": 68,
       "demote->qualified": 2
     }
   },
@@ -333,104 +333,104 @@
     },
     "forward": {
       "counts": {
-        "races": 590,
-        "outerHeadRaces": 525,
-        "changed": 76
+        "races": 637,
+        "outerHeadRaces": 572,
+        "changed": 90
       },
       "ledgers": {
         "allA": {
-          "races": 590,
-          "tickets": 5153,
-          "stakeYen": 515300,
-          "hitRaces": 159,
-          "returnYen": 388960,
+          "races": 637,
+          "tickets": 5581,
+          "stakeYen": 558100,
+          "hitRaces": 175,
+          "returnYen": 421200,
           "skippedRaces": 0,
-          "hitRate": 26.9,
+          "hitRate": 27.5,
           "recoveryRate": 75.5
         },
         "allB": {
-          "races": 590,
-          "tickets": 4880,
-          "stakeYen": 488000,
-          "hitRaces": 158,
-          "returnYen": 386840,
+          "races": 637,
+          "tickets": 5271,
+          "stakeYen": 527100,
+          "hitRaces": 174,
+          "returnYen": 419080,
           "skippedRaces": 0,
-          "hitRate": 26.8,
-          "recoveryRate": 79.3
+          "hitRate": 27.3,
+          "recoveryRate": 79.5
         },
         "allC": {
-          "races": 590,
-          "tickets": 5094,
-          "stakeYen": 509400,
-          "hitRaces": 163,
-          "returnYen": 398110,
+          "races": 637,
+          "tickets": 5511,
+          "stakeYen": 551100,
+          "hitRaces": 179,
+          "returnYen": 430350,
           "skippedRaces": 0,
-          "hitRate": 27.6,
-          "recoveryRate": 78.2
+          "hitRate": 28.1,
+          "recoveryRate": 78.1
         },
         "changedA": {
-          "races": 76,
-          "tickets": 695,
-          "stakeYen": 69500,
-          "hitRaces": 13,
-          "returnYen": 30890,
+          "races": 90,
+          "tickets": 824,
+          "stakeYen": 82400,
+          "hitRaces": 17,
+          "returnYen": 41160,
           "skippedRaces": 0,
-          "hitRate": 17.1,
-          "recoveryRate": 44.4
+          "hitRate": 18.9,
+          "recoveryRate": 50
         },
         "changedB": {
-          "races": 76,
-          "tickets": 422,
-          "stakeYen": 42200,
-          "hitRaces": 12,
-          "returnYen": 28770,
+          "races": 90,
+          "tickets": 514,
+          "stakeYen": 51400,
+          "hitRaces": 16,
+          "returnYen": 39040,
           "skippedRaces": 0,
-          "hitRate": 15.8,
-          "recoveryRate": 68.2
+          "hitRate": 17.8,
+          "recoveryRate": 76
         },
         "changedC": {
-          "races": 76,
-          "tickets": 636,
-          "stakeYen": 63600,
-          "hitRaces": 17,
-          "returnYen": 40040,
+          "races": 90,
+          "tickets": 754,
+          "stakeYen": 75400,
+          "hitRaces": 21,
+          "returnYen": 50310,
           "skippedRaces": 0,
-          "hitRate": 22.4,
-          "recoveryRate": 63
+          "hitRate": 23.3,
+          "recoveryRate": 66.7
         }
       },
       "headOutcomes": {
         "exempt-inside": {
-          "count": 590,
-          "wins": 310,
-          "seconds": 121,
-          "thirds": 53,
-          "winRate": 52.5,
-          "secondThirdRate": 29.5
+          "count": 637,
+          "wins": 328,
+          "seconds": 131,
+          "thirds": 60,
+          "winRate": 51.5,
+          "secondThirdRate": 30
         },
         "qualified": {
-          "count": 619,
-          "wins": 124,
-          "seconds": 155,
-          "thirds": 123,
-          "winRate": 20,
-          "secondThirdRate": 44.9
+          "count": 671,
+          "wins": 137,
+          "seconds": 171,
+          "thirds": 131,
+          "winRate": 20.4,
+          "secondThirdRate": 45
         },
         "demote": {
-          "count": 79,
-          "wins": 5,
-          "seconds": 7,
-          "thirds": 20,
-          "winRate": 6.3,
-          "secondThirdRate": 34.2
+          "count": 93,
+          "wins": 6,
+          "seconds": 10,
+          "thirds": 24,
+          "winRate": 6.5,
+          "secondThirdRate": 36.6
         },
         "insufficient-samples": {
-          "count": 10,
+          "count": 13,
           "wins": 3,
           "seconds": 2,
           "thirds": 0,
-          "winRate": 30,
-          "secondThirdRate": 20
+          "winRate": 23.1,
+          "secondThirdRate": 15.4
         },
         "history-missing": {
           "count": 0,
@@ -446,18 +446,18 @@
   "historyCoverage": {
     "note": "公式結果原本には丸ごと欠けた日（2025-03など）と一部未取得の日がある。本番の統計も同じ原本から作るため、主集計は予想時にAIが見ていた情報と同じ欠けを含む（保存済み判定との一致率で確認）。",
     "fullWindow": {
-      "races": 4405,
-      "racesWithMissingDays": 4405,
+      "races": 4452,
+      "racesWithMissingDays": 4452,
       "maxMissingDays": 31,
       "minWindowDays": 1095,
-      "averageUnavailableRacesPerWindow": 2544
+      "averageUnavailableRacesPerWindow": 2543.9
     },
     "gapFreeWindow": {
-      "races": 4405,
+      "races": 4452,
       "racesWithMissingDays": 0,
       "maxMissingDays": 0,
       "minWindowDays": 477,
-      "averageUnavailableRacesPerWindow": 1062.6
+      "averageUnavailableRacesPerWindow": 1063.5
     }
   },
   "sensitivity": {
@@ -688,104 +688,104 @@
         },
         "forward": {
           "counts": {
-            "races": 590,
-            "outerHeadRaces": 525,
-            "changed": 170
+            "races": 637,
+            "outerHeadRaces": 572,
+            "changed": 187
           },
           "ledgers": {
             "allA": {
-              "races": 590,
-              "tickets": 5153,
-              "stakeYen": 515300,
-              "hitRaces": 159,
-              "returnYen": 388960,
+              "races": 637,
+              "tickets": 5581,
+              "stakeYen": 558100,
+              "hitRaces": 175,
+              "returnYen": 421200,
               "skippedRaces": 0,
-              "hitRate": 26.9,
+              "hitRate": 27.5,
               "recoveryRate": 75.5
             },
             "allB": {
-              "races": 590,
-              "tickets": 4529,
-              "stakeYen": 452900,
-              "hitRaces": 153,
-              "returnYen": 354230,
+              "races": 637,
+              "tickets": 4912,
+              "stakeYen": 491200,
+              "hitRaces": 169,
+              "returnYen": 386470,
               "skippedRaces": 0,
-              "hitRate": 25.9,
-              "recoveryRate": 78.2
+              "hitRate": 26.5,
+              "recoveryRate": 78.7
             },
             "allC": {
-              "races": 590,
-              "tickets": 4943,
-              "stakeYen": 494300,
-              "hitRaces": 162,
-              "returnYen": 374400,
+              "races": 637,
+              "tickets": 5349,
+              "stakeYen": 534900,
+              "hitRaces": 178,
+              "returnYen": 406640,
               "skippedRaces": 0,
-              "hitRate": 27.5,
-              "recoveryRate": 75.7
+              "hitRate": 27.9,
+              "recoveryRate": 76
             },
             "changedA": {
-              "races": 170,
-              "tickets": 1542,
-              "stakeYen": 154200,
-              "hitRaces": 35,
-              "returnYen": 114860,
+              "races": 187,
+              "tickets": 1698,
+              "stakeYen": 169800,
+              "hitRaces": 40,
+              "returnYen": 125490,
               "skippedRaces": 0,
-              "hitRate": 20.6,
-              "recoveryRate": 74.5
+              "hitRate": 21.4,
+              "recoveryRate": 73.9
             },
             "changedB": {
-              "races": 170,
-              "tickets": 918,
-              "stakeYen": 91800,
-              "hitRaces": 29,
-              "returnYen": 80130,
+              "races": 187,
+              "tickets": 1029,
+              "stakeYen": 102900,
+              "hitRaces": 34,
+              "returnYen": 90760,
               "skippedRaces": 0,
-              "hitRate": 17.1,
-              "recoveryRate": 87.3
+              "hitRate": 18.2,
+              "recoveryRate": 88.2
             },
             "changedC": {
-              "races": 170,
-              "tickets": 1332,
-              "stakeYen": 133200,
-              "hitRaces": 38,
-              "returnYen": 100300,
+              "races": 187,
+              "tickets": 1466,
+              "stakeYen": 146600,
+              "hitRaces": 43,
+              "returnYen": 110930,
               "skippedRaces": 0,
-              "hitRate": 22.4,
-              "recoveryRate": 75.3
+              "hitRate": 23,
+              "recoveryRate": 75.7
             }
           },
           "headOutcomes": {
             "exempt-inside": {
-              "count": 590,
-              "wins": 310,
-              "seconds": 121,
-              "thirds": 53,
-              "winRate": 52.5,
-              "secondThirdRate": 29.5
+              "count": 637,
+              "wins": 328,
+              "seconds": 131,
+              "thirds": 60,
+              "winRate": 51.5,
+              "secondThirdRate": 30
             },
             "qualified": {
-              "count": 516,
-              "wins": 107,
-              "seconds": 132,
-              "thirds": 112,
-              "winRate": 20.7,
-              "secondThirdRate": 47.3
+              "count": 563,
+              "wins": 120,
+              "seconds": 147,
+              "thirds": 120,
+              "winRate": 21.3,
+              "secondThirdRate": 47.4
             },
             "demote": {
-              "count": 182,
-              "wins": 22,
-              "seconds": 30,
-              "thirds": 31,
-              "winRate": 12.1,
-              "secondThirdRate": 33.5
+              "count": 201,
+              "wins": 23,
+              "seconds": 34,
+              "thirds": 35,
+              "winRate": 11.4,
+              "secondThirdRate": 34.3
             },
             "insufficient-samples": {
-              "count": 10,
+              "count": 13,
               "wins": 3,
               "seconds": 2,
               "thirds": 0,
-              "winRate": 30,
-              "secondThirdRate": 20
+              "winRate": 23.1,
+              "secondThirdRate": 15.4
             },
             "history-missing": {
               "count": 0,
@@ -30720,6 +30720,737 @@
         "1-2-4",
         "1-2-5",
         "1-2-6"
+      ],
+      "aHit": false,
+      "bHit": false,
+      "cHit": false
+    },
+    {
+      "raceKey": "20261106-02-3",
+      "period": "forward",
+      "selectedAt": "2026-11-06T02:26:31.620Z",
+      "actualTicket": "2-4-6",
+      "payout": 6030,
+      "winningMethod": "まくり",
+      "demotedHeads": [
+        {
+          "boatNo": 3,
+          "course": 3,
+          "starts": 95,
+          "wins": 3,
+          "wakeCrossingWins": 1,
+          "makuriWins": 2,
+          "ticketCount": 1
+        }
+      ],
+      "aTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-5",
+        "1-2-3",
+        "2-1-4",
+        "2-1-5",
+        "1-4-3",
+        "1-4-5",
+        "3-1-5"
+      ],
+      "bTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-5",
+        "1-2-3",
+        "2-1-4",
+        "2-1-5",
+        "1-4-3",
+        "1-4-5"
+      ],
+      "cTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-5",
+        "1-2-3",
+        "2-1-4",
+        "2-1-5",
+        "1-4-3",
+        "1-4-5",
+        "1-3-5"
+      ],
+      "aHit": false,
+      "bHit": false,
+      "cHit": false
+    },
+    {
+      "raceKey": "20261106-03-1",
+      "period": "forward",
+      "selectedAt": "2026-11-05T20:17:12.650Z",
+      "actualTicket": "1-3-4",
+      "payout": 2990,
+      "winningMethod": "逃げ",
+      "demotedHeads": [
+        {
+          "boatNo": 6,
+          "course": 6,
+          "starts": 87,
+          "wins": 1,
+          "wakeCrossingWins": 0,
+          "makuriWins": 0,
+          "ticketCount": 1
+        }
+      ],
+      "aTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-6",
+        "6-2-1",
+        "1-6-4"
+      ],
+      "bTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-6",
+        "1-6-4"
+      ],
+      "cTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-6",
+        "1-6-4",
+        "2-6-1"
+      ],
+      "aHit": true,
+      "bHit": true,
+      "cHit": true
+    },
+    {
+      "raceKey": "20261106-05-1",
+      "period": "forward",
+      "selectedAt": "2026-11-05T20:17:13.094Z",
+      "actualTicket": "1-3-4",
+      "payout": 4330,
+      "winningMethod": "逃げ",
+      "demotedHeads": [
+        {
+          "boatNo": 3,
+          "course": 3,
+          "starts": 43,
+          "wins": 3,
+          "wakeCrossingWins": 0,
+          "makuriWins": 2,
+          "ticketCount": 5
+        }
+      ],
+      "aTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "1-3-4"
+      ],
+      "bTickets": [
+        "1-2-3",
+        "1-2-4",
+        "1-3-4"
+      ],
+      "cTickets": [
+        "1-2-3",
+        "1-2-4",
+        "1-3-4",
+        "1-3-5",
+        "1-3-6"
+      ],
+      "aHit": true,
+      "bHit": true,
+      "cHit": true
+    },
+    {
+      "raceKey": "20261106-10-7",
+      "period": "forward",
+      "selectedAt": "2026-11-06T02:26:32.400Z",
+      "actualTicket": "2-3-6",
+      "payout": 5100,
+      "winningMethod": "まくり",
+      "demotedHeads": [
+        {
+          "boatNo": 6,
+          "course": 6,
+          "starts": 95,
+          "wins": 1,
+          "wakeCrossingWins": 0,
+          "makuriWins": 1,
+          "ticketCount": 1
+        }
+      ],
+      "aTickets": [
+        "4-1-5",
+        "4-5-6",
+        "4-3-5",
+        "1-2-3",
+        "1-2-4",
+        "4-1-6",
+        "4-1-2",
+        "6-1-2",
+        "4-2-1",
+        "4-2-3"
+      ],
+      "bTickets": [
+        "4-1-5",
+        "4-5-6",
+        "4-3-5",
+        "1-2-3",
+        "1-2-4",
+        "4-1-6",
+        "4-1-2",
+        "4-2-1",
+        "4-2-3"
+      ],
+      "cTickets": [
+        "4-1-5",
+        "4-5-6",
+        "4-3-5",
+        "1-2-3",
+        "1-2-4",
+        "4-1-6",
+        "4-1-2",
+        "4-2-1",
+        "4-2-3",
+        "1-6-2"
+      ],
+      "aHit": false,
+      "bHit": false,
+      "cHit": false
+    },
+    {
+      "raceKey": "20261106-10-9",
+      "period": "forward",
+      "selectedAt": "2026-11-06T03:24:54.456Z",
+      "actualTicket": "4-3-6",
+      "payout": 2580,
+      "winningMethod": "まくり",
+      "demotedHeads": [
+        {
+          "boatNo": 6,
+          "course": 6,
+          "starts": 80,
+          "wins": 1,
+          "wakeCrossingWins": 0,
+          "makuriWins": 1,
+          "ticketCount": 1
+        }
+      ],
+      "aTickets": [
+        "4-1-5",
+        "4-2-5",
+        "4-1-6",
+        "1-2-4",
+        "1-2-3",
+        "4-2-1",
+        "4-2-6",
+        "6-1-2",
+        "1-2-5",
+        "1-3-4"
+      ],
+      "bTickets": [
+        "4-1-5",
+        "4-2-5",
+        "4-1-6",
+        "1-2-4",
+        "1-2-3",
+        "4-2-1",
+        "4-2-6",
+        "1-2-5",
+        "1-3-4"
+      ],
+      "cTickets": [
+        "4-1-5",
+        "4-2-5",
+        "4-1-6",
+        "1-2-4",
+        "1-2-3",
+        "4-2-1",
+        "4-2-6",
+        "1-2-5",
+        "1-3-4",
+        "1-6-2"
+      ],
+      "aHit": false,
+      "bHit": false,
+      "cHit": false
+    },
+    {
+      "raceKey": "20261106-11-8",
+      "period": "forward",
+      "selectedAt": "2026-11-06T04:24:04.010Z",
+      "actualTicket": "2-3-5",
+      "payout": 7980,
+      "winningMethod": "まくり",
+      "demotedHeads": [
+        {
+          "boatNo": 6,
+          "course": 6,
+          "starts": 51,
+          "wins": 3,
+          "wakeCrossingWins": 1,
+          "makuriWins": 0,
+          "ticketCount": 1
+        }
+      ],
+      "aTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-4",
+        "2-1-4",
+        "2-1-6",
+        "6-1-3",
+        "1-4-3"
+      ],
+      "bTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-4",
+        "2-1-4",
+        "2-1-6",
+        "1-4-3"
+      ],
+      "cTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-4",
+        "2-1-4",
+        "2-1-6",
+        "1-4-3",
+        "1-6-3"
+      ],
+      "aHit": false,
+      "bHit": false,
+      "cHit": false
+    },
+    {
+      "raceKey": "20261106-14-2",
+      "period": "forward",
+      "selectedAt": "2026-11-06T02:01:26.960Z",
+      "actualTicket": "2-4-6",
+      "payout": 7480,
+      "winningMethod": "差し",
+      "demotedHeads": [
+        {
+          "boatNo": 6,
+          "course": 6,
+          "starts": 69,
+          "wins": 1,
+          "wakeCrossingWins": 0,
+          "makuriWins": 0,
+          "ticketCount": 1
+        }
+      ],
+      "aTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "4-1-2",
+        "6-1-2",
+        "1-3-4"
+      ],
+      "bTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "4-1-2",
+        "1-3-4"
+      ],
+      "cTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "4-1-2",
+        "1-3-4",
+        "1-6-2"
+      ],
+      "aHit": false,
+      "bHit": false,
+      "cHit": false
+    },
+    {
+      "raceKey": "20261106-17-4",
+      "period": "forward",
+      "selectedAt": "2026-11-06T02:26:33.395Z",
+      "actualTicket": "4-3-5",
+      "payout": 5970,
+      "winningMethod": "差し",
+      "demotedHeads": [
+        {
+          "boatNo": 2,
+          "course": 2,
+          "starts": 46,
+          "wins": 2,
+          "wakeCrossingWins": 1,
+          "makuriWins": 1,
+          "ticketCount": 5
+        }
+      ],
+      "aTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-4",
+        "2-1-4",
+        "2-1-5"
+      ],
+      "bTickets": [
+        "1-2-3",
+        "1-2-4"
+      ],
+      "cTickets": [
+        "1-2-3",
+        "1-2-4",
+        "4-2-3",
+        "1-2-5"
+      ],
+      "aHit": false,
+      "bHit": false,
+      "cHit": false
+    },
+    {
+      "raceKey": "20261106-17-7",
+      "period": "forward",
+      "selectedAt": "2026-11-06T03:24:55.248Z",
+      "actualTicket": "1-2-3",
+      "payout": 1490,
+      "winningMethod": "逃げ",
+      "demotedHeads": [
+        {
+          "boatNo": 2,
+          "course": 2,
+          "starts": 28,
+          "wins": 0,
+          "wakeCrossingWins": 0,
+          "makuriWins": 0,
+          "ticketCount": 2
+        }
+      ],
+      "aTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-6",
+        "1-2-5",
+        "1-3-6",
+        "1-4-6"
+      ],
+      "bTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-6",
+        "1-2-5",
+        "1-3-6",
+        "1-4-6"
+      ],
+      "cTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-6",
+        "1-2-5",
+        "1-3-6",
+        "1-4-6"
+      ],
+      "aHit": true,
+      "bHit": true,
+      "cHit": true
+    },
+    {
+      "raceKey": "20261106-17-9",
+      "period": "forward",
+      "selectedAt": "2026-11-06T04:24:04.548Z",
+      "actualTicket": "4-5-6",
+      "payout": 11530,
+      "winningMethod": "まくり",
+      "demotedHeads": [
+        {
+          "boatNo": 4,
+          "course": 4,
+          "starts": 42,
+          "wins": 11,
+          "wakeCrossingWins": 0,
+          "makuriWins": 11,
+          "ticketCount": 1
+        }
+      ],
+      "aTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "4-1-2",
+        "1-2-5",
+        "1-3-4"
+      ],
+      "bTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "1-2-5",
+        "1-3-4"
+      ],
+      "cTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "1-2-5",
+        "1-3-4",
+        "1-4-2"
+      ],
+      "aHit": false,
+      "bHit": false,
+      "cHit": false
+    },
+    {
+      "raceKey": "20261106-22-2",
+      "period": "forward",
+      "selectedAt": "2026-11-06T02:01:28.009Z",
+      "actualTicket": "1-2-5",
+      "payout": 1460,
+      "winningMethod": "逃げ",
+      "demotedHeads": [
+        {
+          "boatNo": 4,
+          "course": 4,
+          "starts": 104,
+          "wins": 4,
+          "wakeCrossingWins": 1,
+          "makuriWins": 2,
+          "ticketCount": 6
+        }
+      ],
+      "aTickets": [
+        "4-1-5",
+        "4-5-6",
+        "4-3-5",
+        "1-2-3",
+        "1-2-4",
+        "4-1-6",
+        "4-1-2",
+        "4-1-3",
+        "1-2-5",
+        "1-3-4"
+      ],
+      "bTickets": [
+        "1-2-3",
+        "1-2-4",
+        "1-2-5",
+        "1-3-4"
+      ],
+      "cTickets": [
+        "1-2-3",
+        "1-2-4",
+        "1-2-5",
+        "1-3-4",
+        "1-4-5",
+        "5-4-6",
+        "1-4-6",
+        "1-4-2",
+        "1-4-3"
+      ],
+      "aHit": true,
+      "bHit": true,
+      "cHit": true
+    },
+    {
+      "raceKey": "20261106-22-7",
+      "period": "forward",
+      "selectedAt": "2026-11-06T04:24:05.298Z",
+      "actualTicket": "2-4-3",
+      "payout": 42830,
+      "winningMethod": "まくり",
+      "demotedHeads": [
+        {
+          "boatNo": 4,
+          "course": 4,
+          "starts": 115,
+          "wins": 7,
+          "wakeCrossingWins": 0,
+          "makuriWins": 7,
+          "ticketCount": 5
+        }
+      ],
+      "aTickets": [
+        "4-1-5",
+        "4-5-6",
+        "4-3-5",
+        "1-2-5",
+        "1-2-6",
+        "4-1-6",
+        "4-1-2",
+        "1-2-4"
+      ],
+      "bTickets": [
+        "1-2-5",
+        "1-2-6",
+        "1-2-4"
+      ],
+      "cTickets": [
+        "1-2-5",
+        "1-2-6",
+        "1-2-4",
+        "1-4-5",
+        "3-4-5",
+        "1-4-6",
+        "1-4-2"
+      ],
+      "aHit": false,
+      "bHit": false,
+      "cHit": false
+    },
+    {
+      "raceKey": "20261106-23-8",
+      "period": "forward",
+      "selectedAt": "2026-11-06T02:26:33.740Z",
+      "actualTicket": "2-1-5",
+      "payout": 2340,
+      "winningMethod": "差し",
+      "demotedHeads": [
+        {
+          "boatNo": 4,
+          "course": 4,
+          "starts": 91,
+          "wins": 3,
+          "wakeCrossingWins": 1,
+          "makuriWins": 1,
+          "ticketCount": 6
+        }
+      ],
+      "aTickets": [
+        "4-1-5",
+        "4-5-6",
+        "4-3-5",
+        "1-2-3",
+        "1-2-4",
+        "4-1-6",
+        "4-1-3",
+        "2-1-3",
+        "4-1-2"
+      ],
+      "bTickets": [
+        "1-2-3",
+        "1-2-4",
+        "2-1-3"
+      ],
+      "cTickets": [
+        "1-2-3",
+        "1-2-4",
+        "2-1-3",
+        "1-4-5",
+        "3-4-5",
+        "1-4-6",
+        "1-4-3",
+        "1-4-2"
+      ],
+      "aHit": false,
+      "bHit": false,
+      "cHit": false
+    },
+    {
+      "raceKey": "20261106-23-9",
+      "period": "forward",
+      "selectedAt": "2026-11-06T03:24:55.930Z",
+      "actualTicket": "3-1-6",
+      "payout": 9480,
+      "winningMethod": "まくり差し",
+      "demotedHeads": [
+        {
+          "boatNo": 6,
+          "course": 5,
+          "starts": 112,
+          "wins": 3,
+          "wakeCrossingWins": 1,
+          "makuriWins": 1,
+          "ticketCount": 1
+        }
+      ],
+      "aTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-6",
+        "6-2-3",
+        "1-2-5"
+      ],
+      "bTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-6",
+        "1-2-5"
+      ],
+      "cTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-6",
+        "1-2-5",
+        "2-6-3"
       ],
       "aHit": false,
       "bHit": false,
