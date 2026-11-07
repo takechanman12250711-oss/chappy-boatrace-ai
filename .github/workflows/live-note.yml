@@ -380,3 +380,43 @@ jobs:
       - name: Surface paired head coverage failures after preserving notes and attempts
         if: always() && github.event_name != 'pull_request' && (steps.head-forward-capture.outcome == 'failure' || steps.head-forward-attempt-save.outcome == 'failure' || steps.head-forward-artifact.outcome == 'failure' || steps.head-forward-confirm.outcome == 'failure' || steps.head-forward-receipt-save.outcome == 'failure')
         run: exit 1
+
+  # GitHub delays the 5-minute schedule heavily (on 2026-11-06 runs started
+  # about every 30 minutes), so audited sources were saved only 3-10 minutes
+  # before the deadline and could not be published in time. This relay keeps
+  # the intended 5-minute cadence during race hours: it waits until 5 minutes
+  # after this run started and then queues one next run, unless another run is
+  # already waiting. The note pipeline, gates and official-site request volume
+  # per run are unchanged.
+  relay:
+    needs: live-note
+    if: >-
+      always() && github.event_name != 'pull_request' &&
+      github.repository == 'takechanman12250711-oss/chappy-boatrace-ai'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    permissions:
+      actions: write
+    steps:
+      - name: Queue the next live note run after five minutes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          hour=$(TZ=Asia/Tokyo date +%H); minute=$(TZ=Asia/Tokyo date +%M)
+          # Race hours only: 07:00-22:49 JST (the last schedule window ends 22:57).
+          if [ "$hour" -lt 7 ] || [ "$hour" -gt 22 ] || { [ "$hour" -eq 22 ] && [ "$minute" -ge 50 ]; }; then
+            echo "Outside race hours ($hour:$minute JST); no relay."; exit 0
+          fi
+          started=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.run_started_at')
+          elapsed=$(( $(date +%s) - $(date -d "$started" +%s) ))
+          wait=$(( 300 - elapsed )); [ "$wait" -gt 0 ] && sleep "$wait"
+          waiting=$(gh api "repos/$REPO/actions/workflows/live-note.yml/runs?status=queued&per_page=5" --jq '.total_count')
+          pending=$(gh api "repos/$REPO/actions/workflows/live-note.yml/runs?status=pending&per_page=5" --jq '.total_count')
+          if [ "$waiting" != "0" ] || [ "$pending" != "0" ]; then
+            echo "Another live note run is already waiting; no relay."; exit 0
+          fi
+          gh workflow run live-note.yml --repo "$REPO" --ref main
+          echo "Queued the next live note run."
