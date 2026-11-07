@@ -37,6 +37,17 @@ async function fetchText(url, fetchImpl) {
   return res.text();
 }
 
+// 公式ページの「締切予定時刻」欄（12R分）から、そのレースの締切を読む。
+function deadlineFromPage(raceInfo, raceNo) {
+  const times = String(raceInfo?.deadlineText || '').match(/\d{1,2}:\d{2}/g) || [];
+  return times.length >= raceNo ? times[raceNo - 1] : '';
+}
+// レース名の欄にページのメニューが混ざることがあるので、短い名前だけ使う。
+function raceTitle(raceInfo) {
+  const t = String(raceInfo?.title || '').trim();
+  return t && t.length <= 24 && !/払戻|レーサー検索|スケジュール/.test(t) ? t : '';
+}
+
 function compactBoat(e) {
   return {
     boat: e.boat, reg: e.registerNo || '', name: e.racerName || '', cls: e.className || '',
@@ -106,18 +117,37 @@ async function collect(options = {}) {
   const gap = options.gapMs ?? REQUEST_GAP_MS;
   const config = options.config || JSON.parse(fs.readFileSync(ROUGHNESS_CONFIG, 'utf8'));
   const schedule = options.schedule || await callApi(scheduleApi, { date });
+  // 取り直しの実行では、前に保存できたレースは見立てごとそのまま残す（後から書き換えない）。
+  const kept = new Map();
+  if (options.existing?.date === date) {
+    for (const v of options.existing.venues || []) for (const r of v.races || []) if (r.boats?.length) kept.set(`${v.jcd}-${r.raceNo}`, r);
+  }
+  const now = new Date().toISOString();
   const venues = [];
   let failed = 0;
   for (const venue of schedule.venues || []) {
     const races = [];
     for (let raceNo = 1; raceNo <= 12; raceNo++) {
       const planned = (venue.races || []).find(r => r.raceNo === raceNo) || {};
+      const previous = kept.get(`${venue.jcd}-${raceNo}`);
+      if (previous) {
+        // 保存済みのレースは見立て・出走表をそのまま残す。締切が空のときだけ、締切時刻を取り直して補う。
+        if (!previous.deadline) {
+          try {
+            const html = await fetchText(`${OFFICIAL}?rno=${raceNo}&jcd=${venue.jcd}&hd=${date}`, fetchImpl);
+            previous.deadline = planned.deadline || deadlineFromPage(parseOfficialRaceHtml(html, '').raceInfo, raceNo);
+          } catch { /* 締切が取れなくても保存済みの内容は残す */ }
+          if (gap) await wait(gap);
+        }
+        races.push(previous);
+        continue;
+      }
       try {
         const html = await fetchText(`${OFFICIAL}?rno=${raceNo}&jcd=${venue.jcd}&hd=${date}`, fetchImpl);
         const parsed = parseOfficialRaceHtml(html, '');
         const boats = parsed.entries.map(compactBoat);
         if (boats.filter(x => x.reg).length < 6) throw new Error('entries-incomplete');
-        const race = { raceNo, deadline: planned.deadline || '', title: parsed.raceInfo?.title || '', boats };
+        const race = { raceNo, deadline: planned.deadline || deadlineFromPage(parsed.raceInfo, raceNo), title: raceTitle(parsed.raceInfo), savedAt: now, boats };
         race.lookout = lookout(race, config, venue.jcd);
         races.push(race);
       } catch (error) {
@@ -147,7 +177,10 @@ function isDayFile(day) {
 
 if (require.main === module) {
   const date = process.argv[2] || process.env.BOAT_DATA_DATE || jstDate();
-  collect({ date }).then(day => {
+  const existingFile = path.join(ROOT, outputPath(date));
+  let existing = null;
+  try { existing = JSON.parse(fs.readFileSync(existingFile, 'utf8')); } catch { existing = null; }
+  collect({ date, existing }).then(day => {
     if (!isDayFile(day)) throw new Error('no-races-collected');
     const out = path.join(ROOT, outputPath(date));
     fs.mkdirSync(path.dirname(out), { recursive: true });
@@ -156,4 +189,4 @@ if (require.main === module) {
   }).catch(error => { console.error(error.message); process.exitCode = 1; });
 }
 
-module.exports = { collect, compactBoat, lookout, reasons, motorRanking, isDayFile, outputPath, jstDate };
+module.exports = { deadlineFromPage, raceTitle, collect, compactBoat, lookout, reasons, motorRanking, isDayFile, outputPath, jstDate };

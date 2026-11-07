@@ -2,11 +2,13 @@
 // ボートデータ帳のデータを main に1ファイルずつ保存する（ledger と同じ再構築・競合時再試行の仕組み）。
 //   node scripts/data-site/persist.cjs day     … 今日の出走表・見どころ・モーター順位
 //   node scripts/data-site/persist.cjs venues  … 24場の特徴（過去3年）
+//   node scripts/data-site/persist.cjs checks  … 朝の見立ての答え合わせ（毎晩）
 const fs = require('node:fs');
 const path = require('node:path');
 const { persist, writeReportCommit } = require('../persist-continuous-performance-ledger.cjs');
 const day = require('./collect-day.cjs');
 const venues = require('./build-venues.cjs');
+const checks = require('./build-checks.cjs');
 
 function target(kind, date) {
   if (kind === 'day') {
@@ -17,7 +19,11 @@ function target(kind, date) {
     return { output: venues.OUTPUT, builder: 'scripts/data-site/build-venues.cjs',
       isValid: venues.isVenuesFile, message: 'Update boat data venues' };
   }
-  throw new Error('usage: persist.cjs day|venues');
+  if (kind === 'checks') {
+    return { output: checks.OUTPUT, builder: 'scripts/data-site/build-checks.cjs',
+      isValid: checks.isChecksFile, message: 'Update boat data checks' };
+  }
+  throw new Error('usage: persist.cjs day|venues|checks');
 }
 
 if (require.main === module) {
