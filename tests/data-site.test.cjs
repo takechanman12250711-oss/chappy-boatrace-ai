@@ -162,6 +162,6 @@ test('pre-race info is fetched only for races near the deadline and saved before
   assert.equal(before.isBeforeFile(empty.report), false);
   // after the deadline nothing is fetched
   const late = fakeFetch(() => beforeinfo());
-  await before.collect({ date: '20261107', day: morning, now: Date.parse('2026-11-07T15:40:00+09:00'), fetch: late, gapMs: 0 });
+  await before.collect({ date: '20261107', day: morning, now: Date.parse('2026-11-07T20:35:00+09:00'), fetch: late, gapMs: 0 });
   assert.equal(late.seen.length, 0);
 });
