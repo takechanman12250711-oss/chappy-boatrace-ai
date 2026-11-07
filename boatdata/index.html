@@ -126,7 +126,14 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;padding:8px 16px 20px
     var t = new Date(Date.now() + 9 * 3600 * 1000 - (offsetDays || 0) * 86400 * 1000);
     return t.toISOString().slice(0,10).replace(/-/g, "");
   }
-  function getJSON(url){ return fetch(url, { cache: "no-cache" }).then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); }); }
+  // データはGitHubの保存先（raw）から直接読む。サイト（Pages）の反映が遅れても、新しいデータがすぐ見られる。
+  // 読めないときだけ、サイトに置かれたコピーを使う。
+  var RAW = "https://raw.githubusercontent.com/takechanman12250711-oss/chappy-boatrace-ai/main/";
+  function fetchJSON(url){ return fetch(url, { cache: "no-cache" }).then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); }); }
+  function getJSON(url){
+    var rel = String(url).replace(/^\.\.\//, "");
+    return fetchJSON(RAW + rel).catch(function(){ return fetchJSON(url); });
+  }
   function loadDay(back){
     var d = jst(back);
     return getJSON(DATA + "days/" + d + ".json").catch(function(){ return back < 3 ? loadDay(back + 1) : null; });
