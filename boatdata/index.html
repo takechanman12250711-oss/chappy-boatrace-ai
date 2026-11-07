@@ -128,7 +128,8 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;padding:8px 16px 20px
   function venueStat(jcd){ return state.venues && state.venues.venues.filter(function(v){ return v.jcd === jcd; })[0]; }
   function pill(label){ return label ? '<span class="pill ' + label + '">' + LABEL[label] + '</span>' : ""; }
   function gradeBadge(g){ return g ? '<span class="grade ' + esc(g) + '">' + esc(g) + '</span>' : ""; }
-  function session(v){ return v.session && v.session.day ? v.session.day + "日目" : ""; }
+  var SESSION = { morning: "モーニング", day: "", night: "ナイター", midnight: "ミッドナイト", summer: "サマータイム" };
+  function session(v){ return typeof v.session === "string" ? (SESSION[v.session] || "") : (v.session && v.session.day ? v.session.day + "日目" : ""); }
 
   function staleNotice(){
     if (!state.day) return '<div class="notice">今日の出走表はまだ届いていません（毎朝8時半ごろに更新）。</div>';
@@ -198,7 +199,8 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;padding:8px 16px 20px
     html += '<nav class="tabs" aria-label="レース">' + v.races.map(function(r){
       return '<a href="#/v/' + jcd + '/' + r.raceNo + '" class="' + (r === race ? "on" : "") + '">' + r.raceNo + 'R' + (r.lookout ? '<i class="' + r.lookout.label + '"></i>' : '<i></i>') + '</a>';
     }).join("") + '</nav>';
-    html += '<section class="card"><h2>' + race.raceNo + 'R ' + esc(race.title || "") + ' <span class="muted" style="font-size:13px;font-weight:400">' + esc(race.deadline ? race.deadline + " 締切" : "") + '</span></h2>';
+    var rt = race.title && race.title.length <= 24 ? race.title : "";
+    html += '<section class="card"><h2>' + race.raceNo + 'R ' + esc(rt) + ' <span class="muted" style="font-size:13px;font-weight:400">' + esc(race.deadline ? race.deadline + " 締切" : "") + '</span></h2>';
     if (!race.boats.length) html += '<p class="muted">このレースの出走表は取得できませんでした。</p>';
     else {
       if (race.lookout) html += '<div class="lookout ' + race.lookout.label + '">' + pill(race.lookout.label) + ' <span class="muted" style="font-size:12px">荒れやすさ ' + race.lookout.score + '</span>' +

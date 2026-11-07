@@ -113,3 +113,20 @@ test('nightly check grades only saved lookouts against official payouts', t => {
   assert.equal(out.latest.races.find(r => r.raceNo === 2).correct, false);
   assert.equal(out.latest.races.find(r => r.raceNo === 4).correct, null);
 });
+
+test('deadline comes from the race card when the schedule has none; menu text is never used as a title', async () => {
+  const noDeadlines = { ok: true, venues: [{ jcd: '24', place: '大村', eventGrade: '一般', eventTitle: 'テスト杯', eventSession: 'night', races: [] }] };
+  const out = await day.collect({ date: '20261107', schedule: noDeadlines, fetch: fakeFetch(() => SOLID), gapMs: 0 });
+  assert.equal(out.venues[0].races[0].deadline, '15:00');
+  assert.equal(out.venues[0].races[1].deadline, '15:30');
+  assert.equal(out.venues[0].races[11].deadline, '20:30');
+  assert.equal(out.venues[0].races[0].title, '一般戦');
+  assert.equal(day.raceTitle({ title: '本日の払戻金一覧 レーサー検索 ライブ リプレイ' }), '');
+  // a saved race without a deadline gets only its deadline filled; the lookout stays as saved
+  const saved = JSON.parse(JSON.stringify(out));
+  saved.venues[0].races[0].deadline = '';
+  const again = await day.collect({ date: '20261107', schedule: noDeadlines, fetch: fakeFetch(() => ROUGH), gapMs: 0, existing: saved });
+  assert.equal(again.venues[0].races[0].deadline, '15:00');
+  assert.equal(again.venues[0].races[0].lookout.label, 'solid');
+  assert.equal(again.venues[0].races[0].boats[0].name, '山田 一郎');
+});
