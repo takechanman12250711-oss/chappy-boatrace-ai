@@ -11,7 +11,8 @@ function isInsightReport(report) {
   return report.schemaVersion === 1 && report.analysisId === 'race-insight-report-v1' &&
     report.usableForPrediction === false && report.productionChanged === false &&
     Number.isInteger(report.sourceCohort?.analyzedRaces) && report.sourceCohort.analyzedRaces > 0 &&
-    Boolean(report.roughness?.holdoutWindow) && Array.isArray(report.tilt?.byCourse) && Array.isArray(report.venue?.byVenue);
+    Boolean(report.roughness?.holdoutWindow) && Array.isArray(report.tilt?.byCourse) && Array.isArray(report.venue?.byVenue) &&
+    report.shadowAb?.usableForPrediction === false && report.shadowAb?.automaticApplication === false;
 }
 
 function persistInsight(options = {}) {
