@@ -113,3 +113,38 @@ test('nightly check grades only saved lookouts against official payouts', t => {
   assert.equal(out.latest.races.find(r => r.raceNo === 2).correct, false);
   assert.equal(out.latest.races.find(r => r.raceNo === 4).correct, null);
 });
+
+test('pre-race info is fetched only for races near the deadline and saved before it', async () => {
+  const before = require('../scripts/data-site/collect-before.cjs');
+  const { beforeinfo } = require('./fixtures/data-site-racelist.cjs');
+  const morning = await day.collect({ date: '20261107', schedule, fetch: fakeFetch(rno => (rno % 2 ? SOLID : ROUGH)), gapMs: 0 });
+  // 1R 15:00, 2R 15:30. Now = 14:30 JST → only 1R (30 min) is inside the 50-minute window... and 2R (60 min) is not.
+  const now = Date.parse('2026-11-07T14:30:00+09:00');
+  const f1 = fakeFetch(() => beforeinfo({ order: [1, 3, 2, 4, 5, 6], wind: 6 }));
+  const run1 = await before.collect({ date: '20261107', day: morning, now, fetch: f1, gapMs: 0 });
+  assert.equal(f1.seen.length, 1);
+  assert.ok(f1.seen[0].startsWith('https://www.boatrace.jp/owpc/pc/race/beforeinfo?rno=1&jcd=24&hd=20261107'));
+  const r1 = run1.report.races['24-1'];
+  assert.equal(r1.boats[2].exRank, 1);           // 6.70 is the fastest exhibition
+  assert.equal(r1.boats[3].tilt, 2);
+  assert.equal(r1.boats[3].parts, 'ピストン');
+  assert.deepEqual(r1.start.map(s => s.boat), [1, 3, 2, 4, 5, 6]);
+  assert.equal(r1.weather.windSpeed, 6);
+  assert.equal(r1.weather.windDirection, '向かい風');
+  assert.ok(['rough', 'mixed', 'solid'].includes(r1.lookout.label));
+  assert.ok(before.isBeforeFile(run1.report));
+  // 20 minutes later: 1R is complete and kept as is, 2R (40 min) is now fetched.
+  const f2 = fakeFetch(() => beforeinfo({ wind: 1 }));
+  const run2 = await before.collect({ date: '20261107', day: morning, now: now + 20 * 60000, fetch: f2, gapMs: 0, existing: run1.report });
+  assert.equal(f2.seen.length, 1);
+  assert.ok(f2.seen[0].includes('rno=2'));
+  assert.deepEqual(run2.report.races['24-1'], r1);
+  // a page fetched before the exhibition (no times) is not saved
+  const empty = await before.collect({ date: '20261107', day: morning, now, fetch: fakeFetch(() => '<html>展示前</html>'), gapMs: 0 });
+  assert.equal(Object.keys(empty.report.races).length, 0);
+  assert.equal(before.isBeforeFile(empty.report), false);
+  // after the deadline nothing is fetched
+  const late = fakeFetch(() => beforeinfo());
+  await before.collect({ date: '20261107', day: morning, now: Date.parse('2026-11-07T15:40:00+09:00'), fetch: late, gapMs: 0 });
+  assert.equal(late.seen.length, 0);
+});

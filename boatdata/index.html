@@ -89,6 +89,12 @@ nav.bottom a.on{color:var(--brand);font-weight:700}
 .vs{font-size:12px;color:var(--sub)}
 .big{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
 .mark{font-weight:800}.mark.ok{color:var(--solid)}.mark.ng{color:var(--sub)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--bg);border-radius:8px;padding:3px 7px;font-size:12.5px;font-variant-numeric:tabular-nums}
+.chip .waku{width:20px;height:20px;font-size:12px;border-radius:5px}
+.facts{margin:8px 0 0;padding-left:18px;font-size:13.5px}
+.facts li{margin:3px 0}
+.badge-new{display:inline-block;font-size:10.5px;font-weight:800;color:#fff;background:var(--brand2);border-radius:4px;padding:0 5px;margin-left:4px;vertical-align:1px}
 .back{display:inline-block;margin:10px 0 0;font-size:14px;color:var(--brand2);text-decoration:none}
 footer{text-align:center;color:var(--sub);font-size:11.5px;padding:8px 16px 20px}
 </style>
@@ -109,7 +115,7 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;padding:8px 16px 20px
   "use strict";
   var DATA = "../data/site/";
   var LABEL = { rough: "荒れそう", mixed: "混戦", solid: "堅そう" };
-  var state = { day: null, venues: null, checks: null, today: "" };
+  var state = { day: null, venues: null, checks: null, before: null, insight: null, today: "" };
   var app = document.getElementById("app");
 
   function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]; }); }
@@ -140,6 +146,7 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;padding:8px 16px 20px
   function home(){
     var d = state.day, html = staleNotice();
     if (!d) { app.innerHTML = html + venuesBlock(); return; }
+    html += soonList();
     var all = [];
     d.venues.forEach(function(v){ v.races.forEach(function(r){ if (r.lookout) all.push({ v: v, r: r }); }); });
     var rough = all.filter(function(x){ return x.r.lookout.label === "rough"; }).sort(function(a,b){ return b.r.lookout.score - a.r.lookout.score; }).slice(0, 6);
@@ -203,8 +210,9 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;padding:8px 16px 20px
     else {
       if (race.lookout) html += '<div class="lookout ' + race.lookout.label + '">' + pill(race.lookout.label) + ' <span class="muted" style="font-size:12px">荒れやすさ ' + race.lookout.score + '</span>' +
         (race.lookout.reasons.length ? '<ul>' + race.lookout.reasons.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join("") + '</ul>' : "") + '</div>';
+      html += beforeBlock(v, race);
       html += race.boats.map(function(b){ return entryRow(b, race); }).join("");
-      html += '<p class="note">赤い数字はそのレースでいちばん高い値、青はいちばん低い値。M2連率はモーター2連率（カッコ内はモーター番号）。進入・展示・チルトは朝の時点では入っていません。</p>';
+      html += '<p class="note">赤い数字はそのレースでいちばん高い値、青はいちばん低い値。M2連率はモーター2連率（カッコ内はモーター番号）。「荒れそう／堅そう」の最初の見立ては朝の出走表だけで出し、直前情報が出たら「直前の見立て」も表示します。</p>';
     }
     html += '</section>';
     html += motorTable(v, 10, "この場のモーター上位10");
@@ -262,6 +270,63 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;padding:8px 16px 20px
   }
 
 
+
+  // ---------- 直前情報 ----------
+  function beforeOf(jcd, rno){ return state.before && state.before.date === (state.day && state.day.date) ? state.before.races[jcd + "-" + rno] : null; }
+  function hm(iso){ var d = new Date(Date.parse(iso) + 9 * 3600 * 1000); return d.toISOString().slice(11, 16); }
+  function tiltBucket(t){ return t < 0 ? "-0.5" : t === 0 ? "0" : t === 0.5 ? "+0.5" : t <= 1.5 ? "+1〜1.5" : "+2以上"; }
+  function tiltFact(boat, course, tilt){
+    if (!(tilt >= 1) || !state.insight) return "";
+    var c = state.insight.tilt.byCourse.filter(function(x){ return x.course === course; })[0];
+    var b = c && c.buckets.filter(function(x){ return x.tilt === tiltBucket(tilt); })[0];
+    if (!b || b.entries < 25) return boat + "号艇が" + course + "コースでチルト+" + tilt.toFixed(1) + "（このかたちの過去データはまだ少なめ）";
+    var word = b.signal === "better" ? "平均よりはっきり高い" : b.signal === "worse" ? "平均よりはっきり低い" : "平均と大きな差はない";
+    return boat + "号艇が" + course + "コースでチルト+" + tilt.toFixed(1) + "。過去の検証では、" + course + "コースで" + b.tilt + "の艇の1着率は " + p1(b.winRate) + "（" + b.entries + "艇、平均 " + p1(c.winRate) + "）で、" + word + "。";
+  }
+  function beforeBlock(v, race){
+    var B = beforeOf(v.jcd, race.raceNo);
+    if (!B) {
+      return '<div class="lookout" style="background:var(--bg)"><b>直前情報</b><p class="note" style="margin:4px 0 0">展示が終わると、締切の30分前ごろからここに出ます（20分ごとに更新）。</p></div>';
+    }
+    var W = B.weather, facts = [];
+    var courseOf = {}; B.start.forEach(function(s){ courseOf[s.boat] = s.course; });
+    B.start.forEach(function(s){ if (s.boat !== s.course) facts.push(s.boat + "号艇が" + s.course + "コースに入った（枠なりではない）"); });
+    var top = B.boats.filter(function(b){ return b.exRank === 1; })[0];
+    if (top) facts.push("展示タイム1位は" + top.boat + "号艇（" + top.exT.toFixed(2) + "）");
+    var one = B.boats.filter(function(b){ return courseOf[b.boat] === 1; })[0];
+    if (one && one.exRank === 6) facts.push("1コースの" + one.boat + "号艇の展示タイムが6艇中いちばん遅い");
+    B.boats.forEach(function(b){ var t = tiltFact(b.boat, courseOf[b.boat] || b.boat, b.tilt); if (t) facts.push(t); });
+    if (W.windSpeed >= 5) facts.push("強めの" + (W.windDirection || "風") + "（" + W.windSpeed + "m）");
+    B.boats.forEach(function(b){ if (b.parts) facts.push(b.boat + "号艇が部品交換（" + b.parts + "）"); if (b.propeller) facts.push(b.boat + "号艇が新プロペラ"); });
+    var morning = race.lookout && race.lookout.label, late = B.lookout && B.lookout.label;
+    var html = '<div class="lookout ' + (late || "") + '" style="' + (late ? "" : "background:var(--bg)") + '"><b>直前情報</b> <span class="muted" style="font-size:12px">' + hm(B.savedAt) + ' 時点</span>' +
+      (late ? '<div style="margin-top:4px">直前の見立て ' + pill(late) + (morning && morning !== late ? ' <span class="muted" style="font-size:12px">（朝は' + LABEL[morning] + '）</span>' : "") + '</div>' : "") +
+      '<div class="note" style="margin:6px 0 0;color:var(--ink)">' + esc([W.weather, W.windDirection ? W.windDirection + " " + W.windSpeed + "m" : (W.windSpeed != null ? "風 " + W.windSpeed + "m" : ""), W.waveHeight != null ? "波 " + W.waveHeight + "cm" : "", W.temperature != null ? "気温 " + W.temperature + "℃" : "", W.waterTemperature != null ? "水温 " + W.waterTemperature + "℃" : ""].filter(Boolean).join("・")) + '</div>' +
+      '<div class="chips">' + B.start.map(function(s){ return '<span class="chip">' + s.course + 'コース <span class="waku w' + s.boat + '">' + s.boat + '</span>' + (s.marker || "") + (s.st != null ? s.st.toFixed(2).replace(/^0/, "") : "") + '</span>'; }).join("") + '</div>' +
+      '<table><thead><tr><th>艇</th><th>展示</th><th>順位</th><th>チルト</th><th>部品・プロペラ</th></tr></thead><tbody>' +
+      B.boats.map(function(b){ return '<tr><td><span class="waku w' + b.boat + '" style="width:22px;height:22px;font-size:12px">' + b.boat + '</span></td><td' + (b.exRank === 1 ? ' style="color:var(--rough);font-weight:800"' : "") + '>' + (b.exT != null ? b.exT.toFixed(2) : "-") + '</td><td>' + (b.exRank || "-") + '</td><td>' + (b.tilt != null ? (b.tilt > 0 ? "+" : "") + b.tilt.toFixed(1) : "-") + '</td><td class="l">' + esc([b.parts, b.propeller ? "新プロペラ" : ""].filter(Boolean).join("・") || "-") + '</td></tr>'; }).join("") +
+      '</tbody></table>' +
+      (facts.length ? '<ul class="facts">' + facts.map(function(f){ return '<li>' + esc(f) + '</li>'; }).join("") + '</ul>' : "") + '</div>';
+    return html;
+  }
+  function soonList(){
+    var d = state.day;
+    if (!d || d.date !== state.today) return "";
+    var now = Date.now(), items = [];
+    d.venues.forEach(function(v){ v.races.forEach(function(r){
+      if (!r.deadline || !r.boats.length) return;
+      var t = Date.parse(d.date.slice(0,4) + "-" + d.date.slice(4,6) + "-" + d.date.slice(6) + "T" + (r.deadline.length === 4 ? "0" + r.deadline : r.deadline) + ":00+09:00");
+      if (t > now) items.push({ v: v, r: r, t: t });
+    }); });
+    items.sort(function(a, b){ return a.t - b.t; });
+    items = items.slice(0, 6);
+    if (!items.length) return "";
+    return '<section class="card"><h2>⏱ まもなく締切</h2><div class="list">' + items.map(function(x){
+      var B = beforeOf(x.v.jcd, x.r.raceNo), lk = (B && B.lookout) || x.r.lookout;
+      return '<a class="row" href="#/v/' + x.v.jcd + '/' + x.r.raceNo + '"><span class="where">' + esc(x.v.place) + ' ' + x.r.raceNo + 'R<small>' + esc(x.r.deadline) + ' 締切</small></span><span class="why">' + (lk ? pill(lk.label) : "") + (B ? '<span class="badge-new">直前情報あり</span>' : '<span class="muted" style="font-size:12px"> 直前情報はまだ</span>') + '</span></a>';
+    }).join("") + '</div></section>';
+  }
+
   // ---------- 答え合わせ ----------
   function checkBoxes(c){
     return '<div class="grid" style="grid-template-columns:1fr 1fr">' +
@@ -309,10 +374,21 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;padding:8px 16px 20px
   }
   state.today = jst(0);
   document.getElementById("dateLabel").textContent = md(state.today) + "（" + "日月火水木金土"[new Date(Date.now() + 9 * 3600 * 1000).getUTCDay()] + "）";
-  Promise.all([loadDay(0), getJSON(DATA + "venues.json").catch(function(){ return null; }), getJSON(DATA + "checks.json").catch(function(){ return null; })]).then(function(res){
-    state.day = res[0]; state.venues = res[1]; state.checks = res[2];
+  Promise.all([loadDay(0), getJSON(DATA + "venues.json").catch(function(){ return null; }), getJSON(DATA + "checks.json").catch(function(){ return null; }),
+    getJSON("../data/stats/race-insight-report.json").catch(function(){ return null; })]).then(function(res){
+    state.day = res[0]; state.venues = res[1]; state.checks = res[2]; state.insight = res[3];
+    return state.day ? getJSON(DATA + "before/" + state.day.date + ".json").then(function(b){ state.before = b; }).catch(function(){}) : null;
+  }).then(function(){
     window.addEventListener("hashchange", route);
     route();
+    setInterval(function(){
+      if (!state.day || state.day.date !== state.today || document.hidden) return;
+      getJSON(DATA + "before/" + state.day.date + ".json").then(function(b){
+        var changed = !state.before || b.generatedAt !== state.before.generatedAt;
+        state.before = b;
+        if (changed && /^#\/(v\/|$)|^$/.test(location.hash)) { var y = window.scrollY; route(); window.scrollTo(0, y); }
+      }).catch(function(){});
+    }, 5 * 60 * 1000);
   });
 })();
 </script>
