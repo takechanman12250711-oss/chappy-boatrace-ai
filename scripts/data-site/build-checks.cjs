@@ -22,7 +22,7 @@ function summary(tallies) {
 }
 const newTallies = () => ({ all: emptyTally(), rough: emptyTally(), mixed: emptyTally(), solid: emptyTally() });
 
-function gradeDay(day, results) {
+function gradeDay(day, results, before) {
   const byKey = new Map();
   for (const r of results?.races || []) {
     if (!r?.resultAvailable || r.void) continue;
@@ -31,6 +31,7 @@ function gradeDay(day, results) {
     byKey.set(`${String(r.jcd).padStart(2, '0')}-${Number(r.raceNo)}`, { payout, combination: r.trifecta.combination || '' });
   }
   const tallies = newTallies();
+  const beforeTallies = newTallies();
   const races = [];
   for (const v of day.venues || []) {
     for (const race of v.races || []) {
@@ -39,18 +40,22 @@ function gradeDay(day, results) {
       if (!label || !result) continue;
       const rough = result.payout >= ROUGH_YEN;
       addTally(tallies.all, rough); addTally(tallies[label], rough);
-      races.push({ jcd: v.jcd, place: v.place, raceNo: race.raceNo, label, payout: result.payout, combination: result.combination,
+      const late = before?.races?.[`${v.jcd}-${race.raceNo}`]?.lookout?.label || null;
+      if (late) { addTally(beforeTallies.all, rough); addTally(beforeTallies[late], rough); }
+      races.push({ jcd: v.jcd, place: v.place, raceNo: race.raceNo, label, beforeLabel: late, payout: result.payout, combination: result.combination,
         correct: label === 'rough' ? rough : label === 'solid' ? !rough : null });
     }
   }
-  return { tallies, races };
+  return { tallies, beforeTallies, races };
 }
 
 function build(options = {}) {
   const daysDir = options.daysDir || path.join(ROOT, 'data', 'site', 'days');
   const resultsDir = options.resultsDir || path.join(ROOT, 'data', 'results');
+  const beforeDir = options.beforeDir || path.join(ROOT, 'data', 'site', 'before');
   const files = fs.existsSync(daysDir) ? fs.readdirSync(daysDir).filter(f => /^\d{8}\.json$/.test(f)).sort() : [];
   const total = newTallies();
+  const beforeTotal = newTallies();
   const days = [];
   let latest = null;
   for (const file of files) {
@@ -58,16 +63,21 @@ function build(options = {}) {
     const resultFile = path.join(resultsDir, file);
     if (!fs.existsSync(resultFile)) continue;
     const day = JSON.parse(fs.readFileSync(path.join(daysDir, file), 'utf8'));
-    const graded = gradeDay(day, JSON.parse(fs.readFileSync(resultFile, 'utf8')));
+    const beforeFile = path.join(beforeDir, file);
+    const before = fs.existsSync(beforeFile) ? JSON.parse(fs.readFileSync(beforeFile, 'utf8')) : null;
+    const graded = gradeDay(day, JSON.parse(fs.readFileSync(resultFile, 'utf8')), before);
     if (!graded.tallies.all.races) continue;
-    for (const key of Object.keys(total)) { total[key].races += graded.tallies[key].races; total[key].rough += graded.tallies[key].rough; }
-    days.push({ date, ...summary(graded.tallies) });
+    for (const key of Object.keys(total)) {
+      total[key].races += graded.tallies[key].races; total[key].rough += graded.tallies[key].rough;
+      beforeTotal[key].races += graded.beforeTallies[key].races; beforeTotal[key].rough += graded.beforeTallies[key].rough;
+    }
+    days.push({ date, ...summary(graded.tallies), before: graded.beforeTallies.all.races ? summary(graded.beforeTallies) : null });
     latest = { date, ...summary(graded.tallies), races: graded.races };
   }
   return {
     schemaVersion: 1, kind: 'boat-data-checks', generatedAt: new Date().toISOString(),
     definition: `3連単の払戻が${ROUGH_YEN.toLocaleString('ja-JP')}円以上なら「荒れた」`,
-    cumulative: summary(total), days: days.reverse(), latest
+    cumulative: summary(total), beforeCumulative: beforeTotal.all.races ? summary(beforeTotal) : null, days: days.reverse(), latest
   };
 }
 

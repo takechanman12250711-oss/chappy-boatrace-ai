@@ -11,7 +11,8 @@
 - 検査：`node --test tests/data-site.test.cjs`
 
 - 答え合わせ：`data/site/checks.json` … `scripts/data-site/build-checks.cjs`。既存の `Collect official race results` 成功後に `Build boat data checks` が実行（新しい定期実行なし）。朝に保存した見立てだけを公式の3連単払戻で採点。荒れそう＝5,000円以上で当たり、堅そう＝5,000円未満で当たり、混戦は採点外。外れも全部数える。
+- 直前情報：`data/site/before/YYYYMMDD.json` … `scripts/data-site/collect-before.cjs`。`Build boat data pre-race info`（09:00〜21:40 JST・20分ごと）が締切まで50分以内のレースだけ公式 beforeinfo を取得（展示タイム・順位・チルト・部品交換・新プロペラ・スタート展示の進入とST・天候/風/波）。締切1分前以降は取得しない、締切前に取れた分だけ保存、そろった分は書き換えない、新しい分がなければ書かない。実際の進入と風・波で同じ固定式を当て直した「直前の見立て」も保存し、答え合わせで朝の見立てとは別に採点する。チルトの注目は `data/stats/race-insight-report.json` の検証値をそのまま引用。
 
 ## あとから入れる予定（必ず本人へ提案する）
 
-万舟の記録、直前情報（展示タイム・チルト・進入・風）の反映、選手ページ、場ごとの「今日の見どころ」文章、独自URLへの移設。
+万舟の記録、選手ページ、場ごとの「今日の見どころ」文章、独自URLへの移設。
