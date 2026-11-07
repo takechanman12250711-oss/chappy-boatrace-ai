@@ -13,6 +13,7 @@ const ledger = require('./build-continuous-performance-ledger.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const CONFIG_PATH = path.join(ROOT, 'config', 'race-roughness-v1.json');
+const SHADOW_PATH = path.join(ROOT, 'config', 'datazeme-shadow-ab-v1.json');
 const OUTPUT = 'data/stats/race-insight-report.json';
 const VENUES = ['', '桐生', '戸田', '江戸川', '平和島', '多摩川', '浜名湖', '蒲郡', '常滑', '津', '三国', 'びわこ', '住之江',
   '尼崎', '鳴門', '丸亀', '児島', '宮島', '徳山', '下関', '若松', '芦屋', '福岡', '唐津', '大村'];
@@ -242,6 +243,53 @@ function correlation(xs, ys) {
   return sxx && syy ? round(sxy / Math.sqrt(sxx * syy), 2) : null;
 }
 
+// チャッピーの1着軸：保存した実戦厳選の券で、1着に置かれた回数がいちばん多い艇（同数なら先に出た艇）。
+function headBoat(tickets) {
+  const count = new Map();
+  for (const t of tickets || []) {
+    const b = Number(String(t).split('-')[0]);
+    if (b >= 1 && b <= 6) count.set(b, (count.get(b) || 0) + 1);
+  }
+  let best = null;
+  for (const [b, n] of count) if (best === null || n > count.get(best)) best = b;
+  return best;
+}
+
+// 3つの見送りルール（config/datazeme-shadow-ab-v1.json に文章で固定）。結果は見ない。
+function shadowRules(row) {
+  const course4 = row.boats.find(b => b.course === 4);
+  const kadoTilt = Boolean(course4 && Number.isFinite(course4.tilt) && course4.tilt >= 2 && course4.tilt <= TILT_MAX && row.head !== course4.boat);
+  let weakInMotor = false;
+  if (motorSource(row.boats) === 'official') {
+    const inBoat = row.boats.find(b => b.course === 1);
+    if (inBoat && row.head === inBoat.boat) {
+      const min = Math.min(...row.boats.map(b => b.m2));
+      weakInMotor = inBoat.m2 === min && row.boats.filter(b => b.m2 === min).length === 1;
+    }
+  }
+  return { B1_skipRough: row.roughness.label === 'rough', B2_skipKadoTilt: kadoTilt, B3_skipWeakInMotor: weakInMotor };
+}
+
+function shadowAb(rows, shadow) {
+  const variants = ['B1_skipRough', 'B2_skipKadoTilt', 'B3_skipWeakInMotor', 'B_all'];
+  const flagged = rows.map(r => { const f = shadowRules(r); f.B_all = f.B1_skipRough || f.B2_skipKadoTilt || f.B3_skipWeakInMotor; return { r, f }; });
+  const windowOf = items => ({
+    A_current: money(items.map(x => x.r)),
+    variants: Object.fromEntries(variants.map(v => [v, {
+      kept: money(items.filter(x => !x.f[v]).map(x => x.r)),
+      skipped: money(items.filter(x => x.f[v]).map(x => x.r))
+    }]))
+  });
+  const cut = shadow.exploredThroughRaceDate;
+  return {
+    analysisId: shadow.analysisId, fixedAt: shadow.fixedAt, rules: shadow.rules,
+    minimumHoldoutRacesForDecision: shadow.minimumHoldoutRacesForDecision,
+    explored: windowOf(flagged.filter(x => x.r.date <= cut)),
+    holdout: windowOf(flagged.filter(x => x.r.date > cut)),
+    productionChanged: false, usableForPrediction: false, automaticApplication: false
+  };
+}
+
 function buildRows(records, config) {
   const rows = [];
   for (const record of records) {
@@ -259,7 +307,8 @@ function buildRows(records, config) {
       rough: payout >= config.roughDefinition.roughAtOrAboveYen,
       finishers: (result.finishers || []).map(f => ({ rank: num(f.rank), boat: num(f.boat) })),
       starts: (result.starts || []).map(s => ({ course: num(s.course), boat: num(s.boat) })),
-      chappy: ledger.evaluate(record)
+      chappy: ledger.evaluate(record),
+      head: headBoat(ledger.practicalTickets(record?.prediction || record))
     });
   }
   return rows.sort((a, b) => a.raceKey.localeCompare(b.raceKey));
@@ -267,6 +316,7 @@ function buildRows(records, config) {
 
 function build(options = {}) {
   const config = options.config || JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+  const shadow = options.shadow || JSON.parse(fs.readFileSync(SHADOW_PATH, 'utf8'));
   const cohort = options.records ? { records: options.records, diagnostics: {} }
     : input.buildDefaultCohort({ root: options.root || ROOT, compactPredictionRecord: projector });
   const rows = buildRows(cohort.records, config);
@@ -296,6 +346,7 @@ function build(options = {}) {
     },
     tilt: tiltReport(rows),
     motor: motorReport(rows),
+    shadowAb: shadowAb(rows, shadow),
     venue: {
       splitDate: split,
       hitRateStabilityCorrelation: correlation(stable.map(v => v.early.hitRate), stable.map(v => v.late.hitRate)),
@@ -311,4 +362,4 @@ if (require.main === module) {
   fs.writeFileSync(out, JSON.stringify(build(), null, 2) + '\n');
 }
 
-module.exports = { OUTPUT, build, buildRows, classifyRoughness, roughnessFeatures, extractFeatures, collectTilts, tiltBucket, motorSource, projector };
+module.exports = { OUTPUT, headBoat, shadowRules, shadowAb, build, buildRows, classifyRoughness, roughnessFeatures, extractFeatures, collectTilts, tiltBucket, motorSource, projector };

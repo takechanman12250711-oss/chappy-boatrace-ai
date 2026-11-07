@@ -107,6 +107,12 @@ footer{text-align:center;color:var(--sub);font-size:12px;padding:0 16px 32px}
 <div id="motorBody"></div>
 </section>
 
+<section class="card" id="shadowCard" hidden>
+<h2>🧪 予想に取り入れたら？（比較テスト）</h2>
+<p class="note" style="margin:0 0 10px">見つかった傾向を「このレースは買わない」というルールにして、今の予想（A）と比べています。<b>本番の予想は変えていません。</b>ルールは11/7に固定し、11/7以降のレースで本当に良くなるかを確かめます。</p>
+<div id="shadowBody"></div>
+</section>
+
 <section class="card" id="venueCard" hidden>
 <h2>🏟 場ごとのチャッピーの的中率</h2>
 <div id="venueBody"></div>
@@ -261,7 +267,21 @@ footer{text-align:center;color:var(--sub);font-size:12px;padding:0 16px 32px}
       '</tbody></table></div>' +
       '<p class="note">前半＝' + md(V.splitDate) + 'より前、後半＝それ以降。的中率は前半と後半で似た傾向が続きます（相関 ' + V.hitRateStabilityCorrelation + '）。一方、場ごとの回収率は前半と後半でほぼ関係がなく（相関 ' + V.roiStabilityCorrelation + '）、たまたまの大当たりに左右されるため、ここには載せていません。</p>';
 
-    ["roughCard","tiltCard","motorCard","venueCard"].forEach(function(id){ $(id).hidden = false; });
+    var S = d.shadowAb;
+    if (S) {
+      var NAMES = { B1_skipRough: "①荒れそう→見送り", B2_skipKadoTilt: "②4コース跳ね→見送り", B3_skipWeakInMotor: "③インのモーター最下位→見送り", B_all: "①〜③どれか→見送り" };
+      function shadowTable(w, title){
+        if (!w || !w.A_current.races) return '<h3 style="font-size:15px;margin:14px 0 6px">' + title + '</h3><p class="note">まだレースがありません。</p>';
+        var A = w.A_current;
+        return '<h3 style="font-size:15px;margin:14px 0 6px">' + title + '</h3><div style="overflow-x:auto"><table><thead><tr><th>ルール</th><th>買うレース</th><th>的中率</th><th>回収率</th><th>見送った分の回収率</th></tr></thead><tbody>' +
+          '<tr><td>A：今の予想</td><td>' + A.races + '</td><td>' + pct(A.hitRate) + '</td><td>' + pct(A.roi) + '</td><td>-</td></tr>' +
+          Object.keys(NAMES).map(function(k){ var v = w.variants[k]; return '<tr><td class="l" style="white-space:normal;text-align:left">' + NAMES[k] + '</td><td>' + v.kept.races + '</td><td>' + pct(v.kept.hitRate) + '</td><td' + (v.kept.roi > A.roi ? ' class="plus"' : '') + '>' + pct(v.kept.roi) + '</td><td>' + (v.skipped.races ? pct(v.skipped.roi) + '（' + v.skipped.races + 'R）' : '-') + '</td></tr>'; }).join("") +
+          '</tbody></table></div>';
+      }
+      $("shadowBody").innerHTML = shadowTable(S.holdout, "11/7以降（ルールを決めた後に初めて見るレース）") + shadowTable(S.explored, "11/6まで（ルールを作るときに見た期間・参考）") +
+        '<p class="note">①荒れそう＝朝の式で「荒れる」。②4コースの艇がチルト+2以上で、チャッピーの1着軸がその艇でない。③チャッピーの1着軸がインの艇で、その公式モーター2連率が6艇中最下位。<br/>11/6までの数字は、傾向を見つけた期間と同じなので良く見えやすい参考値です。判断は11/7以降が' + S.minimumHoldoutRacesForDecision + 'レースほどたまってから行います。良くなっても自動では採用しません。</p>';
+    }
+    ["roughCard","tiltCard","motorCard","venueCard","shadowCard"].forEach(function(id){ if (id !== "shadowCard" || d.shadowAb) $(id).hidden = false; });
   }
   fetch(INSIGHT_URL, { cache: "no-cache" })
     .then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); })

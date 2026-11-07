@@ -87,3 +87,40 @@ test('publication validator rejects reports that could be mistaken for predictio
   assert.equal(isInsightReport({ ...ok, usableForPrediction: true }), false);
   assert.equal(isInsightReport({ ...ok, sourceCohort: { analyzedRaces: 0 } }), false);
 });
+
+test('chappy head boat is the most frequent first-place boat in the saved tickets', () => {
+  assert.equal(report.headBoat(['1-2-3', '1-3-2', '2-1-3']), 1);
+  assert.equal(report.headBoat(['4-1-2', '4-1-3', '1-4-2']), 4);
+  assert.equal(report.headBoat([]), null);
+});
+
+test('the three fixed skip rules read only pre-race data', () => {
+  const official = (m2s, extra = {}) => m2s.map((m2, i) => boat(i + 1, i + 1, 'B1', 5, { m2, m3: m2 + 20 + i, ...(extra[i + 1] || {}) }));
+  const row = (boats, head, label = 'solid') => ({ boats, head, roughness: { label } });
+  // B1: rough lookout
+  assert.equal(report.shadowRules(row(official([30, 31, 32, 33, 34, 35]), 1, 'rough')).B1_skipRough, true);
+  // B2: course-4 tilt +2 and chappy's head is someone else; not when chappy heads the 4
+  const tilted = official([30, 31, 32, 33, 34, 35], { 4: { tilt: 2.5 } });
+  assert.equal(report.shadowRules(row(tilted, 1)).B2_skipKadoTilt, true);
+  assert.equal(report.shadowRules(row(tilted, 4)).B2_skipKadoTilt, false);
+  // B3: chappy heads the inside boat whose official motor is the single lowest
+  assert.equal(report.shadowRules(row(official([25, 31, 32, 33, 34, 35]), 1)).B3_skipWeakInMotor, true);
+  assert.equal(report.shadowRules(row(official([25, 31, 32, 33, 34, 35]), 2)).B3_skipWeakInMotor, false);
+  assert.equal(report.shadowRules(row(official([25, 25, 32, 33, 34, 35]), 1)).B3_skipWeakInMotor, false);
+  // internal-score motors (m3 = m2 + 15) are never judged
+  const internal = [1, 2, 3, 4, 5, 6].map(n => boat(n, n, 'B1', 5, { m2: n === 1 ? 20 : 30 + n, m3: (n === 1 ? 20 : 30 + n) + 15 }));
+  assert.equal(report.shadowRules(row(internal, 1)).B3_skipWeakInMotor, false);
+});
+
+test('shadow comparison never marks itself usable and splits explored / holdout', () => {
+  const out = report.build({ records: [record('20261106-24-5', solidRace, [1, 2, 3, 4, 5, 6], 1200, ['1-2-3']),
+    record('20261108-02-5', roughRace, [4, 5, 1, 2, 3, 6], 25000, ['1-2-3'])], config });
+  const s = out.shadowAb;
+  assert.equal(s.productionChanged, false);
+  assert.equal(s.usableForPrediction, false);
+  assert.equal(s.automaticApplication, false);
+  assert.equal(s.explored.A_current.races, 1);
+  assert.equal(s.holdout.A_current.races, 1);
+  assert.equal(s.holdout.variants.B1_skipRough.skipped.races, 1);
+  assert.equal(s.holdout.variants.B1_skipRough.kept.races, 0);
+});
