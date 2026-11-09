@@ -7,18 +7,41 @@ name: Deploy site (GitHub Pages)
 #
 # 動かすには、リポジトリの Settings → Pages → Build and deployment の Source を「GitHub Actions」にする（本人の操作）。
 # Source がまだ「Deploy from a branch」の間は、このワークフローは確認だけして何もしない（失敗にもしない）。
+# GITHUB_TOKEN で保存した push は別 workflow を起動しないため、主な自動保存元の完了も受け取る。
 # 公開対象は _config.yml の exclude のまま（Jekyll でこれまでと同じ形に組み立てる）。
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Collect live note independently
+      - Collect automatic race predictions
+      - Collect official race results
+      - Build continuous performance ledger
+      - Build race insight report
+      - Build learning analysis pipeline
+      - Build boat data site
+      - Build boat data pre-race info
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
   check:
+    if: >-
+      github.repository == 'takechanman12250711-oss/chappy-boatrace-ai' &&
+      ((github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event != 'pull_request' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.head_repository &&
+        github.event.workflow_run.head_repository.full_name == github.repository) ||
+       ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+        github.ref == 'refs/heads/main'))
     runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions:
@@ -60,6 +83,9 @@ jobs:
       # 公開しない大きな保存データは取得しない（_config.yml の exclude と同じ範囲）
       - uses: actions/checkout@v4
         with:
+          # 起点の収集開始SHAではなく、待機を終えた時点のmainを公開する。
+          # workflow_run のartifactや外部ブランチのコードは使わない。
+          ref: main
           fetch-depth: 1
           filter: blob:none
           persist-credentials: false
