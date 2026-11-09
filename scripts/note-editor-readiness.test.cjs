@@ -68,6 +68,8 @@ function harness({ title = true, body = true, titleEditable = true, bodyEditable
 }
 
 function diagnostic(logs) {
+  assert.equal(logs.join('\n').includes(PRIVATE), false);
+  logs = logs.filter(line => line.startsWith(PREFIX));
   assert.equal(logs.length, 1);
   assert.ok(logs[0].startsWith(PREFIX));
   assert.ok(Buffer.byteLength(logs[0]) < 512);
@@ -188,7 +190,8 @@ test('navigation and initial-host gates remain before field lookup', async () =>
   redirect.page.url = () => 'https://note.com/login';
   const { failure, logs } = await redirect.run();
   assert.equal(failure.message, 'note_editor_session_not_ready_note.com');
-  assert.deepEqual(logs, []);
+  assert.equal(logs.filter(line => line.startsWith(PREFIX)).length, 0);
+  assert.equal(logs.filter(line => line.startsWith('NOTE_UI_EDITOR_LOAD=')).length, 1);
   assert.equal(redirect.events.some(event => event[0] === 'locate'), false);
 });
 

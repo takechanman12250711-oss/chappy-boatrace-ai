@@ -3,7 +3,7 @@ name: Note GitHub UI Transport
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/note-github-ui-transport.yml', 'scripts/note-github-ui-transport.js', 'scripts/note-cover.js', 'scripts/note-cover-template.js', 'assets/note/**', 'scripts/note-browserbase-draft-save.js', 'scripts/note-editor-content.js', 'scripts/note-publication-source.js', 'scripts/note-korogashi-presentation.cjs', 'scripts/note-plain-presentation.cjs', 'scripts/note-recovery*', 'scripts/note-readable-article.js', 'scripts/note-published-ticket-sections.js', 'scripts/publish-note-queue.js', 'scripts/note-article-series.js', 'scripts/save-independent-monitor-note.js', 'data/note-drafts/**']
+    paths: ['.github/workflows/note-github-ui-transport.yml', 'scripts/note-github-ui-transport.js', 'scripts/note-editor-load-observer.cjs', 'scripts/note-cover.js', 'scripts/note-cover-template.js', 'assets/note/**', 'scripts/note-browserbase-draft-save.js', 'scripts/note-editor-content.js', 'scripts/note-publication-source.js', 'scripts/note-korogashi-presentation.cjs', 'scripts/note-plain-presentation.cjs', 'scripts/note-recovery*', 'scripts/note-readable-article.js', 'scripts/note-published-ticket-sections.js', 'scripts/publish-note-queue.js', 'scripts/note-article-series.js', 'scripts/save-independent-monitor-note.js', 'data/note-drafts/**']
   workflow_run:
     workflows: ['Build note publish handoff']
     types: [completed]
