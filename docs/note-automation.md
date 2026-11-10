@@ -422,5 +422,5 @@ note収益がほぼ無いため、本人が「全部無料にする」を選択�
 本人がPR #1436の新デザインへの切り替えを選択。2026-10-04承認の3枚の表紙指定より優先する。ファイル名と種類の対応（normal / escape / manshu、一覧 `chappy-index-cover.jpg`、ヘッダー `chappy-cover.jpg`）、保存原本のarticleSeriesでの選択、左下の日付・場・R・締切の帯の位置・大きさは変えず、帯は濃紺・水色の配色にする。
 
 - escapeのバッジは「本命予想」（記事タイトル・原本・独立監視区分は従来どおり）。チャッピー少年は使わない。的中速報用 `chappy-hit-cover.jpg` は素材のみで未接続。
-- 生成元は `scripts/design/make_note_covers.py`。社員の顔イラスト原画はリポジトリ外（`STAFF_DIR`）で、`assets/staff` のプロフィール表とは別物。投稿ごとの画像生成APIは使わない。
+- 生成元は `scripts/design/make_note_covers.py`。社員の顔イラスト原画は `assets/note/cover-faces/`（組織図ページの400x400画像と同一。`assets/staff` のプロフィール表とは別物）。Python Playwrightで `CHROMIUM_PATH=/opt/pw-browsers/chromium python3 scripts/design/make_note_covers.py` を実行すると再生成できる（Noto Sans CJK JPが必要）。投稿ごとの画像生成APIは使わない。
 - 公開済み記事の本文・買い目・価格・公開日時・表紙は変更しない。main反映と、次の新規公開記事での表紙表示確認は別に報告する。

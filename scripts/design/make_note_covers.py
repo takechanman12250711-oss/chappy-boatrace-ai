@@ -1,11 +1,10 @@
 import base64, sys, pathlib
 from playwright.sync_api import sync_playwright
 import os
-S = pathlib.Path(os.environ.get("STAFF_DIR", pathlib.Path(__file__).parent / "staff"))  # 社員の顔イラスト（組織図用の原画。リポジトリ外）を置いたフォルダ。assets/staff のプロフィール表とは別物
+# 社員の顔イラスト原画（組織図ページの400x400画像と同一。assets/staff のプロフィール表とは別物）
+S = pathlib.Path(os.environ.get("STAFF_DIR", pathlib.Path(__file__).resolve().parents[2] / "assets" / "note" / "cover-faces"))
 img = lambda n: "data:image/jpeg;base64," + base64.b64encode((S / n).read_bytes()).decode()
-P = {"sora": "img_02_ee906251.jpg", "shizuku": "img_03_468bdd1d.jpg", "hinata": "img_04_47929ce2.jpg", "tsumugi": "img_05_664a80ed.jpg",
-     "kai": "img_06_59f2f169.jpg", "minato": "img_07_e0833fc6.jpg", "homura": "img_08_4f49d2dd.jpg", "ruri": "img_09_9ec2bc15.jpg",
-     "kohaku": "img_10_3526eca6.jpg", "wakaba": "img_11_df07a72f.jpg", "hero": "img_01_e460aaee.jpg"}
+P = {n: f"{n}.jpg" for n in ["sora", "shizuku", "hinata", "tsumugi", "kai", "minato", "homura", "ruri", "kohaku", "wakaba"]}
 
 COVERS = {
   "normal":  dict(color="#22d3ee", badge="AI展開予想", h=["展開を読んで、", "勝負レースを絞る。"], sub="AI社員チームがデータで展開を読み解く", chips=["展開を読む", "データで絞る", "結果も公開"], faces=["kai", "ruri"]),
@@ -45,8 +44,6 @@ def chart(c):
     return f'<svg class="chart" viewBox="0 0 1734 907">{bars}<polyline points="{poly}" fill="none" stroke="{c}" stroke-width="6" opacity=".9"/>{dots}</svg>'
 
 def faces_html(fs):
-    if fs == ["hero"]:
-        return f'<div class="faces"><div class="face" style="width:900px;height:600px"><img src="{img(P["hero"])}"></div></div>'
     size = {1: 540, 2: 316, 4: 300, 6: 204}[len(fs)]
     if len(fs) in (4, 6):
         rows = "".join(f'<div class="face" style="width:{size}px;height:{size}px"><img src="{img(P[f])}"></div>' for f in fs)
