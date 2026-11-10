@@ -141,12 +141,22 @@ permissions:
 jobs:
   note-regression:
     runs-on: ubuntu-24.04
-    # A cold checkout of the retained prediction sources can take five
-    # minutes by itself. Leave time for the unchanged regression commands.
+    # Tests use local fixtures, not retained prediction/result history.
+    # Keep their code, policy checks, shared skills and cover assets available.
     timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts
+            js
+            api
+            config
+            .github/workflows
+            .agents/skills
+            .claude/skills
+            assets/note
 
       - uses: actions/setup-node@v4
         with:
