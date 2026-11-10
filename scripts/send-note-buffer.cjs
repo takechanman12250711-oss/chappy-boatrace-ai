@@ -305,35 +305,60 @@ function verifiedDelivery(delivery,store,loaded,state,config,marketing,clock) {
   }};
 }
 
+// Public receipt kinds only; no Buffer call. X送信 is a separate stage from note views and purchases.
+function deliveryKind(key) {
+  const k=String(key||'');
+  return k.startsWith('announcement:')?'announcement':/^recap(?:-[a-z]+)?:/.test(k)?'recap':'hit';
+}
+function summarizeDeliveries(date,receipts) {
+  const statuses=['buffer_confirmed_sent','accepted_pending','review_required'];
+  const byKind={};
+  for(const kind of ['announcement','hit','recap'])byKind[kind]=Object.fromEntries([...statuses,'other'].map(s=>[s,0]));
+  for(const r of receipts)byKind[deliveryKind(r.publicationKey)][statuses.includes(r.status)?r.status:'other']++;
+  return {date,source:'note-buffer-final receipts',bufferSentIsNotXPageVerification:true,byKind};
+}
+const metricsReason=error=>/^(?:buffer|metrics)_[a-z0-9_]+$/.test(error?.message||'')?error.message:'metrics_unknown_error';
+// API-level failures repeat for every post; stop reading so the shared 80/24h budget is not spent on known failures.
+const apiLevelFailure=reason=>/^buffer_(?:http_\d+|graphql_failed|free_budget_reached)$/.test(reason);
+
 async function collectMetrics(config,log,delivery,now) {
   if(config.metrics?.enabled!==true)return {status:'disabled'};
   if(timeOf(now)<'22:30')return {status:'before_metrics_window'};
   const date=jstDate(now),claim='note-buffer-metrics-claim/'+date;
   if(await log.get(claim))return {status:'already_attempted'};
-  const receipts=[];
+  const receipts=[],today=[];
   for(const d of [jstDate(now-86400000),date])for(const ref of await log.refs('note-buffer-final/'+d+'/')) {
     const r=await log.get(ref.ref.replace('refs/tags/',''));
+    if(d===date&&r)today.push(r);
     if(r?.status==='buffer_confirmed_sent'&&r.postId&&r.channelId)receipts.push(r);
   }
   if(!receipts.length)return {status:'no_verified_posts'};
   // Read at most six posts once per JST day, within the existing shared budget.
   // Experimental metrics never gate publishing or trigger strategy changes.
-  await log.put(claim,{date,at:now});const items=[];
+  await log.put(claim,{date,at:now});const items=[];let stopped=null;
   for(const receipt of receipts.slice(0,6)) {
     let item={postId:receipt.postId,url:receipt.url,publicationKey:receipt.publicationKey,status:'unavailable',metrics:null};
+    if(stopped){items.push({...item,reason:'skipped_after_api_failure'});continue;}
     try {
       const p=await delivery.metrics(receipt.postId);
       if(observed(p,receipt).status!=='buffer_confirmed_sent')throw Error('metrics_identity_mismatch');
       const metrics=Array.isArray(p.metrics)?p.metrics.filter(m=>typeof m.type==='string'&&typeof m.name==='string'&&
         typeof m.value==='number'&&Number.isFinite(m.value)&&m.value>=0&&typeof m.unit==='string'):[];
+      if(!metrics.length)throw Error('metrics_empty');
       const updated=Date.parse(p.metricsUpdatedAt);
-      if(metrics.length&&Number.isFinite(updated)&&updated<=now)item={...item,status:'observed',metrics,metricsUpdatedAt:p.metricsUpdatedAt};
-    }catch{/* Unavailable is never represented as zero or retried in a loop. */}
+      if(!Number.isFinite(updated)||updated>now)throw Error('metrics_updated_at_invalid');
+      item={...item,status:'observed',metrics,metricsUpdatedAt:p.metricsUpdatedAt};
+    }catch(error){
+      // Unavailable is never represented as zero or retried in a loop; only a sanitized code is kept.
+      const reason=metricsReason(error);item.reason=reason;if(apiLevelFailure(reason))stopped=reason;
+    }
     items.push(item);
   }
-  const report={date,observedAt:new Date(now).toISOString(),experimental:true,purchaseAttribution:'not_connected',items};
+  const report={date,observedAt:new Date(now).toISOString(),experimental:true,purchaseAttribution:'not_connected',
+    deliveries:summarizeDeliveries(date,today),items};
   await log.put('note-buffer-metrics/'+date,report);
-  return {status:'recorded',posts:items.length,available:items.filter(x=>x.status==='observed').length,purchaseAttribution:'not_connected'};
+  return {status:'recorded',posts:items.length,available:items.filter(x=>x.status==='observed').length,
+    ...(stopped?{stoppedReason:stopped}:{}),purchaseAttribution:'not_connected'};
 }
 
 async function run({env=process.env,now=Date.now(),clock=Date.now,config=JSON.parse(fs.readFileSync('config/note-social.json','utf8')),marketing=loadConfig(),store,log,delivery,claims,renderCard,publishCard}={}) {
@@ -411,4 +436,4 @@ async function run({env=process.env,now=Date.now(),clock=Date.now,config=JSON.pa
   return {announcement,recap:review,recovery,metrics,status:results.some(x=>x.status==='review_required')?'review_required':results.length?'processed':'no_new_hits',started,results};
 }
 if(require.main===module)run().then(result=>{const text=JSON.stringify(result);console.log('NOTE_BUFFER='+text);if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'\nBuffer Free X reports\n```json\n'+text+'\n```\n');if(result.status==='review_required')process.exitCode=1;}).catch(error=>{const reason=/^buffer_[a-z0-9_]+$/.test(error.message)?error.message:'verification_failed';console.error('NOTE_BUFFER_STOPPED='+reason+'; permanent_receipts_retained_no_auto_repost');process.exitCode=1;});
-module.exports={hitItems,recoverRecap,validateAssets,assetInput,blockers,ledger,transport,observed,reconcile,announcementRows,announcementText,announce,recap,collectMetrics,run};
+module.exports={hitItems,recoverRecap,validateAssets,assetInput,blockers,ledger,transport,observed,reconcile,announcementRows,announcementText,announce,recap,collectMetrics,summarizeDeliveries,run};

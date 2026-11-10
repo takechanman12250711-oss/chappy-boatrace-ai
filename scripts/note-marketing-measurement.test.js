@@ -18,3 +18,12 @@ test('missing data, zero sales, incomplete coverage and immature cohorts remain 
   const sameDay=measure({...base,sales:[sale('a','2026-10-04T18:00:00+09:00'),sale('b','2026-10-04T19:00:00+09:00')]});assert.equal(sameDay.repeat7Days.repeatBuyers,0);
   const duplicate=sale('a','2026-10-04T18:00:00+09:00');assert.throws(()=>measure({...base,sales:[duplicate,duplicate]}),/sale_invalid/);
 });
+test('X send stage stays separate from views and purchases, counts only the period, and rejects bad input',()=>{
+  assert.equal(measure(base).xSend,null);
+  const day=(date,sent,pending=0)=>({date,byKind:{announcement:{buffer_confirmed_sent:sent},hit:{buffer_confirmed_sent:1},recap:{accepted_pending:pending}}});
+  const out=measure({...base,xDeliveries:[day('20261005',2),day('20261006',3,1),day('20261020',9)]});
+  assert.deepEqual(out.xSend,{daysRecorded:2,bufferConfirmedSent:{announcement:5,hit:2,recap:0},acceptedPending:1,reviewRequired:0,other:0,xPageIndependentlyVerified:null});
+  assert.equal(out.traffic.xReferralPageViews,null);assert.equal(out.sales,null);assert.equal(out.newArticlesFreeSince,'2026-10-28');
+  assert.throws(()=>measure({...base,xDeliveries:[day('20261005',1),day('20261005',1)]}),/x_invalid/);
+  assert.throws(()=>measure({...base,xDeliveries:[day('20261005',-1)]}),/x_invalid/);
+});
