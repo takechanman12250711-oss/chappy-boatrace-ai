@@ -1,0 +1,121 @@
+name: Deploy site (GitHub Pages)
+
+# 公開サイトの反映を GitHub Actions で行う。
+# 以前の「pages build and deployment」（ブランチ公開）は、レースの日にデータの自動保存が数分おきに入るたび
+# 途中の反映が取り消され、昼から夜まで1回も反映が終わらないことがあった（2026-11-08 は 15:08 以降すべて取り消し）。
+# ここでは cancel-in-progress: false にして、始まった反映は最後まで終わらせ、待ちは最新の1件だけにする。
+#
+# 動かすには、リポジトリの Settings → Pages → Build and deployment の Source を「GitHub Actions」にする（本人の操作）。
+# Source がまだ「Deploy from a branch」の間は、このワークフローは確認だけして何もしない（失敗にもしない）。
+# GITHUB_TOKEN で保存した push は別 workflow を起動しないため、主な自動保存元の完了も受け取る。
+# 公開対象は _config.yml の exclude のまま（Jekyll でこれまでと同じ形に組み立てる）。
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Collect live note independently
+      - Collect automatic race predictions
+      - Collect official race results
+      - Build continuous performance ledger
+      - Build race insight report
+      - Build learning analysis pipeline
+      - Build boat data site
+      - Build boat data pre-race info
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    if: >-
+      github.repository == 'takechanman12250711-oss/chappy-boatrace-ai' &&
+      ((github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event != 'pull_request' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.head_repository &&
+        github.event.workflow_run.head_repository.full_name == github.repository) ||
+       ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+        github.ref == 'refs/heads/main'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      pages: read
+    outputs:
+      source: ${{ steps.src.outputs.source }}
+    steps:
+      - name: Check Pages source
+        id: src
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          source="$(gh api "repos/${GITHUB_REPOSITORY}/pages" --jq '.build_type' 2>/dev/null || echo unknown)"
+          echo "source=${source}" >> "$GITHUB_OUTPUT"
+          if [ "$source" = "workflow" ]; then
+            echo "Pages の Source は GitHub Actions です。反映を進めます。" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Pages の Source が GitHub Actions ではありません（${source}）。今回は反映しません。Settings → Pages → Source を「GitHub Actions」にすると、この仕組みで反映されます。" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  deploy:
+    needs: check
+    if: needs.check.outputs.source == 'workflow'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    # 始まった反映は取り消さない。待ちは GitHub が最新の1件だけ残す。
+    concurrency:
+      group: pages-deploy
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # 公開しない大きな保存データは取得しない（_config.yml の exclude と同じ範囲）
+      - uses: actions/checkout@v4
+        with:
+          # 起点の収集開始SHAではなく、待機を終えた時点のmainを公開する。
+          # workflow_run のartifactや外部ブランチのコードは使わない。
+          ref: main
+          fetch-depth: 1
+          filter: blob:none
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/data/predictions/20[0-9][0-9][0-1][0-9][0-3][0-9].json
+            !/data/predictions/source-archives/
+            !/data/results/
+            !/data/outer-attack-sources/
+            !/data/independent-autonomous-forward/
+            !/data/independent-head-forward-v2/
+            !/data/verification-coverage/
+            !/data/external-reference/
+            !/data/experiments/
+            !/docs/
+            !/scripts/
+            !/tests/
+            !/tools/
+            !/workflows/
+            !/api/
+      - uses: actions/configure-pages@v5
+      - name: Build with Jekyll (same as branch publishing)
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./_site
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
