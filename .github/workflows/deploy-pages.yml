@@ -116,6 +116,10 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./_site
+      # 既定の10分では、約280MBの公開物が syncing_files のまま時間切れになり、
+      # 反映が取り消された（2026-11-10 run 42799511972）。job上限60分の内側で30分待つ。
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          timeout: 1800000

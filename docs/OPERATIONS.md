@@ -70,6 +70,8 @@ Vercel上の古いフロント表示は本番正本として扱わない。
 4. ブラウザキャッシュ・PWAキャッシュを確認する。
 5. API障害とフロント障害を分けて確認する。
 
+公開は `deploy-pages.yml`（Pages の Source＝GitHub Actions）で行う。Actions のトークンで起動した実行（live-note の5分リレー、heartbeat）は完了しても `workflow_run` を発生させないため、live-note の relay job が `deploy-pages.yml` を直接1回起動する。成功した定時実行は従来どおり `workflow_run` で届くので二重には起動しない。起動要求の失敗はリレーを止めずに、relay job の失敗として残す。`deploy-pages` の待ち時間は30分（既定10分では約280MBの公開物が `syncing_files` のまま取り消された。2026-11-10 run 42799511972）。反映確認は deploy run の成功だけでなく、公開画面のデータ更新時刻まで見る。
+
 ### APIが取得できない
 
 1. Vercel APIの稼働を確認する。
