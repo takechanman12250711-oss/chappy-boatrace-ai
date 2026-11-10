@@ -415,7 +415,21 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;padding:8px 16px 20px
         if (changed && /^#\/(v\/|$)|^$/.test(location.hash)) { var y = window.scrollY; route(); window.scrollTo(0, y); }
       }).catch(function(){});
     }, 5 * 60 * 1000);
+    // ページを開いたまま締切を過ぎたら、出走表の「済」・締切表示・最初に開くレースを付け直す。
+    var closedCount = countClosed();
+    setInterval(function(){
+      if (document.hidden) return;
+      var n = countClosed();
+      if (n === closedCount) return;
+      closedCount = n;
+      if (/^#\/v\//.test(location.hash)) { var y = window.scrollY; route(); window.scrollTo(0, y); }
+    }, 30 * 1000);
   });
+  function countClosed(){
+    var d = state.day, n = 0;
+    if (d) d.venues.forEach(function(v){ v.races.forEach(function(r){ if (isClosed(d, r)) n++; }); });
+    return n;
+  }
 })();
 </script>
 </body>
