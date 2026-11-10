@@ -1,7 +1,7 @@
 import base64, sys, pathlib
 from playwright.sync_api import sync_playwright
 import os
-S = pathlib.Path(os.environ.get("STAFF_DIR", pathlib.Path(__file__).parent / "staff"))  # 社員イラスト（組織図のもの）を置いたフォルダ
+S = pathlib.Path(os.environ.get("STAFF_DIR", pathlib.Path(__file__).parent / "staff"))  # 社員の顔イラスト（組織図用の原画。リポジトリ外）を置いたフォルダ。assets/staff のプロフィール表とは別物
 img = lambda n: "data:image/jpeg;base64," + base64.b64encode((S / n).read_bytes()).decode()
 P = {"sora": "img_02_ee906251.jpg", "shizuku": "img_03_468bdd1d.jpg", "hinata": "img_04_47929ce2.jpg", "tsumugi": "img_05_664a80ed.jpg",
      "kai": "img_06_59f2f169.jpg", "minato": "img_07_e0833fc6.jpg", "homura": "img_08_4f49d2dd.jpg", "ruri": "img_09_9ec2bc15.jpg",
@@ -9,11 +9,11 @@ P = {"sora": "img_02_ee906251.jpg", "shizuku": "img_03_468bdd1d.jpg", "hinata": 
 
 COVERS = {
   "normal":  dict(color="#22d3ee", badge="AI展開予想", h=["展開を読んで、", "勝負レースを絞る。"], sub="AI社員チームがデータで展開を読み解く", chips=["展開を読む", "データで絞る", "結果も公開"], faces=["kai", "ruri"]),
-  "escape":  dict(color="#34d399", badge="イン逃げ", h=["1号艇の逃げを、", "データで見極める。"], sub="スタート・展示・モーターから逃げ切りを判定", chips=["ST・展示", "モーター", "結果も公開"], faces=["minato"]),
+  "escape":  dict(color="#34d399", badge="本命予想", h=["1号艇の逃げを、", "データで見極める。"], sub="スタート・展示・モーターから逃げ切りを判定", chips=["ST・展示", "モーター", "結果も公開"], faces=["minato"]),
   "manshu":  dict(color="#fbbf24", badge="万舟", h=["波乱の一撃を、", "AIが狙う。"], sub="高配当になる展開をデータで探す", chips=["攻めを読む", "穴を拾う", "結果も公開"], faces=["homura"]),
   "index":   dict(color="#60a5fa", badge="予想・結果一覧", h=["今日の予想と", "結果をまとめて。"], sub="締切順に並べて、終わったら公式結果を確認", chips=["締切順", "的中・不的中", "毎日更新"], faces=["kai", "minato", "homura", "ruri"]),
   "hit":     dict(color="#f43f5e", badge="的中速報", h=["的中！", "AIの読みが決まった。"], sub="当たったレースを、配当と一緒にお知らせ", chips=["的中報告", "配当公開", "通算も公開"], faces=["kohaku", "hinata"]),
-  "cover":   dict(color="#22d3ee", badge="チャッピーボートレースAI", h=["AI社員チームが", "毎日レースを分析。"], sub="展開・データ・オッズから、その日の勝負レースを届ける", chips=["AI展開予想", "イン逃げ", "万舟"], faces=["kai","minato","homura","ruri","kohaku","wakaba"]),
+  "cover":   dict(color="#22d3ee", badge="チャッピーボートレースAI", h=["AI社員チームが", "毎日レースを分析。"], sub="展開・データ・オッズから、その日の勝負レースを届ける", chips=["AI展開予想", "本命予想", "万舟"], faces=["kai","minato","homura","ruri","kohaku","wakaba"]),
 }
 
 CSS = """
@@ -64,7 +64,7 @@ def html(key, d):
 
 out = pathlib.Path(__file__).resolve().parents[2] / "assets" / "note"
 with sync_playwright() as p:
-    b = p.chromium.launch(); pg = b.new_page(viewport={"width": 1734, "height": 907})
+    b = p.chromium.launch(executable_path=os.environ.get("CHROMIUM_PATH") or None); pg = b.new_page(viewport={"width": 1734, "height": 907})
     for k, d in COVERS.items():
         pg.set_content(html(k, d)); pg.wait_for_timeout(300)
         name = "chappy-cover.jpg" if k == "cover" else f"chappy-{k}-cover.jpg"
