@@ -4,7 +4,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const root = path.resolve(__dirname, "..");
-const names = ["chappy-boatrace-dev", "chappy-boatdata-site", "chappy-pr-merge-chain", "chappy-response-guide", "chappy-result-learning", "chappy-source-research", "chappy-actions-recovery", "chappy-race-select", "chappy-note-generate", "chappy-note-audit", "chappy-note-publish", "chappy-note-settle"];
+const names = ["chappy-ai-staff", "chappy-boatrace-dev", "chappy-boatdata-site", "chappy-pr-merge-chain", "chappy-response-guide", "chappy-result-learning", "chappy-source-research", "chappy-actions-recovery", "chappy-race-select", "chappy-note-generate", "chappy-note-audit", "chappy-note-publish", "chappy-note-settle"];
 
 function filesIn(directory, prefix = "") {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
