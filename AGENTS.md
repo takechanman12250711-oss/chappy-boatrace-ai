@@ -1,6 +1,7 @@
 # 作業の引き継ぎ
 
 - 現在の依頼を最新main → 関連する最新PR → 申し継ぎの順に照合する。「続き」は合意済みの未完了作業を指す。追加要望を元の目的に組み込み、完了済みの別作業へ移らない。
+- AI社員での運用・チームへの依頼は共有 `chappy-ai-staff` スキルと `docs/ai-staff-operations.md` に従う。社員名と担当は `staff.html` を維持し、必要な担当だけへ委任する。同じファイルの編集担当は1名とし、実行・検査・引き継ぎの証拠を残す。定義の追加だけで常時稼働やClaude/Codex認証が成立したとは扱わない。
 - note自動化では最初に `docs/note-automation.md` と `.agents/skills/chappy-note-publish/SKILL.md` を読む。完了済みの収集・監視・原稿生成・handoffを作り直さず、認証と最終投稿の未接続部分を進める。
 - ユーザー操作はiPhoneだけで完結することが要件。PC、開発者ツール、Cookie抽出、storageState作成を本人へ丸投げしない。操作可能な本人認証と、その認証が投稿処理へ引き継がれる根拠を確認してから本人操作を依頼する。
 - TinyFish、Browserbase、GitHub-hosted fresh X OAuthは不採用。同じ失敗方式を名前や実行形態を変えて再試行しない。既存アカウントの認証方式変更を前提にしない。
