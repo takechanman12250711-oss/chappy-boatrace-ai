@@ -140,6 +140,8 @@ jobs:
           BROWSER_USE_API_KEY: ${{ secrets.BROWSER_USE_API_KEY }}
           BROWSER_USE_PROFILE_ID: ${{ secrets.BROWSER_USE_PROFILE_ID }}
           NOTE_CLAIM_TOKEN: ${{ github.token }}
+          # Token-started runs do not trigger workflow_run; ask for marketing explicitly.
+          NOTE_MARKETING_DISPATCH: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'github-actions[bot]' }}
         run: |
           if [ "$NOTE_UI_MODE" = "publish" ]; then
             node scripts/publish-note-queue.js
