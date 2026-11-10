@@ -5,11 +5,11 @@ import { webkit } from "playwright";
 
 // 2026-11-10: Vercel の公開APIは無料枠の上限で止まっており 402 を返す。
 // アプリ（js/api-origin-fallback.js）と同じく、同じ公開ルートの Cloudflare を先に使い、
-// 使えないときだけ Vercel を試す。RACE_URL を指定したときはそのURLだけを使う。
+// 使えないときだけ Vercel を試す。Vercel 以外の RACE_URL はそのURLだけを使う。
 const VERCEL_ORIGIN = "https://chappy-boatrace-api.vercel.app";
 const CLOUDFLARE_ORIGIN = "https://chappy-boatrace-read-api.takechanman12250711.workers.dev";
 async function fetchRaceWithFallback(url) {
-  const candidates = process.env.RACE_URL || !url.startsWith(VERCEL_ORIGIN + "/")
+  const candidates = !url.startsWith(VERCEL_ORIGIN + "/")
     ? [url]
     : [CLOUDFLARE_ORIGIN + url.slice(VERCEL_ORIGIN.length), url];
   let last = null;
