@@ -13,6 +13,8 @@
 | 軽量な日次表示 | `scripts/build-prediction-summaries.js`、`data/predictions/summaries/`。要約にない項目を原本にもないと判断しない |
 | 原本と圧縮 | `scripts/daily-prediction-source-archive.js`、`scripts/restore-daily-prediction-source.js`。必要な期間だけ調べ、巨大な全原本を毎回読まない |
 | 公式結果 | `.github/workflows/collect-results.yml` とその呼び出し先。note公開記事との照合とは区別する |
+| 成績公開・研究レポート | `seiseki.html`、`scripts/build-race-insight-report.cjs`、`config/race-roughness-v1.json`、`config/datazeme-shadow-ab-v1.json`、`docs/race-insight-report.md` |
+| ボートデータ帳 | `boatdata/`、`scripts/data-site/`、`data/site/`、`docs/boatdata.md`（`chappy-boatdata-site` スキル） |
 | 共通Skill | `.agents/skills/`、`.claude/skills/`、`scripts/check-note-skills.js` |
 
 フロントはGitHub Pages、取得APIは別の `takechanman12250711-oss/chappy-boatrace-api`（Vercel）。API側も変更する必要があるかは、実際の不具合と依頼範囲から判断する。

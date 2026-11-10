@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
-const { judgeRegular, judgeManual, judgeRelay, findNoteError, buildReport, jstDate } = require('./daily-health-check.cjs');
+const { judgeRegular, judgeManual, judgeRelay, findNoteError, buildReport, jstDate, raceDayJst } = require('./daily-health-check.cjs');
 
 const now = new Date('2026-11-05T12:00:00Z');
 const ago = (h) => new Date(now.getTime() - h * 3600 * 1000).toISOString();
@@ -65,4 +65,13 @@ test('報告文：異常なしと異常あり', () => {
 
 test('日本時間の日付', () => {
   assert.equal(jstDate(new Date('2026-11-05T15:30:00Z')), '20261106');
+});
+
+test('確認するレースの日：予約実行が深夜にずれたら前日を見る', () => {
+  // 予定どおり 21:07 日本時間 → その日
+  assert.equal(raceDayJst(new Date('2026-11-05T12:07:00Z')), '20261105');
+  // 遅れて翌 04:52 日本時間に動いた → 前日（11/5）
+  assert.equal(raceDayJst(new Date('2026-11-05T19:52:00Z')), '20261105');
+  // 朝 8 時以降 → その日
+  assert.equal(raceDayJst(new Date('2026-11-05T23:00:00Z')), '20261106');
 });

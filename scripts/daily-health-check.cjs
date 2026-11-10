@@ -24,6 +24,14 @@ function jstDate(now) {
   const d = new Date(now.getTime() + 9 * HOUR);
   return d.toISOString().slice(0, 10).replace(/-/g, '');
 }
+// 確認する「レースの日」。GitHub の予約実行は数時間遅れることがあり、
+// 日付が変わった深夜（日本時間 0〜7 時台）に動くと、まだ作られるはずのない翌日の
+// ファイルを「無い」と誤って知らせてしまう。朝 8 時より前は前日を確認する。
+const RACE_DAY_START_HOUR_JST = 8;
+function raceDayJst(now) {
+  const jstHour = new Date(now.getTime() + 9 * HOUR).getUTCHours();
+  return jstHour < RACE_DAY_START_HOUR_JST ? jstDate(new Date(now.getTime() - 24 * HOUR)) : jstDate(now);
+}
 function jstTime(iso) {
   if (!iso) return '不明';
   const d = new Date(new Date(iso).getTime() + 9 * HOUR);
@@ -131,8 +139,14 @@ function collect(now) {
   results.push(safe('チャッピー：結果の収集', () =>
     judgeRegular('チャッピー：結果の収集', chappyRuns('collect-results.yml'), now, 24, '的中・回収率の記録が止まっている可能性があります。')));
   results.push(safe('チャッピー：公開ページの反映', () => {
-    const runs = ghJson(`repos/${CHAPPY}/actions/runs?per_page=100&event=dynamic`).workflow_runs
-      .filter((r) => r.name === 'pages build and deployment');
+    // 公開の仕組みは Pages の Source で決まる。「GitHub Actions」なら deploy-pages.yml、
+    // それ以外（ブランチ公開）なら pages build and deployment を見る。
+    let source = '';
+    try { source = String(gh(['api', `repos/${CHAPPY}/pages`, '--jq', '.build_type'])).trim(); } catch (_) { source = ''; }
+    const runs = source === 'workflow'
+      ? chappyRuns('deploy-pages.yml').filter((r) => r.event !== 'pull_request')
+      : ghJson(`repos/${CHAPPY}/actions/runs?per_page=100&event=dynamic`).workflow_runs
+        .filter((r) => r.name === 'pages build and deployment');
     return judgeRegular('チャッピー：公開ページの反映', runs, now, 24, '予想がアプリに出ていない可能性があります。');
   }));
   for (const [file, label] of [
@@ -171,10 +185,12 @@ function collect(now) {
   results.push(safe('boatrace-ev：夜の処理（nightly）', () =>
     judgeRegular('boatrace-ev：夜の処理（nightly）', evRuns('nightly.yml'), now, 26, '成績の集計が止まっている可能性があります。')));
   results.push(safe('boatrace-ev：今日のデータ', () => {
-    const today = jstDate(now);
-    const commits = ghJson(`repos/${EV}/commits?path=docs/data/${today}.json&per_page=1`);
+    const day = raceDayJst(now);
+    const isToday = day === jstDate(now);
+    const commits = ghJson(`repos/${EV}/commits?path=docs/data/${day}.json&per_page=1`);
     if (commits.length === 0) {
-      return { label: 'boatrace-ev：今日のデータ', ok: false, text: `docs/data/${today}.json が今日まだ作られていません。表示画面に今日の予想が出ていない可能性があります。` };
+      const when = isToday ? '今日' : 'その日（前日分）';
+      return { label: 'boatrace-ev：今日のデータ', ok: false, text: `docs/data/${day}.json が${when}まだ作られていません。表示画面に予想が出ていない可能性があります。` };
     }
     return { label: 'boatrace-ev：今日のデータ', ok: true, text: `更新あり（${jstTime(commits[0].commit.committer.date)}）` };
   }));
@@ -220,4 +236,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { judgeRegular, judgeManual, judgeRelay, findNoteError, buildReport, jstDate, ISSUE_TITLE };
+module.exports = { judgeRegular, judgeManual, judgeRelay, findNoteError, buildReport, jstDate, raceDayJst, ISSUE_TITLE };
