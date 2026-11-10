@@ -153,3 +153,10 @@ body.chappy-bright-ui.chappy-final-mobile-ui .prediction-empty-state {background
 .result-period-cell>small b.is-plus{color:#1d6b3c}
 .result-period-cell.is-empty>strong{font-size:15px;color:#526e86}
 .result-period-cell>small.result-period-limit{color:#8a4b00}
+
+/* 社員紹介へのリンク（ヘッダー右・更新ボタンの左）。タイトルが折り返さないよう小さめ */
+.home-header-actions:has(.home-staff-link){gap:6px}
+.home-header-actions a.home-staff-link{display:grid;place-items:center;gap:1px;padding:2px;min-width:38px;text-decoration:none;border-radius:10px;background:#eaf4ff;color:#0769cf!important}
+.home-header-actions a.home-staff-link b{font-size:1.2rem;line-height:1.25;font-weight:500}
+.home-header-actions a.home-staff-link small{font-size:.58rem;font-weight:800;white-space:nowrap}
+.home-header-actions a.home-staff-link:focus-visible{outline:3px solid #0769cf;outline-offset:2px}

@@ -139,8 +139,14 @@ function collect(now) {
   results.push(safe('チャッピー：結果の収集', () =>
     judgeRegular('チャッピー：結果の収集', chappyRuns('collect-results.yml'), now, 24, '的中・回収率の記録が止まっている可能性があります。')));
   results.push(safe('チャッピー：公開ページの反映', () => {
-    const runs = ghJson(`repos/${CHAPPY}/actions/runs?per_page=100&event=dynamic`).workflow_runs
-      .filter((r) => r.name === 'pages build and deployment');
+    // 公開の仕組みは Pages の Source で決まる。「GitHub Actions」なら deploy-pages.yml、
+    // それ以外（ブランチ公開）なら pages build and deployment を見る。
+    let source = '';
+    try { source = String(gh(['api', `repos/${CHAPPY}/pages`, '--jq', '.build_type'])).trim(); } catch (_) { source = ''; }
+    const runs = source === 'workflow'
+      ? chappyRuns('deploy-pages.yml').filter((r) => r.event !== 'pull_request')
+      : ghJson(`repos/${CHAPPY}/actions/runs?per_page=100&event=dynamic`).workflow_runs
+        .filter((r) => r.name === 'pages build and deployment');
     return judgeRegular('チャッピー：公開ページの反映', runs, now, 24, '予想がアプリに出ていない可能性があります。');
   }));
   for (const [file, label] of [

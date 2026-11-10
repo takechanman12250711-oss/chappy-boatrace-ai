@@ -121,6 +121,14 @@ jobs:
             echo "NOTE_UI_TRANSPORT_BLOCKED=browser_use_profile_id_missing"
             exit 1
           fi
+      # 2026-11-06 the browser download once took 8m41s and the race deadline
+      # passed before publishing. Reuse the downloaded browser between runs.
+      - name: Restore cached Playwright browser
+        if: steps.preflight.outputs.ready == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-1.55.0-${{ runner.os }}
       - name: Install Playwright and local cover browser
         if: steps.preflight.outputs.ready == 'true'
         run: |
