@@ -3,6 +3,31 @@ import path from "node:path";
 import process from "node:process";
 import { webkit } from "playwright";
 
+// 2026-11-10: Vercel の公開APIは無料枠の上限で止まっており 402 を返す。
+// アプリ（js/api-origin-fallback.js）と同じく、同じ公開ルートの Cloudflare を先に使い、
+// 使えないときだけ Vercel を試す。RACE_URL を指定したときはそのURLだけを使う。
+const VERCEL_ORIGIN = "https://chappy-boatrace-api.vercel.app";
+const CLOUDFLARE_ORIGIN = "https://chappy-boatrace-read-api.takechanman12250711.workers.dev";
+async function fetchRaceWithFallback(url) {
+  const candidates = process.env.RACE_URL || !url.startsWith(VERCEL_ORIGIN + "/")
+    ? [url]
+    : [CLOUDFLARE_ORIGIN + url.slice(VERCEL_ORIGIN.length), url];
+  let last = null;
+  for (const candidate of candidates) {
+    try {
+      const response = await fetch(candidate, { signal: AbortSignal.timeout(30_000) });
+      const text = await response.text();
+      let data = null;
+      try { data = JSON.parse(text); } catch { data = null; }
+      last = { response, data, url: candidate, text };
+      if (data && response.ok && data.ok !== false) return last;
+    } catch (error) {
+      last = last || { response: null, data: null, url: candidate, error };
+    }
+  }
+  return last;
+}
+
 const stage = process.argv[2] || "core";
 const appUrl = process.env.APP_URL || "http://127.0.0.1:4173/";
 const outputDir = process.env.DIAG_OUTPUT || `artifacts-stage/${stage}`;
@@ -55,10 +80,12 @@ let browser = null;
 
 try {
   mark("fetch-race-start");
-  const raceResponse = await fetch(raceUrl, {
-    signal: AbortSignal.timeout(30_000)
-  });
-  const raceData = await raceResponse.json();
+  const fetched = await fetchRaceWithFallback(raceUrl);
+  if (!fetched?.response) throw fetched?.error || new Error("race API unreachable");
+  const raceResponse = fetched.response;
+  const raceData = fetched.data;
+  report.raceUrlUsed = fetched.url;
+  if (!raceData) throw new Error(`race API ${raceResponse.status}: ${String(fetched.text || "").slice(0, 80)}`);
   mark("fetch-race-finished", {
     status: raceResponse.status,
     ok: raceData?.ok,
