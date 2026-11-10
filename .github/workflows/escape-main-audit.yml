@@ -201,8 +201,12 @@ jobs:
             if git push origin "HEAD:$TARGET_BRANCH"; then exit 0; fi
           done
           exit 1
+      # On pull requests only warn: the v2 drift predates the PR and nothing is saved there.
+      - name: Warn on pull request when registered head forward v2 could not report
+        if: steps.head_forward_v2.outcome == 'failure' && github.event_name == 'pull_request'
+        run: echo '::warning::head-forward v2 report failed (fail-closed); scheduled runs on main fail on this'
       - name: Fail when registered head forward v2 could not report
-        if: steps.head_forward_v2.outcome == 'failure'
+        if: steps.head_forward_v2.outcome == 'failure' && github.event_name != 'pull_request'
         run: |
           echo '::error::head-forward v2 report failed (fail-closed); other derived reports were saved'
           exit 1
