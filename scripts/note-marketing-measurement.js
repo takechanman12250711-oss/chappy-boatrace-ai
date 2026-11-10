@@ -1,9 +1,33 @@
 'use strict';
 const DAY = 86400000;
 const jstDay = ms => new Date(ms + 9 * 3600000).toISOString().slice(0,10);
+const FREE_SINCE = '2026-10-28';
+const KINDS = ['announcement','hit','recap'];
 const timestamp = value => typeof value === 'string' && /(Z|[+-]\d{2}:\d{2})$/.test(value) ? Date.parse(value) : NaN;
 // Local-only input: normalized official sales export, never a public data file.
 // Output contains aggregate counts only, no buyer or order identifiers.
+// X送信 stage: daily `deliveries` summaries copied from public note-buffer-metrics receipts.
+// Buffer sent is not an independent X page check, not a view, and not a purchase.
+function xSend(days, start, through) {
+  if (days == null) return null;
+  if (!Array.isArray(days)) throw Error('measurement_x_invalid');
+  const seen = new Set(), sent = Object.fromEntries(KINDS.map(k => [k, 0]));let pending = 0, review = 0, other = 0;
+  const from = jstDay(start).replace(/-/g,''), to = jstDay(through).replace(/-/g,'');
+  for (const day of days) {
+    if (!/^\d{8}$/.test(day?.date || '') || seen.has(day.date) || typeof day.byKind !== 'object' || !day.byKind) throw Error('measurement_x_invalid');
+    seen.add(day.date);
+    if (day.date < from || day.date > to) continue;
+    for (const kind of KINDS) {
+      const c = day.byKind[kind] || {};
+      for (const key of ['buffer_confirmed_sent','accepted_pending','review_required','other']) {
+        if (c[key] != null && (!Number.isSafeInteger(c[key]) || c[key] < 0)) throw Error('measurement_x_invalid');
+      }
+      sent[kind] += c.buffer_confirmed_sent || 0;pending += c.accepted_pending || 0;review += c.review_required || 0;other += c.other || 0;
+    }
+  }
+  return {daysRecorded: [...seen].filter(d => d >= from && d <= to).length, bufferConfirmedSent: sent,
+    acceptedPending: pending, reviewRequired: review, other, xPageIndependentlyVerified: null};
+}
 function measure(input) {
   const start=timestamp(input.trialStartedAt), through=timestamp(input.observedThrough);
   if (!Number.isFinite(start) || !Number.isFinite(through) || through<start) throw Error('measurement_period_invalid');
@@ -13,7 +37,10 @@ function measure(input) {
     if(n!=null && (!Number.isSafeInteger(n)||n<0)) throw Error('measurement_traffic_invalid');
     traffic[key]=n??null;
   }
-  const base={trialStartedAt:input.trialStartedAt,observedThrough:input.observedThrough,traffic,
+  const base={trialStartedAt:input.trialStartedAt,observedThrough:input.observedThrough,
+    xSend:xSend(input.xDeliveries,start,through),traffic,
+    // New race articles are free from this JST date: views apply, purchases only to earlier paid articles.
+    newArticlesFreeSince:FREE_SINCE,
     xPurchaseAttribution:null,sales:null,repeat7Days:{status:'sales_unavailable',eligibleBuyers:null,repeatBuyers:null,rate:null}};
   if(input.sales==null)return base;
   if(!Array.isArray(input.sales))throw Error('measurement_sales_invalid');
