@@ -443,3 +443,9 @@ Browser Useの残高不足（`browser_use_create_failed_402`）で、接続前�
 - 2026-11-11 公開画面の確認（ログインなし・Chromium）：公開設定で付けたタグは本文要素 `.note-common-styles__textnote-body` の外に表示され、本文の innerText に入らない（他の作者の公開記事 `nc3533401f117` で本文内のタグリンク0件）。本文に `#タグ` を直接書いた記事では本文内にリンクが入る（`na9844b27c603`、`n1fc6e599c30c`）。したがってタグは公開設定欄にだけ入れ、本文には書かない。チャッピーの公開記事 `n695f8a0a7460` は現在タグ0件で、本文要素は1個。これは表示位置の確認であり、タグ入力の動作確認ではない。
 - 接続する場合は、予約後・公開クリック前の工程に、失敗しても公開を止めない形で追加し、実画面での確認を先に行う。公開済み記事へタグを後付けしない。
 - 検証: `node --test scripts/note-article-tags.test.js`（note-regressionのCIには未登録）。
+
+## 2026-11-11 タグ欄の読み取り観測と402の理由コード
+
+- 公開設定画面でタグ欄を読むだけの観測（`scripts/note-hashtag-observation.js`）を、価格設定の後・公開クリックの前に追加した。入力・クリック・フォーカスはせず、最大3秒、失敗しても公開を止めない。ログ `NOTE_UI_HASHTAG_FIELD=` に、タグ欄の個数・要素の種類・フォーム内かどうか・フォームの送信ボタン数だけを出す（画面の文言は出さない）。タグ入力はまだ接続していない。次に公開が成功した実行のログで、Enterが投稿を確定させ得る構造かを判断する。
+- Browser Useのセッション作成が拒否された場合、エラーに応答の短い理由コードだけを付ける（例 `browser_use_create_failed_402_<code>`）。残高や上限の金額、メッセージ本文はログに出さない。2026-11-11は公開11回に加え、無料一覧の更新（Update note marketing）も同じ402で失敗している。理由コードが取れるのはこの変更のmain反映後の実行から。
+- 検証: `node --test scripts/note-hashtag-observation.test.js` と `node scripts/note-github-ui-transport.test.js`。

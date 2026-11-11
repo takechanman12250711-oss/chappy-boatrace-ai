@@ -60,7 +60,17 @@ async function createBrowserUseSession(config, request = fetch) {
       timeout: BROWSER_USE_TIMEOUT_MINUTES
     })
   });
-  if (!response.ok) throw new Error(`browser_use_create_failed_${response.status}`);
+  if (!response.ok) {
+    // Keep only the service's short reason code (e.g. balance vs key limit).
+    // Amounts, messages and any other body text never reach the log.
+    let code = '';
+    try {
+      const body = await response.json();
+      const raw = body?.detail?.code ?? body?.code ?? body?.error?.code;
+      if (typeof raw === 'string') code = raw.replace(/[^A-Za-z0-9_]/g, '').slice(0, 40);
+    } catch { /* No readable body: the status alone is reported. */ }
+    throw new Error(`browser_use_create_failed_${response.status}${code ? `_${code}` : ''}`);
+  }
   const session = await response.json();
   if (!session || !session.id || !session.cdpUrl) throw new Error('browser_use_session_invalid');
   return { id: session.id, cdpUrl: session.cdpUrl };
@@ -1066,6 +1076,8 @@ async function run({ env = process.env } = {}) {
     requireDraftGate(payload);
     console.log(`NOTE_UI_COVER_ATTACHED=${coverResult.attached}`);
     const paid = await configurePaidPublication(page, payload);
+    // Read-only and bounded to 3 seconds; it cannot stop or change the article.
+    await require('./note-hashtag-observation').observeHashtagField(page);
     if (mode === 'publish') {
       const receipt = await publishConfiguredArticle(page, payload, paid);
       await savePublicationReceipt(payload, receipt, env);
