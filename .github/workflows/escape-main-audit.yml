@@ -122,7 +122,8 @@ concurrency:
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # checkout alone takes 8-10 minutes and the analysis about 11 (2026-11 runs).
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -157,7 +158,19 @@ jobs:
           node scripts/independent-weather-history-v1.cjs
           node scripts/independent-weather-history-v2.cjs
           node scripts/independent-autonomous-forward.cjs report
-          node scripts/head-forward-report.cjs
+      # The registered head-forward v2 study fails closed when its frozen source
+      # manifest drifts. Keep that failure visible (final step) without blocking
+      # the other derived reports from being saved. Its report is not rewritten
+      # on failure, and its manifest is never refreshed here.
+      - name: Report registered head forward v2
+        id: head_forward_v2
+        continue-on-error: true
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+        run: node scripts/head-forward-report.cjs
+      - name: Keep head forward v2 report unchanged after failure
+        if: steps.head_forward_v2.outcome == 'failure'
+        run: git checkout -- data/stats/independent-head-forward-v2-report.json
       - uses: actions/upload-artifact@v4
         with:
           name: escape-main-audit
@@ -187,4 +200,13 @@ jobs:
             git rebase "origin/$TARGET_BRANCH"
             if git push origin "HEAD:$TARGET_BRANCH"; then exit 0; fi
           done
+          exit 1
+      # On pull requests only warn: the v2 drift predates the PR and nothing is saved there.
+      - name: Warn on pull request when registered head forward v2 could not report
+        if: steps.head_forward_v2.outcome == 'failure' && github.event_name == 'pull_request'
+        run: echo '::warning::head-forward v2 report failed (fail-closed); scheduled runs on main fail on this'
+      - name: Fail when registered head forward v2 could not report
+        if: steps.head_forward_v2.outcome == 'failure' && github.event_name != 'pull_request'
+        run: |
+          echo '::error::head-forward v2 report failed (fail-closed); other derived reports were saved'
           exit 1
