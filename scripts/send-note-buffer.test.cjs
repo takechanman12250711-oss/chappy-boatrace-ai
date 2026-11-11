@@ -295,6 +295,31 @@ test('experimental metrics distinguish missing from zero, pin identity, and run 
  g.delivery.metrics=async()=>({id:'wrong',channelId:'c',text,status:'sent',externalLink:base.url,metrics:[]});
  assert.equal((await collectMetrics(g.config,g.log,g.delivery,late)).available,0);assert.equal((await g.log.get('note-buffer-metrics/20260929')).items[0].metrics,null);
 });
+test('metrics keep a sanitized reason, stop after an API-level failure, and summarize today\'s X sends without Buffer calls',async()=>{
+ const f=fixture(),late=Date.parse('2026-09-29T22:45:00+09:00');f.config.metrics={enabled:true};
+ const text='original',base={status:'buffer_confirmed_sent',postId:'p',channelId:'c',textSha256:createHash('sha256').update(text).digest('hex'),url:'https://x.com/chappy_boat_ai/status/1'};
+ await f.log.put('note-buffer-final/20260929/a',{...base,publicationKey:'announcement:20260929:x'});
+ await f.log.put('note-buffer-final/20260929/b',{...base,postId:'q',publicationKey:'20260929-01-1:published-main'});
+ await f.log.put('note-buffer-final/20260929/c',{status:'accepted_pending',publicationKey:'recap-late:20260928'});
+ await f.log.put('note-buffer-final/20260928/d',{...base,postId:'r',publicationKey:'recap:20260928'});
+ let calls=0;f.delivery.metrics=async()=>{calls++;throw Error('buffer_graphql_failed');};
+ const result=await collectMetrics(f.config,f.log,f.delivery,late);
+ assert.equal(calls,1);assert.equal(result.stoppedReason,'buffer_graphql_failed');assert.equal(result.available,0);
+ const saved=await f.log.get('note-buffer-metrics/20260929');
+ assert.deepEqual(saved.items.map(x=>x.reason).sort(),['buffer_graphql_failed','skipped_after_api_failure','skipped_after_api_failure']);
+ assert(saved.items.every(x=>x.metrics===null));
+ const k=saved.deliveries.byKind;
+ assert.equal(k.announcement.buffer_confirmed_sent,1);assert.equal(k.hit.buffer_confirmed_sent,1);
+ assert.equal(k.recap.accepted_pending,1);assert.equal(k.recap.buffer_confirmed_sent,0);
+ const g=fixture();g.config.metrics={enabled:true};await g.log.put('note-buffer-final/20260929/a',base);
+ g.delivery.metrics=async()=>{throw new Error('secret token abc');};
+ await collectMetrics(g.config,g.log,g.delivery,late);
+ assert.equal((await g.log.get('note-buffer-metrics/20260929')).items[0].reason,'metrics_unknown_error');
+ const h=fixture();h.config.metrics={enabled:true};await h.log.put('note-buffer-final/20260929/a',base);
+ h.delivery.metrics=async()=>({id:'p',channelId:'c',text,status:'sent',externalLink:base.url,metrics:[]});
+ await collectMetrics(h.config,h.log,h.delivery,late);
+ assert.equal((await h.log.get('note-buffer-metrics/20260929')).items[0].reason,'metrics_empty');
+});
 test('announcements exclude old, future, expired, review and wrong-day articles without Buffer calls',async()=>{
  for(const change of [{publishedAt:'2026-09-29T18:00:00+09:00'},{publishedAt:'2026-09-29T23:00:00+09:00'},{deadlineAt:'2026-09-29T21:01:00+09:00'},{settlement:{status:'review'}},{raceKey:'20260928-13-4'},{url:'https://example.com'}]){
  const f=announcementFixture();f.state.rows=[{...f.state.rows[0],...change}];assert.equal((await announce(f.state,f.config,f.marketing,f.log,f.delivery,f.clock)).status,'no_new_articles');assert.deepEqual(f.events,[]);

@@ -79,3 +79,31 @@ test('duplicate entrypoints share the non-cancelling deployment queue and read c
   assert.match(checkout, /persist-credentials: false/);
   assert.doesNotMatch(deploy, /actions\/download-artifact/);
 });
+
+test('deploy waits past the 10-minute default inside the job limit', () => {
+  const deploy = workflow.slice(workflow.indexOf('\n  deploy:'));
+  const minutes = Number(deploy.match(/timeout-minutes: (\d+)/)[1]);
+  const step = deploy.match(/uses: actions\/deploy-pages@v4\n        with:\n          timeout: (\d+)/);
+  assert.ok(step, 'deploy-pages timeout is explicit');
+  const ms = Number(step[1]);
+  assert.ok(ms > 600000, 'longer than the action default that cancelled run 42799511972');
+  assert.ok(ms < minutes * 60000, 'still ends before the job limit');
+});
+
+test('token-queued live note runs request a deployment without blocking the relay', () => {
+  // Runs queued with the Actions token emit no workflow_run, so the relay asks directly.
+  const live = read('.github/workflows/live-note.yml');
+  const relay = live.slice(live.indexOf('\n  relay:'));
+  assert.match(relay, /permissions:\n      actions: write/);
+  const request = relay.match(/- name: Request a site deployment[^\n]*\n([\s\S]*?)\n      - name: /)[1];
+  assert.match(request, /id: deploy-request/);
+  assert.match(request, /if: github\.event_name != 'schedule' \|\| needs\.live-note\.result != 'success'/);
+  assert.match(request, /continue-on-error: true/);
+  assert.match(request, /gh workflow run deploy-pages\.yml --repo "\$REPO" --ref main/);
+  const order = ['Request a site deployment', 'Queue the next live note run', 'Surface a failed site deployment request'];
+  const at = order.map(name => relay.indexOf(`- name: ${name}`));
+  assert.ok(at.every(i => i > 0) && at[0] < at[1] && at[1] < at[2], 'request, then relay, then surface failure');
+  const surface = relay.slice(at[2]);
+  assert.match(surface, /if: always\(\) && steps\.deploy-request\.outcome == 'failure'/);
+  assert.match(surface, /exit 1/);
+});

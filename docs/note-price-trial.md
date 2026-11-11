@@ -30,3 +30,12 @@
 salesは取得できなければnull、全対象期間を漏れなく確認して販売なしなら空配列。各販売は `{saleId, purchasedAt, buyerKey, articlePriceYen, amountYen, status}`。statusはcompleted/refunded/cancelled。記事価格200円のcompletedだけを対象にし、金額は実記録値を使う。返金・取消は含めない。手数料控除後売上はこの集計器では計算せず、公式販売明細から別途確認する。
 
 2026-10-05確認時点ではアクセス画面は閲覧可能、販売CSVはパスワード再確認画面で停止。実数と画面証拠はユーザー向けの非公開記録へ保存し、本文の数値から将来の成果や価格変更の効果を断定しない。
+
+
+## 2026-11-10 X送信段階と指標取得の改善
+
+- 2026-10-28以降の新規レース記事は0円（readable-v7）。新規記事は閲覧までを測り、購入・別日再購入は以前の200円記事だけに適用する。集計器は `newArticlesFreeSince` を出力し、無料記事の購入0件を「売れなかった」と扱わない。
+- `note-buffer-metrics/<日付>` に `deliveries`（当日分の公開receiptを告知・的中・振り返り別、sent/受付のみ/review/その他で数えた件数）を追加。Buffer APIは追加で呼ばない。Buffer sentはX公開画面の独立確認・閲覧・購入ではない。
+- 集計器の入力 `xDeliveries` にその日次 `deliveries` を並べると、期間内の `xSend` を閲覧（traffic）・購入（sales）と別に出す。同じ日付の重複や負数は拒否。未入力はnull。
+- 2026-10-04〜11-05の指標記録は全投稿が `unavailable` だった。原因は記録されていなかったため、以後は投稿ごとに整理済みの理由コード（例: `buffer_graphql_failed`、`metrics_empty`、`metrics_identity_mismatch`）を保存する。HTTP・GraphQL・API枠の失敗は全投稿に共通なので、最初の1件で読み取りを止め、残りを `skipped_after_api_failure` とする。エラー本文や鍵は保存しない。
+- 2026-11-06〜11-09は指標記録自体がない。原因は未確認であり、欠測を0とみなさない。

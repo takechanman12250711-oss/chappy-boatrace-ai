@@ -131,6 +131,33 @@ test('queue processes each kind for the same race and refuses a receipt from ano
   await assert.rejects(publishQueue({ ...args, publish: async () => ({ raceKey: candidates[0].raceKey, articleSeries: 'manshu', url: 'wrong-kind' }) }), /receipt_missing/);
 });
 
+test('token-started queue requests marketing once before the continuation, only after a publication', async () => {
+  const candidates = ['normal', 'escape'].map(articleSeries => ({ raceKey: '20260928-15-6', articleSeries, publicationKey: publicationKey('20260928-15-6', articleSeries) }));
+  const base = { now: () => now, build: () => ({ payload: { candidates: structuredClone(candidates) } }),
+    publish: async ({ env: e }) => ({ ...JSON.parse(fs.readFileSync(e.NOTE_IPHONE_HANDOFF)), url: 'verified-test' }) };
+  const calls = [], request = async (url, init) => { calls.push({ url, body: JSON.parse(init.body) }); return { status: 204 }; };
+  // Publish `left` articles, stop the loop once, then report a pending item.
+  let left = 1, stopped = false;
+  const prepare = async ({ handoff }) => {
+    if (left > 0) { left--; return { ok: true, payload: handoff.candidates[0] }; }
+    if (!stopped) { stopped = true; return { ok: false }; }
+    stopped = false; return { ok: true };
+  };
+  assert.equal((await publishQueue({ ...base, env: { ...env, NOTE_MARKETING_DISPATCH: 'true' }, request, prepare })).published, 1);
+  assert.deepEqual(calls.map(c => c.url.split('/workflows/')[1]), ['update-note-marketing.yml/dispatches', 'note-github-ui-transport.yml/dispatches']);
+  assert.deepEqual(calls[0].body, { ref: 'main' });
+  calls.length = 0; left = 0;
+  await publishQueue({ ...base, env: { ...env, NOTE_MARKETING_DISPATCH: 'true' }, request, prepare });
+  assert.deepEqual(calls.map(c => c.url.split('/workflows/')[1]), ['note-github-ui-transport.yml/dispatches'], 'no article, no marketing request');
+  calls.length = 0; left = 1;
+  await publishQueue({ ...base, env, request, prepare });
+  assert.equal(calls.some(c => c.url.includes('update-note-marketing')), false, 'workflow_run already covers user-started runs');
+  calls.length = 0; left = 1;
+  const failing = async (url, init) => { calls.push({ url }); return { status: url.includes('marketing') ? 500 : 204 }; };
+  await assert.rejects(publishQueue({ ...base, env: { ...env, NOTE_MARKETING_DISPATCH: 'true' }, request: failing, prepare }), /marketing_dispatch_failed_500/);
+  assert.equal(calls.length, 2, 'continuation is still requested and the failed request is not retried');
+});
+
 test('index verifies source kind, lists three sections, and rejects duplicate articles within kind', () => {
   const rows = ['normal', 'escape', 'manshu'].map((kind, i) => {
     const b = original(kind === 'normal' ? 'escape' : kind);

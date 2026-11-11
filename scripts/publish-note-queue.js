@@ -39,6 +39,21 @@ async function publishQueue({ env = process.env, request = fetch, prepare = prep
       published++;
       handoff.candidates = handoff.candidates.filter(c => publicationKey(c.raceKey, c.articleSeries) !== gate.payload.publicationKey);
     }
+    // A run started with the workflow token does not emit workflow_run for
+    // Update note marketing. Request it explicitly, before the continuation
+    // dispatch, so the free index, social queue and korogashi registration
+    // see each new article while its deadline is still ahead.
+    let marketingError = null;
+    if (published > 0 && env.NOTE_MARKETING_DISPATCH === 'true') {
+      try {
+        const response = await request(`https://api.github.com/repos/${REPOSITORY}/actions/workflows/update-note-marketing.yml/dispatches`, {
+          method: 'POST', headers: { Authorization: `Bearer ${env.NOTE_CLAIM_TOKEN}`,
+            Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ref: 'main' }), signal: AbortSignal.timeout(30000)
+        });
+        if (![200, 204].includes(response.status)) marketingError = `marketing_dispatch_failed_${response.status}`;
+      } catch { marketingError = 'marketing_dispatch_failed_request'; }
+    }
     const pending = await prepare({ env, request, handoff });
     if (pending.ok) {
       const response = await request(`https://api.github.com/repos/${REPOSITORY}/actions/workflows/note-github-ui-transport.yml/dispatches`, {
@@ -49,6 +64,9 @@ async function publishQueue({ env = process.env, request = fetch, prepare = prep
       if (response.status !== 204) throw new Error(`publication_queue_dispatch_failed_${response.status}`);
     }
     console.log(`NOTE_QUEUE=${JSON.stringify({ published, continued: pending.ok })}`);
+    // Publication already succeeded; surface a missed marketing request
+    // after the continuation, without retrying an uncertain dispatch.
+    if (marketingError) throw new Error(marketingError);
     return { published, continued: pending.ok };
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 }

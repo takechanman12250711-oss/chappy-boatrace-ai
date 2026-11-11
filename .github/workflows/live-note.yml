@@ -398,6 +398,20 @@ jobs:
     permissions:
       actions: write
     steps:
+      # A run queued with the Actions token (this relay, or a heartbeat) does not
+      # emit workflow_run, so Deploy site never saw its saved data. Ask for one
+      # deployment of current main here. A successful scheduled run already
+      # reaches Deploy site through workflow_run, so it is not requested twice.
+      # The deploy queue keeps one waiting run and never cancels a started one.
+      # A failed request must not stop the relay; it is surfaced after the relay.
+      - name: Request a site deployment of the data this run saved
+        id: deploy-request
+        if: github.event_name != 'schedule' || needs.live-note.result != 'success'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: gh workflow run deploy-pages.yml --repo "$REPO" --ref main
       - name: Queue the next live note run after five minutes
         env:
           GH_TOKEN: ${{ github.token }}
@@ -420,3 +434,8 @@ jobs:
           fi
           gh workflow run live-note.yml --repo "$REPO" --ref main
           echo "Queued the next live note run."
+      - name: Surface a failed site deployment request
+        if: always() && steps.deploy-request.outcome == 'failure'
+        run: |
+          echo "::error::Deploy site could not be requested; saved data is not on the public site yet."
+          exit 1

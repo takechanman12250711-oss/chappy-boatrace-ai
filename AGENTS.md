@@ -1,6 +1,7 @@
 # 作業の引き継ぎ
 
 - 現在の依頼を最新main → 関連する最新PR → 申し継ぎの順に照合する。「続き」は合意済みの未完了作業を指す。追加要望を元の目的に組み込み、完了済みの別作業へ移らない。
+- AI社員での運用・チームへの依頼は共有 `chappy-ai-staff` スキルと `docs/ai-staff-operations.md` に従う。社員名と担当は `staff.html` を維持し、必要な担当だけへ委任する。同じファイルの編集担当は1名とし、実行・検査・引き継ぎの証拠を残す。定義の追加だけで常時稼働やClaude/Codex認証が成立したとは扱わない。
 - note自動化では最初に `docs/note-automation.md` と `.agents/skills/chappy-note-publish/SKILL.md` を読む。完了済みの収集・監視・原稿生成・handoffを作り直さず、認証と最終投稿の未接続部分を進める。
 - ユーザー操作はiPhoneだけで完結することが要件。PC、開発者ツール、Cookie抽出、storageState作成を本人へ丸投げしない。操作可能な本人認証と、その認証が投稿処理へ引き継がれる根拠を確認してから本人操作を依頼する。
 - TinyFish、Browserbase、GitHub-hosted fresh X OAuthは不採用。同じ失敗方式を名前や実行形態を変えて再試行しない。既存アカウントの認証方式変更を前提にしない。
@@ -103,3 +104,11 @@ Claude CodeのWeb/iOSと、この会話の実行環境は認証もファイル�
 ## 2026-10-28 新規記事は全部無料（本人承認）
 
 新規公開のnoteレース記事は readable-v7・0円（v6の無料説明2行を言い換えただけ。買い目・区分・証明はv6と同じ）で、有料エリアなしに買い目まで全文無料。過去の200円/300円指定より優先。価格正本は `scripts/note-pricing.js` の `priceForPresentation`（v6・v7=0円、v1〜v5=200円）。公開画面は無料・本文全文一致・有料表示なしを匿名確認する。過去の200円claimの復旧は固定コピーで従来どおり照合し、公開済み記事は変更しない。詳細は docs/note-automation.md の最新節。
+
+## 2026-11-10 表紙をAI・データ感のデザインへ刷新（本人承認）
+
+本人がPR #1436の新デザインへの切り替えを選択。2026-10-04承認の3枚の表紙指定より優先する。ファイル名と種類の対応（normal / escape / manshu、一覧 `chappy-index-cover.jpg`、ヘッダー `chappy-cover.jpg`）、保存原本のarticleSeriesでの選択、左下の日付・場・R・締切の帯の位置・大きさは変えず、帯は濃紺・水色の配色にする。
+
+- escapeのバッジは「本命予想」（記事タイトル・原本・独立監視区分は従来どおり）。チャッピー少年は使わない。的中速報用 `chappy-hit-cover.jpg` は素材のみで未接続。
+- 生成元は `scripts/design/make_note_covers.py`。社員の顔イラスト原画は `assets/note/cover-faces/`（組織図ページの400x400画像と同一。`assets/staff` のプロフィール表とは別物）。Python Playwrightで `CHROMIUM_PATH=/opt/pw-browsers/chromium python3 scripts/design/make_note_covers.py` を実行すると再生成できる（Noto Sans CJK JPが必要）。投稿ごとの画像生成APIは使わない。
+- 公開済み記事の本文・買い目・価格・公開日時・表紙は変更しない。main反映と、次の新規公開記事での表紙表示確認は別に報告する。

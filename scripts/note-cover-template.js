@@ -43,9 +43,9 @@ function artworkHtml(lines, background, font, family, label) {
   return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeXml(label)}</title><style>
     @font-face{font-family:${family};src:url(data:font/ttf;base64,${font.toString('base64')}) format('truetype');font-weight:${family === 'ChappyRound' ? 700 : 400}}
     *{box-sizing:border-box}html,body{margin:0;width:1734px;height:907px;overflow:hidden;background:#fbf7ed}
-    img,svg{position:absolute;inset:0;width:1734px;height:907px}text{font-family:${family};font-weight:${family === 'ChappyRound' ? 700 : 400};fill:#123a60}
+    img,svg{position:absolute;inset:0;width:1734px;height:907px}text{font-family:${family};font-weight:${family === 'ChappyRound' ? 700 : 400};fill:#ffffff}
   </style></head><body><img alt="${escapeXml(label)}" src="data:image/jpeg;base64,${background.toString('base64')}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1734 907">
-    <rect x="16" y="795" width="672" height="104" rx="18" fill="#fffaf0" fill-opacity=".97" stroke="#123a60" stroke-width="3"/>
+    <rect x="16" y="795" width="672" height="104" rx="18" fill="#06122a" fill-opacity=".92" stroke="#22d3ee" stroke-width="3"/>
     ${text}
   </svg></body></html>`;
 }

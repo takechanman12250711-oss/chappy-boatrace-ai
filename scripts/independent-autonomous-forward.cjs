@@ -165,12 +165,20 @@ function prepare(root,out,env=process.env){
   if(env.GITHUB_OUTPUT)fs.appendFileSync(env.GITHUB_OUTPUT,`count=${count}\n`);
   console.log(JSON.stringify({captured:count,usableForPrediction:false}));return count;
 }
-async function seal(root,out,env=process.env,fetcher=fetch){
+// A just-finalized artifact can briefly read as 404 (run 42798024245). Only 404
+// and 5xx are retried, twice, before failing closed; identity checks are unchanged.
+const ARTIFACT_RETRY_MS=[2000,4000];
+async function seal(root,out,env=process.env,fetcher=fetch,sleep=ms=>new Promise(r=>setTimeout(r,ms))){
   context(env);const p=protocol(root);
   if(!/^\d+$/.test(env.AUTONOMOUS_ARTIFACT_ID||'') || !/^(sha256:)?[a-f0-9]{64}$/.test(env.AUTONOMOUS_ARTIFACT_DIGEST||''))fail('artifact_input_invalid');
   prepare(root,out,env);
-  const response=await fetcher(`https://api.github.com/repos/${REPO}/actions/artifacts/${env.AUTONOMOUS_ARTIFACT_ID}`,{
-    signal:AbortSignal.timeout(10000),headers:{Authorization:`Bearer ${env.GH_TOKEN}`,Accept:'application/vnd.github+json'}});
+  let response;
+  for(let attempt=0;;attempt++){
+    response=await fetcher(`https://api.github.com/repos/${REPO}/actions/artifacts/${env.AUTONOMOUS_ARTIFACT_ID}`,{
+      signal:AbortSignal.timeout(10000),headers:{Authorization:`Bearer ${env.GH_TOKEN}`,Accept:'application/vnd.github+json'}});
+    if(response.ok || !(response.status===404 || response.status>=500) || attempt>=ARTIFACT_RETRY_MS.length)break;
+    await sleep(ARTIFACT_RETRY_MS[attempt]);
+  }
   if(!response.ok)fail('artifact_unavailable');
   const a=await response.json(),server=Date.parse(response.headers.get('date'))+1000;
   if(!Number.isFinite(server) || a.expired!==false || a.id!==Number(env.AUTONOMOUS_ARTIFACT_ID) ||
