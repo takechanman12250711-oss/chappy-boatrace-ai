@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "analysisId": "wake-crossing-head-gate-v2",
-  "generatedAt": "2026-11-10T21:27:47.858Z",
+  "generatedAt": "2026-11-11T03:51:55.399Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
@@ -39,9 +39,12 @@
     },
     "excluded": {
       "reasons": {
-        "refund-or-missing-start": 20
+        "refund-or-missing-start": 20,
+        "incomplete-result-day": 2
       },
-      "incompleteResultDays": []
+      "incompleteResultDays": [
+        "20261111"
+      ]
     },
     "verdict": {
       "status": "collecting",
@@ -60,24 +63,24 @@
   },
   "note": "B案は降格艇が頭の実戦厳選券を除外。C案は降格艇を2着へ回した券に置き換え（x-h-y）。いずれも採用には本人承認が必要。",
   "cohort": {
-    "canonicalPredictionCount": 4704,
-    "preDeadlinePredictionCount": 4686,
+    "canonicalPredictionCount": 4722,
+    "preDeadlinePredictionCount": 4704,
     "excludedPredictionCount": 18,
     "excludedReasons": {
       "captured-at-or-after-deadline": 6,
       "source-fetched-at-or-after-deadline": 5,
       "timestamp-missing": 7
     },
-    "officialResultCount": 4643,
-    "settledJoinCount": 4643,
+    "officialResultCount": 4645,
+    "settledJoinCount": 4645,
     "deduplication": "predictions-preferred-over-verificationPredictions",
     "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json"
   },
   "resultIndex": {
-    "races": 178344
+    "races": 178350
   },
   "counts": {
-    "settled": 4643,
+    "settled": 4645,
     "basisValid": 4621,
     "basisInvalid": {
       "practical-tickets-missing": 2
