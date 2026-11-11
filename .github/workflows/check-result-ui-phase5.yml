@@ -24,7 +24,33 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
+      - name: Determine saved result dates
+        id: saved-results-dates
+        run: |
+          result_date=$(TZ=Asia/Tokyo date +%F)
+          echo "today=$(date -d "$result_date" +%Y%m%d)" >> "$GITHUB_OUTPUT"
+          echo "tomorrow=$(date -d "$result_date +1 day" +%Y%m%d)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
+        with:
+          # Non-cone patterns exclude large daily prediction and result archives.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/*/
+            /scripts/
+            /js/
+            /css/
+            /config/
+            /data/predictions/index-manifest.json
+            /data/predictions/index-shards/
+            /data/predictions/summaries/
+            /data/predictions/improvement-review.json
+            /data/stats/race-review-progress.json
+            /data/stats/candidate24-report.json
+            /data/stats/outer-attack-ticket-central-report-v1.json
+            /data/analysis/reference-tag-effectiveness.json
+            /data/results/${{ steps.saved-results-dates.outputs.today }}.json
+            /data/results/${{ steps.saved-results-dates.outputs.tomorrow }}.json
       - uses: actions/setup-node@v4
         with:
           node-version: 20

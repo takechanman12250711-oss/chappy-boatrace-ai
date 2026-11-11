@@ -58,6 +58,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Non-cone patterns avoid checking out historical data beside these paths.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/*/
+            /scripts/
+            /js/
+            /css/
+            /config/
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
