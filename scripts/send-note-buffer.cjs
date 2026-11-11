@@ -326,6 +326,11 @@ async function collectMetrics(config,log,delivery,now) {
   // A run in 22:30-24:00 JST is not guaranteed. Before 22:30, a run may record the
   // previous JST day once if that day has no claim; no extra cron or retry loop.
   const late=timeOf(now)>='22:30',date=late?jstDate(now):jstDate(now-86400000),claim='note-buffer-metrics-claim/'+date;
+  // The approved limit is six posts once per execution JST day, so a morning recovery
+  // and the same day's 22:30 run share one run claim in addition to the target-day claim.
+  // Before #1448 only target claims existed; an evening target claim also marks that run day.
+  const runDate=jstDate(now),runClaim='note-buffer-metrics-run/'+runDate;
+  if(await log.get(runClaim)||(!late&&await log.get('note-buffer-metrics-claim/'+runDate)))return {status:late?'already_attempted':'before_metrics_window'};
   if(await log.get(claim))return {status:late?'already_attempted':'before_metrics_window'};
   const before=jstDate(Date.parse(date.replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3T12:00:00+09:00'))-86400000);
   const receipts=[],today=[];
@@ -337,7 +342,7 @@ async function collectMetrics(config,log,delivery,now) {
   if(!receipts.length)return late?{status:'no_verified_posts'}:{status:'before_metrics_window'};
   // Read at most six posts once per JST day, within the existing shared budget.
   // Experimental metrics never gate publishing or trigger strategy changes.
-  await log.put(claim,{date,at:now});const items=[];let stopped=null;
+  await log.put(runClaim,{runDate,targetDate:date,at:now});await log.put(claim,{date,at:now});const items=[];let stopped=null;
   for(const receipt of receipts.slice(0,6)) {
     let item={postId:receipt.postId,url:receipt.url,publicationKey:receipt.publicationKey,status:'unavailable',metrics:null};
     if(stopped){items.push({...item,reason:'skipped_after_api_failure'});continue;}

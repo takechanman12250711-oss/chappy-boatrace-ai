@@ -333,6 +333,19 @@ test('a run before 22:30 records the previous JST day once when that night had n
  assert.equal((await collectMetrics(f.config,f.log,f.delivery,morning+3600000)).status,'before_metrics_window');assert.equal(calls,1);
  assert.equal(await f.log.get('note-buffer-metrics/20260930'),null);
 });
+test('a morning recovery and the same JST day\'s 22:30 run read at most six posts in total',async()=>{
+ const f=fixture();f.config.metrics={enabled:true};const text='original';
+ const base={status:'buffer_confirmed_sent',channelId:'c',textSha256:createHash('sha256').update(text).digest('hex'),url:'https://x.com/chappy_boat_ai/status/1'};
+ for(let i=0;i<6;i++){await f.log.put('note-buffer-final/20261110/y'+i,{...base,postId:'y'+i});await f.log.put('note-buffer-final/20261111/t'+i,{...base,postId:'t'+i});}
+ let calls=0;f.delivery.metrics=async id=>{calls++;return {id,channelId:'c',text,status:'sent',externalLink:base.url,metrics:[{type:'impressions',name:'Impressions',value:1,unit:'count'}],metricsUpdatedAt:'2026-11-10T00:00:00Z'};};
+ assert.equal((await collectMetrics(f.config,f.log,f.delivery,Date.parse('2026-11-11T07:00:00+09:00'))).recoveredDate,'20261110');assert.equal(calls,6);
+ assert.equal((await collectMetrics(f.config,f.log,f.delivery,Date.parse('2026-11-11T22:30:00+09:00'))).status,'already_attempted');assert.equal(calls,6);
+ assert.equal(await f.log.get('note-buffer-metrics/20261111'),null);
+ const g=fixture();g.config.metrics={enabled:true};for(let i=0;i<6;i++)await g.log.put('note-buffer-final/20261110/y'+i,{...base,postId:'y'+i});
+ await g.log.put('note-buffer-metrics-claim/20261111',{date:'20261111'});let gc=0;g.delivery.metrics=async()=>{gc++;return null;};
+ assert.equal((await collectMetrics(g.config,g.log,g.delivery,Date.parse('2026-11-11T23:00:00+09:00'))).status,'already_attempted');
+ assert.equal((await collectMetrics(g.config,g.log,g.delivery,Date.parse('2026-11-11T23:30:00+09:00'))).status,'already_attempted');assert.equal(gc,0);
+});
 test('announcements exclude old, future, expired, review and wrong-day articles without Buffer calls',async()=>{
  for(const change of [{publishedAt:'2026-09-29T18:00:00+09:00'},{publishedAt:'2026-09-29T23:00:00+09:00'},{deadlineAt:'2026-09-29T21:01:00+09:00'},{settlement:{status:'review'}},{raceKey:'20260928-13-4'},{url:'https://example.com'}]){
  const f=announcementFixture();f.state.rows=[{...f.state.rows[0],...change}];assert.equal((await announce(f.state,f.config,f.marketing,f.log,f.delivery,f.clock)).status,'no_new_articles');assert.deepEqual(f.events,[]);
