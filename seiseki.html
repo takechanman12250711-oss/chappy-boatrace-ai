@@ -9,6 +9,7 @@
 <style>
 :root{--bg:#f3f8ff;--card:#fff;--ink:#14263d;--sub:#5a6b80;--line:#dbe5f1;--hit:#d9480f;--hitbg:#fff1e8;--miss:#8a96a6;--accent:#1c64c8}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;line-height:1.6;-webkit-text-size-adjust:100%}
 header{padding:20px 16px 8px;max-width:720px;margin:0 auto}
 header a{color:var(--accent);font-size:14px;text-decoration:none}
@@ -36,6 +37,9 @@ tr.hit td{background:var(--hitbg)}
 .filters{display:flex;gap:8px;margin:0 0 10px;flex-wrap:wrap}
 .filters button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 14px;font-size:14px}
 .filters button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.venue-pick{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:14px}
+.venue-pick select{font-size:15px;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+.list-sum{font-size:14px;margin:0 0 8px}
 .more{display:block;width:100%;margin-top:12px;padding:10px;border:1px solid var(--line);background:var(--bg);border-radius:10px;font-size:15px;color:var(--ink)}
 details summary{cursor:pointer;font-weight:700}
 details p,details li{font-size:14px}
@@ -86,6 +90,8 @@ footer{text-align:center;color:var(--sub);font-size:12px;padding:0 16px 32px}
 <button type="button" data-filter="hit" aria-pressed="false">的中だけ</button>
 <button type="button" data-filter="miss" aria-pressed="false">外れだけ</button>
 </div>
+<label class="venue-pick">場で絞る <select id="venueSelect"><option value="">すべての場</option></select></label>
+<p class="list-sum" id="listSum"></p>
 <div style="overflow-x:auto"><table id="raceTable"><thead><tr><th>レース</th><th>結果</th><th>点数</th><th>確定</th><th>払戻</th></tr></thead><tbody></tbody></table></div>
 <button type="button" class="more" id="moreBtn">もっと見る</button>
 </section>
@@ -138,7 +144,7 @@ footer{text-align:center;color:var(--sub);font-size:12px;padding:0 16px 32px}
   var LEDGER_URL = "data/stats/continuous-performance-ledger.json";
   var VENUES = ["","桐生","戸田","江戸川","平和島","多摩川","浜名湖","蒲郡","常滑","津","三国","びわこ","住之江","尼崎","鳴門","丸亀","児島","宮島","徳山","下関","若松","芦屋","福岡","唐津","大村"];
   var PAGE = 50;
-  var rows = [], filter = "all", shown = PAGE;
+  var rows = [], filter = "all", venue = "", shown = PAGE;
 
   function $(id){ return document.getElementById(id); }
   function yen(n){ return Number(n || 0).toLocaleString("ja-JP") + "円"; }
@@ -176,12 +182,27 @@ footer{text-align:center;color:var(--sub);font-size:12px;padding:0 16px 32px}
     }).join("");
   }
   function renderList(){
-    var list = rows.filter(function(r){ return filter === "all" || (filter === "hit" ? r.hit : !r.hit); });
+    var inVenue = rows.filter(function(r){ return !venue || parseKey(r.raceKey).venue === venue; });
+    var list = inVenue.filter(function(r){ return filter === "all" || (filter === "hit" ? r.hit : !r.hit); });
+    var hits = 0, stake = 0, ret = 0;
+    inVenue.forEach(function(r){ if (r.hit) hits++; stake += Number(r.stakeYen || 0); ret += Number(r.returnYen || 0); });
+    $("listSum").textContent = inVenue.length
+      ? (venue ? venue + "：" : "すべての場：") + inVenue.length.toLocaleString("ja-JP") + "レース中 " + hits.toLocaleString("ja-JP") + "本的中（的中率 " + pct(hits / inVenue.length * 100) + "・回収率 " + pct(stake ? ret / stake * 100 : 0) + "）"
+      : "";
     $("raceTable").tBodies[0].innerHTML = list.slice(0, shown).map(function(r){
       var k = parseKey(r.raceKey);
       return '<tr class="' + (r.hit ? "hit" : "") + '"><td>' + esc(k.md + " " + k.venue + k.race + "R") + '</td><td><span class="badge ' + (r.hit ? "hit" : "miss") + '">' + (r.hit ? "的中" : "外れ") + '</span></td><td>' + esc(r.ticketCount) + '点</td><td>' + esc(r.actualTicket || "-") + '</td><td>' + (r.hit ? '<span class="plus">' + yen(r.returnYen) + '</span>' : "-") + '</td></tr>';
     }).join("") || '<tr><td colspan="5">該当するレースはありません</td></tr>';
     $("moreBtn").hidden = list.length <= shown;
+  }
+  function renderVenueOptions(){
+    var count = {};
+    rows.forEach(function(r){ var v = parseKey(r.raceKey).venue; count[v] = (count[v] || 0) + 1; });
+    var order = VENUES.filter(function(v){ return v && count[v]; });
+    Object.keys(count).forEach(function(v){ if (order.indexOf(v) < 0) order.push(v); });
+    $("venueSelect").innerHTML = '<option value="">すべての場</option>' + order.map(function(v){
+      return '<option value="' + esc(v) + '">' + esc(v) + '（' + count[v] + 'R）</option>';
+    }).join("");
   }
   function render(data){
     rows = (data.rows || []).slice().sort(function(a, b){
@@ -194,7 +215,7 @@ footer{text-align:center;color:var(--sub);font-size:12px;padding:0 16px 32px}
     $("updatedAt").textContent = isNaN(g) ? "" : g.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) + " 時点の集計（毎日自動で更新）";
     var dg = data.diagnostics || {};
     $("excluded").textContent = "これまでに" + Number(dg.excludedPredictionCount || 0) + "件";
-    renderDaily(); renderList();
+    renderVenueOptions(); renderDaily(); renderList();
     ["summaryCard","dailyCard","listCard","methodCard"].forEach(function(id){ $(id).hidden = false; });
     $("status").hidden = true;
   }
@@ -205,6 +226,7 @@ footer{text-align:center;color:var(--sub);font-size:12px;padding:0 16px 32px}
       renderList();
     });
   });
+  $("venueSelect").addEventListener("change", function(){ venue = this.value; shown = PAGE; renderList(); });
   $("moreBtn").addEventListener("click", function(){ shown += PAGE; renderList(); });
   fetch(LEDGER_URL, { cache: "no-cache" })
     .then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); })
