@@ -40,6 +40,10 @@ tr.hit td{background:var(--hitbg)}
 .venue-pick{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:14px}
 .venue-pick select{font-size:15px;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
 .list-sum{font-size:14px;margin:0 0 8px}
+#dailyTable tbody tr{cursor:pointer}
+#dailyTable tbody tr:hover td,#dailyTable tbody tr:focus td{background:var(--bg)}
+#dailyTable tbody tr.on td{background:#e8f0fb;font-weight:700}
+.clear{border:1px solid var(--line);background:var(--card);color:var(--accent);border-radius:999px;padding:2px 10px;font-size:13px;margin-left:6px}
 .more{display:block;width:100%;margin-top:12px;padding:10px;border:1px solid var(--line);background:var(--bg);border-radius:10px;font-size:15px;color:var(--ink)}
 details summary{cursor:pointer;font-weight:700}
 details p,details li{font-size:14px}
@@ -80,6 +84,7 @@ footer{text-align:center;color:var(--sub);font-size:12px;padding:0 16px 32px}
 
 <section class="card" id="dailyCard" hidden>
 <h2>日ごとの成績（直近30日）</h2>
+<p class="note" style="margin:0 0 8px">日付をタップすると、その日のレースが下の「レースごとの記録」に出ます。</p>
 <div style="overflow-x:auto"><table id="dailyTable"><thead><tr><th>日付</th><th>レース</th><th>的中</th><th>的中率</th><th>回収率</th></tr></thead><tbody></tbody></table></div>
 </section>
 
@@ -91,6 +96,7 @@ footer{text-align:center;color:var(--sub);font-size:12px;padding:0 16px 32px}
 <button type="button" data-filter="miss" aria-pressed="false">外れだけ</button>
 </div>
 <label class="venue-pick">場で絞る <select id="venueSelect"><option value="">すべての場</option></select></label>
+<label class="venue-pick">日付で絞る <select id="daySelect"><option value="">すべての日</option></select></label>
 <p class="list-sum" id="listSum"></p>
 <div style="overflow-x:auto"><table id="raceTable"><thead><tr><th>レース</th><th>結果</th><th>点数</th><th>確定</th><th>払戻</th></tr></thead><tbody></tbody></table></div>
 <button type="button" class="more" id="moreBtn">もっと見る</button>
@@ -144,7 +150,7 @@ footer{text-align:center;color:var(--sub);font-size:12px;padding:0 16px 32px}
   var LEDGER_URL = "data/stats/continuous-performance-ledger.json";
   var VENUES = ["","桐生","戸田","江戸川","平和島","多摩川","浜名湖","蒲郡","常滑","津","三国","びわこ","住之江","尼崎","鳴門","丸亀","児島","宮島","徳山","下関","若松","芦屋","福岡","唐津","大村"];
   var PAGE = 50;
-  var rows = [], filter = "all", venue = "", shown = PAGE;
+  var rows = [], filter = "all", venue = "", day = "", shown = PAGE;
 
   function $(id){ return document.getElementById(id); }
   function yen(n){ return Number(n || 0).toLocaleString("ja-JP") + "円"; }
@@ -178,17 +184,19 @@ footer{text-align:center;color:var(--sub);font-size:12px;padding:0 16px 32px}
     var days = Object.keys(byDay).sort().reverse().slice(0, 30);
     $("dailyTable").tBodies[0].innerHTML = days.map(function(d){
       var b = byDay[d], roi = b.stake ? b.ret / b.stake * 100 : 0;
-      return '<tr><td>' + esc(parseKey(d).md) + '</td><td>' + b.races + '</td><td>' + b.hits + '</td><td>' + pct(b.hits / b.races * 100) + '</td><td' + (roi >= 100 ? ' class="plus"' : '') + '>' + pct(roi) + '</td></tr>';
+      return '<tr tabindex="0" data-day="' + esc(d) + '"' + (d === day ? ' class="on"' : '') + ' aria-label="' + esc(parseKey(d).md) + 'のレースを表示"><td>' + esc(parseKey(d).md) + '</td><td>' + b.races + '</td><td>' + b.hits + '</td><td>' + pct(b.hits / b.races * 100) + '</td><td' + (roi >= 100 ? ' class="plus"' : '') + '>' + pct(roi) + '</td></tr>';
     }).join("");
   }
   function renderList(){
-    var inVenue = rows.filter(function(r){ return !venue || parseKey(r.raceKey).venue === venue; });
+    var inVenue = rows.filter(function(r){ var k = parseKey(r.raceKey); return (!venue || k.venue === venue) && (!day || k.date === day); });
     var list = inVenue.filter(function(r){ return filter === "all" || (filter === "hit" ? r.hit : !r.hit); });
     var hits = 0, stake = 0, ret = 0;
     inVenue.forEach(function(r){ if (r.hit) hits++; stake += Number(r.stakeYen || 0); ret += Number(r.returnYen || 0); });
+    var label = (day ? parseKey(day).md + "・" : "") + (venue ? venue : (day ? "全場" : "すべての場"));
     $("listSum").textContent = inVenue.length
-      ? (venue ? venue + "：" : "すべての場：") + inVenue.length.toLocaleString("ja-JP") + "レース中 " + hits.toLocaleString("ja-JP") + "本的中（的中率 " + pct(hits / inVenue.length * 100) + "・回収率 " + pct(stake ? ret / stake * 100 : 0) + "）"
-      : "";
+      ? label + "：" + inVenue.length.toLocaleString("ja-JP") + "レース中 " + hits.toLocaleString("ja-JP") + "本的中（的中率 " + pct(hits / inVenue.length * 100) + "・回収率 " + pct(stake ? ret / stake * 100 : 0) + "）"
+      : (day || venue ? label + "：該当するレースはありません" : "");
+    if (day) $("listSum").insertAdjacentHTML("beforeend", '<button type="button" class="clear" id="clearDay">日付の絞り込みをやめる</button>');
     $("raceTable").tBodies[0].innerHTML = list.slice(0, shown).map(function(r){
       var k = parseKey(r.raceKey);
       return '<tr class="' + (r.hit ? "hit" : "") + '"><td>' + esc(k.md + " " + k.venue + k.race + "R") + '</td><td><span class="badge ' + (r.hit ? "hit" : "miss") + '">' + (r.hit ? "的中" : "外れ") + '</span></td><td>' + esc(r.ticketCount) + '点</td><td>' + esc(r.actualTicket || "-") + '</td><td>' + (r.hit ? '<span class="plus">' + yen(r.returnYen) + '</span>' : "-") + '</td></tr>';
@@ -204,6 +212,21 @@ footer{text-align:center;color:var(--sub);font-size:12px;padding:0 16px 32px}
       return '<option value="' + esc(v) + '">' + esc(v) + '（' + count[v] + 'R）</option>';
     }).join("");
   }
+  function renderDayOptions(){
+    var count = {};
+    rows.forEach(function(r){ var d = parseKey(r.raceKey).date; count[d] = (count[d] || 0) + 1; });
+    $("daySelect").innerHTML = '<option value="">すべての日</option>' + Object.keys(count).sort().reverse().map(function(d){
+      return '<option value="' + esc(d) + '">' + esc(parseKey(d).md) + '（' + count[d] + 'R）</option>';
+    }).join("");
+    $("daySelect").value = day;
+  }
+  function setDay(d, scroll){
+    day = d || ""; shown = PAGE;
+    $("daySelect").value = day;
+    document.querySelectorAll("#dailyTable tbody tr").forEach(function(tr){ tr.classList.toggle("on", tr.getAttribute("data-day") === day); });
+    renderList();
+    if (scroll && day) $("listCard").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   function render(data){
     rows = (data.rows || []).slice().sort(function(a, b){
       var ka = String(a.raceKey).split("-"), kb = String(b.raceKey).split("-");
@@ -215,7 +238,7 @@ footer{text-align:center;color:var(--sub);font-size:12px;padding:0 16px 32px}
     $("updatedAt").textContent = isNaN(g) ? "" : g.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) + " 時点の集計（毎日自動で更新）";
     var dg = data.diagnostics || {};
     $("excluded").textContent = "これまでに" + Number(dg.excludedPredictionCount || 0) + "件";
-    renderVenueOptions(); renderDaily(); renderList();
+    renderVenueOptions(); renderDayOptions(); renderDaily(); renderList();
     ["summaryCard","dailyCard","listCard","methodCard"].forEach(function(id){ $(id).hidden = false; });
     $("status").hidden = true;
   }
@@ -225,6 +248,17 @@ footer{text-align:center;color:var(--sub);font-size:12px;padding:0 16px 32px}
       document.querySelectorAll("[data-filter]").forEach(function(b){ b.setAttribute("aria-pressed", String(b === btn)); });
       renderList();
     });
+  });
+  $("daySelect").addEventListener("change", function(){ setDay(this.value, false); });
+  $("listSum").addEventListener("click", function(e){ if (e.target && e.target.id === "clearDay") setDay("", false); });
+  $("dailyTable").tBodies[0].addEventListener("click", function(e){
+    var tr = e.target.closest && e.target.closest("tr[data-day]");
+    if (tr) setDay(tr.getAttribute("data-day") === day ? "" : tr.getAttribute("data-day"), true);
+  });
+  $("dailyTable").tBodies[0].addEventListener("keydown", function(e){
+    if (e.key !== "Enter" && e.key !== " ") return;
+    var tr = e.target.closest && e.target.closest("tr[data-day]");
+    if (tr) { e.preventDefault(); setDay(tr.getAttribute("data-day") === day ? "" : tr.getAttribute("data-day"), true); }
   });
   $("venueSelect").addEventListener("change", function(){ venue = this.value; shown = PAGE; renderList(); });
   $("moreBtn").addEventListener("click", function(){ shown += PAGE; renderList(); });
