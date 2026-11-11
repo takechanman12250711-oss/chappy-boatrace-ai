@@ -62,7 +62,9 @@ function harness(options = {}) {
     assert.notEqual(method, 'DELETE', 'permanent claims and drafts must never be deleted');
     if (url.origin === 'https://api.browser-use.com') {
       if (method === 'POST' && url.pathname === '/api/v4/browsers') {
-        event('session-start'); return response({ id: `synthetic-${state.attempts.length}`, cdpUrl: 'mock://cdp' });
+        event('session-start');
+        if (first() && options.sessionStatus && state.attempts.length === 1) return response(null, options.sessionStatus);
+        return response({ id: `synthetic-${state.attempts.length}`, cdpUrl: 'mock://cdp' });
       }
       assert.equal(method, 'PATCH');
       assert.deepEqual(JSON.parse(init.body), { action: 'stop' });
@@ -141,7 +143,7 @@ function harness(options = {}) {
     if (first() && options.cleanup === 'browser') throw Error('synthetic_browser_close_failure');
   } };
   const context = { pages: () => [page], browser: () => browser, newPage: async () => page };
-  const page = { goto: async url => { currentUrl = url; return response(null); }, url: () => currentUrl,
+  const page = { goto: async url => { event('editor-open'); currentUrl = url; return response(null); }, url: () => currentUrl,
     waitForTimeout: async () => {}, context: () => context,
     getByRole: (role, query) => {
       if (role === 'button' && query.name === '投稿する') return submit;
@@ -195,7 +197,11 @@ function harness(options = {}) {
     './note-cover': { loadCoverTemplate: () => null, attachCoverOrSkip: async () => { event('cover-attach'); return { attached: true }; } },
     './note-cover-template': { renderCover: async () => { throw Error('unexpected_cover_render'); } },
     './note-browserbase-draft-save': draftDependency,
-    playwright: { chromium: { connectOverCDP: async address => { assert.equal(address, 'mock://cdp'); return browser; },
+    playwright: { chromium: { connectOverCDP: async address => {
+      assert.equal(address, 'mock://cdp'); event('cdp-connect');
+      if (first() && options.connectError && state.attempts.length === 1) throw options.connectError;
+      return browser;
+    },
       launch: async () => { throw Error('real_browser_launch_forbidden'); } } }
   });
   const handoff = () => ({ candidates: payloads.map(({ raceKey, articleSeries, sourcePath }) => ({ raceKey, articleSeries, sourcePath })) });
@@ -342,6 +348,37 @@ test('real gate errors require both the pre-click phase and actual run cleanup',
     assert.deepEqual(preClickError.issueCodes, ['DEADLINE_TOO_CLOSE']);
     assert.equal(await h.transport.confirmedExpiredPublication(preClickError, h.payloads[0], h.env, h.request), null);
     assert.equal(h.state.requests.length, 0);
+  });
+});
+
+test('a remote browser that cannot start or connect leaves the race unclaimed and retryable', async () => {
+  for (const options of [{ sessionStatus: 402 }, { connectError: Error('synthetic_cdp_connect_failure') }]) {
+    await withHarness({ expire: false, ...options }, async h => {
+      const [first] = h.payloads;
+      await assert.rejects(h.queue(), options.sessionStatus ? /browser_use_create_failed_402/ : /synthetic_cdp_connect_failure/);
+      assert.equal(h.state.claims.size, 0, 'no permanent claim before the browser is reachable');
+      assert.equal(h.state.clicks.length, 0); assert.equal(h.state.receipts.size, 0);
+      assert.equal(h.state.events.some(event => event.name === 'fill-draft'), false);
+      // A started session is still stopped even though the connection failed.
+      assert.equal(h.state.stopped.length, options.connectError ? 1 : 0);
+      assert.deepEqual(h.state.attempts, [first.publicationKey], 'the queue stops instead of burning later races');
+      // The same race is eligible again on the next run and publishes once.
+      const result = await h.queue();
+      assert.equal(result.published, 2);
+      assert.deepEqual(h.state.clicks, h.payloads.map(payload => payload.publicationKey));
+      assert.equal(h.state.claims.get(h.transport.draftClaimRef(first)), SHA);
+      assert.equal(h.state.claims.size, 2); assert.equal(h.state.receipts.size, 2);
+    });
+  }
+});
+
+test('the permanent claim is still created before the note editor is opened or written', async () => {
+  await withHarness({ expire: false }, async h => {
+    await h.queue();
+    const names = h.state.events.filter(event => event.key === h.payloads[0].publicationKey).map(event => event.name);
+    const claim = names.indexOf('claim-create');
+    assert.ok(names.indexOf('session-start') < claim && names.indexOf('cdp-connect') < claim);
+    assert.ok(claim >= 0 && claim < names.indexOf('editor-open') && claim < names.indexOf('fill-draft'));
   });
 });
 

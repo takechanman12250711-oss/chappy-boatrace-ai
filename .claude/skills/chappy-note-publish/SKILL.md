@@ -204,3 +204,8 @@ description: チャッピーボートレースAIのnote公開経路を扱う。�
 - escapeのバッジは「本命予想」（記事タイトル・原本・独立監視区分は従来どおり）。チャッピー少年は使わない。的中速報用 `chappy-hit-cover.jpg` は素材のみで未接続。
 - 生成元は `scripts/design/make_note_covers.py`。社員の顔イラスト原画は `assets/note/cover-faces/`（組織図ページの400x400画像と同一。`assets/staff` のプロフィール表とは別物）。Python Playwrightで `CHROMIUM_PATH=/opt/pw-browsers/chromium python3 scripts/design/make_note_covers.py` を実行すると再生成できる（Noto Sans CJK JPが必要）。投稿ごとの画像生成APIは使わない。
 - 公開済み記事の本文・買い目・価格・公開日時・表紙は変更しない。main反映と、次の新規公開記事での表紙表示確認は別に報告する。
+
+
+## 2026-11-11 予約はBrowser Use接続の後に作る
+
+予約（`note-draft-claim`）はBrowser Useセッション作成とCDP接続の後、note編集画面を開く前に作る。接続失敗（402など）では予約を作らず、同じ記事は締切前の次回実行で再び対象になる。予約後の失敗は従来どおり予約を残し、削除・解除・再投稿をしない。予約だけが残った過去の記事は復活させない。詳細は `docs/note-automation.md` の同日の節。

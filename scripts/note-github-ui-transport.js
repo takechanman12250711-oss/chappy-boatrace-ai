@@ -1023,13 +1023,16 @@ async function run({ env = process.env } = {}) {
       await coverBrowser.close();
     }
   }
-  // Do not reserve a race when local cover generation itself fails.
-  if (draft && !recoveryOnly) await claimDraft(draft.payload, env);
+  // Do not reserve a race when local cover generation itself fails, or when
+  // the remote browser cannot be started or reached (e.g. Browser Use 402).
+  // Neither step touches note, so no article can exist yet; the permanent
+  // claim is still taken before the editor is opened or anything is written.
   const session = await createBrowserUseSession(browserUse);
   let browser;
   let failure;
   try {
     browser = await chromium.connectOverCDP(session.cdpUrl);
+    if (draft && !recoveryOnly) await claimDraft(draft.payload, env);
     if (recoveryOnly) {
       const context = browser.contexts()[0];
       if (!context) throw new Error('browser_use_context_missing');

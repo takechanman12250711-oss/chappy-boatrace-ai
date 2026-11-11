@@ -424,3 +424,13 @@ note収益がほぼ無いため、本人が「全部無料にする」を選択�
 - escapeのバッジは「本命予想」（記事タイトル・原本・独立監視区分は従来どおり）。チャッピー少年は使わない。的中速報用 `chappy-hit-cover.jpg` は素材のみで未接続。
 - 生成元は `scripts/design/make_note_covers.py`。社員の顔イラスト原画は `assets/note/cover-faces/`（組織図ページの400x400画像と同一。`assets/staff` のプロフィール表とは別物）。Python Playwrightで `CHROMIUM_PATH=/opt/pw-browsers/chromium python3 scripts/design/make_note_covers.py` を実行すると再生成できる（Noto Sans CJK JPが必要）。投稿ごとの画像生成APIは使わない。
 - 公開済み記事の本文・買い目・価格・公開日時・表紙は変更しない。main反映と、次の新規公開記事での表紙表示確認は別に報告する。
+
+
+## 2026-11-11 予約はBrowser Use接続の後に作る
+
+Browser Useの残高不足（`browser_use_create_failed_402`）で、接続前に作った永久予約だけが残り、その記事が再投稿されない事象が同日8回発生した。`scripts/note-github-ui-transport.js` の順序を、表紙生成 → Browser Useセッション作成 → CDP接続 → 原子的予約（`note-draft-claim`）→ note編集画面を開く → 本文入力、へ変更した。
+
+- セッション作成とCDP接続はnoteへ書き込まないため、ここで失敗しても記事は存在しない。予約は作られず、同じ記事は締切前の次回実行で再び対象になる。キューはその場で停止し、後続レースを続けて試さない。
+- 予約はnote編集画面を開く前に必ず作る。予約後の失敗（編集画面の未準備、本文入力、公開結果不明など）は従来どおり予約を残し、削除・解除・自動再投稿をしない。価格、元原稿監査、締切120秒超、匿名公開検証は変更していない。
+- 既に予約だけが残った過去の記事（同日の8件を含む）は復活させない。予約の削除や締切後の投稿は行わない。
+- これは順序の修正であり、Browser Useの402そのもの（利用枠・支払い）は解消しない。402が続く間は新規公開は行われない。検証: `node --test scripts/note-queue-expiry.test.cjs`。main反映と実レースでの確認は別に報告する。
