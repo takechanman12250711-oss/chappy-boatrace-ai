@@ -323,16 +323,18 @@ const apiLevelFailure=reason=>/^buffer_(?:http_\d+|graphql_failed|free_budget_re
 
 async function collectMetrics(config,log,delivery,now) {
   if(config.metrics?.enabled!==true)return {status:'disabled'};
-  if(timeOf(now)<'22:30')return {status:'before_metrics_window'};
-  const date=jstDate(now),claim='note-buffer-metrics-claim/'+date;
-  if(await log.get(claim))return {status:'already_attempted'};
+  // A run in 22:30-24:00 JST is not guaranteed. Before 22:30, a run may record the
+  // previous JST day once if that day has no claim; no extra cron or retry loop.
+  const late=timeOf(now)>='22:30',date=late?jstDate(now):jstDate(now-86400000),claim='note-buffer-metrics-claim/'+date;
+  if(await log.get(claim))return {status:late?'already_attempted':'before_metrics_window'};
+  const before=jstDate(Date.parse(date.replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3T12:00:00+09:00'))-86400000);
   const receipts=[],today=[];
-  for(const d of [jstDate(now-86400000),date])for(const ref of await log.refs('note-buffer-final/'+d+'/')) {
+  for(const d of [before,date])for(const ref of await log.refs('note-buffer-final/'+d+'/')) {
     const r=await log.get(ref.ref.replace('refs/tags/',''));
     if(d===date&&r)today.push(r);
     if(r?.status==='buffer_confirmed_sent'&&r.postId&&r.channelId)receipts.push(r);
   }
-  if(!receipts.length)return {status:'no_verified_posts'};
+  if(!receipts.length)return late?{status:'no_verified_posts'}:{status:'before_metrics_window'};
   // Read at most six posts once per JST day, within the existing shared budget.
   // Experimental metrics never gate publishing or trigger strategy changes.
   await log.put(claim,{date,at:now});const items=[];let stopped=null;
@@ -354,11 +356,11 @@ async function collectMetrics(config,log,delivery,now) {
     }
     items.push(item);
   }
-  const report={date,observedAt:new Date(now).toISOString(),experimental:true,purchaseAttribution:'not_connected',
+  const report={date,observedAt:new Date(now).toISOString(),...(late?{}:{recoveredNextDay:true}),experimental:true,purchaseAttribution:'not_connected',
     deliveries:summarizeDeliveries(date,today),items};
   await log.put('note-buffer-metrics/'+date,report);
   return {status:'recorded',posts:items.length,available:items.filter(x=>x.status==='observed').length,
-    ...(stopped?{stoppedReason:stopped}:{}),purchaseAttribution:'not_connected'};
+    ...(stopped?{stoppedReason:stopped}:{}),...(late?{}:{recoveredDate:date}),purchaseAttribution:'not_connected'};
 }
 
 async function run({env=process.env,now=Date.now(),clock=Date.now,config=JSON.parse(fs.readFileSync('config/note-social.json','utf8')),marketing=loadConfig(),store,log,delivery,claims,renderCard,publishCard}={}) {
