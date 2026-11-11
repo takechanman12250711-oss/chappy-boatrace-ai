@@ -52,9 +52,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
+      # A full checkout of retained data can exceed the 8-minute limit before any
+      # test runs. These tests use local fixtures; keep code, policy and skills.
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          sparse-checkout: |
+            scripts
+            js
+            api
+            config
+            .github/workflows
+            .agents/skills
+            .claude/skills
+            assets/note
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
