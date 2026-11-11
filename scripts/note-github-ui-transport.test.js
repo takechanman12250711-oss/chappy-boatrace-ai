@@ -345,6 +345,18 @@ async function checkAsyncGuards() {
   assert.deepEqual(await stopBrowserUseSession({ apiKey: 'secret' }, session.id, request), { ok: true, status: 200 });
   assert.equal(calls[1].options.method, 'PATCH');
   assert.deepEqual(JSON.parse(calls[1].options.body), { action: 'stop' });
+  // A refused session reports the status and only the service's short code.
+  const refused = body => async () => ({ ok: false, status: 402, json: body });
+  await assert.rejects(createBrowserUseSession({ apiKey: 'secret', profileId: 'profile' },
+    refused(async () => ({ detail: { code: 'INSUFFICIENT_CREDITS', cap: 5, spent: 5, message: 'top up 残高' } }))),
+    error => error.message === 'browser_use_create_failed_402_INSUFFICIENT_CREDITS');
+  await assert.rejects(createBrowserUseSession({ apiKey: 'secret', profileId: 'profile' },
+    refused(async () => ({ detail: { code: 'bad code/../secret=1 ' + 'x'.repeat(80) } }))),
+    error => /^browser_use_create_failed_402_[A-Za-z0-9_]{1,40}$/.test(error.message));
+  for (const body of [async () => ({ detail: 'plain text' }), async () => { throw new Error('not json'); }, undefined]) {
+    await assert.rejects(createBrowserUseSession({ apiKey: 'secret', profileId: 'profile' }, refused(body)),
+      error => error.message === 'browser_use_create_failed_402');
+  }
   const page = { goto: async () => {}, waitForTimeout: async () => {}, url: () => 'https://editor.note.com/new' };
   // An editor URL alone is not proof of usable authentication.
   await assert.rejects(ensureEditorReady(page, async () => null), /note_editor_fields_not_ready/);
