@@ -53,6 +53,8 @@ h3{font-size:14px;margin:14px 0 6px}
 .tabs a,.tabs button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:6px 10px;font-size:14px;text-decoration:none;color:var(--ink);font-family:inherit;min-width:44px;text-align:center}
 .tabs a.on,.tabs button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
 .tabs a i{display:block;height:3px;border-radius:2px;margin-top:3px}
+.tabs a.done:not(.on){color:var(--sub);background:var(--bg);border-style:dashed}
+.tabs a small{display:block;font-size:10px;line-height:1.1;opacity:.85}
 .tabs a i.rough{background:var(--rough)}.tabs a i.mixed{background:#d4b400}.tabs a i.solid{background:var(--solid)}
 .entry{display:grid;grid-template-columns:34px 1fr auto;gap:8px 10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
 .entry:first-of-type{border-top:0}
@@ -206,15 +208,19 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;padding:8px 16px 20px
     var v = d && d.venues.filter(function(x){ return x.jcd === jcd; })[0];
     var vs = venueStat(jcd);
     if (!v) { app.innerHTML = staleNotice() + '<p>この場は今日は開催していません。</p>' + (vs ? venueDetail(vs) : ""); return; }
-    var race = v.races.filter(function(r){ return r.raceNo === rno; })[0] || v.races.filter(function(r){ return r.boats.length; })[0] || v.races[0];
+    // レース番号の指定がないときは、まだ締切前のいちばん早いレースを開く（全部終わっていれば最初のレース）。
+    var race = v.races.filter(function(r){ return r.raceNo === rno; })[0] ||
+      v.races.filter(function(r){ return r.boats.length && !isClosed(d, r); })[0] ||
+      v.races.filter(function(r){ return r.boats.length; })[0] || v.races[0];
     var html = staleNotice() + '<section class="card"><h2>' + esc(v.place) + gradeBadge(v.grade) + ' <span class="muted" style="font-size:13px;font-weight:400">' + esc([session(v), v.title].filter(Boolean).join("・")) + '</span></h2>' +
       (vs ? '<div class="kpis"><div class="kpi"><small>イン1着率</small><b>' + p1(vs.inWinRate) + '</b></div><div class="kpi"><small>荒れ率</small><b>' + p1(vs.roughRate) + '</b></div><div class="kpi"><small>万舟率</small><b>' + p1(vs.manshuRate) + '</b></div></div><p class="note">過去3年の' + esc(v.place) + '。<a href="#/venue/' + jcd + '">場の特徴をくわしく →</a></p>' : "") +
       '</section>';
     html += '<nav class="tabs" aria-label="レース">' + v.races.map(function(r){
-      return '<a href="#/v/' + jcd + '/' + r.raceNo + '" class="' + (r === race ? "on" : "") + '">' + r.raceNo + 'R' + (r.lookout ? '<i class="' + r.lookout.label + '"></i>' : '<i></i>') + '</a>';
+      var closed = isClosed(d, r);
+      return '<a href="#/v/' + jcd + '/' + r.raceNo + '" class="' + [r === race ? "on" : "", closed ? "done" : ""].join(" ").trim() + '"' + (closed ? ' aria-label="' + r.raceNo + 'R 締切済み"' : "") + '>' + r.raceNo + 'R' + (closed ? '<small>済</small>' : "") + (r.lookout ? '<i class="' + r.lookout.label + '"></i>' : '<i></i>') + '</a>';
     }).join("") + '</nav>';
     var rt = race.title && race.title.length <= 24 ? race.title : "";
-    html += '<section class="card"><h2>' + race.raceNo + 'R ' + esc(rt) + ' <span class="muted" style="font-size:13px;font-weight:400">' + esc(race.deadline ? race.deadline + " 締切" : "") + '</span></h2>';
+    html += '<section class="card"><h2>' + race.raceNo + 'R ' + esc(rt) + ' <span class="muted" style="font-size:13px;font-weight:400">' + esc(race.deadline ? race.deadline + (isClosed(d, race) ? " 締切済み" : " 締切") : "") + '</span></h2>';
     if (!race.boats.length) html += '<p class="muted">このレースの出走表は取得できませんでした。</p>';
     else {
       if (race.lookout) html += '<div class="lookout ' + race.lookout.label + '">' + pill(race.lookout.label) + ' <span class="muted" style="font-size:12px">荒れやすさ ' + race.lookout.score + '</span>' +
@@ -226,6 +232,9 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;padding:8px 16px 20px
     html += '</section>';
     html += motorTable(v, 10, "この場のモーター上位10");
     app.innerHTML = html;
+    // 選んだレースのボタンが横にはみ出していたら、見える位置まで横にずらす（縦には動かさない）。
+    var nav = app.querySelector('.tabs[aria-label="レース"]'), on = nav && nav.querySelector("a.on");
+    if (nav && on) nav.scrollLeft = Math.max(0, on.offsetLeft - nav.offsetLeft - 8);
   }
 
   // ---------- モーター ----------
@@ -318,14 +327,22 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;padding:8px 16px 20px
       (facts.length ? '<ul class="facts">' + facts.map(function(f){ return '<li>' + esc(f) + '</li>'; }).join("") + '</ul>' : "") + '</div>';
     return html;
   }
+  // 締切時刻（日本時間）をミリ秒に。締切が分からなければ null。
+  function deadlineMs(date, r){
+    if (!r || !r.deadline || !/^\d{1,2}:\d{2}$/.test(r.deadline)) return null;
+    var t = Date.parse(date.slice(0,4) + "-" + date.slice(4,6) + "-" + date.slice(6) + "T" + (r.deadline.length === 4 ? "0" + r.deadline : r.deadline) + ":00+09:00");
+    return isNaN(t) ? null : t;
+  }
+  // 今日の分を見ているときだけ「締切済み」を判断する（前の日の表示ではつけない）。
+  function isClosed(d, r){ if (!d || d.date !== state.today) return false; var t = deadlineMs(d.date, r); return t != null && t <= Date.now(); }
   function soonList(){
     var d = state.day;
     if (!d || d.date !== state.today) return "";
     var now = Date.now(), items = [];
     d.venues.forEach(function(v){ v.races.forEach(function(r){
-      if (!r.deadline || !r.boats.length) return;
-      var t = Date.parse(d.date.slice(0,4) + "-" + d.date.slice(4,6) + "-" + d.date.slice(6) + "T" + (r.deadline.length === 4 ? "0" + r.deadline : r.deadline) + ":00+09:00");
-      if (t > now) items.push({ v: v, r: r, t: t });
+      if (!r.boats.length) return;
+      var t = deadlineMs(d.date, r);
+      if (t != null && t > now) items.push({ v: v, r: r, t: t });
     }); });
     items.sort(function(a, b){ return a.t - b.t; });
     items = items.slice(0, 6);
@@ -398,7 +415,21 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;padding:8px 16px 20px
         if (changed && /^#\/(v\/|$)|^$/.test(location.hash)) { var y = window.scrollY; route(); window.scrollTo(0, y); }
       }).catch(function(){});
     }, 5 * 60 * 1000);
+    // ページを開いたまま締切を過ぎたら、出走表の「済」・締切表示・最初に開くレースを付け直す。
+    var closedCount = countClosed();
+    setInterval(function(){
+      if (document.hidden) return;
+      var n = countClosed();
+      if (n === closedCount) return;
+      closedCount = n;
+      if (/^#\/v\//.test(location.hash)) { var y = window.scrollY; route(); window.scrollTo(0, y); }
+    }, 30 * 1000);
   });
+  function countClosed(){
+    var d = state.day, n = 0;
+    if (d) d.venues.forEach(function(v){ v.races.forEach(function(r){ if (isClosed(d, r)) n++; }); });
+    return n;
+  }
 })();
 </script>
 </body>
