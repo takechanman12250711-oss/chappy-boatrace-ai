@@ -320,6 +320,32 @@ test('metrics keep a sanitized reason, stop after an API-level failure, and summ
  await collectMetrics(h.config,h.log,h.delivery,late);
  assert.equal((await h.log.get('note-buffer-metrics/20260929')).items[0].reason,'metrics_empty');
 });
+test('a run before 22:30 records the previous JST day once when that night had no run',async()=>{
+ const f=fixture(),morning=Date.parse('2026-09-30T07:00:00+09:00');f.config.metrics={enabled:true};
+ const text='original',base={status:'buffer_confirmed_sent',postId:'p',channelId:'c',textSha256:createHash('sha256').update(text).digest('hex'),url:'https://x.com/chappy_boat_ai/status/1',publicationKey:'20260929-01-1:published-main'};
+ let calls=0;f.delivery.metrics=async()=>{calls++;return {id:'p',channelId:'c',text,status:'sent',externalLink:base.url,metrics:[{type:'impressions',name:'Impressions',value:3,unit:'count'}],metricsUpdatedAt:new Date(morning-1000).toISOString()};};
+ assert.equal((await collectMetrics(f.config,f.log,f.delivery,morning)).status,'before_metrics_window');assert.equal(calls,0);
+ await f.log.put('note-buffer-final/20260929/a',base);await f.log.put('note-buffer-final/20260930/b',{...base,postId:'today'});
+ const result=await collectMetrics(f.config,f.log,f.delivery,morning);
+ assert.equal(result.status,'recorded');assert.equal(result.recoveredDate,'20260929');assert.equal(calls,1);
+ const saved=await f.log.get('note-buffer-metrics/20260929');
+ assert.equal(saved.recoveredNextDay,true);assert.deepEqual(saved.items.map(x=>x.postId),['p']);assert.equal(saved.deliveries.byKind.hit.buffer_confirmed_sent,1);
+ assert.equal((await collectMetrics(f.config,f.log,f.delivery,morning+3600000)).status,'before_metrics_window');assert.equal(calls,1);
+ assert.equal(await f.log.get('note-buffer-metrics/20260930'),null);
+});
+test('a morning recovery and the same JST day\'s 22:30 run read at most six posts in total',async()=>{
+ const f=fixture();f.config.metrics={enabled:true};const text='original';
+ const base={status:'buffer_confirmed_sent',channelId:'c',textSha256:createHash('sha256').update(text).digest('hex'),url:'https://x.com/chappy_boat_ai/status/1'};
+ for(let i=0;i<6;i++){await f.log.put('note-buffer-final/20261110/y'+i,{...base,postId:'y'+i});await f.log.put('note-buffer-final/20261111/t'+i,{...base,postId:'t'+i});}
+ let calls=0;f.delivery.metrics=async id=>{calls++;return {id,channelId:'c',text,status:'sent',externalLink:base.url,metrics:[{type:'impressions',name:'Impressions',value:1,unit:'count'}],metricsUpdatedAt:'2026-11-10T00:00:00Z'};};
+ assert.equal((await collectMetrics(f.config,f.log,f.delivery,Date.parse('2026-11-11T07:00:00+09:00'))).recoveredDate,'20261110');assert.equal(calls,6);
+ assert.equal((await collectMetrics(f.config,f.log,f.delivery,Date.parse('2026-11-11T22:30:00+09:00'))).status,'already_attempted');assert.equal(calls,6);
+ assert.equal(await f.log.get('note-buffer-metrics/20261111'),null);
+ const g=fixture();g.config.metrics={enabled:true};for(let i=0;i<6;i++)await g.log.put('note-buffer-final/20261110/y'+i,{...base,postId:'y'+i});
+ await g.log.put('note-buffer-metrics-claim/20261111',{date:'20261111'});let gc=0;g.delivery.metrics=async()=>{gc++;return null;};
+ assert.equal((await collectMetrics(g.config,g.log,g.delivery,Date.parse('2026-11-11T23:00:00+09:00'))).status,'already_attempted');
+ assert.equal((await collectMetrics(g.config,g.log,g.delivery,Date.parse('2026-11-11T23:30:00+09:00'))).status,'already_attempted');assert.equal(gc,0);
+});
 test('announcements exclude old, future, expired, review and wrong-day articles without Buffer calls',async()=>{
  for(const change of [{publishedAt:'2026-09-29T18:00:00+09:00'},{publishedAt:'2026-09-29T23:00:00+09:00'},{deadlineAt:'2026-09-29T21:01:00+09:00'},{settlement:{status:'review'}},{raceKey:'20260928-13-4'},{url:'https://example.com'}]){
  const f=announcementFixture();f.state.rows=[{...f.state.rows[0],...change}];assert.equal((await announce(f.state,f.config,f.marketing,f.log,f.delivery,f.clock)).status,'no_new_articles');assert.deepEqual(f.events,[]);
