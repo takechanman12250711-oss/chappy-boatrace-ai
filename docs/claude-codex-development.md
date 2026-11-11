@@ -1,6 +1,6 @@
 # Claude CodeとCodexの開発連携
 
-Claude Codeが実装し、Codexが独立して差分をレビューする。両者はこのリポジトリの `AGENTS.md` を共有する。実装・レビュー・テスト・main反映を別々に記録する。
+Claude CodeとCodexが同じPRで実装と独立レビューを分担する。両者はこのリポジトリの `AGENTS.md` を共有し、実装・レビュー・テスト・main反映を別々に記録する。本書のローカルCLIはClaudeの実装をCodexがレビューする経路を扱う。逆向きのレビューや、双方のAI社員の担当・受領・返却は [社員の分業運用](ai-staff-operations.md#claude-code側の社員と協業する)に従う。相手の既存チームや個別設定は保持する。
 
 Claude Code v2.1.277以降は、対象フォルダに `CLAUDE.md` / `CLAUDE.local.md` がなければ `AGENTS.md` を自動で読む。既存の `CLAUDE.md` がある別環境では、内容を保持し、`@AGENTS.md` のimportで共有する。このリポジトリでは共通ルールを複製しない。
 

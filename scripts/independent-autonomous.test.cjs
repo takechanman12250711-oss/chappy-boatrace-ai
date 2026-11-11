@@ -86,6 +86,21 @@ test('only remote-confirmed snapshots enter cohort, with immutable bytes and exa
   await assert.rejects(f.seal(x.root,x.out,env,response('invalid')),/artifact_identity/);
   assert.throws(()=>f.createRecorder(x.root,path.join(x.root,'pr'),{...env,GITHUB_REF:'refs/pull/1/merge'},()=>clock),/context/);
 });
+test('a briefly invisible artifact is re-read twice; other failures stay fail-closed',async t=>{
+  const seq=(...codes)=>{const calls=[];const fn=async()=>{const code=codes[Math.min(calls.length,codes.length-1)];calls.push(code);
+    return code===200?await response()():{ok:false,status:code,headers:{get:()=>null},json:async()=>({})};};fn.calls=calls;return fn;};
+  const waits=[],sleep=async ms=>{waits.push(ms);};
+  let x=setup(t);f.createRecorder(x.root,x.out,env,()=>clock)(official(),target);
+  const lag=seq(404,503,200);
+  assert.deepEqual(await f.seal(x.root,x.out,env,lag,sleep),{saved:1,late:0});
+  assert.deepEqual(lag.calls,[404,503,200]);assert.deepEqual(waits,[2000,4000]);
+  for(const [codes,count] of [[[404],3],[[401],1],[[403],1]]){
+    x=setup(t);f.createRecorder(x.root,x.out,env,()=>clock)(official(),target);
+    const fn=seq(...codes);waits.length=0;
+    await assert.rejects(f.seal(x.root,x.out,env,fn,sleep),/artifact_unavailable/);
+    assert.equal(fn.calls.length,count);assert.equal(f.cohort(x.root,f.protocol(x.root)).rows.length,0);
+  }
+});
 test('new captures bind judgment facts into the seal while legacy snapshots remain valid',async t=>{
   const x=setup(t),raw=official();raw.entries[0].avgSt=.15;
   f.createRecorder(x.root,x.out,env,()=>clock)(raw,target);
