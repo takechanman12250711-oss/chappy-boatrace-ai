@@ -49,7 +49,7 @@ summary .time{color:var(--sub);font-size:14px;font-variant-numeric:tabular-nums}
 </header>
 <main>
   <div id="list"></div>
-  <p class="note">予想は参考情報です。舟券の購入は20歳以上の方が、ご自身の判断と責任でお願いします。公式の展示のあと、締切の2分以上前に保存できた予想だけを載せています。載せたあとの書き換えはしません。</p>
+  <p class="note">予想は参考情報です。舟券の購入は20歳以上の方が、ご自身の判断と責任でお願いします。公式の展示のあと、締切の2分以上前に保存できた予想だけを載せています。保存からこのページに表示されるまで数分かかることがあり、締切に間に合わない場合があります。載せたあとの書き換えはしません。</p>
 </main>
 <script>
 (() => {
@@ -96,7 +96,7 @@ summary .time{color:var(--sub);font-size:14px;font-variant-numeric:tabular-nums}
       const body = el('div', 'body');
       body.append(el('h2', null, 'このレースの予想'), textBlock(article.introText),
         el('h2', null, '買い目'), textBlock(article.ticketText),
-        el('p', 'proof', `公開 ${clock(article.publishedAt)}（締切前）／保存原本 ${String(article.sourceSha256 || '').slice(0, 12)}`));
+        el('p', 'proof', `予想の保存 ${clock(article.savedAt)}／保存原本 ${String(article.sourceSha256 || '').slice(0, 12)}`));
       details.append(summary, body);
       list.append(details);
     }

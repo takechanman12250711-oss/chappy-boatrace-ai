@@ -48,8 +48,9 @@ test('articles carry the same audited public copy as the note article and are sa
       assert.equal(article.ticketText, payload.paidText);
       assert.equal(article.sourceSha256, payload.sourceSha256);
       assert.equal(article.presentationVersion, 'readable-v7');
-      assert.equal(article.publishedAt, new Date(START).toISOString());
-      assert.ok(Date.parse(article.publishedAt) < Date.parse(article.deadlineAt));
+      assert.equal(article.savedAt, new Date(START).toISOString());
+      assert.ok(Date.parse(article.savedAt) < Date.parse(article.deadlineAt));
+      assert.equal('publishedAt' in article, false, 'generation time is not recorded as a publication time');
     });
     assert.deepEqual(w.read('latest.json'), { version: VERSION, date: '20260928', path: 'data/site-articles/20260928.json',
       count: 2, updatedAt: new Date(START).toISOString() });
@@ -67,8 +68,8 @@ test('the first publication is never rewritten and a later run adds nothing', ()
     const second = buildSiteArticles({ rootDir: w.directory, now: START + 30000, handoff: w.handoff });
     assert.deepEqual(second.added, [w.candidates[1].publicationKey]);
     const day = w.read('20260928.json');
-    assert.equal(day.articles[0].publishedAt, new Date(START).toISOString());
-    assert.equal(day.articles[1].publishedAt, new Date(START + 30000).toISOString());
+    assert.equal(day.articles[0].savedAt, new Date(START).toISOString());
+    assert.equal(day.articles[1].savedAt, new Date(START + 30000).toISOString());
   } finally { w.close(); }
 });
 
@@ -87,4 +88,34 @@ test('nothing is published too close to or after the deadline, on another day, o
     assert.equal(fs.existsSync(path.join(w.directory, 'data/site-articles')), false, 'no file is written when nothing qualifies');
     assert.throws(() => buildSiteArticles({ rootDir: w.directory, now: START, handoff: {} }), /candidates_invalid/);
   } finally { w.close(); }
+});
+
+test('the note handoff is still saved when there is no site output, and the page claims no publication time', () => {
+  const { execFileSync } = require('node:child_process');
+  const workflow = fs.readFileSync(path.join(__dirname, '../.github/workflows/build-note-publish-handoff.yml'), 'utf8');
+  const step = workflow.slice(workflow.indexOf('- name: Save handoffs only when changed'));
+  const script = step.slice(step.indexOf('run: |') + 6).split('\n').map(line => line.replace(/^ {10}/, '')).join('\n')
+    .replace(/git pull --rebase origin main\n/, '').replace(/git push origin main\n?/, '');
+  for (const withSite of [false, true]) {
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'site-articles-git-'));
+    try {
+      const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' });
+      git('init', '-q'); git('config', 'user.name', 'test'); git('config', 'user.email', 'test@example.invalid');
+      git('config', 'commit.gpgsign', 'false');
+      fs.mkdirSync(path.join(repo, 'data/note-publish'), { recursive: true });
+      fs.writeFileSync(path.join(repo, 'README'), 'x'); git('add', '.'); git('commit', '-q', '-m', 'base');
+      for (const name of ['latest.json', 'latest.md', 'iphone.json']) fs.writeFileSync(path.join(repo, 'data/note-publish', name), '{}');
+      if (withSite) {
+        fs.mkdirSync(path.join(repo, 'data/site-articles'));
+        fs.writeFileSync(path.join(repo, 'data/site-articles/latest.json'), '{}');
+      }
+      execFileSync('bash', ['-e', '-c', script], { cwd: repo, encoding: 'utf8' });
+      const saved = git('show', '--name-only', '--format=%s', 'HEAD').trim().split('\n');
+      assert.equal(saved[0], 'Build note publish handoff');
+      assert.equal(saved.includes('data/note-publish/latest.json'), true);
+      assert.equal(saved.includes('data/site-articles/latest.json'), withSite);
+    } finally { fs.rmSync(repo, { recursive: true, force: true }); }
+  }
+  const page = fs.readFileSync(path.join(__dirname, '../yosou.html'), 'utf8');
+  assert.doesNotMatch(page, /publishedAt|（締切前）/);
 });

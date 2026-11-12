@@ -33,8 +33,8 @@ function buildSiteArticles({ rootDir = process.cwd(), now = Date.now(), handoff,
   for (const candidate of latest.candidates) {
     if (known.has(candidate.publicationKey)) continue;
     const skip = reason => skipped.push({ publicationKey: candidate.publicationKey, reason });
-    // Only today's races, and only while the deadline is still ahead: a page
-    // that first appears after the deadline would not be a prediction.
+    // Only today's races, and only while the deadline is still ahead at
+    // generation time. The site may still show it later than this.
     if (String(candidate.raceKey || '').slice(0, 8) !== date) { skip('race_day_mismatch'); continue; }
     let payload;
     try {
@@ -52,7 +52,9 @@ function buildSiteArticles({ rootDir = process.cwd(), now = Date.now(), handoff,
       place: candidate.place ?? null, raceNo: candidate.raceNo ?? null, deadlineAt: payload.deadlineAt,
       title: payload.title, introText: payload.freeText, ticketText: payload.paidText,
       presentationVersion: payload.presentationVersion, sourcePath: payload.sourcePath,
-      sourceSha256: payload.sourceSha256, publishedAt: new Date(now).toISOString()
+      // When this entry was generated. It is not a publication time: the
+      // commit, push and site deployment all happen later and are not verified here.
+      sourceSha256: payload.sourceSha256, savedAt: new Date(now).toISOString()
     };
     day.articles.push(article);
     added.push(article.publicationKey);

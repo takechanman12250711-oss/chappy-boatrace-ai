@@ -69,7 +69,14 @@ jobs:
             exit 0
           fi
 
-          git add data/note-publish/latest.json data/note-publish/latest.md data/note-publish/iphone.json data/site-articles
+          git add data/note-publish/latest.json data/note-publish/latest.md data/note-publish/iphone.json
+          # The site output is optional: it does not exist until the first
+          # article qualifies, and its absence must not stop the note handoff.
+          if [ -d data/site-articles ]; then git add data/site-articles; fi
+          if git diff --cached --quiet; then
+            echo "保存する変更はありません"
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Build note publish handoff"
