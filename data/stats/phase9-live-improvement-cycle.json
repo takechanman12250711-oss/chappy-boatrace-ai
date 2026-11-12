@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "analysisId": "phase9-live-improvement-cycle-v1",
-  "generatedAt": "2026-11-11T20:12:26.844Z",
+  "generatedAt": "2026-11-12T04:02:00.424Z",
   "productionChanged": false,
   "summary": {
-    "matchedRows": 5263,
-    "hits": 1330,
-    "misses": 3933,
+    "matchedRows": 5267,
+    "hits": 1332,
+    "misses": 3935,
     "duplicates": 0,
     "patterns": 123,
     "eligibleCandidates": 0
@@ -118449,6 +118449,88 @@
         "1-3-6"
       ],
       "result": "146"
+    },
+    {
+      "raceKey": "20261112-10-1",
+      "hit": false,
+      "missReason": "OTHER_WITH_REASON",
+      "reason": "result matched but existing saved evidence cannot safely attribute a narrower cause",
+      "logicFingerprint": "d691a612f3874582b925",
+      "theoryIds": [
+        "flow",
+        "holdPickup"
+      ],
+      "finalTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-5",
+        "1-3-2"
+      ],
+      "result": "152"
+    },
+    {
+      "raceKey": "20261112-17-1",
+      "hit": true,
+      "missReason": "HIT",
+      "reason": "official trifecta is present in final tickets",
+      "logicFingerprint": "d691a612f3874582b925",
+      "theoryIds": [
+        "flow",
+        "holdPickup"
+      ],
+      "finalTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-5",
+        "1-3-2"
+      ],
+      "result": "134"
+    },
+    {
+      "raceKey": "20261112-21-1",
+      "hit": true,
+      "missReason": "HIT",
+      "reason": "official trifecta is present in final tickets",
+      "logicFingerprint": "d691a612f3874582b925",
+      "theoryIds": [
+        "flow",
+        "holdPickup"
+      ],
+      "finalTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6",
+        "1-3-2",
+        "1-4-2"
+      ],
+      "result": "124"
+    },
+    {
+      "raceKey": "20261112-23-1",
+      "hit": false,
+      "missReason": "HEAD_MISS",
+      "reason": "predicted first-place axis differs from official result",
+      "logicFingerprint": "d691a612f3874582b925",
+      "theoryIds": [
+        "flow",
+        "holdPickup"
+      ],
+      "finalTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-5",
+        "1-3-2"
+      ],
+      "result": "213"
     }
   ],
   "patterns": [
@@ -124592,9 +124674,9 @@
       "reason": "No pre-existing formal minimum-count gate is attached to this observed pattern; phase9 must not invent one."
     },
     {
-      "patternId": "5923674c71665e1c22330095ea122d173fecf37bd71fdbab2736fbea5d2c14d0",
+      "patternId": "708069b432b81d1d03a61bff4a5921b736e15d492fc10e77656a80c0f53e8068",
       "key": "d691a612f3874582b925::HEAD_MISS",
-      "count": 154,
+      "count": 155,
       "races": [
         "20261105-01-11",
         "20261105-15-8",
@@ -124749,7 +124831,8 @@
         "20261111-22-3",
         "20261111-22-4",
         "20261111-22-7",
-        "20261111-24-1"
+        "20261111-24-1",
+        "20261112-23-1"
       ],
       "status": "INSUFFICIENT_EVIDENCE",
       "candidate": null,
@@ -124768,9 +124851,9 @@
       "reason": "No pre-existing formal minimum-count gate is attached to this observed pattern; phase9 must not invent one."
     },
     {
-      "patternId": "b5ecd34ee5e9c8dd26bf6a68d1a5344336d314314b2c065c3fdaa20026d5e2fa",
+      "patternId": "cdd90ba5871070f89389ab00c883a5d59c0eba24205dd3b5a8e2e625a1d18644",
       "key": "d691a612f3874582b925::HIT",
-      "count": 94,
+      "count": 96,
       "races": [
         "20261105-01-8",
         "20261105-15-11",
@@ -124865,16 +124948,18 @@
         "20261111-19-9",
         "20261111-21-1",
         "20261111-24-10",
-        "20261111-24-12"
+        "20261111-24-12",
+        "20261112-17-1",
+        "20261112-21-1"
       ],
       "status": "INSUFFICIENT_EVIDENCE",
       "candidate": null,
       "reason": "No pre-existing formal minimum-count gate is attached to this observed pattern; phase9 must not invent one."
     },
     {
-      "patternId": "994e676879a531ac8f3b0c70b25e747bffa5dc2f3682e834621753b35dbee559",
+      "patternId": "04f72dca68dfc781133af536b20a4a04657a970a79aa8ee920bcc0f4c3e73a67",
       "key": "d691a612f3874582b925::OTHER_WITH_REASON",
-      "count": 53,
+      "count": 54,
       "races": [
         "20261105-12-10",
         "20261105-12-8",
@@ -124928,7 +125013,8 @@
         "20261111-21-11",
         "20261111-21-9",
         "20261111-22-1",
-        "20261111-24-8"
+        "20261111-24-8",
+        "20261112-10-1"
       ],
       "status": "INSUFFICIENT_EVIDENCE",
       "candidate": null,
