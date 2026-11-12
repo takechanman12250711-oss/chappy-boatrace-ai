@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#f3f8ff"/>
+<meta name="description" content="チャッピーボートレースAIの今日の予想。展示のあと、締切前に保存した予想を買い目まで無料で公開しています。"/>
+<title>今日の予想｜チャッピーボートレースAI</title>
+<style>
+:root{--bg:#f3f8ff;--card:#fff;--ink:#14263d;--sub:#5a6b80;--line:#dbe5f1;--accent:#1c64c8;--open:#0b7a4b;--openbg:#e6f6ee;--closed:#8a96a6;--closedbg:#eef1f5}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;line-height:1.6;-webkit-text-size-adjust:100%}
+header{padding:20px 16px 8px;max-width:720px;margin:0 auto}
+header a{color:var(--accent);font-size:14px;text-decoration:none;margin-right:14px}
+h1{font-size:22px;margin:8px 0 4px}
+.lead{color:var(--sub);font-size:14px;margin:0}
+main{max-width:720px;margin:0 auto;padding:0 16px 40px}
+.filters{display:flex;gap:8px;margin:14px 0 0;flex-wrap:wrap}
+.filters button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 14px;font-size:14px;font-family:inherit}
+.filters button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+details{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:12px 0;overflow:hidden}
+summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+summary::-webkit-details-marker{display:none}
+summary b{font-size:17px}
+summary .time{color:var(--sub);font-size:14px;font-variant-numeric:tabular-nums}
+.badge{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:1px 9px;white-space:nowrap}
+.badge.kind{background:var(--bg);color:var(--accent)}
+.badge.open{background:var(--openbg);color:var(--open)}
+.badge.closed{background:var(--closedbg);color:var(--closed)}
+.body{padding:0 16px 16px;border-top:1px solid var(--line)}
+.body h2{font-size:15px;margin:14px 0 6px;color:var(--sub)}
+.text{white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px;margin:0}
+.text a{color:var(--accent)}
+.proof{font-size:12px;color:var(--sub);margin:12px 0 0;overflow-wrap:anywhere}
+.note{font-size:13px;color:var(--sub);margin:14px 0 0}
+.empty{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 16px;margin:14px 0;color:var(--sub);font-size:15px}
+</style>
+</head>
+<body>
+<header>
+  <a href="./">← トップ</a><a href="seiseki.html">全成績</a>
+  <h1>今日の予想</h1>
+  <p class="lead" id="lead">読み込み中…</p>
+  <div class="filters" id="filters" hidden>
+    <button type="button" data-filter="open" aria-pressed="true">締切前</button>
+    <button type="button" data-filter="all" aria-pressed="false">すべて</button>
+  </div>
+</header>
+<main>
+  <div id="list"></div>
+  <p class="note">予想は参考情報です。舟券の購入は20歳以上の方が、ご自身の判断と責任でお願いします。公式の展示のあと、締切の2分以上前に保存できた予想だけを載せています。載せたあとの書き換えはしません。</p>
+</main>
+<script>
+(() => {
+  'use strict';
+  const KIND = { normal: 'AI展開予想', escape: '本命予想', manshu: '万舟予想' };
+  const list = document.getElementById('list'), lead = document.getElementById('lead'), filters = document.getElementById('filters');
+  let articles = [], filter = 'open';
+  const el = (tag, className, text) => {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text != null) node.textContent = text;
+    return node;
+  };
+  const clock = value => new Date(value).toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit' });
+  // Text is inserted as text only. Links are limited to https addresses.
+  const textBlock = value => {
+    const block = el('p', 'text');
+    String(value || '').split(/(https:\/\/[^\s]+)/).forEach((part, index) => {
+      if (index % 2 === 0) { block.append(part); return; }
+      const link = el('a', null, part);
+      link.href = part; link.rel = 'noopener'; link.target = '_blank';
+      block.append(link);
+    });
+    return block;
+  };
+  const render = () => {
+    const now = Date.now();
+    list.replaceChildren();
+    const shown = articles.filter(article => filter === 'all' || Date.parse(article.deadlineAt) > now);
+    if (!shown.length) {
+      list.append(el('div', 'empty', articles.length
+        ? '締切前の予想は今ありません。「すべて」で今日ここまでの予想を見られます。'
+        : '今日の予想はまだありません。展示が出そろったレースから順に載ります。'));
+      return;
+    }
+    for (const article of shown) {
+      const open = Date.parse(article.deadlineAt) > now;
+      const details = el('details');
+      const summary = el('summary');
+      summary.append(el('b', null, `${article.place || ''}${article.raceNo || ''}R`),
+        el('span', 'time', `締切 ${clock(article.deadlineAt)}`),
+        el('span', 'badge kind', KIND[article.articleSeries] || '予想'),
+        el('span', `badge ${open ? 'open' : 'closed'}`, open ? '締切前' : '締切済み'));
+      const body = el('div', 'body');
+      body.append(el('h2', null, 'このレースの予想'), textBlock(article.introText),
+        el('h2', null, '買い目'), textBlock(article.ticketText),
+        el('p', 'proof', `公開 ${clock(article.publishedAt)}（締切前）／保存原本 ${String(article.sourceSha256 || '').slice(0, 12)}`));
+      details.append(summary, body);
+      list.append(details);
+    }
+  };
+  filters.addEventListener('click', event => {
+    const button = event.target.closest('button[data-filter]');
+    if (!button) return;
+    filter = button.dataset.filter;
+    filters.querySelectorAll('button').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+    render();
+  });
+  const load = async file => {
+    const response = await fetch(`${file}?t=${Date.now()}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(String(response.status));
+    return response.json();
+  };
+  (async () => {
+    const today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10).replaceAll('-', '');
+    try {
+      const latest = await load('data/site-articles/latest.json');
+      if (latest.version !== 'site-articles-v1' || latest.date !== today) throw new Error('no-today');
+      const day = await load(`data/site-articles/${today}.json`);
+      articles = Array.isArray(day.articles) ? day.articles : [];
+      lead.textContent = `${Number(today.slice(4, 6))}月${Number(today.slice(6, 8))}日・${articles.length}レース。買い目まで全部無料です。`;
+    } catch (error) {
+      articles = [];
+      lead.textContent = '展示のあと、締切前に保存した予想を買い目まで無料で公開しています。';
+    }
+    filters.hidden = !articles.length;
+    render();
+    setInterval(render, 60000);
+  })();
+})();
+</script>
+</body>
+</html>
