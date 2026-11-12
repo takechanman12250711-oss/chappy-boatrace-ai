@@ -383,7 +383,9 @@ test('workflow keeps recovery inputs out of shell interpolation and never rebuil
   assert.match(yaml, /recovery_source_path:\n[\s\S]*recovery_url:/);
   assert.match(yaml, /NOTE_RECOVERY_SOURCE_PATH: \$\{\{ github.event_name == 'workflow_dispatch' && inputs.recovery_source_path \|\| '' \}\}/);
   assert.match(yaml, /NOTE_RECOVERY_URL: \$\{\{ github.event_name == 'workflow_dispatch' && inputs.recovery_url \|\| '' \}\}/);
-  assert.match(yaml, /const handoff = mode === 'publish' \?/);
+  assert.match(yaml, /const handoff = mode === 'publish' && !siteActive \?/);
+  // 2026-11-12: while own-site publishing is on, publish mode never reserves a note article.
+  assert.match(yaml, /mode === 'publish' && siteActive \? \{ ok: false, reason: 'site_publication_active' \}/);
   assert.doesNotMatch(yaml, /\['publish', 'recover'\]\.includes\(mode\) \? require/);
   const shell = yaml.slice(yaml.indexOf('    steps:'));
   assert.doesNotMatch(shell, /\$\{\{[^}]*inputs\.recovery_/);

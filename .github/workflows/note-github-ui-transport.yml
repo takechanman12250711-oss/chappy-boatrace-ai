@@ -3,7 +3,7 @@ name: Note GitHub UI Transport
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/note-github-ui-transport.yml', 'scripts/note-github-ui-transport.js', 'scripts/note-cover.js', 'scripts/note-cover-template.js', 'assets/note/**', 'scripts/note-browserbase-draft-save.js', 'scripts/note-editor-content.js', 'scripts/note-publication-source.js', 'scripts/note-korogashi-presentation.cjs', 'scripts/note-plain-presentation.cjs', 'scripts/note-recovery*', 'scripts/note-readable-article.js', 'scripts/note-published-ticket-sections.js', 'scripts/publish-note-queue.js', 'scripts/note-article-series.js', 'scripts/save-independent-monitor-note.js', 'data/note-drafts/**']
+    paths: ['.github/workflows/note-github-ui-transport.yml', 'scripts/note-github-ui-transport.js', 'scripts/note-cover.js', 'scripts/note-cover-template.js', 'assets/note/**', 'scripts/note-browserbase-draft-save.js', 'scripts/note-editor-content.js', 'scripts/note-publication-source.js', 'scripts/note-korogashi-presentation.cjs', 'scripts/note-plain-presentation.cjs', 'scripts/note-recovery*', 'scripts/note-readable-article.js', 'scripts/note-published-ticket-sections.js', 'scripts/publish-note-queue.js', 'scripts/note-article-series.js', 'scripts/save-independent-monitor-note.js', 'config/site-publish.json', 'data/note-drafts/**']
   workflow_run:
     workflows: ['Build note publish handoff']
     types: [completed]
@@ -92,8 +92,12 @@ jobs:
           const { prepareTransport } = require('./scripts/note-github-ui-transport');
           (async () => {
             const mode = process.env.NOTE_UI_MODE;
-            const handoff = mode === 'publish' ? require('./scripts/build-note-publish-handoff').buildLatestHandoff({ write: false }).payload : null;
-            const gate = await prepareTransport(mode, { handoff, env: process.env });
+            // 2026-11-12: new articles go to our own free site (config/site-publish.json).
+            // Never reserve or post a new note article while that is active. auth/recover stay available.
+            const siteActive = JSON.parse(fs.readFileSync('config/site-publish.json', 'utf8')).enabled === true;
+            const handoff = mode === 'publish' && !siteActive ? require('./scripts/build-note-publish-handoff').buildLatestHandoff({ write: false }).payload : null;
+            const gate = mode === 'publish' && siteActive ? { ok: false, reason: 'site_publication_active' }
+              : await prepareTransport(mode, { handoff, env: process.env });
             if (['publish', 'recover'].includes(mode) && gate.ok) {
               const file = require('node:path').join(process.env.RUNNER_TEMP, 'note-publication.json');
               fs.writeFileSync(file, JSON.stringify(gate.payload));
