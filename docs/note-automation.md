@@ -380,6 +380,14 @@ node scripts/check-charter.js
 
 これは観測不足を補う実装であり、編集画面の障害原因や復旧を証明しない。2026-10-11のrun38128826982はこの診断を持たない旧コードのため、後付けで原因を確定できない。期限切れの桐生8R（20261011-01-8、normal）のclaimは保持し、再実行しない。次に自然発生した同エラーのログで、欠損・編集不可・検査エラー・host遷移を切り分ける。
 
+### 2026-11-09 編集画面の読み込み観測を追加
+
+11月9日18:40 JSTのrun `42594972258` はeditor HTTPSへ到達したが、タイトル・本文の両方を取得できず `note_editor_fields_not_ready` で停止した。同じ投稿コードは同日15:10の公開で成功しており、現時点では認証切れ・サイト変更・一時的な読み込み障害のどれかを特定できない。
+
+次の自然実行の失敗では、既存v1診断を保ち、別の `NOTE_UI_EDITOR_LOAD=` に固定分類の段階、既存navigationのHTTP status（不明はnull）、main frameの限定したscript/stylesheetの要求・HTTPエラー・通信失敗件数、pageerror件数を残す。対象assetは `https://editor.note.com` と `https://frontend.st-note.com` のGETだけ。追跡する要求は最大64件、各件数は255で打ち切り、打ち切り・観測エラー・listener解除の状態も区別する。
+
+既存ページのイベントとgotoの戻り値だけを使い、追加通信やDOM・本文・header・例外内容の取得を行わない。asset URLはorigin判定に一時的に使うだけで、URL/pathを保持・記録しない。成功時は追加ログを出さず、成功・失敗・途中例外のいずれでもlistenerを解除する。navigation・待機時間・selector・探索順・retry・claim・公開gateは変更しない。この変更は次回の原因特定のための観測追加であり、今回の障害の根本修正・認証復旧・次回公開成功を示すものではない。既存claimを解除・再投稿せず、原因が分かるまで本人へ再ログインを要求しない。
+
 ## 2026-10-12 対象を固定した公開記録の復旧
 
 `Note GitHub UI Transport` の明示的な `recover` は、既存公開URLの証拠がある1記事だけを扱う。`recovery_source_path` にSHA256を含む不変 `data/note-drafts` 原本の正確なpath、`recovery_url` に同じ作者の正確な公開URLを渡す。どちらか不足・不正ならブラウザ起動前に停止する。当日の `latest`、候補順、同名記事一覧から対象を選び直さないため、日付が変わった後も元の保存原本を指定する。

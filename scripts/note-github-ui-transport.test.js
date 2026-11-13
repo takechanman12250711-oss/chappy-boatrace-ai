@@ -373,4 +373,5 @@ checkAsyncGuards()
   // Existing CI entrypoint must execute the queue's fail-closed expiry cases.
   .then(() => require('./note-queue-expiry.test.cjs'))
   .then(() => require('./note-editor-readiness.test.cjs'))
+  .then(() => require('./note-editor-load-observer.test.cjs'))
   .catch((error) => { console.error(error); process.exitCode = 1; });
