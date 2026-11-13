@@ -321,6 +321,11 @@ async function checkAsyncGuards() {
       return { status: 201, json: async () => ({ ref: draftClaimRef(eligible), object: { sha: claimEnv.GITHUB_SHA } }) };
     }), /deadline_passed/);
   } finally { Date.now = realNow; }
+  // The runner-browser login check is limited to the read-only auth mode.
+  for (const NOTE_UI_MODE of ['draft', 'publish']) {
+    await assert.rejects(run({ env: { NOTE_UI_MODE, NOTE_UI_BROWSER: 'github' } }), /direct_login_auth_mode_only/);
+  }
+  await assert.rejects(run({ env: { NOTE_UI_MODE: 'auth', NOTE_UI_BROWSER: 'github' } }), /note_login_id_missing/);
   await assert.rejects(run({ env: {} }), /browser_use_api_key_missing/);
   await assert.rejects(run({ env: { BROWSER_USE_API_KEY: 'key' } }), /browser_use_profile_id_missing/);
   assert.deepEqual(loadBrowserUseConfig({ BROWSER_USE_API_KEY: ' key ', BROWSER_USE_PROFILE_ID: ' profile ' }), {

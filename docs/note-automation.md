@@ -449,3 +449,13 @@ Browser Useの残高不足（`browser_use_create_failed_402`）で、接続前�
 - 公開設定画面でタグ欄を読むだけの観測（`scripts/note-hashtag-observation.js`）を、価格設定の後・公開クリックの前に追加した。入力・クリック・フォーカスはせず、最大3秒、失敗しても公開を止めない。ログ `NOTE_UI_HASHTAG_FIELD=` に、タグ欄の個数・要素の種類・フォーム内かどうか・フォームの送信ボタン数だけを出す（画面の文言は出さない）。タグ入力はまだ接続していない。次に公開が成功した実行のログで、Enterが投稿を確定させ得る構造かを判断する。
 - Browser Useのセッション作成が拒否された場合、エラーに応答の短い理由コードだけを付ける（例 `browser_use_create_failed_402_<code>`）。残高や上限の金額、メッセージ本文はログに出さない。2026-11-11は公開11回に加え、無料一覧の更新（Update note marketing）も同じ402で失敗している。理由コードが取れるのはこの変更のmain反映後の実行から。
 - 検証: `node --test scripts/note-hashtag-observation.test.js` と `node scripts/note-github-ui-transport.test.js`。
+
+## 2026-11-13 GitHubのブラウザで直接ログインする確認（authのみ・本人の疑問「Browser Useに課金しないと自動投稿できないのか」）
+
+自動投稿に必要なのは「noteにログインしたブラウザを機械が操作できること」で、Browser Useはその置き場所の1つである。課金なしの候補として、GitHub Actionsの中のブラウザがメールアドレス（またはnote ID）とパスワードで直接ログインする経路の確認を追加した。以前不採用にしたのはXアカウント経由のログインで、この方式は未試行。
+
+- `scripts/note-direct-login.js`。`Note GitHub UI Transport` の手動実行で `mode=auth`・`browser=github` を選んだときだけ動く。ログイン画面を開き、1回だけログインを試し、編集画面のタイトル欄・本文欄が使えることを確認して終了する。記事の入力・予約・公開はしない。draft／publish／recover では使えない（`direct_login_auth_mode_only`）。
+- 必要なSecretは `NOTE_LOGIN_ID` と `NOTE_LOGIN_PASSWORD`（本人がiPhoneで登録）。値とページ本文はログに出さず、固定の結果コードだけを出す。失敗しても自動で再試行しない（連続失敗によるアカウント制限を避ける）。
+- 確認済み：ログイン画面に「メールアドレス または note ID」「パスワード」の欄と「ログイン」ボタンが各1つあること（ログインなしで画面を読んだだけ）。未確認：GitHubのサーバーからのログインをnoteが受け付けるか、機械よけや本人確認が出ないか。実アカウントでの手動実行1回で判断する。
+- この確認が通っても、公開処理はまだBrowser Use経由のままである。公開をこの経路へ切り替えるのは、確認結果を見てからの別の変更とする。「既存アカウントの認証方式変更を前提にしない」という取り決めとの関係（パスワードの利用）は本人の判断による。
+- 検証: `node --test scripts/note-direct-login.test.js`、`node scripts/note-github-ui-transport.test.js`。

@@ -1001,6 +1001,12 @@ async function run({ env = process.env } = {}) {
     throw new Error('explicit_recovery_mode_required');
   }
   const recoveryTarget = recoveryOnly ? loadRecoveryTarget(env) : null;
+  // Login check with the runner's own browser. Only the read-only auth mode
+  // may use it; every writing mode still goes through the existing route.
+  if (String(env.NOTE_UI_BROWSER || '').trim() === 'github') {
+    if (mode !== 'auth') throw new Error('direct_login_auth_mode_only');
+    return require('./note-direct-login').runDirectAuth({ env, ensureEditorReady });
+  }
 
   // Invalid/missing credentials and stale handoffs must stop before browser setup.
   const browserUse = loadBrowserUseConfig(env);
