@@ -23,6 +23,7 @@ const REPO = 'takechanman12250711-oss/chappy-boatrace-ai';
 const OWNER = 'takechanman12250711-oss';
 const LABEL = 'chappy-claude-handoff';
 const SCHEMA = 'chappy-ai-handoff:v1';
+const REQUEST_RESERVATION_SCHEMA = 'chappy-ai-handoff:v2';
 const MARKER = `<!-- ${SCHEMA} -->`;
 const ROOT = `repos/${REPO}`;
 
@@ -62,7 +63,13 @@ function reservationFor(kind, record) {
   const head = sha(record.head);
   const key = `${task(record.taskId)}/r${round(record.round)}${kind === 'claim' ? `/${head}` : ''}`;
   const digest = createHash('sha256').update(key).digest('hex').slice(0, 32);
-  return { name: `ai-staff-${prefixes[kind]}-${digest}`, color: 'EDEDED', description: `${SCHEMA} ${kind} ${head}` };
+  // Keep the existing task/round name, including its create-only collision guard.
+  // PR + round + full head fit GitHub's 100-character description limit even
+  // for a 9-digit PR. The name is a hash, never a recovered/truncated taskId.
+  const description = kind === 'request'
+    ? `${REQUEST_RESERVATION_SCHEMA} request ${prNumber(record.pr)} ${round(record.round)} ${head}`
+    : `${SCHEMA} ${kind} ${head}`;
+  return { name: `ai-staff-${prefixes[kind]}-${digest}`, color: 'EDEDED', description };
 }
 function format(record) { return `${MARKER}\n\`\`\`json\n${JSON.stringify(record, null, 2)}\n\`\`\``; }
 
@@ -145,12 +152,59 @@ function createHandoff({ api = ghApi, now = () => new Date().toISOString(), read
     requireThat(found.length <= 1, 'duplicate_trusted_records');
     return found[0];
   }
-  function reservationExists(reservation) {
+  function reservationExists(reservation, legacyDescription) {
     const result = api('GET', `${ROOT}/labels/${reservation.name}`);
     if (result?.status === 404) return null;
     requireThat(result?.status === 200, 'reservation_read_unknown');
-    requireThat(result.data?.name === reservation.name && result.data.description === reservation.description, 'reservation_conflict');
+    requireThat(result.data?.name === reservation.name &&
+      (result.data.description === reservation.description ||
+        (legacyDescription !== undefined && result.data.description === legacyDescription)), 'reservation_conflict');
     return true;
+  }
+  function requestReservationExists(record) {
+    return reservationExists(reservationFor('request', record), `${SCHEMA} request ${sha(record.head)}`);
+  }
+  function requestReservations(number, rows) {
+    const labels = [];
+    const names = new Set();
+    let complete = false;
+    for (let page = 1; page <= 1000; page++) {
+      const found = call('GET', `${ROOT}/labels?per_page=100&page=${page}`);
+      requireThat(Array.isArray(found) && found.length <= 100, 'reservation_pagination_unknown');
+      for (const label of found) {
+        requireThat(label && typeof label.name === 'string' && !names.has(label.name.toLowerCase()), 'reservation_pagination_unknown');
+        names.add(label.name.toLowerCase());
+        if (label.name.toLowerCase().startsWith('ai-staff-rq-')) labels.push(label);
+      }
+      if (found.length < 100) { complete = true; break; }
+    }
+    requireThat(complete, 'reservation_pagination_incomplete');
+    function exact(pattern, value) {
+      const match = typeof value === 'string' ? pattern.exec(value) : null;
+      return match?.[0] === value ? match : null;
+    }
+    return labels.flatMap(label => {
+      const match = exact(/^ai-staff-rq-([a-f0-9]{32})$/, label.name);
+      const metadata = exact(/^chappy-ai-handoff:v2 request ([1-9]\d{0,8}) ([1-3]) ([a-f0-9]{40})$/, label.description);
+      const legacy = exact(/^chappy-ai-handoff:v1 request ([a-f0-9]{40})$/, label.description);
+      const matching = rows.filter(r => r.kind === 'request' && reservationFor('request', r).name === label.name);
+      requireThat(matching.length <= 1, 'duplicate_trusted_records');
+      const request = matching[0];
+      if (request && (label.description === reservationFor('request', request).description ||
+        label.description === `${SCHEMA} request ${request.head}`)) {
+        return [{ name: label.name, pr: number, taskId: request.taskId, requestKeyHash: match[1],
+          round: request.round, head: request.head, status: 'recorded', requestCommentId: request.commentId }];
+      }
+      // A legacy label without its request comment cannot be assigned to a PR.
+      // Expose that uncertainty for every PR; never silently treat it as absent.
+      if (match && metadata && !request) {
+        if (Number(metadata[1]) !== number) return [];
+        return [{ name: label.name, pr: number, taskId: null, requestKeyHash: match[1],
+          round: Number(metadata[2]), head: metadata[3], status: 'unresolved', requestCommentId: null }];
+      }
+      return [{ name: label.name, pr: null, taskId: null, requestKeyHash: match?.[1] ?? null,
+        round: null, head: legacy?.[1] ?? null, status: 'unknown', requestCommentId: null }];
+    });
   }
   function createReservation(reservation) {
     const result = call('POST', `${ROOT}/labels`, reservation, [201]);
@@ -170,7 +224,9 @@ function createHandoff({ api = ghApi, now = () => new Date().toISOString(), read
   function inspect(options) {
     const number = prNumber(options.pr);
     const p = currentPr(number);
-    return { repo: REPO, pr: number, head: p.head.sha, labelApplied: p.labels.some(l => l.name === LABEL), records: records(number) };
+    const rows = records(number);
+    return { repo: REPO, pr: number, head: p.head.sha, labelApplied: p.labels.some(l => l.name === LABEL),
+      records: rows, requestReservations: requestReservations(number, rows) };
   }
   function request(options) {
     const b = base(options);
@@ -181,15 +237,17 @@ function createHandoff({ api = ghApi, now = () => new Date().toISOString(), read
     requireThat(call('GET', `${ROOT}/labels/${LABEL}`)?.name === LABEL, 'handoff_label_missing');
     const target = { ...b, head: p.head.sha };
     const rows = records(b.pr);
+    const reservations = requestReservations(b.pr, rows);
     const existing = one(rows, 'request', target);
     const intent = reservationFor('request', target);
-    const reserved = reservationExists(intent);
+    const reserved = requestReservationExists(target);
     if (existing) {
       requireThat(reserved && existing.head === target.head && existing.action === options.action &&
         JSON.stringify(existing.scope) === JSON.stringify(paths) && existing.authorizationUrl === authorizationUrl, 'request_conflict');
       return { status: 'already_requested', ...target, commentId: existing.commentId, labelApplied: p.labels.some(l => l.name === LABEL) };
     }
     requireThat(!reserved, 'request_reserved_result_unknown_do_not_resend');
+    requireThat(reservations.every(r => r.status === 'recorded'), 'other_request_reserved_result_unknown_do_not_resend');
     requireThat(!one(rows, 'claim', target) && !one(rows, 'receipt', target), 'orphan_record_stop');
     for (const r of rows.filter(r => r.kind === 'request')) {
       requireThat(one(rows, 'receipt', r), 'other_request_pending');
@@ -223,7 +281,7 @@ function createHandoff({ api = ghApi, now = () => new Date().toISOString(), read
     const p = ensureHead(b.pr, b.head);
     const rows = records(b.pr);
     const req = one(rows, 'request', b);
-    requireThat(req && req.head === b.head && reservationExists(reservationFor('request', b)), 'matching_request_not_found');
+    requireThat(req && req.head === b.head && requestReservationExists(b), 'matching_request_not_found');
     requireThat(p.labels.some(l => l.name === LABEL), 'handoff_label_not_applied');
     requireThat(!one(rows, 'claim', b) && !one(rows, 'receipt', b), 'already_claimed_or_returned');
     const reservation = reservationFor('claim', b);
@@ -255,7 +313,7 @@ function createHandoff({ api = ghApi, now = () => new Date().toISOString(), read
     const claimed = one(rows, 'claim', b);
     const claimReservation = reservationFor('claim', b);
     requireThat(req?.head === b.head && claimed?.head === b.head && reservationExists(claimReservation) &&
-      reservationExists(reservationFor('request', b)), 'matching_claim_not_found');
+      requestReservationExists(b), 'matching_claim_not_found');
     const reservation = reservationFor('receipt', { ...b, head: resultHead });
     const reserved = reservationExists(reservation);
     const existing = one(rows, 'receipt', b);

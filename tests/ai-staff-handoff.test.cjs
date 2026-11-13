@@ -19,11 +19,11 @@ const RECEIPT = { ...CLAIM, 'result-head': HEAD, 'session-url': SESSION, status:
 
 function fixture() {
   const state = {
-    head: HEAD, labels: [], comments: [], reservations: new Map(), calls: [], nextId: 1,
+    pr: 1462, head: HEAD, labels: [], comments: [], reservations: new Map(), calls: [], nextId: 1,
     owner: OWNER, open: true, fork: false, missingComment: false, intercept: null,
   };
   function comment(body, login = state.owner) {
-    const c = { id: state.nextId++, body, user: { login }, html_url: `https://github.com/${REPO}/issues/1462#issuecomment-${state.nextId - 1}` };
+    const c = { id: state.nextId++, body, user: { login }, html_url: `https://github.com/${REPO}/issues/${state.pr}#issuecomment-${state.nextId - 1}` };
     state.comments.push(c);
     return c;
   }
@@ -37,13 +37,13 @@ function fixture() {
       status: 'ahead', merge_base_commit: { sha: HEAD }, total_commits: 1, commits: [{ sha: NEXT }],
       files: [{ filename: 'scripts/example.cjs', status: 'modified' }],
     });
-    if (method === 'GET' && path === `${ROOT}/pulls/1462`) return result(200, {
-      number: 1462, state: state.open ? 'open' : 'closed', merged: false,
+    if (method === 'GET' && path === `${ROOT}/pulls/${state.pr}`) return result(200, {
+      number: state.pr, state: state.open ? 'open' : 'closed', merged: false,
       base: { ref: 'main', repo: { full_name: REPO } },
       head: { sha: state.head, repo: { full_name: state.fork ? 'someone/fork' : REPO } },
       labels: state.labels.map(name => ({ name })),
     });
-    if (method === 'GET' && path.startsWith(`${ROOT}/issues/1462/comments?`)) {
+    if (method === 'GET' && path.startsWith(`${ROOT}/issues/${state.pr}/comments?`)) {
       const page = Number(new URL(`https://example.com/${path}`).searchParams.get('page'));
       return result(200, state.comments.slice((page - 1) * 100, page * 100));
     }
@@ -51,7 +51,11 @@ function fixture() {
       const c = state.comments.find(c => c.id === Number(path.split('/').at(-1)));
       return c && !state.missingComment ? result(200, c) : result(404, {});
     }
-    if (method === 'POST' && path === `${ROOT}/issues/1462/comments`) return result(201, comment(body.body));
+    if (method === 'POST' && path === `${ROOT}/issues/${state.pr}/comments`) return result(201, comment(body.body));
+    if (method === 'GET' && path.startsWith(`${ROOT}/labels?`)) {
+      const page = Number(new URL(`https://example.com/${path}`).searchParams.get('page'));
+      return result(200, [...state.reservations.values()].slice((page - 1) * 100, page * 100));
+    }
     if (method === 'GET' && path.startsWith(`${ROOT}/labels/`)) {
       const name = path.slice(`${ROOT}/labels/`.length);
       return state.reservations.has(name) ? result(200, state.reservations.get(name)) : result(404, {});
@@ -61,11 +65,11 @@ function fixture() {
       state.reservations.set(body.name, { ...body });
       return result(201, body);
     }
-    if (method === 'POST' && path === `${ROOT}/issues/1462/labels`) {
+    if (method === 'POST' && path === `${ROOT}/issues/${state.pr}/labels`) {
       state.labels = [...new Set([...state.labels, ...body.labels])];
       return result(200, state.labels.map(name => ({ name })));
     }
-    if (method === 'DELETE' && path === `${ROOT}/issues/1462/labels/${LABEL}`) {
+    if (method === 'DELETE' && path === `${ROOT}/issues/${state.pr}/labels/${LABEL}`) {
       state.labels = state.labels.filter(name => name !== LABEL);
       return result(200, state.labels.map(name => ({ name })));
     }
@@ -262,10 +266,10 @@ test('implementation compare must be forward, complete, below file cap and consi
 });
 
 test('reservation label name and description must both match; only the gate label is ever applied', () => {
-  const target = { taskId: 'work-1462', round: 1, head: HEAD };
+  const target = { pr: 1462, taskId: 'work-1462', round: 1, head: HEAD };
   const reservation = reservationFor('request', target);
   assert.match(reservation.name, /^ai-staff-rq-[a-f0-9]{32}$/);
-  assert.equal(reservation.description, `${SCHEMA} request ${HEAD}`);
+  assert.equal(reservation.description, `chappy-ai-handoff:v2 request 1462 1 ${HEAD}`);
   assert.equal(reservation.color, 'EDEDED');
   const conflict = fixture(); conflict.state.reservations.set(reservation.name, { ...reservation, description: `${SCHEMA} request ${NEXT}` });
   assert.throws(() => conflict.helper.request(REQUEST), /reservation_conflict/);
@@ -407,6 +411,188 @@ test('a failed comment page never becomes an empty successful search', () => {
 test('a second task cannot start while another request has no receipt', () => {
   const f = fixture(); f.helper.request(REQUEST); f.state.calls = [];
   assert.throws(() => f.helper.request({ ...REQUEST, 'task-id': 'other-task' }), /other_request_pending/);
+  assert.equal(writes(f.state).length, 0);
+});
+
+test('commentless request reservation is visible to inspect and blocks a replacement task without writes', () => {
+  const f = fixture();
+  f.state.intercept = (method, path) => {
+    if (method === 'POST' && path === `${ROOT}/issues/1462/comments`) throw new Error('github_result_unknown_do_not_resend');
+  };
+  assert.throws(() => f.helper.request(REQUEST), /github_result_unknown_do_not_resend/);
+  f.state.intercept = null; f.state.calls = [];
+  const result = f.helper.inspect({ pr: REQUEST.pr });
+  assert.equal(result.records.length, 0);
+  assert.equal(result.labelApplied, false);
+  assert.deepEqual(result.requestReservations, [{
+    name: [...f.state.reservations.keys()][0], pr: 1462, taskId: null,
+    requestKeyHash: [...f.state.reservations.keys()][0].slice('ai-staff-rq-'.length),
+    round: 1, head: HEAD, status: 'unresolved', requestCommentId: null,
+  }]);
+  assert.equal(writes(f.state).length, 0);
+  for (const changed of [{}, { action: 'implement' }, { scope: 'scripts/another.cjs' }]) {
+    f.state.calls = [];
+    assert.throws(() => f.helper.request({ ...REQUEST, ...changed, 'task-id': 'replacement-task' }), /other_request_reserved_result_unknown_do_not_resend/);
+    assert.equal(writes(f.state).length, 0);
+    assert.equal(f.state.reservations.size, 1);
+  }
+  f.state.head = NEXT; f.state.calls = [];
+  assert.equal(f.helper.inspect({ pr: REQUEST.pr }).requestReservations[0].head, HEAD);
+  assert.throws(() => f.helper.request({ ...REQUEST, 'task-id': 'replacement-task' }), /other_request_reserved_result_unknown_do_not_resend/);
+  assert.equal(writes(f.state).length, 0);
+});
+
+test('all repository label pages are read before a new task can send', () => {
+  const f = fixture();
+  for (let i = 0; i < 100; i++) f.state.reservations.set(`unrelated-${i}`, { name: `unrelated-${i}`, description: null });
+  const reserved = reservationFor('request', { pr: 1462, taskId: 'interrupted-task', round: 1, head: HEAD });
+  f.state.reservations.set(reserved.name, reserved);
+  assert.equal(f.helper.inspect({ pr: REQUEST.pr }).requestReservations[0].name, reserved.name);
+  assert.ok(f.state.calls.some(c => c.path === `${ROOT}/labels?per_page=100&page=2`));
+  f.state.calls = [];
+  assert.throws(() => f.helper.request(REQUEST), /other_request_reserved_result_unknown_do_not_resend/);
+  assert.equal(writes(f.state).length, 0);
+});
+
+test('failed, unknown or malformed label pages never become an empty reservation search', () => {
+  for (const response of [{ status: 503, data: [] }, undefined, { status: 200, data: null },
+    { status: 200, data: {} }, { status: 200, data: [{ description: null }] },
+    { status: 200, data: Array.from({ length: 101 }, (_, i) => ({ name: `extra-${i}` })) }]) {
+    const f = fixture();
+    // Explicitly return undefined for the transport itself in that case.
+    const transport = (method, path, body) => path.startsWith(`${ROOT}/labels?`) ? response : f.api(method, path, body);
+    const helper = createHandoff({ api: transport });
+    assert.throws(() => helper.inspect({ pr: REQUEST.pr }), /github_read_failed|reservation_pagination_unknown/);
+    assert.throws(() => helper.request(REQUEST), /github_read_failed|reservation_pagination_unknown/);
+    assert.equal(writes(f.state).length, 0);
+  }
+});
+
+test('a failed second label page and repeated pages stop before a replacement send', () => {
+  for (const second of [{ status: 503, data: [] }, { status: 200, data: [{ name: 'unrelated-0' }] }]) {
+    const f = fixture();
+    for (let i = 0; i < 100; i++) f.state.reservations.set(`unrelated-${i}`, { name: `unrelated-${i}` });
+    f.state.intercept = (method, path) => path === `${ROOT}/labels?per_page=100&page=2` ? second : undefined;
+    assert.throws(() => f.helper.inspect({ pr: REQUEST.pr }), /github_read_failed_503|reservation_pagination_unknown/);
+    assert.throws(() => f.helper.request(REQUEST), /github_read_failed_503|reservation_pagination_unknown/);
+    assert.equal(writes(f.state).length, 0);
+  }
+});
+
+test('exhausting the repository label pagination limit stops without writes', () => {
+  const f = fixture();
+  f.state.intercept = (method, path) => {
+    if (method === 'GET' && path.startsWith(`${ROOT}/labels?`)) {
+      const page = Number(new URL(`https://example.com/${path}`).searchParams.get('page'));
+      return { status: 200, data: Array.from({ length: 100 }, (_, i) => ({ name: `unrelated-${page}-${i}` })) };
+    }
+  };
+  assert.throws(() => f.helper.inspect({ pr: REQUEST.pr }), /reservation_pagination_incomplete/);
+  assert.throws(() => f.helper.request(REQUEST), /reservation_pagination_incomplete/);
+  assert.equal(writes(f.state).length, 0);
+});
+
+test('an unbound legacy request is exposed as unknown and stops new IDs on every PR', () => {
+  for (const number of [1462, 1463]) {
+    const f = fixture(); f.state.pr = number;
+    const reserved = reservationFor('request', { pr: 1462, taskId: 'legacy-task', round: 1, head: HEAD });
+    reserved.description = `${SCHEMA} request ${HEAD}`;
+    f.state.reservations.set(reserved.name, reserved);
+    const inspected = f.helper.inspect({ pr: String(number) }).requestReservations;
+    assert.equal(inspected.length, 1);
+    assert.equal(inspected[0].pr, null);
+    assert.equal(inspected[0].taskId, null);
+    assert.equal(inspected[0].status, 'unknown');
+    assert.equal(inspected[0].head, HEAD);
+    assert.throws(() => f.helper.request({ ...REQUEST, pr: String(number), 'task-id': 'new-task' }), /other_request_reserved_result_unknown_do_not_resend/);
+    assert.equal(writes(f.state).length, 0);
+    assert.deepEqual([...f.state.reservations.values()], [reserved]);
+  }
+});
+
+test('legacy request names and exact descriptions remain usable without updating the old reservation', () => {
+  const f = fixture(); f.helper.request(REQUEST);
+  const reserved = [...f.state.reservations.values()][0];
+  reserved.description = `${SCHEMA} request ${HEAD}`;
+  f.state.calls = [];
+  assert.equal(f.helper.request(REQUEST).status, 'already_requested');
+  const recovered = f.helper.inspect({ pr: REQUEST.pr }).requestReservations[0];
+  assert.equal(recovered.taskId, REQUEST['task-id']);
+  assert.equal(recovered.status, 'recorded');
+  assert.equal(writes(f.state).length, 0);
+  f.helper.claim(CLAIM); f.helper.receipt(RECEIPT);
+  f.state.calls = [];
+  assert.equal(f.helper.request(REQUEST).status, 'already_requested');
+  assert.equal(f.helper.receipt(RECEIPT).status, 'already_returned');
+  assert.equal(writes(f.state).length, 0);
+  assert.equal(f.state.reservations.get(reserved.name).description, `${SCHEMA} request ${HEAD}`);
+});
+
+test('conflicting and malformed reservation metadata is unknown rather than ignored', () => {
+  const normal = reservationFor('request', { pr: 1462, taskId: 'interrupted-task', round: 1, head: HEAD });
+  for (const reserved of [
+    { ...normal, description: null }, { ...normal, description: 'unrecognized metadata' },
+    { ...normal, description: `chappy-ai-handoff:v2 request 1462 4 ${HEAD}` },
+    { ...normal, description: `chappy-ai-handoff:v2 request 1463 1 ${HEAD}\n` },
+    { ...normal, name: 'ai-staff-rq-incomplete' },
+    { ...normal, name: normal.name.toUpperCase() },
+    { ...normal, name: `${normal.name}\n` },
+  ]) {
+    const f = fixture(); f.state.reservations.set(reserved.name, reserved);
+    assert.equal(f.helper.inspect({ pr: REQUEST.pr }).requestReservations[0].status, 'unknown');
+    assert.throws(() => f.helper.request(REQUEST), /other_request_reserved_result_unknown_do_not_resend/);
+    assert.equal(writes(f.state).length, 0);
+  }
+  const f = fixture(); f.helper.request(REQUEST);
+  const reserved = [...f.state.reservations.values()][0];
+  reserved.description = `chappy-ai-handoff:v2 request 1463 1 ${HEAD}`;
+  f.state.calls = [];
+  assert.equal(f.helper.inspect({ pr: REQUEST.pr }).requestReservations[0].status, 'unknown');
+  assert.throws(() => f.helper.request(REQUEST), /reservation_conflict/);
+  assert.throws(() => f.helper.request({ ...REQUEST, 'task-id': 'new-task' }), /other_request_reserved_result_unknown_do_not_resend/);
+  assert.equal(writes(f.state).length, 0);
+});
+
+test('a new-format reservation on a different PR does not block an unrelated request', () => {
+  const f = fixture();
+  const reserved = reservationFor('request', { pr: 1463, taskId: 'other-pr-task', round: 1, head: HEAD });
+  f.state.reservations.set(reserved.name, reserved);
+  assert.deepEqual(f.helper.inspect({ pr: REQUEST.pr }).requestReservations, []);
+  assert.equal(f.helper.request(REQUEST).status, 'requested');
+  assert.deepEqual(f.state.reservations.get(reserved.name), reserved);
+  assert.equal(commentWrites(f.state).length, 1);
+});
+
+test('a separate task after a completed exchange remains allowed by the existing contract', () => {
+  const f = fixture(); requestAndClaim(f); f.helper.receipt(RECEIPT);
+  f.state.calls = [];
+  assert.equal(f.helper.request({ ...REQUEST, 'task-id': 'separate-task', scope: 'scripts/another.cjs',
+    'authorization-url': `https://github.com/${REPO}/issues/1338#issuecomment-2` }).status, 'requested');
+  assert.equal(commentWrites(f.state).length, 1);
+});
+
+test('reservation metadata fits label limits at maximum PR and task lengths without truncating an ID', () => {
+  const taskId = 'a'.repeat(80);
+  const target = { pr: 999999999, taskId, round: 3, head: HEAD };
+  const reserved = reservationFor('request', target);
+  assert.ok(reserved.name.length <= 50);
+  assert.ok(reserved.description.length <= 100);
+  assert.equal(reserved.description, `chappy-ai-handoff:v2 request 999999999 3 ${HEAD}`);
+  const f = fixture(); f.state.pr = target.pr;
+  f.state.reservations.set(reserved.name, reserved);
+  const unknown = f.helper.inspect({ pr: String(target.pr) }).requestReservations[0];
+  assert.equal(unknown.taskId, null);
+  assert.equal(unknown.pr, target.pr);
+  assert.equal(unknown.round, 3);
+  assert.equal(unknown.head, HEAD);
+  assert.equal(unknown.requestKeyHash, reserved.name.slice('ai-staff-rq-'.length));
+  f.comment(format({ schema: SCHEMA, kind: 'request', sender: 'chappy', receiver: 'claude', ...target,
+    action: 'review', scope: ['scripts/example.cjs'], authorizationUrl: AUTH }));
+  assert.equal(f.helper.inspect({ pr: String(target.pr) }).requestReservations[0].taskId, taskId);
+  const invalid = fixture();
+  assert.throws(() => invalid.helper.request({ ...REQUEST, 'task-id': 'a'.repeat(81) }), /invalid_task_id/);
+  assert.throws(() => reservationFor('request', { ...target, pr: 1000000000 }), /invalid_pr/);
+  assert.equal(invalid.state.calls.length, 0);
   assert.equal(writes(f.state).length, 0);
 });
 
