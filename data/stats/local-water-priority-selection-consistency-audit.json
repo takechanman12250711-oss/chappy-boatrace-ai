@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "version": "local-water-priority-selection-consistency-audit-v1",
-  "generatedAt": "2026-11-12T08:03:59.817Z",
+  "generatedAt": "2026-11-13T02:20:30.571Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
   "methodology": "当地・水面の同一確定コホートで、実5・6号艇勝ちが同じ保存済み候補配列内で最終頭以上のpriorityScoreを持ちながら未選択だった例だけを対象に、締切前保存済みの選択フラグ・除外理由・配列順・役割・重複信号を監査する。",
   "sourceVersion": "local-water-outer-head-priority-score-audit-v1",
-  "sourceGeneratedAt": "2026-11-12T07:23:40.602Z",
+  "sourceGeneratedAt": "2026-11-13T01:20:31.090Z",
   "sourceNextStep": "audit-local-water-priority-selection-consistency",
   "applicable": true,
   "fixedDecisionRules": {
@@ -20,42 +20,42 @@
     "explicitRejectionCountForContractAudit": 5
   },
   "metrics": {
-    "sourceComparableCount": 226,
-    "targetCount": 66,
-    "predictionMatchedCount": 66,
-    "resolvedPairCount": 66,
+    "sourceComparableCount": 231,
+    "targetCount": 68,
+    "predictionMatchedCount": 68,
+    "resolvedPairCount": 68,
     "strictInversionCount": 8,
-    "tiedCount": 58,
+    "tiedCount": 60,
     "explicitWinnerRejectionCount": 0,
     "explicitWinnerSelectedCount": 0,
     "explicitFinalSelectedCount": 0,
-    "duplicateSignalCount": 23,
-    "tieFinalEarlierCount": 58,
+    "duplicateSignalCount": 24,
+    "tieFinalEarlierCount": 60,
     "tieWinnerEarlierCount": 0,
     "tieSameIndexCount": 0,
     "winnerRoleLowerPriorityCount": 0,
     "resolvedPairCoverageRate": 100,
-    "strictInversionRate": 12.1,
-    "tiedRate": 87.9,
-    "duplicateSignalShare": 34.8,
+    "strictInversionRate": 11.8,
+    "tiedRate": 88.2,
+    "duplicateSignalShare": 35.3,
     "tieFinalEarlierShare": 100,
     "winnerRoleLowerPriorityShare": 0
   },
   "classifications": {
-    "tie-final-earlier-order": 58,
+    "tie-final-earlier-order": 60,
     "winner-ahead-selector-inversion": 8
   },
   "signalCounts": {
-    "same-role-class": 66,
-    "final-earlier": 65,
-    "priority-score-tied": 58,
-    "duplicate-overlap": 23,
+    "same-role-class": 68,
+    "final-earlier": 67,
+    "priority-score-tied": 60,
+    "duplicate-overlap": 24,
     "winner-score-ahead": 8,
     "winner-earlier": 1
   },
   "comparisonPathCounts": {
-    "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches": 23,
-    "practicalSelection.targetDecisions[1].candidateDecisions": 14,
+    "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches": 24,
+    "practicalSelection.targetDecisions[1].candidateDecisions": 15,
     "practicalSelection.targetDecisions[0].candidateDecisions": 13,
     "practicalSelection.targetDecisions[2].candidateDecisions": 6,
     "practicalSelection.targetDecisions[4].candidateDecisions": 5,
@@ -2949,6 +2949,95 @@
       "signals": [
         "winner-score-ahead",
         "winner-earlier",
+        "same-role-class"
+      ]
+    },
+    {
+      "date": "20261112",
+      "jcd": "04",
+      "raceNo": 5,
+      "actualHead": 5,
+      "finalHead": 3,
+      "comparisonPath": "practicalSelection.targetDecisions[1].candidateDecisions",
+      "upstreamWinnerScore": 90,
+      "upstreamFinalScore": 90,
+      "upstreamGap": 0,
+      "upstreamWinnerAhead": false,
+      "upstreamTied": true,
+      "upstreamDuplicateReason": false,
+      "resolved": true,
+      "rankingArrayLength": 10,
+      "resolvedWinnerScore": 90,
+      "resolvedFinalScore": 90,
+      "resolvedGap": 0,
+      "winnerIndex": 9,
+      "finalIndex": 3,
+      "orderRelation": "final-earlier",
+      "winnerRole": "unclassified",
+      "finalRole": "unclassified",
+      "winnerSelectionState": {
+        "selected": false,
+        "rejected": false,
+        "duplicate": false
+      },
+      "finalSelectionState": {
+        "selected": false,
+        "rejected": false,
+        "duplicate": false
+      },
+      "winnerReasons": [],
+      "finalReasons": [],
+      "classification": "tie-final-earlier-order",
+      "signals": [
+        "priority-score-tied",
+        "final-earlier",
+        "same-role-class"
+      ]
+    },
+    {
+      "date": "20261112",
+      "jcd": "22",
+      "raceNo": 6,
+      "actualHead": 5,
+      "finalHead": 3,
+      "comparisonPath": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+      "upstreamWinnerScore": 93,
+      "upstreamFinalScore": 93,
+      "upstreamGap": 0,
+      "upstreamWinnerAhead": false,
+      "upstreamTied": true,
+      "upstreamDuplicateReason": true,
+      "resolved": true,
+      "rankingArrayLength": 133,
+      "resolvedWinnerScore": 93,
+      "resolvedFinalScore": 93,
+      "resolvedGap": 0,
+      "winnerIndex": 108,
+      "finalIndex": 11,
+      "orderRelation": "final-earlier",
+      "winnerRole": "unclassified",
+      "finalRole": "unclassified",
+      "winnerSelectionState": {
+        "selected": false,
+        "rejected": false,
+        "duplicate": true
+      },
+      "finalSelectionState": {
+        "selected": false,
+        "rejected": false,
+        "duplicate": true
+      },
+      "winnerReasons": [
+        "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 6号艇のpickup・93点・6コース最内差し・道中拾い / 道中指数上位 / 水面荒れで拾い上昇 / 既存フォーメーションに同一買い目あり"
+      ],
+      "finalReasons": [
+        "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 6号艇のpickup・93点・6コース最内差し・道中拾い / 道中指数上位 / 水面荒れで拾い上昇 / 既存フォーメーションに同一買い目あり"
+      ],
+      "classification": "tie-final-earlier-order",
+      "signals": [
+        "priority-score-tied",
+        "duplicate-overlap",
+        "final-earlier",
         "same-role-class"
       ]
     }
