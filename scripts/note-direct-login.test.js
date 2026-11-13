@@ -3,7 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { loadLoginConfig, signIn, runDirectAuth, NOTE_LOGIN_URL } = require('./note-direct-login');
 
-function fakePage({ after = 'https://note.com/', form = true, enabled = true } = {}) {
+function fakePage({ after = 'https://note.com/', form = true, enabled = true, botCheck = 0 } = {}) {
   const state = { url: 'about:blank', filled: {}, clicks: 0, visited: [] };
   const field = name => ({ waitFor: async () => {}, count: async () => (form ? 1 : 0),
     fill: async value => { state.filled[name] = value; } });
@@ -14,7 +14,8 @@ function fakePage({ after = 'https://note.com/', form = true, enabled = true } =
     getByLabel: label => field(label),
     getByRole: () => ({ count: async () => (form ? 1 : 0), isEnabled: async () => enabled,
       click: async () => { state.clicks++; state.url = after; } }),
-    waitForURL: async () => {}
+    waitForURL: async () => {},
+    locator: () => ({ count: async () => botCheck })
   };
   return page;
 }
@@ -35,6 +36,7 @@ test('one sign-in attempt, accepted only when note leaves the login page', async
   assert.deepEqual(ok.state.filled, { 'メールアドレス または note ID': 'a@example.invalid', 'パスワード': 'secret-value' });
   for (const [page, pattern] of [
     [fakePage({ after: 'https://note.com/login' }), /^note_login_not_accepted$/],
+    [fakePage({ after: 'https://note.com/login', botCheck: 1 }), /^note_login_bot_check$/],
     [fakePage({ after: 'https://accounts.example.invalid/check?x=secret' }), /^note_login_left_note_accounts\.example\.invalid$/],
     [fakePage({ form: false }), /^note_login_form_not_found$/],
     [fakePage({ enabled: false }), /^note_login_button_disabled$/]

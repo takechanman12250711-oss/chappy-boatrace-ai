@@ -37,7 +37,13 @@ async function signIn(page, config) {
   await page.waitForURL(url => !/\/login\/?$/.test(new URL(String(url)).pathname), { timeout: 30000 }).catch(() => {});
   const url = page.url();
   if (hostOf(url) !== 'note.com') throw new Error(`note_login_left_note_${hostOf(url)}`);
-  if (/\/login\/?$/.test(new URL(url).pathname)) throw new Error('note_login_not_accepted');
+  if (/\/login\/?$/.test(new URL(url).pathname)) {
+    // Tell a bot check apart from a rejected password: the next step differs.
+    const botCheck = await page.locator(
+      'textarea[name="g-recaptcha-response"], iframe[src*="recaptcha"], iframe[src*="hcaptcha"], iframe[src*="turnstile"]'
+    ).count().catch(() => 0);
+    throw new Error(botCheck > 0 ? 'note_login_bot_check' : 'note_login_not_accepted');
+  }
   return true;
 }
 
