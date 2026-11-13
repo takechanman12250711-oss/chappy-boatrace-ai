@@ -1,5 +1,7 @@
 # 作業の引き継ぎ
 
+- 2026-11-13本人依頼の双方の無人起動は `docs/ai-staff-claude-cloud-task.md` に従う。既存の毎時チャッピー勤務と、本人が保存する専用ラベル限定のClaude公式Cloud scheduled taskを接続する。依頼・claim・receiptは `scripts/ai-staff-handoff.cjs` で同じPRとheadを照合し、最大3往復と重複停止を維持する。タスク保存や実行URLの未確認を接続完了と扱わず、既存の提案下書きやGitHub→Work受信を上書きしない。
+
 - 現在の依頼を最新main → 関連する最新PR → 申し継ぎの順に照合する。「続き」は合意済みの未完了作業を指す。追加要望を元の目的に組み込み、完了済みの別作業へ移らない。
 - AI社員での運用・チームへの依頼は共有 `chappy-ai-staff` スキルと `docs/ai-staff-operations.md` に従う。社員名と担当は `staff.html` を維持し、必要な担当だけへ委任する。同じファイルの編集担当は1名とし、実行・検査・引き継ぎの証拠を残す。定義の追加だけで常時稼働やClaude/Codex認証が成立したとは扱わない。
 - note自動化では最初に `docs/note-automation.md` と `.agents/skills/chappy-note-publish/SKILL.md` を読む。完了済みの収集・監視・原稿生成・handoffを作り直さず、認証と最終投稿の未接続部分を進める。

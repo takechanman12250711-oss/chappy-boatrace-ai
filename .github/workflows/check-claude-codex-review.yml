@@ -5,6 +5,8 @@ on:
     paths:
       - scripts/claude-codex-review.cjs
       - tests/claude-codex-review.test.cjs
+      - scripts/ai-staff-handoff.cjs
+      - tests/ai-staff-handoff.test.cjs
       - scripts/check-ai-staff.cjs
       - scripts/check-note-skills.js
       - .claude/agents/**
@@ -12,6 +14,9 @@ on:
       - .claude/skills/chappy-ai-staff/**
       - docs/ai-staff-operations.md
       - docs/ai-staff-autonomous.md
+      - docs/ai-staff-claude-cloud-task.md
+      - docs/ai-staff-claude-cloud-prompt.txt
+      - docs/ai-staff-chappy-handoff-prompt.txt
       - staff.html
       - .agents/skills/claude-codex-review/**
       - .claude/skills/claude-codex-review/**
@@ -35,6 +40,8 @@ jobs:
             scripts/check-ai-staff.cjs
             scripts/check-note-skills.js
             tests/claude-codex-review.test.cjs
+            scripts/ai-staff-handoff.cjs
+            tests/ai-staff-handoff.test.cjs
             .agents/skills/
             .claude/skills/
             .claude/agents/
@@ -48,6 +55,8 @@ jobs:
         run: |
           node --check scripts/claude-codex-review.cjs
           node --test tests/claude-codex-review.test.cjs
+          node --check scripts/ai-staff-handoff.cjs
+          node --test tests/ai-staff-handoff.test.cjs
           cmp .agents/skills/claude-codex-review/SKILL.md .claude/skills/claude-codex-review/SKILL.md
       - name: Check AI staff profiles and shared instructions without model calls
         run: |
