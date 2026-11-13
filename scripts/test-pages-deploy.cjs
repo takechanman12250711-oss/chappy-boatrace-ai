@@ -35,7 +35,7 @@ test('GITHUB_TOKEN data writers have an explicit completed-run route', () => {
     'live-note.yml', 'collect-predictions.yml', 'collect-results.yml',
     'build-continuous-performance-ledger.yml', 'build-race-insight-report.yml',
     'build-learning-analysis-pipeline.yml', 'build-boat-data-site.yml',
-    'build-boat-data-before.yml',
+    'build-boat-data-before.yml', 'build-note-publish-handoff.yml',
   ];
   const configuredNames = [...section.matchAll(/^      - (.+)$/gm)].map(m => m[1]);
   const actualNames = writerFiles.map(file => read(`.github/workflows/${file}`).match(/^name: (.+)$/m)[1]);

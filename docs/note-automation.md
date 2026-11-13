@@ -449,3 +449,16 @@ Browser Useの残高不足（`browser_use_create_failed_402`）で、接続前�
 - 公開設定画面でタグ欄を読むだけの観測（`scripts/note-hashtag-observation.js`）を、価格設定の後・公開クリックの前に追加した。入力・クリック・フォーカスはせず、最大3秒、失敗しても公開を止めない。ログ `NOTE_UI_HASHTAG_FIELD=` に、タグ欄の個数・要素の種類・フォーム内かどうか・フォームの送信ボタン数だけを出す（画面の文言は出さない）。タグ入力はまだ接続していない。次に公開が成功した実行のログで、Enterが投稿を確定させ得る構造かを判断する。
 - Browser Useのセッション作成が拒否された場合、エラーに応答の短い理由コードだけを付ける（例 `browser_use_create_failed_402_<code>`）。残高や上限の金額、メッセージ本文はログに出さない。2026-11-11は公開11回に加え、無料一覧の更新（Update note marketing）も同じ402で失敗している。理由コードが取れるのはこの変更のmain反映後の実行から。
 - 検証: `node --test scripts/note-hashtag-observation.test.js` と `node scripts/note-github-ui-transport.test.js`。
+
+## 2026-11-12 無料の全レース予想を自分のサイトにも掲載（本人依頼「すぐ始めて」）
+
+Browser Useの残高切れ（402）でnote公開が止まったことを受け、ブラウザ・ログイン・外部サービスを使わない掲載先を追加した。noteの公開処理・予約・検証は変更していない（並行して動く）。
+
+- `scripts/build-site-articles.js` が既存 `Build note publish handoff` の中で動き、当日（JST）の候補を `publicationPayload` で実時計監査してから `data/site-articles/<日付>.json` と `latest.json` へ保存する。新しいworkflow・cron・有料契約は追加していない。このステップが失敗してもnoteのhandoff保存は続ける（continue-on-error）。
+- 掲載条件はnote公開と同じ：保存原本のSHA一致、展示後、中心の買い目1〜7点、締切120秒超、無料版（readable-v7）。本文と買い目はnote記事と同じバイト。最初に保存した内容は書き換えず、同じレース・種類は1回だけ保存する。これは生成時点の条件で、生成が締切の120秒より前であることまでを確認する。保存後のcommit・push・Pages反映は後から起きるため、サイトでの初回表示が締切後になる場合を排除しない（実際の初配信時刻は未確認）。
+- 表示は `yosou.html`（今日の予想）。本文は文字として挿入し、リンクは https のみ。締切前／すべての切り替え、予想の保存時刻（`savedAt`、生成時刻であり公開時刻ではない）と保存原本SHAの先頭を表示する。
+- 実データでの試算（2026-11-12の候補88件、各レースの選定1分後の時刻で判定）：掲載13件、中心の買い目が8点以上で対象外63件、監査で対象外12件。「全レース」が載るわけではなく、現行のnote公開条件を満たしたものだけが載る。条件の変更は別の承認が必要。
+- 未接続：トップ画面やnote・Xの告知からこのページへの導線、過去日の一覧、成績ページとの連携。main反映後の実際の掲載確認も別に報告する。
+- 検証: `node --test scripts/build-site-articles.test.js`、`node scripts/test-pages-publish-scope.js`。
+
+- 2026-11-12 レビュー指摘への対応（PR #1458）：(1) サイト出力が無い初回でもnoteのhandoff保存が止まらないよう、`data/site-articles` は存在するときだけstageする。(2) 記事の時刻は `savedAt`（生成時刻）とし、公開時刻・締切前公開とは表示しない。保存後のcommit・push・Pages反映は後から起き、匿名画面での表示時刻は照合していない。締切前に実際に表示されたことの証明（配信対象head・匿名本文・時刻のreceipt）は未実装で、締切前公開の実績として数えない。(3) GITHUB_TOKENのpushは別workflowを起動しないため、`Deploy site (GitHub Pages)` の起動元に `Build note publish handoff` を追加した。反映までの実際の所要時間は未計測。

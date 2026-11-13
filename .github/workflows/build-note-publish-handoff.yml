@@ -9,6 +9,7 @@ on:
       - "scripts/build-note-publish-handoff.js"
       - "scripts/build-note-mcp-markdown.js"
       - "scripts/build-note-iphone-handoff.js"
+      - "scripts/build-site-articles.js"
       - "data/note-drafts/**"
   workflow_run:
     workflows:
@@ -53,14 +54,29 @@ jobs:
           node scripts/build-note-mcp-markdown.js
           node scripts/build-note-iphone-handoff.js
 
+      # Free race articles on our own site (no browser, login or outside service).
+      - name: Build site articles
+        # A failure here must never hold back the note handoff below.
+        continue-on-error: true
+        run: |
+          node --test scripts/build-site-articles.test.js
+          node scripts/build-site-articles.js
+
       - name: Save handoffs only when changed
         run: |
-          if [ -z "$(git status --porcelain -- data/note-publish/latest.json data/note-publish/latest.md data/note-publish/iphone.json)" ]; then
+          if [ -z "$(git status --porcelain -- data/note-publish/latest.json data/note-publish/latest.md data/note-publish/iphone.json data/site-articles)" ]; then
             echo "note投稿受け渡しに変更はありません"
             exit 0
           fi
 
           git add data/note-publish/latest.json data/note-publish/latest.md data/note-publish/iphone.json
+          # The site output is optional: it does not exist until the first
+          # article qualifies, and its absence must not stop the note handoff.
+          if [ -d data/site-articles ]; then git add data/site-articles; fi
+          if git diff --cached --quiet; then
+            echo "保存する変更はありません"
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Build note publish handoff"
