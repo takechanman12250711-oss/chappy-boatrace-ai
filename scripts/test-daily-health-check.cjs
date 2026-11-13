@@ -75,3 +75,16 @@ test('確認するレースの日：予約実行が深夜にずれたら前日�
   // 朝 8 時以降 → その日
   assert.equal(raceDayJst(new Date('2026-11-05T23:00:00Z')), '20261106');
 });
+
+test('見張り役のIssue：定期報告（週次集計）と健康チェック自身は異常に数えない', () => {
+  const { filterWatchIssues } = require('./daily-health-check.cjs');
+  const bot = { login: 'github-actions[bot]' };
+  const out = filterWatchIssues([
+    { number: 1, title: '📊 週次集計（自動）', user: bot },
+    { number: 2, title: '🩺 毎日の健康チェック：異常あり', user: bot },
+    { number: 3, title: '収集が止まっています', user: bot },
+    { number: 4, title: '人が開いたIssue', user: { login: 'someone' } },
+    { number: 5, title: 'PR', user: bot, pull_request: {} },
+  ]);
+  assert.deepStrictEqual(out.map((i) => i.number), [3]);
+});

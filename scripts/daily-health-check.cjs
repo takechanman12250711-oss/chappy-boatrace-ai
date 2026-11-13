@@ -95,6 +95,18 @@ function findNoteError(log) {
   return m ? m[1] : '';
 }
 
+// いつも開いたままにしておく「定期報告」用の Issue（異常の知らせではない）。
+// 例：週次集計は「閉じないでください」と書いてあり、毎週コメントが足される。
+const STANDING_REPORT_TITLES = ['📊 週次集計（自動）'];
+
+// 自動で開かれた Issue のうち、異常の知らせとして数えるものだけを残す。
+function filterWatchIssues(issues) {
+  return (issues || []).filter((i) => !i.pull_request
+    && i.title !== ISSUE_TITLE
+    && !STANDING_REPORT_TITLES.includes(i.title)
+    && i.user && i.user.login === 'github-actions[bot]');
+}
+
 function buildReport(results, now) {
   const bad = results.filter((r) => !r.ok);
   const lines = [];
@@ -169,8 +181,7 @@ function collect(now) {
     }));
   }
   results.push(safe('チャッピー：見張り役のIssue', () => {
-    const issues = ghJson(`repos/${CHAPPY}/issues?state=open&per_page=50`)
-      .filter((i) => !i.pull_request && i.title !== ISSUE_TITLE && i.user && i.user.login === 'github-actions[bot]');
+    const issues = filterWatchIssues(ghJson(`repos/${CHAPPY}/issues?state=open&per_page=50`));
     if (issues.length === 0) return { label: 'チャッピー：見張り役のIssue', ok: true, text: '開いているものなし' };
     return {
       label: 'チャッピー：見張り役のIssue',
@@ -237,3 +248,4 @@ function main() {
 if (require.main === module) main();
 
 module.exports = { judgeRegular, judgeManual, judgeRelay, findNoteError, buildReport, jstDate, raceDayJst, ISSUE_TITLE };
+module.exports.filterWatchIssues = filterWatchIssues;
