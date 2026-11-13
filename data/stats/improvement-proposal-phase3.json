@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-12T23:13:09.103Z",
+  "generatedAt": "2026-11-13T03:08:08.045Z",
   "source": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json",
   "analysisInputContract": "official-pre-deadline-cohort-v1",
   "deduplication": "predictions-preferred-over-verificationPredictions",
@@ -12,8 +12,8 @@
       "source-fetched-at-or-after-deadline": 5,
       "timestamp-missing": 7
     },
-    "officialResultCount": 5319,
-    "settledJoinCount": 5319,
+    "officialResultCount": 5321,
+    "settledJoinCount": 5321,
     "deduplication": "predictions-preferred-over-verificationPredictions",
     "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json"
   },
@@ -21,7 +21,7 @@
   "engineVersion": "improvement-proposal-phase3-20260818-root-cause-priority",
   "status": "proposal-candidates-ready",
   "minimumRaceCount": 100,
-  "settledRaceCount": 5319,
+  "settledRaceCount": 5321,
   "remainingRaceCount": 0,
   "proposals": [
     {
@@ -29,7 +29,7 @@
       "label": "当地補正不足",
       "theory": "当地・水面理論",
       "sampleCount": 3344,
-      "occurrenceRate": 62.9,
+      "occurrenceRate": 62.8,
       "priority": "high",
       "improvementCandidate": "場・風・波・潮の補正条件を再検証",
       "expectedEffect": "場別回収率の改善余地を検証",
@@ -89,7 +89,7 @@
       "label": "ST補正不足",
       "theory": "ST・スリット理論",
       "sampleCount": 822,
-      "occurrenceRate": 15.5,
+      "occurrenceRate": 15.4,
       "priority": "medium",
       "improvementCandidate": "ST差とスリット隊形の補正条件を再検証",
       "expectedEffect": "1着・攻め艇一致率の改善余地を検証",
@@ -106,14 +106,14 @@
       "code": "ticket-coverage-insufficient",
       "label": "買い目不足",
       "theory": "買い目構成",
-      "sampleCount": 3976,
-      "occurrenceRate": 74.8,
+      "sampleCount": 3977,
+      "occurrenceRate": 74.7,
       "priority": "high",
       "improvementCandidate": "展開内の残し・拾い不足を再検証",
       "expectedEffect": "実戦厳選的中率の改善余地を検証",
       "confidenceBreakdown": {
         "high": 112,
-        "medium": 3864,
+        "medium": 3865,
         "low": 0
       },
       "diagnosticOnly": true,
