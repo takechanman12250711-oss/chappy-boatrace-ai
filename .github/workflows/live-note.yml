@@ -63,6 +63,8 @@ on:
       - 'js/note-generator.js'
       - 'scripts/note-publication-audit.js'
       - 'scripts/dispatch-ready-note.js'
+      - 'scripts/site-article-publish*'
+      - 'config/site-publish.json'
       - 'scripts/prepare-note-input.js'
       - 'scripts/omura-reference.cjs'
       - 'scripts/collect-omura-reference.cjs'
@@ -128,6 +130,8 @@ on:
       - 'js/note-generator.js'
       - 'scripts/note-publication-audit.js'
       - 'scripts/dispatch-ready-note.js'
+      - 'scripts/site-article-publish*'
+      - 'config/site-publish.json'
       - 'scripts/test-note-source-concurrency.js'
       - 'scripts/prepare-note-input.js'
       - 'scripts/omura-reference.cjs'
@@ -188,6 +192,7 @@ jobs:
             data/outer-attack-sources
             data/verification-coverage
             data/note-publish
+            data/site-articles
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -204,6 +209,7 @@ jobs:
           node scripts/test-outer-attack-research.js
           node scripts/test-exhibition-candidate24.js
           node scripts/test-note-publication-audit.js
+          node --test scripts/site-article-publish.test.cjs
           node --require ./js/frame-rise-fall-replay-preload.js -e "const c = require('./scripts/collect-predictions'); for (const k of ['SHADOW_LOGIC_FINGERPRINT', 'SHADOW_REFERENCE_DATA_FINGERPRINT', 'SHADOW_REFERENCE_GENERATION_ID']) if (!c[k] || c[k] === 'unavailable') throw new Error(k);"
       - name: Verify current official inputs without saving or publishing
         if: github.event_name == 'pull_request'
@@ -220,11 +226,15 @@ jobs:
       - name: Save immutable evidence independently of publication audit
         if: always() && github.event_name != 'pull_request'
         run: node scripts/save-live-verification-sources.js
-      - name: Save only audited note source and start existing publisher
+      # 2026-11-12: note auto-posting needs paid Browser Use (balance $0).
+      # Publish the same audited article on our own free site and announce it on X via Buffer Free.
+      - name: Save only audited note source and publish it on the site
         if: github.event_name != 'pull_request'
         env:
           NOTE_CLAIM_TOKEN: ${{ github.token }}
           NOTE_SOURCE_ISOLATED: 'true'
+          PUBLICATION_TARGET: site
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
         run: node scripts/dispatch-ready-note.js
 
       - name: Prepare autonomous research snapshots after publication handoff
