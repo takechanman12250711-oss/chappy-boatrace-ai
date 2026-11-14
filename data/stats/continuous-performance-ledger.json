@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "analysisId": "continuous-performance-ledger-v1",
-  "generatedAt": "2026-11-13T06:54:23.900Z",
+  "generatedAt": "2026-11-14T02:19:42.490Z",
   "productionChanged": false,
   "automaticProductionChange": false,
   "policy": {
@@ -11,16 +11,16 @@
     "stakePerTicketYen": 100
   },
   "diagnostics": {
-    "canonicalPredictionCount": 4823,
-    "preDeadlinePredictionCount": 4805,
+    "canonicalPredictionCount": 4837,
+    "preDeadlinePredictionCount": 4819,
     "excludedPredictionCount": 18,
     "excludedReasons": {
       "captured-at-or-after-deadline": 6,
       "source-fetched-at-or-after-deadline": 5,
       "timestamp-missing": 7
     },
-    "officialResultCount": 4735,
-    "settledJoinCount": 4735,
+    "officialResultCount": 4774,
+    "settledJoinCount": 4774,
     "deduplication": "predictions-preferred-over-verificationPredictions",
     "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json",
     "selectionBasis": "saved practicalTickets/practicalSelection.tickets only",
@@ -29,22 +29,22 @@
     "missingPracticalTicketCount": 2
   },
   "cumulative": {
-    "races": 4733,
-    "hits": 1160,
-    "hitRate": 24.51,
-    "stakeYen": 4091700,
-    "returnYen": 3092930,
-    "profitYen": -998770,
-    "roi": 75.59
+    "races": 4772,
+    "hits": 1169,
+    "hitRate": 24.5,
+    "stakeYen": 4126100,
+    "returnYen": 3126830,
+    "profitYen": -999270,
+    "roi": 75.78
   },
   "rolling100": {
     "races": 100,
-    "hits": 27,
-    "hitRate": 27,
-    "stakeYen": 88500,
-    "returnYen": 63580,
-    "profitYen": -24920,
-    "roi": 71.84
+    "hits": 25,
+    "hitRate": 25,
+    "stakeYen": 86900,
+    "returnYen": 74860,
+    "profitYen": -12040,
+    "roi": 86.14
   },
   "generationBreakdown": [
     {
@@ -59,13 +59,13 @@
     },
     {
       "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
-      "races": 1794,
-      "hits": 462,
-      "hitRate": 25.75,
-      "stakeYen": 1574300,
-      "returnYen": 1090030,
-      "profitYen": -484270,
-      "roi": 69.24
+      "races": 1833,
+      "hits": 471,
+      "hitRate": 25.7,
+      "stakeYen": 1608700,
+      "returnYen": 1123930,
+      "profitYen": -484770,
+      "roi": 69.87
     },
     {
       "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-v1\"]",
@@ -47440,6 +47440,66 @@
       "returnYen": 0
     },
     {
+      "raceKey": "20261113-03-1",
+      "selectedAt": "2026-11-12T21:11:20.019Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 7,
+      "actualTicket": "5-4-3",
+      "hit": false,
+      "stakeYen": 700,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-02-1",
+      "selectedAt": "2026-11-12T21:11:20.037Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 8,
+      "actualTicket": "3-2-1",
+      "hit": false,
+      "stakeYen": 800,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-04-1",
+      "selectedAt": "2026-11-12T21:11:20.248Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 7,
+      "actualTicket": "4-5-3",
+      "hit": false,
+      "stakeYen": 700,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-08-1",
+      "selectedAt": "2026-11-12T21:11:20.486Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 10,
+      "actualTicket": "1-5-4",
+      "hit": false,
+      "stakeYen": 1000,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-09-1",
+      "selectedAt": "2026-11-12T21:11:20.774Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 10,
+      "actualTicket": "2-4-1",
+      "hit": false,
+      "stakeYen": 1000,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-13-1",
+      "selectedAt": "2026-11-12T21:11:20.950Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 8,
+      "actualTicket": "4-5-3",
+      "hit": false,
+      "stakeYen": 800,
+      "returnYen": 0
+    },
+    {
       "raceKey": "20261113-10-1",
       "selectedAt": "2026-11-12T21:11:20.971Z",
       "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
@@ -47450,6 +47510,26 @@
       "returnYen": 6590
     },
     {
+      "raceKey": "20261113-16-1",
+      "selectedAt": "2026-11-12T21:11:21.310Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 7,
+      "actualTicket": "5-1-3",
+      "hit": false,
+      "stakeYen": 700,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-22-1",
+      "selectedAt": "2026-11-12T21:11:21.470Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 9,
+      "actualTicket": "1-5-4",
+      "hit": false,
+      "stakeYen": 900,
+      "returnYen": 0
+    },
+    {
       "raceKey": "20261113-23-1",
       "selectedAt": "2026-11-12T21:11:21.802Z",
       "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
@@ -47457,6 +47537,316 @@
       "actualTicket": "1-4-2",
       "hit": false,
       "stakeYen": 600,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-02-4",
+      "selectedAt": "2026-11-13T02:49:11.969Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 7,
+      "actualTicket": "1-2-3",
+      "hit": true,
+      "stakeYen": 700,
+      "returnYen": 2220
+    },
+    {
+      "raceKey": "20261113-04-4",
+      "selectedAt": "2026-11-13T02:49:11.989Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 10,
+      "actualTicket": "1-2-5",
+      "hit": false,
+      "stakeYen": 1000,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-03-3",
+      "selectedAt": "2026-11-13T02:49:12.344Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 10,
+      "actualTicket": "2-6-4",
+      "hit": false,
+      "stakeYen": 1000,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-09-4",
+      "selectedAt": "2026-11-13T02:49:13.282Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 8,
+      "actualTicket": "1-6-3",
+      "hit": false,
+      "stakeYen": 800,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-13-4",
+      "selectedAt": "2026-11-13T02:49:13.467Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 8,
+      "actualTicket": "4-3-2",
+      "hit": false,
+      "stakeYen": 800,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-10-8",
+      "selectedAt": "2026-11-13T02:49:13.573Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 10,
+      "actualTicket": "1-5-3",
+      "hit": false,
+      "stakeYen": 1000,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-22-4",
+      "selectedAt": "2026-11-13T02:49:14.192Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 10,
+      "actualTicket": "1-3-2",
+      "hit": false,
+      "stakeYen": 1000,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-23-8",
+      "selectedAt": "2026-11-13T02:49:14.573Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 8,
+      "actualTicket": "5-2-3",
+      "hit": false,
+      "stakeYen": 800,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-02-5",
+      "selectedAt": "2026-11-13T03:17:22.619Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 10,
+      "actualTicket": "1-4-5",
+      "hit": false,
+      "stakeYen": 1000,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-04-5",
+      "selectedAt": "2026-11-13T03:17:22.658Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 10,
+      "actualTicket": "2-5-1",
+      "hit": false,
+      "stakeYen": 1000,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-03-4",
+      "selectedAt": "2026-11-13T03:17:22.883Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 10,
+      "actualTicket": "1-2-3",
+      "hit": true,
+      "stakeYen": 1000,
+      "returnYen": 1690
+    },
+    {
+      "raceKey": "20261113-08-5",
+      "selectedAt": "2026-11-13T03:17:23.436Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 9,
+      "actualTicket": "5-4-3",
+      "hit": false,
+      "stakeYen": 900,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-09-5",
+      "selectedAt": "2026-11-13T03:17:23.617Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 8,
+      "actualTicket": "1-3-2",
+      "hit": false,
+      "stakeYen": 800,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-10-9",
+      "selectedAt": "2026-11-13T03:17:23.954Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 8,
+      "actualTicket": "2-4-3",
+      "hit": true,
+      "stakeYen": 800,
+      "returnYen": 5310
+    },
+    {
+      "raceKey": "20261113-13-5",
+      "selectedAt": "2026-11-13T03:17:24.127Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 10,
+      "actualTicket": "1-2-3",
+      "hit": true,
+      "stakeYen": 1000,
+      "returnYen": 490
+    },
+    {
+      "raceKey": "20261113-16-4",
+      "selectedAt": "2026-11-13T03:17:24.375Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 10,
+      "actualTicket": "2-4-5",
+      "hit": false,
+      "stakeYen": 1000,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-22-5",
+      "selectedAt": "2026-11-13T03:17:24.691Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 9,
+      "actualTicket": "4-3-5",
+      "hit": true,
+      "stakeYen": 900,
+      "returnYen": 6460
+    },
+    {
+      "raceKey": "20261113-23-9",
+      "selectedAt": "2026-11-13T03:17:25.117Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 10,
+      "actualTicket": "4-2-6",
+      "hit": false,
+      "stakeYen": 1000,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-04-8",
+      "selectedAt": "2026-11-13T04:51:06.429Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 10,
+      "actualTicket": "4-5-3",
+      "hit": false,
+      "stakeYen": 1000,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-02-8",
+      "selectedAt": "2026-11-13T04:51:06.459Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 10,
+      "actualTicket": "2-1-5",
+      "hit": true,
+      "stakeYen": 1000,
+      "returnYen": 13930
+    },
+    {
+      "raceKey": "20261113-03-8",
+      "selectedAt": "2026-11-13T04:51:06.693Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 8,
+      "actualTicket": "5-1-2",
+      "hit": false,
+      "stakeYen": 800,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-08-9",
+      "selectedAt": "2026-11-13T04:51:07.005Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 9,
+      "actualTicket": "3-4-5",
+      "hit": false,
+      "stakeYen": 900,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-07-1",
+      "selectedAt": "2026-11-13T04:51:07.020Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 8,
+      "actualTicket": "1-2-6",
+      "hit": true,
+      "stakeYen": 800,
+      "returnYen": 1500
+    },
+    {
+      "raceKey": "20261113-09-8",
+      "selectedAt": "2026-11-13T04:51:07.439Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 9,
+      "actualTicket": "1-5-2",
+      "hit": false,
+      "stakeYen": 900,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-13-8",
+      "selectedAt": "2026-11-13T04:51:07.809Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 7,
+      "actualTicket": "1-4-2",
+      "hit": false,
+      "stakeYen": 700,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-10-12",
+      "selectedAt": "2026-11-13T04:51:07.868Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 6,
+      "actualTicket": "1-3-4",
+      "hit": true,
+      "stakeYen": 600,
+      "returnYen": 1520
+    },
+    {
+      "raceKey": "20261113-16-7",
+      "selectedAt": "2026-11-13T04:51:08.254Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 9,
+      "actualTicket": "5-2-6",
+      "hit": false,
+      "stakeYen": 900,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-20-1",
+      "selectedAt": "2026-11-13T04:51:08.330Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 10,
+      "actualTicket": "5-4-1",
+      "hit": false,
+      "stakeYen": 1000,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-22-8",
+      "selectedAt": "2026-11-13T04:51:08.575Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 9,
+      "actualTicket": "1-2-3",
+      "hit": true,
+      "stakeYen": 900,
+      "returnYen": 780
+    },
+    {
+      "raceKey": "20261113-23-12",
+      "selectedAt": "2026-11-13T04:51:08.728Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 8,
+      "actualTicket": "1-5-4",
+      "hit": false,
+      "stakeYen": 800,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20261113-24-1",
+      "selectedAt": "2026-11-13T04:51:08.846Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\"]",
+      "ticketCount": 10,
+      "actualTicket": "1-4-2",
+      "hit": false,
+      "stakeYen": 1000,
       "returnYen": 0
     }
   ]
