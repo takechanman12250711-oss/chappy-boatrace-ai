@@ -56,7 +56,82 @@ function auditFixture(name, stage = auditStages[0], { unchanged = false, noRecei
   git(f.work, ['reset', '--hard', baseSha]);
   return { ...f, stage, baseSha, bundle, auditReport, receiptFile, output };
 }
+// This exception is valid only while the standalone PR CLI is not a builder
+// dependency. Inspect tracked content even when a sparse checkout omits it.
+function handoffReferences(directory) {
+  const paths = execFileSync('git', ['ls-files', '-z', '--', 'scripts', 'js', 'api', 'config',
+    '.github/workflows/collect-results.yml'], { cwd: directory, encoding: 'utf8' }).split('\0').filter(Boolean);
+  for (const required of ['scripts/build-prediction-calibration.js', 'js/prediction.js',
+    'api/result.js', 'config/chappy-charter.json', '.github/workflows/collect-results.yml'])
+    assert.ok(paths.includes(required), `Cannot verify builder independence without tracked ${required}`);
+  return paths.filter(file => {
+    if (['scripts/ai-staff-handoff.cjs', 'scripts/test-result-report-checkpoint.cjs'].includes(file)) return false;
+    const absolute = path.join(directory, file);
+    let content = fs.existsSync(absolute) ? fs.readFileSync(absolute, 'utf8') :
+      execFileSync('git', ['show', `:${file}`], { cwd: directory, encoding: 'utf8' });
+    if (file === 'scripts/result-report-checkpoint.cjs')
+      content = content.replace(/^const INDEPENDENT_HANDOFF = 'scripts\/ai-staff-handoff\.cjs';$/m, '');
+    return content.includes('ai-staff-handoff');
+  });
+}
 try {
+  assert.deepEqual(handoffReferences(path.resolve(__dirname, '..')), [],
+    'A builder now references the PR handoff CLI; remove its code-change exception before publishing');
+  const independent = fixture('handoff-dependency-contract');
+  for (const file of ['scripts/build-prediction-calibration.js', 'js/prediction.js',
+    'api/result.js', 'config/chappy-charter.json', '.github/workflows/collect-results.yml'])
+    write(independent.work, file, { independent: true });
+  const declaration = "const INDEPENDENT_HANDOFF = 'scripts/ai-staff-handoff.cjs';\n";
+  fs.writeFileSync(path.join(independent.work, 'scripts/result-report-checkpoint.cjs'), declaration);
+  commit(independent.work, 'tracked independent builder inputs');
+  fs.rmSync(path.join(independent.work, 'js/prediction.js'));
+  assert.deepEqual(handoffReferences(independent.work), [], 'sparse omissions are read from the Git index');
+  fs.writeFileSync(path.join(independent.work, 'scripts/builder.js'), "require('./ai-staff-handoff.cjs');\n");
+  assert.deepEqual(handoffReferences(independent.work), ['scripts/builder.js'], 'a new builder dependency fails the contract');
+  git(independent.work, ['restore', '--', 'scripts/builder.js']);
+  fs.writeFileSync(path.join(independent.work, 'scripts/result-report-checkpoint.cjs'), declaration +
+    "require('./ai-staff-handoff.cjs');\n");
+  assert.deepEqual(handoffReferences(independent.work), ['scripts/result-report-checkpoint.cjs'],
+    'only the exact exception declaration is exempt, not the checkpoint implementation');
+
+  for (const stage of ['diagnostics', 'calibration']) {
+    for (const operation of ['add', 'change']) {
+      const handoff = fixture(`handoff-${stage}-${operation}`);
+      const helper = path.join(handoff.work, 'scripts/ai-staff-handoff.cjs');
+      if (operation === 'change') {
+        fs.writeFileSync(helper, 'module.exports = { version: 1 };\n');
+        handoff.baseSha = commit(handoff.work, 'existing standalone PR CLI');
+      }
+      write(handoff.work, report, { built: true });
+      const output = path.join(root, `handoff-${stage}-${operation}.json`);
+      pack({ root: handoff.work, stage, output });
+      const bundle = JSON.parse(fs.readFileSync(output));
+      git(handoff.work, ['reset', '--hard', handoff.baseSha]);
+      fs.writeFileSync(helper, 'module.exports = { version: 2 };\n');
+      commit(handoff.work, 'unrelated PR CLI change');
+      const receipt = apply({ root: handoff.work, stage, baseSha: handoff.baseSha, bundle });
+      assert.deepEqual(receipt.files.map(file => file.path), [report]);
+      assert.equal(JSON.parse(fs.readFileSync(path.join(handoff.work, report))).built, true);
+      assert.deepEqual(JSON.parse(fs.readFileSync(path.join(handoff.work, 'data/predictions/20261005.json'))), { original: true });
+      assert.equal(fs.readFileSync(helper, 'utf8'), 'module.exports = { version: 2 };\n');
+    }
+    for (const file of ['scripts/ai-staff-handoff-extra.cjs', 'scripts/unknown-builder.cjs',
+      'scripts/builder.js', 'config/example.json']) {
+      const conflict = fixture(`handoff-conflict-${stage}-${path.basename(file)}`);
+      write(conflict.work, 'scripts/ai-staff-handoff.cjs', { unrelated: true });
+      write(conflict.work, file, { changed: true });
+      commit(conflict.work, 'relevant code change beside PR CLI');
+      const bundle = { ...conflict.bundle, stage };
+      assert.throws(() => apply({ root: conflict.work, stage, baseSha: conflict.baseSha, bundle }), /Builder code changed/);
+      assert.equal(git(conflict.work, ['status', '--porcelain']), '', 'code conflict stops before any report or receipt write');
+    }
+    const descendant = fixture(`handoff-directory-conflict-${stage}`);
+    write(descendant.work, 'scripts/ai-staff-handoff.cjs/unknown-builder.js', { changed: true });
+    commit(descendant.work, 'a directory at the exception path is not the standalone CLI');
+    assert.throws(() => apply({ root: descendant.work, stage, baseSha: descendant.baseSha,
+      bundle: { ...descendant.bundle, stage } }), /Builder code changed/);
+    assert.equal(git(descendant.work, ['status', '--porcelain']), '', 'directory descendants remain protected before writes');
+  }
   const f = fixture('new-prediction');
   write(f.work, 'data/predictions/20261005.json', { original: true, fresh: true });
   const liveSha = commit(f.work, 'live prediction'); git(f.work, ['push', 'origin', 'main']);
