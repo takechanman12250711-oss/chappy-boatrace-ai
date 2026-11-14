@@ -151,6 +151,52 @@ function modifiedPredictionSourceDates(
   return datesFromPaths(paths);
 }
 
+// Artifact checks must leave the prepared stage intact. Stop on new changes
+// instead of silently archiving or staging bytes that have not been validated.
+function verifyPreparedPredictionGitSave({
+  rootDirectory = process.cwd()
+} = {}) {
+  const options = {
+    cwd: rootDirectory,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+    env: {
+      ...process.env,
+      GIT_OPTIONAL_LOCKS: "0"
+    }
+  };
+  const tracked = spawnSync(
+    "git",
+    [
+      "diff", "--quiet", "--no-ext-diff", "--no-textconv",
+      "--exit-code", "--", "data/predictions"
+    ],
+    options
+  );
+  if (tracked.error || ![0, 1].includes(tracked.status)) {
+    throw new Error("予想のGit保存準備を照合できません（diff）");
+  }
+  if (tracked.status === 1) {
+    throw new Error("検証後に日次予想の未stage変更があります");
+  }
+
+  const untracked = spawnSync(
+    "git",
+    [
+      "ls-files", "--others", "--exclude-standard", "-z",
+      "--", "data/predictions"
+    ],
+    options
+  );
+  if (untracked.error || untracked.status !== 0) {
+    throw new Error("予想のGit保存準備を照合できません（ls-files）");
+  }
+  if (untracked.stdout.length > 0) {
+    throw new Error("検証後に日次予想の未stage新規ファイルがあります");
+  }
+  return { ok: true };
+}
+
 function cleanupRestoredPredictionSources({
   rootDirectory = process.cwd(),
   all = false,
@@ -370,6 +416,11 @@ function preparePredictionGitSave({
 }
 
 function main() {
+  if (archiveApi.hasFlag("verify-prepared")) {
+    verifyPreparedPredictionGitSave();
+    console.log("検証済み予想のGit stageを確認（再圧縮なし）");
+    return;
+  }
   const all = archiveApi.hasFlag("all");
   if (
     archiveApi.hasFlag(
@@ -430,6 +481,7 @@ module.exports = {
   datesFromPaths,
   outputLines,
   modifiedPredictionSourceDates,
+  verifyPreparedPredictionGitSave,
   cleanupRestoredPredictionSources,
   preparePredictionGitSave,
   main
