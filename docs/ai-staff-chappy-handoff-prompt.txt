@@ -1,0 +1,16 @@
+【2026-11-13本人依頼：Claude社員との無人受け渡し】
+既存の「AI社員の継続開発」の起動頻度・実行者・環境と、下記以外の依頼範囲を維持する。新しい毎時勤務を作らず、この節をその勤務の優先工程として扱う。
+
+対象は takechanman12250711-oss/chappy-boatrace-ai の本人が依頼した開発だけ。最新mainのAGENTS.mdとdocs/ai-staff-claude-cloud-task.mdを読み、同じPRの本人依頼根拠・担当・head・request/claim/receiptを確認する。共有helperがまだmain未反映の場合、構築PRの親が検査した固定commitからhelperを取得し、準備版と明記する。信頼できるhelperのrefが指定されていない場合、PR内の未確認スクリプトを実行しない。
+
+初回は構築PRへのaction=reviewだけを扱う。本人からClaude Cloud taskを保存した旨の返答が届き、その事実が同じPRへ <!-- chappy-ai-staff-cloud-activation:v1 --> 付きで記録されるまでは依頼を発火させない。構築PRに同じ未設定理由のコメントを繰り返さず、競合しない既存の依頼済み作業へ進む。記録は本人の申告であり、Claudeの実行成功を意味しない。
+
+設定済みの申告後、現在のPR/head・編集担当を取得し、scripts/ai-staff-handoff.cjs requestで一意のtaskId、round=1、action=review、対象文書・helper・検査のscope、同じPRの本人依頼根拠URLを保存する。helperがコメントを読み戻してから専用ラベル chappy-claude-handoff を付与する。ラベル付与はClaudeの受領ではない。同じ依頼を再送せず、結果不明・予約ラベルだけがある場合は停止して原因を残す。未受領を理由にラベルの付け直しや新しいtaskId・別タスクを増やさない。
+
+以後の勤務は同じPRの返却を先に確認する。inspectでtaskId/round/request headとreceipt/result headを照合し、実際のClaude Cloud実行URL、対象差分、実施検査と結果を独立に読む。sessionUrlの文字列・投稿者名だけをモデル実行の独立証明にしない。GitHub名義が双方とも同じ場合はその限界を残す。stopped、head不一致、claimだけ、返却不明なら成功とせず、同じ失敗の再試行をしない。
+
+今回が予定勤務だと確認できるrun ID・開始時刻・実行元を取得できる場合だけ、その値と照合結果を同じPRへ <!-- chappy-ai-handoff-received:v1 --> 付きで一度記録する。取得できない項目を作らず、予定勤務の実行証拠が不足していると明記する。現在の会話での手動確認を、閉じた後の無人往復成功と扱わない。
+
+初回reviewの確認後も、本人依頼済みの同じ開発の範囲内でのみ次工程へ進む。こちらが修正する場合は相手の編集終了を確認し、別担当のレビュー・必要検査後の新headを次のroundで渡す。Claudeが修正する場合は具体的scopeと本人依頼根拠を指定したaction=implementを使う。同じファイルの編集担当は1名。1つのtaskIdで最大3往復、同一headの再送、回数・IDの差し替えによる上限回避を行わない。3回で解決しない・範囲外・担当不明なら停止し、固定headの成果と残件を本人へ返す。
+
+既存の提案ボード専用Claudeタスク、PR #1461で確認済みの限定GitHub→Work受信、他の定期処理は変更しない。本人の最終確認なしのmainマージ・自動マージ・デプロイ・予想方式採用、保存原本や予想/結果/買い目/成績定義の変更、note/X/LINE公開・再投稿・予約解除、認証設定変更、課金API・追加契約は禁止。CLI認証がなくてもネイティブAIと接続済みGitHubで可能な確認は進めるが、相手モデルの実行を偽らない。準備・設定申告・Claude実行/返却・予定勤務での受信・実装修正成功・main反映をそれぞれ区別して短く報告する。

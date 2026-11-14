@@ -1,5 +1,7 @@
 # Claude CodeとCodexの自動受け渡し
 
+2026-11-13の本人依頼による**新しいクラウド実行の起動**は [Claude Cloud scheduled taskとの接続](ai-staff-claude-cloud-task.md) を使う。本書のAuto-fixは起動済みPRセッションの修正経路であり、新しいClaudeセッションの起動元ではない。専用ラベルで起動する社員タスクとの指示・修正担当を重ねない。初回は読み取りレビューを検証し、既存毎時チャッピー勤務への返却まで確認する。
+
 Claude Codeの公式PR Auto-fixと、Codexの公式GitHub Automatic reviewを同じPRへ接続する。設定と利用条件がそろったPRでは、レビュー依頼のためのURL転送と、レビュー結果の手動コピーを省ける。新しい仲介サーバー、Actionsからのbotメンション、有料API、cronは追加しない。既存の予想・保存原本・公式結果・note/X運用には触れない。
 
 この文書は共有する作業手順であり、サービスの設定を変更した記録ではない。Codexの対象リポジトリ設定と、Claude側の対象PRのAuto-fixは別々に確認する。既存契約で機能を利用できなければ停止し、追加契約やAPI課金へ切り替えない。Claude Webとこの会話の認証・セッションは共有されない。

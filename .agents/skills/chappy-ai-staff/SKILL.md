@@ -5,6 +5,8 @@ description: チャッピーのAI社員10人で仕事を分担し、成果・検
 
 # チャッピーAI社員の分業
 
+2026-11-13本人依頼の双方の無人起動では `docs/ai-staff-claude-cloud-task.md` を使う。既存の毎時勤務を受信側に保ち、本人がClaudeアカウント内で保存する専用ラベル限定Cloud scheduled taskへ同じPRを渡す。`scripts/ai-staff-handoff.cjs` のrequest・claim・receiptでheadと最大3往復を照合し、実際のClaude実行・返却と次回チャッピー勤務の受領を確認する。社員定義やラベル追加だけを稼働証拠にしない。既存の提案下書き・限定Work受信・他の停止タスクは変更しない。
+
 最初に最新mainの `AGENTS.md` と `docs/ai-staff-operations.md` を読む。社員の名前と担当は `staff.html` を維持し、既存のスキル・保存結果・Issue/PRを再利用する。
 
 1. 主担当はカイの統括役として、依頼の範囲・完了条件・作業ID・次の担当を整理する。単独で済む作業に全社員を起動しない。
