@@ -91,6 +91,7 @@ jobs:
           node scripts/note-publication-source.test.js
           node --test scripts/note-korogashi-presentation.test.cjs scripts/note-recovery-presentation.test.cjs
           node --test scripts/note-article-series.test.js
+          node --test scripts/note-direct-login.test.js
       - name: Check current handoff before opening a browser
         id: preflight
         env:
