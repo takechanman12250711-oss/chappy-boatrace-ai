@@ -86,12 +86,16 @@ assert.equal(later.fingerprint, failed.fingerprint, "unchanged conditions have a
 
 function mockGithub(issue) {
   const calls = [];
-  const github = { calls, paginate: async () => issue ? [issue] : [], rest: { issues: {
+  const github = { calls, paginate: async () => issue ? [{ user: { login: "github-actions[bot]" }, ...issue }] : [], rest: { issues: {
     listForRepo: () => {},
     create: async args => calls.push(["create", args]),
     createComment: async args => calls.push(["comment", args]),
     update: async args => calls.push(["update", args]),
-    listComments: async args => { calls.push(["readComments", args]); return { data: [{ body: issue.lastComment || "old" }] }; }
+    listComments: async args => {
+      calls.push(["readComments", args]);
+      return { data: issue.commentPages ? issue.commentPages[args.page] :
+        [{ body: issue.lastComment || "old", user: { login: "github-actions[bot]" } }] };
+    }
   } } };
   return github;
 }
@@ -116,6 +120,58 @@ async function main() {
   assert.deepEqual(github.calls.map(x => x[0]), ["comment", "update"]);
   assert.equal(github.calls[1][1].state, "closed");
   assert.equal(await runSync(mockGithub(), healthy), "healthy");
+
+  // A human/AI work record must not hide the existing alert in the issue body.
+  const notification = report => ({ body: render(report), user: { login: "github-actions[bot]" } });
+  const workRecord = body => ({ body, user: { login: "takechanman12250711-oss" } });
+  github = mockGithub({ number: 932, title: ISSUE_TITLE, comments: 1, body: render(failed),
+    commentPages: { 1: [workRecord("Investigation and CI results; the incident is still open.")] } });
+  assert.equal(await runSync(github, failed), "unchanged", "work records must not cause duplicate alerts");
+  assert.deepEqual(github.calls.map(x => x[0]), ["readComments"], "no write for an unchanged incident");
+
+  // Find the latest actual notification, not any historical matching marker.
+  const different = evaluate({ now, run: { ...failed.run, id: 101 }, jobs: cancelledJobs, results });
+  github = mockGithub({ number: 932, title: ISSUE_TITLE, comments: 3, body: render(failed),
+    commentPages: { 1: [notification(different), workRecord(render(failed)), workRecord("New progress")] } });
+  assert.equal(await runSync(github, failed), "commented", "A -> B -> A is a new transition");
+  assert.deepEqual(github.calls.map(x => x[0]), ["readComments", "comment"]);
+  github = mockGithub({ number: 932, title: ISSUE_TITLE, comments: 1, body: render(failed),
+    commentPages: { 1: [notification(healthy)] } });
+  assert.equal(await runSync(github, failed), "commented", "a failed close after recovery cannot hide a renewed error");
+
+  // Work records may fill the last page. Continue backwards across pages.
+  github = mockGithub({ number: 932, title: ISSUE_TITLE, comments: 101, body: render(different),
+    commentPages: { 1: [notification(failed)], 2: [workRecord("Progress without a notification")] } });
+  assert.equal(await runSync(github, failed), "unchanged");
+  assert.deepEqual(github.calls.filter(x => x[0] === "readComments").map(x => x[1].page), [2, 1]);
+  assert.ok(!github.calls.some(x => ["create", "comment", "update"].includes(x[0])));
+
+  // Neither manual lookalikes nor bot comments merely quoting a marker are state.
+  for (const ignored of [workRecord(render(different)),
+    { body: `Quoted report:\n${render(different)}`, user: { login: "github-actions[bot]" } },
+    { body: render(different).replace("<!-- chappy-result-watchdog:", "<!-- chappy-result-watchdog:bad"), user: { login: "github-actions[bot]" } }]) {
+    github = mockGithub({ number: 932, title: ISSUE_TITLE, comments: 2, body: render(different),
+      commentPages: { 1: [notification(failed), ignored] } });
+    assert.equal(await runSync(github, failed), "unchanged");
+    assert.deepEqual(github.calls.map(x => x[0]), ["readComments"]);
+  }
+
+  // Read failures and malformed pages must never cause a fallback write.
+  for (const badPage of [undefined, null, {}, "not comments", [null], [{ body: null }]]) {
+    github = mockGithub({ number: 932, title: ISSUE_TITLE, comments: 1, body: render(different),
+      commentPages: { 1: badPage } });
+    await assert.rejects(runSync(github, failed), /comment/i);
+    assert.deepEqual(github.calls.map(x => x[0]), ["readComments"]);
+  }
+  github = mockGithub({ number: 932, title: ISSUE_TITLE, comments: 1, body: render(different) });
+  const commentReadFailure = Object.assign(new Error("comment API unavailable"), { status: 503 });
+  github.rest.issues.listComments = async () => { throw commentReadFailure; };
+  await assert.rejects(runSync(github, failed), error => error === commentReadFailure);
+  assert.deepEqual(github.calls, []);
+  github = mockGithub({ number: 932, title: ISSUE_TITLE, comments: 10001, body: render(failed) });
+  await assert.rejects(runSync(github, failed), /comment history exceeds lookup limit/);
+  assert.equal(github.calls.length, 100, "history reads are bounded and cannot fall back to an unknown state");
+  assert.ok(github.calls.every(x => x[0] === "readComments"));
 
   // End-to-end adapter test: a delayed old event must use current run/main data.
   github = mockGithub();
