@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "version": "local-water-priority-selection-consistency-audit-v1",
-  "generatedAt": "2026-11-13T07:46:28.258Z",
+  "generatedAt": "2026-11-14T03:39:33.723Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
   "methodology": "当地・水面の同一確定コホートで、実5・6号艇勝ちが同じ保存済み候補配列内で最終頭以上のpriorityScoreを持ちながら未選択だった例だけを対象に、締切前保存済みの選択フラグ・除外理由・配列順・役割・重複信号を監査する。",
   "sourceVersion": "local-water-outer-head-priority-score-audit-v1",
-  "sourceGeneratedAt": "2026-11-13T07:07:25.423Z",
+  "sourceGeneratedAt": "2026-11-14T01:58:56.170Z",
   "sourceNextStep": "audit-local-water-priority-selection-consistency",
   "applicable": true,
   "fixedDecisionRules": {
@@ -20,41 +20,41 @@
     "explicitRejectionCountForContractAudit": 5
   },
   "metrics": {
-    "sourceComparableCount": 231,
-    "targetCount": 68,
-    "predictionMatchedCount": 68,
-    "resolvedPairCount": 68,
+    "sourceComparableCount": 236,
+    "targetCount": 69,
+    "predictionMatchedCount": 69,
+    "resolvedPairCount": 69,
     "strictInversionCount": 8,
-    "tiedCount": 60,
+    "tiedCount": 61,
     "explicitWinnerRejectionCount": 0,
     "explicitWinnerSelectedCount": 0,
     "explicitFinalSelectedCount": 0,
-    "duplicateSignalCount": 24,
-    "tieFinalEarlierCount": 60,
+    "duplicateSignalCount": 25,
+    "tieFinalEarlierCount": 61,
     "tieWinnerEarlierCount": 0,
     "tieSameIndexCount": 0,
     "winnerRoleLowerPriorityCount": 0,
     "resolvedPairCoverageRate": 100,
-    "strictInversionRate": 11.8,
-    "tiedRate": 88.2,
-    "duplicateSignalShare": 35.3,
+    "strictInversionRate": 11.6,
+    "tiedRate": 88.4,
+    "duplicateSignalShare": 36.2,
     "tieFinalEarlierShare": 100,
     "winnerRoleLowerPriorityShare": 0
   },
   "classifications": {
-    "tie-final-earlier-order": 60,
+    "tie-final-earlier-order": 61,
     "winner-ahead-selector-inversion": 8
   },
   "signalCounts": {
-    "same-role-class": 68,
-    "final-earlier": 67,
-    "priority-score-tied": 60,
-    "duplicate-overlap": 24,
+    "same-role-class": 69,
+    "final-earlier": 68,
+    "priority-score-tied": 61,
+    "duplicate-overlap": 25,
     "winner-score-ahead": 8,
     "winner-earlier": 1
   },
   "comparisonPathCounts": {
-    "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches": 24,
+    "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches": 25,
     "practicalSelection.targetDecisions[1].candidateDecisions": 15,
     "practicalSelection.targetDecisions[0].candidateDecisions": 13,
     "practicalSelection.targetDecisions[2].candidateDecisions": 6,
@@ -3032,6 +3032,53 @@
       ],
       "finalReasons": [
         "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 6号艇のpickup・93点・6コース最内差し・道中拾い / 道中指数上位 / 水面荒れで拾い上昇 / 既存フォーメーションに同一買い目あり"
+      ],
+      "classification": "tie-final-earlier-order",
+      "signals": [
+        "priority-score-tied",
+        "duplicate-overlap",
+        "final-earlier",
+        "same-role-class"
+      ]
+    },
+    {
+      "date": "20261113",
+      "jcd": "16",
+      "raceNo": 1,
+      "actualHead": 5,
+      "finalHead": 1,
+      "comparisonPath": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+      "upstreamWinnerScore": 84,
+      "upstreamFinalScore": 84,
+      "upstreamGap": 0,
+      "upstreamWinnerAhead": false,
+      "upstreamTied": true,
+      "upstreamDuplicateReason": true,
+      "resolved": true,
+      "rankingArrayLength": 165,
+      "resolvedWinnerScore": 84,
+      "resolvedFinalScore": 84,
+      "resolvedGap": 0,
+      "winnerIndex": 123,
+      "finalIndex": 3,
+      "orderRelation": "final-earlier",
+      "winnerRole": "unclassified",
+      "finalRole": "unclassified",
+      "winnerSelectionState": {
+        "selected": false,
+        "rejected": false,
+        "duplicate": true
+      },
+      "finalSelectionState": {
+        "selected": false,
+        "rejected": false,
+        "duplicate": true
+      },
+      "winnerReasons": [
+        "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 3号艇のpickup・84点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
+      ],
+      "finalReasons": [
+        "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 3号艇のpickup・84点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり"
       ],
       "classification": "tie-final-earlier-order",
       "signals": [
