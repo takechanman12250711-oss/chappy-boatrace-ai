@@ -1,30 +1,30 @@
 {
   "schemaVersion": 1,
   "version": "local-water-main-head-selection-audit-v1",
-  "generatedAt": "2026-11-13T06:58:58.586Z",
+  "generatedAt": "2026-11-14T02:17:10.714Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
   "methodology": "The same settled formal local-water cohort is traced with strict role semantics. A boat counts as a head only through an explicit head field, first-position ticket, head role, or eligible position 1; second/third/support mentions do not count as a head.",
   "metrics": {
-    "settledFormalEvidenceRaceCount": 3881,
-    "actualHead56Count": 342,
-    "actualHead5Count": 240,
+    "settledFormalEvidenceRaceCount": 3931,
+    "actualHead56Count": 349,
+    "actualHead5Count": 247,
     "actualHead6Count": 102,
-    "candidateActualHeadCount": 273,
-    "scenarioActualHeadCount": 326,
-    "selectedActualHeadCount": 95,
+    "candidateActualHeadCount": 280,
+    "scenarioActualHeadCount": 333,
+    "selectedActualHeadCount": 97,
     "finalAny56Count": 1,
     "finalCorrectCount": 1,
-    "candidateActualCoverageRate": 79.8,
-    "scenarioActualCoverageRate": 95.3,
+    "candidateActualCoverageRate": 80.2,
+    "scenarioActualCoverageRate": 95.4,
     "selectedActualCoverageRate": 27.8,
     "finalAny56Rate": 0.3,
     "finalCorrectRate": 0.3
   },
   "classifications": {
-    "scenario-head-not-selected": 231,
-    "selected-outer-head-not-final": 94,
+    "scenario-head-not-selected": 236,
+    "selected-outer-head-not-final": 96,
     "support-only-not-head-eligible": 6,
     "candidate-head-not-promoted": 10,
     "final-correct": 1
@@ -33,35 +33,39 @@
   "topHeadEvidencePaths": [
     {
       "value": "candidate:evaluatedScenarioCandidates.candidatePool[80].ticket",
-      "count": 146
+      "count": 150
     },
     {
       "value": "candidate:evaluatedScenarioCandidates.candidatePool[81].ticket",
-      "count": 145
+      "count": 149
     },
     {
       "value": "candidate:evaluatedScenarioCandidates.candidatePool[82].ticket",
-      "count": 142
+      "count": 146
     },
     {
       "value": "candidate:evaluatedScenarioCandidates.candidatePool[83].ticket",
-      "count": 141
+      "count": 145
     },
     {
       "value": "candidate:evaluatedScenarioCandidates.candidatePool[84].ticket",
-      "count": 132
+      "count": 136
     },
     {
       "value": "candidate:evaluatedScenarioCandidates.candidatePool[85].ticket",
-      "count": 130
+      "count": 134
     },
     {
       "value": "candidate:evaluatedScenarioCandidates.candidatePool[86].ticket",
-      "count": 117
+      "count": 121
     },
     {
       "value": "candidate:evaluatedScenarioCandidates.candidatePool[87].ticket",
-      "count": 105
+      "count": 107
+    },
+    {
+      "value": "selected:practicalSelection.targetDecisions[4].bestCandidateTicket",
+      "count": 65
     },
     {
       "value": "candidate:evaluatedScenarioCandidates.candidatePool[100].ticket",
@@ -70,10 +74,6 @@
     {
       "value": "candidate:evaluatedScenarioCandidates.candidatePool[101].ticket",
       "count": 64
-    },
-    {
-      "value": "selected:practicalSelection.targetDecisions[4].bestCandidateTicket",
-      "count": 63
     },
     {
       "value": "candidate:evaluatedScenarioCandidates.candidatePool[102].ticket",
@@ -96,94 +96,94 @@
       "count": 45
     },
     {
+      "value": "selected:practicalTickets[7].roleLabels[0]",
+      "count": 43
+    },
+    {
+      "value": "selected:practicalTickets[7].ticket",
+      "count": 43
+    },
+    {
       "value": "candidate:evaluatedScenarioCandidates.candidatePool[107].ticket",
       "count": 42
     },
     {
-      "value": "selected:practicalTickets[7].roleLabels[0]",
-      "count": 42
-    },
-    {
-      "value": "selected:practicalTickets[7].ticket",
-      "count": 42
-    },
-    {
       "value": "selected:practicalTickets[7].physicalCoverage[2]",
-      "count": 41
+      "count": 42
     }
   ],
   "topSupportOnlyPaths": [
     {
       "value": "scenario:practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates",
-      "count": 340
+      "count": 347
     },
     {
       "value": "scenario:practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.thirdCandidates",
-      "count": 340
+      "count": 347
     },
     {
       "value": "scenario:practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[3].outcome.thirdCandidates",
-      "count": 330
+      "count": 337
     },
     {
       "value": "scenario:practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.holdPickup",
-      "count": 317
+      "count": 323
     },
     {
       "value": "scenario:practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[2].outcome.thirdCandidates",
-      "count": 304
+      "count": 310
     },
     {
       "value": "scenario:practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[1].outcome.thirdCandidates",
-      "count": 302
+      "count": 309
     },
     {
       "value": "scenario:practicalSelection.frameRiseFallReplayBasis.raceScenarios.subScenario.outcome.thirdCandidates",
-      "count": 298
+      "count": 305
     },
     {
       "value": "scenario:practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.holdPickup.thirdCandidates",
-      "count": 293
+      "count": 298
     },
     {
       "value": "scenario:practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[3].outcome.secondCandidates",
-      "count": 234
-    },
-    {
-      "value": "scenario:practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.thirdCandidates",
-      "count": 186
+      "count": 241
     },
     {
       "value": "scenario:practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[2].outcome.secondCandidates",
-      "count": 185
+      "count": 190
+    },
+    {
+      "value": "scenario:practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.thirdCandidates",
+      "count": 189
     },
     {
       "value": "scenario:practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[1].outcome.secondCandidates",
-      "count": 175
+      "count": 180
     },
     {
       "value": "scenario:practicalSelection.frameRiseFallReplayBasis.raceScenarios.subScenario.outcome.secondCandidates",
-      "count": 175
+      "count": 180
     },
     {
       "value": "scenario:practicalSelection.frameRiseFallReplayBasis.raceScenarios.holdPickupTheory",
-      "count": 147
+      "count": 150
     },
     {
       "value": "scenario:practicalSelection.frameRiseFallReplayBasis.raceScenarios.holdPickupTheory.thirdCandidates",
-      "count": 110
+      "count": 111
     },
     {
       "value": "scenario:practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.secondCandidates",
-      "count": 45
+      "count": 46
     },
     {
       "value": "scenario:practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.secondCandidates",
-      "count": 45
+      "count": 46
     },
     {
       "value": "candidate:practicalSelection.targetDecisions[4].supportedSelectedTickets",
-      "count": 42
+      "count": 43
     },
     {
       "value": "scenario:practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.holdPickup.secondCandidates",
@@ -197,15 +197,15 @@
   "topDecisionReasons": [
     {
       "value": "scenario:最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
-      "count": 461
+      "count": 475
     },
     {
       "value": "scenario:最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
-      "count": 403
+      "count": 412
     },
     {
       "value": "candidate:評価された艇・着順役割を実戦買い目へ反映。",
-      "count": 288
+      "count": 294
     },
     {
       "value": "scenario:総合指数上位",
@@ -213,19 +213,19 @@
     },
     {
       "value": "scenario:最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
-      "count": 172
+      "count": 178
     },
     {
       "value": "scenario:最有力展開連動40/40 / 差し場・空き水面15/25 / 実進入・位置関係17/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
       "count": 160
     },
     {
-      "value": "scenario:最有力展開連動40/40 / 差し場・空き水面15/25 / 実進入・位置関係17/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+      "value": "scenario:最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
       "count": 159
     },
     {
-      "value": "scenario:最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
-      "count": 150
+      "value": "scenario:最有力展開連動40/40 / 差し場・空き水面15/25 / 実進入・位置関係17/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+      "count": 159
     },
     {
       "value": "scenario:攻め指数上位 / 外コースから展開突き",
@@ -236,16 +236,16 @@
       "count": 95
     },
     {
+      "value": "scenario:正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+      "count": 90
+    },
+    {
       "value": "scenario:最有力展開一致40/40 / 実進入・位置関係20/25 / 壁・内側残存経路20/20 / 1マーク後の残し経路6/10 / 取得信頼度0/5",
       "count": 89
     },
     {
-      "value": "scenario:正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
-      "count": 88
-    },
-    {
       "value": "scenario:正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
-      "count": 84
+      "count": 86
     },
     {
       "value": "scenario:最有力展開連動40/40 / 差し場・空き水面15/25 / 実進入・位置関係22/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
@@ -259,27 +259,27 @@
   "topHeadTransitions": [
     {
       "value": "0->2",
-      "count": 101
+      "count": 103
     },
     {
       "value": "2->2",
-      "count": 101
+      "count": 103
     },
     {
       "value": "0->1",
-      "count": 96
+      "count": 98
     },
     {
       "value": "1->1",
-      "count": 96
+      "count": 98
     },
     {
       "value": "0->3",
-      "count": 81
+      "count": 84
     },
     {
       "value": "3->3",
-      "count": 81
+      "count": 84
     },
     {
       "value": "0->4",
@@ -84924,6 +84924,1837 @@
           "boatNo": 5,
           "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[199].phaseEvidence.partners.third",
           "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        }
+      ]
+    },
+    {
+      "date": "20261113",
+      "jcd": "23",
+      "raceNo": 8,
+      "actualHead": 5,
+      "finalHead": 3,
+      "candidate": true,
+      "scenario": true,
+      "selected": false,
+      "finalCorrect": false,
+      "finalAny56": false,
+      "supportOnly": true,
+      "classification": "scenario-head-not-selected",
+      "directHeads": {
+        "final": 3,
+        "verification": 3,
+        "raceFlow": null,
+        "aiCoreMain": null,
+        "replayMain": 3,
+        "replayAlternate": null
+      },
+      "actualHeadPaths": {
+        "candidate": [
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[72].ticket",
+            "detail": "5-1-2"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[73].ticket",
+            "detail": "5-1-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[74].ticket",
+            "detail": "5-1-4"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[75].ticket",
+            "detail": "5-1-6"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[76].ticket",
+            "detail": "5-2-1"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[77].ticket",
+            "detail": "5-2-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[78].ticket",
+            "detail": "5-2-4"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[79].ticket",
+            "detail": "5-2-6"
+          }
+        ],
+        "scenario": [
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[58].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[58].ticket",
+            "detail": "5-1-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[59].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[59].ticket",
+            "detail": "5-1-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[60].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[60].ticket",
+            "detail": "5-1-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[61].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[61].ticket",
+            "detail": "5-1-3"
+          }
+        ],
+        "selected": [],
+        "support": [
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[1].outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[1].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[2].outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[2].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[3].outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[3].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.subScenario.outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.subScenario.outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.holdPickup",
+            "detail": "holdPickup",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.holdPickup.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          }
+        ]
+      },
+      "actualHeadReasons": [
+        {
+          "boatNo": 5,
+          "path": "manshuSheet.candidates[2]",
+          "reason": "外枠高配当",
+          "stage": "candidate"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.targetDecisions[2]",
+          "reason": "評価された艇・着順役割を実戦買い目へ反映。",
+          "stage": "candidate"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates[0]",
+          "reason": "正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[102].phaseEvidence.partner.evidence",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[105].phaseEvidence.attack",
+          "reason": "5号艇 小池 礼乃 は💣外コース妙味。総合63点。プラス材料はまくり差し・展開拾い、ST安定 .16、当地勝率2位 5.78。マイナス材料は級別は控えめ、展示・足D評価。",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[106].phaseEvidence.attack",
+          "reason": "5号艇 小池 礼乃 は💣外コース妙味。総合63点。プラス材料はまくり差し・展開拾い、ST安定 .16、当地勝率2位 5.78。マイナス材料は級別は控えめ、展示・足D評価。",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[107].phaseEvidence.attack",
+          "reason": "5号艇 小池 礼乃 は💣外コース妙味。総合63点。プラス材料はまくり差し・展開拾い、ST安定 .16、当地勝率2位 5.78。マイナス材料は級別は控えめ、展示・足D評価。",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[108].phaseEvidence.attack",
+          "reason": "5号艇 小池 礼乃 は💣外コース妙味。総合63点。プラス材料はまくり差し・展開拾い、ST安定 .16、当地勝率2位 5.78。マイナス材料は級別は控えめ、展示・足D評価。",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.thirdCandidates[0]",
+          "reason": "正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[102].phaseEvidence.partner.evidence",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[105].phaseEvidence.attack",
+          "reason": "5号艇 小池 礼乃 は💣外コース妙味。総合63点。プラス材料はまくり差し・展開拾い、ST安定 .16、当地勝率2位 5.78。マイナス材料は級別は控えめ、展示・足D評価。",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[106].phaseEvidence.attack",
+          "reason": "5号艇 小池 礼乃 は💣外コース妙味。総合63点。プラス材料はまくり差し・展開拾い、ST安定 .16、当地勝率2位 5.78。マイナス材料は級別は控えめ、展示・足D評価。",
+          "stage": "scenario"
+        }
+      ]
+    },
+    {
+      "date": "20261113",
+      "jcd": "16",
+      "raceNo": 1,
+      "actualHead": 5,
+      "finalHead": 1,
+      "candidate": true,
+      "scenario": true,
+      "selected": false,
+      "finalCorrect": false,
+      "finalAny56": false,
+      "supportOnly": true,
+      "classification": "scenario-head-not-selected",
+      "directHeads": {
+        "final": 1,
+        "verification": 1,
+        "raceFlow": null,
+        "aiCoreMain": null,
+        "replayMain": 1,
+        "replayAlternate": null
+      },
+      "actualHeadPaths": {
+        "candidate": [
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[79].ticket",
+            "detail": "5-1-2"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[80].ticket",
+            "detail": "5-1-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[81].ticket",
+            "detail": "5-1-4"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[82].ticket",
+            "detail": "5-1-6"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[83].ticket",
+            "detail": "5-2-1"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[84].ticket",
+            "detail": "5-2-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[85].ticket",
+            "detail": "5-2-4"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[86].ticket",
+            "detail": "5-2-6"
+          }
+        ],
+        "scenario": [
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[121].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[121].ticket",
+            "detail": "5-1-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[122].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[122].ticket",
+            "detail": "5-1-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[123].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[123].ticket",
+            "detail": "5-1-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[124].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[124].ticket",
+            "detail": "5-1-2"
+          }
+        ],
+        "selected": [],
+        "support": [
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[1].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[2].outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[2].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[3].outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[3].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.subScenario.outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.holdPickup",
+            "detail": "holdPickup",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.holdPickup.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.holdPickupTheory",
+            "detail": "holdPickupTheory",
+            "stage": "scenario"
+          }
+        ]
+      },
+      "actualHeadReasons": [
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.targetDecisions[4]",
+          "reason": "評価された艇・着順役割を実戦買い目へ反映。",
+          "stage": "candidate"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates[2]",
+          "reason": "正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[149].phaseEvidence.partner.evidence",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[154].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[158].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[161].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.thirdCandidates[2]",
+          "reason": "正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[149].phaseEvidence.partner.evidence",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[154].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[158].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[161].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.preservations[2].phaseEvidence.partner.evidence",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        }
+      ]
+    },
+    {
+      "date": "20261113",
+      "jcd": "20",
+      "raceNo": 1,
+      "actualHead": 5,
+      "finalHead": 2,
+      "candidate": true,
+      "scenario": true,
+      "selected": false,
+      "finalCorrect": false,
+      "finalAny56": false,
+      "supportOnly": true,
+      "classification": "scenario-head-not-selected",
+      "directHeads": {
+        "final": 2,
+        "verification": 2,
+        "raceFlow": null,
+        "aiCoreMain": null,
+        "replayMain": 2,
+        "replayAlternate": null
+      },
+      "actualHeadPaths": {
+        "candidate": [
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[80].ticket",
+            "detail": "5-1-2"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[81].ticket",
+            "detail": "5-1-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[82].ticket",
+            "detail": "5-1-4"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[83].ticket",
+            "detail": "5-1-6"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[84].ticket",
+            "detail": "5-2-1"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[85].ticket",
+            "detail": "5-2-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[86].ticket",
+            "detail": "5-2-4"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[87].ticket",
+            "detail": "5-2-6"
+          }
+        ],
+        "scenario": [
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[183].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[183].ticket",
+            "detail": "5-1-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[183].roles[0]",
+            "detail": "alternate-head"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[183].evidenceChecks[0]",
+            "detail": "alternate-head"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[184].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[184].ticket",
+            "detail": "5-1-4"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[184].roles[0]",
+            "detail": "alternate-head"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[184].evidenceChecks[0]",
+            "detail": "alternate-head"
+          }
+        ],
+        "selected": [],
+        "support": [
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[1].outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[1].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[3].outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[3].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.subScenario.outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.subScenario.outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.holdPickup",
+            "detail": "holdPickup",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.holdPickup.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.holdPickupTheory",
+            "detail": "holdPickupTheory",
+            "stage": "scenario"
+          }
+        ]
+      },
+      "actualHeadReasons": [
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.targetDecisions[5]",
+          "reason": "候補は保持し、採用境界との優先度比較で非採用。",
+          "stage": "candidate"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates[2]",
+          "reason": "正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[151].phaseEvidence.partner.evidence",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[157].phaseEvidence.partner.evidence",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[163].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[165].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[169].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[171].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[176].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[178].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[181].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[183].phaseEvidence.attack",
+          "reason": "5号艇 黒田 剛 は🌊展開艇 / 💣外コース妙味。総合70点。プラス材料はまくり差し・展開拾い、ST安定 .16、外の展開突き評価。マイナス材料は級別は控えめ、全国勝率低め 3.57。",
+          "stage": "scenario"
+        }
+      ]
+    },
+    {
+      "date": "20261113",
+      "jcd": "03",
+      "raceNo": 1,
+      "actualHead": 5,
+      "finalHead": 3,
+      "candidate": true,
+      "scenario": true,
+      "selected": false,
+      "finalCorrect": false,
+      "finalAny56": false,
+      "supportOnly": true,
+      "classification": "scenario-head-not-selected",
+      "directHeads": {
+        "final": 3,
+        "verification": 3,
+        "raceFlow": null,
+        "aiCoreMain": null,
+        "replayMain": 3,
+        "replayAlternate": null
+      },
+      "actualHeadPaths": {
+        "candidate": [
+          {
+            "boatNo": 5,
+            "path": "candidate24Tickets[8].ticket",
+            "detail": "5-1-4"
+          },
+          {
+            "boatNo": 5,
+            "path": "candidate24Tickets[9].ticket",
+            "detail": "5-1-2"
+          },
+          {
+            "boatNo": 5,
+            "path": "candidate24Tickets[10].ticket",
+            "detail": "5-4-1"
+          },
+          {
+            "boatNo": 5,
+            "path": "candidate24Tickets[11].ticket",
+            "detail": "5-4-2"
+          },
+          {
+            "boatNo": 5,
+            "path": "candidate24Tickets[12].ticket",
+            "detail": "5-1-6"
+          },
+          {
+            "boatNo": 5,
+            "path": "candidate24Tickets[13].ticket",
+            "detail": "5-2-6"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[76].ticket",
+            "detail": "5-1-2"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[77].ticket",
+            "detail": "5-1-3"
+          }
+        ],
+        "scenario": [
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[83].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[83].ticket",
+            "detail": "5-1-4"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[84].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[84].ticket",
+            "detail": "5-1-4"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[85].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[85].ticket",
+            "detail": "5-1-4"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[86].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[86].ticket",
+            "detail": "5-1-2"
+          }
+        ],
+        "selected": [],
+        "support": [
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[1].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[2].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[3].outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[3].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.subScenario.outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.holdPickup",
+            "detail": "holdPickup",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.holdPickup.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.holdPickupTheory",
+            "detail": "holdPickupTheory",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.holdPickupTheory.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          }
+        ]
+      },
+      "actualHeadReasons": [
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.targetDecisions[2]",
+          "reason": "評価された艇・着順役割を実戦買い目へ反映。",
+          "stage": "candidate"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates[0]",
+          "reason": "正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[102].phaseEvidence.partner.evidence",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[105].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[108].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.thirdCandidates[0]",
+          "reason": "正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[102].phaseEvidence.partner.evidence",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[105].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[108].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.preservations[0].phaseEvidence.partner.evidence",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.preservations[3].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.preservations[6].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "stage": "scenario"
+        }
+      ]
+    },
+    {
+      "date": "20261113",
+      "jcd": "08",
+      "raceNo": 5,
+      "actualHead": 5,
+      "finalHead": 2,
+      "candidate": true,
+      "scenario": true,
+      "selected": true,
+      "finalCorrect": false,
+      "finalAny56": false,
+      "supportOnly": true,
+      "classification": "selected-outer-head-not-final",
+      "directHeads": {
+        "final": 2,
+        "verification": 2,
+        "raceFlow": null,
+        "aiCoreMain": null,
+        "replayMain": 2,
+        "replayAlternate": null
+      },
+      "actualHeadPaths": {
+        "candidate": [
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[79].ticket",
+            "detail": "5-1-2"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[80].ticket",
+            "detail": "5-1-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[81].ticket",
+            "detail": "5-1-4"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[82].ticket",
+            "detail": "5-1-6"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[83].ticket",
+            "detail": "5-2-1"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[84].ticket",
+            "detail": "5-2-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[85].ticket",
+            "detail": "5-2-4"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[86].ticket",
+            "detail": "5-2-6"
+          }
+        ],
+        "scenario": [
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[95].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[95].ticket",
+            "detail": "5-1-2"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[96].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[96].ticket",
+            "detail": "5-1-2"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[97].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[97].ticket",
+            "detail": "5-1-2"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[98].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[98].ticket",
+            "detail": "5-1-2"
+          }
+        ],
+        "selected": [
+          {
+            "boatNo": 5,
+            "path": "practicalTickets[7].ticket",
+            "detail": "5-1-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalTickets[7].coverage[0]",
+            "detail": "alternate-head"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalTickets[7].physicalCoverage[2]",
+            "detail": "head"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalTickets[7].roleLabels[0]",
+            "detail": "alternate-head"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.targetDecisions[4].bestCandidateTicket",
+            "detail": "5-2-4"
+          }
+        ],
+        "support": [
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.targetDecisions[4].supportedSelectedTickets",
+            "detail": "supportedSelectedTickets",
+            "stage": "candidate"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[1].outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[1].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[2].outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[2].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[3].outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[3].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.subScenario.outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.subScenario.outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.holdPickup",
+            "detail": "holdPickup",
+            "stage": "scenario"
+          }
+        ]
+      },
+      "actualHeadReasons": [
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.targetDecisions[4]",
+          "reason": "評価された艇・着順役割を実戦買い目へ反映。",
+          "stage": "candidate"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceFlow.alternateScenarioRoles.attackBoats[0]",
+          "reason": "対抗展開として採用・外コースから展開突き / スリットアラート 隣艇より0.12速い",
+          "stage": "candidate"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates[2]",
+          "reason": "正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[159].phaseEvidence.partner.evidence",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[164].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[167].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[170].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[172].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[175].phaseEvidence.attack",
+          "reason": "外コースから展開突き / スリットアラート 隣艇より0.12速い",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[176].phaseEvidence.attack",
+          "reason": "外コースから展開突き / スリットアラート 隣艇より0.12速い",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[177].phaseEvidence.attack",
+          "reason": "外コースから展開突き / スリットアラート 隣艇より0.12速い",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[178].phaseEvidence.attack",
+          "reason": "外コースから展開突き / スリットアラート 隣艇より0.12速い",
+          "stage": "scenario"
+        }
+      ]
+    },
+    {
+      "date": "20261113",
+      "jcd": "03",
+      "raceNo": 8,
+      "actualHead": 5,
+      "finalHead": 3,
+      "candidate": true,
+      "scenario": true,
+      "selected": true,
+      "finalCorrect": false,
+      "finalAny56": false,
+      "supportOnly": true,
+      "classification": "selected-outer-head-not-final",
+      "directHeads": {
+        "final": 3,
+        "verification": 3,
+        "raceFlow": null,
+        "aiCoreMain": null,
+        "replayMain": 3,
+        "replayAlternate": null
+      },
+      "actualHeadPaths": {
+        "candidate": [
+          {
+            "boatNo": 5,
+            "path": "candidate24Tickets[0].ticket",
+            "detail": "5-1-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "candidate24Tickets[1].ticket",
+            "detail": "5-1-2"
+          },
+          {
+            "boatNo": 5,
+            "path": "candidate24Tickets[2].ticket",
+            "detail": "5-3-1"
+          },
+          {
+            "boatNo": 5,
+            "path": "candidate24Tickets[3].ticket",
+            "detail": "5-3-2"
+          },
+          {
+            "boatNo": 5,
+            "path": "candidate24Tickets[4].ticket",
+            "detail": "5-2-1"
+          },
+          {
+            "boatNo": 5,
+            "path": "candidate24Tickets[5].ticket",
+            "detail": "5-2-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "candidate24Tickets[12].ticket",
+            "detail": "5-1-6"
+          },
+          {
+            "boatNo": 5,
+            "path": "candidate24Tickets[13].ticket",
+            "detail": "5-2-6"
+          }
+        ],
+        "scenario": [
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[72].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[72].ticket",
+            "detail": "5-1-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[73].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[73].ticket",
+            "detail": "5-1-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[74].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[74].ticket",
+            "detail": "5-1-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[75].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[75].ticket",
+            "detail": "5-1-3"
+          }
+        ],
+        "selected": [
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.targetDecisions[4].bestCandidateTicket",
+            "detail": "5-1-6"
+          }
+        ],
+        "support": [
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[1].outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[1].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[2].outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[2].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[3].outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[3].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.subScenario.outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.subScenario.outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.holdPickup",
+            "detail": "holdPickup",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.holdPickup.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          }
+        ]
+      },
+      "actualHeadReasons": [
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.targetDecisions[2]",
+          "reason": "評価された艇・着順役割を実戦買い目へ反映。",
+          "stage": "candidate"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates[0]",
+          "reason": "正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[118].phaseEvidence.partner.evidence",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[121].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[123].phaseEvidence.attack",
+          "reason": "5号艇 寺本 重宣 は🌊展開艇 / ⚡道中艇 / 💣外コース妙味。総合80点。プラス材料はまくり差し・展開拾い、A2安定、ST安定 .15。マイナス材料は展示・足D評価。",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[124].phaseEvidence.attack",
+          "reason": "5号艇 寺本 重宣 は🌊展開艇 / ⚡道中艇 / 💣外コース妙味。総合80点。プラス材料はまくり差し・展開拾い、A2安定、ST安定 .15。マイナス材料は展示・足D評価。",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[125].phaseEvidence.attack",
+          "reason": "5号艇 寺本 重宣 は🌊展開艇 / ⚡道中艇 / 💣外コース妙味。総合80点。プラス材料はまくり差し・展開拾い、A2安定、ST安定 .15。マイナス材料は展示・足D評価。",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[126].phaseEvidence.attack",
+          "reason": "5号艇 寺本 重宣 は🌊展開艇 / ⚡道中艇 / 💣外コース妙味。総合80点。プラス材料はまくり差し・展開拾い、A2安定、ST安定 .15。マイナス材料は展示・足D評価。",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.thirdCandidates[0]",
+          "reason": "正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[118].phaseEvidence.partner.evidence",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[121].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[123].phaseEvidence.attack",
+          "reason": "5号艇 寺本 重宣 は🌊展開艇 / ⚡道中艇 / 💣外コース妙味。総合80点。プラス材料はまくり差し・展開拾い、A2安定、ST安定 .15。マイナス材料は展示・足D評価。",
+          "stage": "scenario"
+        }
+      ]
+    },
+    {
+      "date": "20261113",
+      "jcd": "16",
+      "raceNo": 7,
+      "actualHead": 5,
+      "finalHead": 1,
+      "candidate": true,
+      "scenario": true,
+      "selected": false,
+      "finalCorrect": false,
+      "finalAny56": false,
+      "supportOnly": true,
+      "classification": "scenario-head-not-selected",
+      "directHeads": {
+        "final": 1,
+        "verification": 1,
+        "raceFlow": null,
+        "aiCoreMain": null,
+        "replayMain": 1,
+        "replayAlternate": null
+      },
+      "actualHeadPaths": {
+        "candidate": [
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[80].ticket",
+            "detail": "5-1-2"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[81].ticket",
+            "detail": "5-1-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[82].ticket",
+            "detail": "5-1-4"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[83].ticket",
+            "detail": "5-1-6"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[84].ticket",
+            "detail": "5-2-1"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[85].ticket",
+            "detail": "5-2-3"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[86].ticket",
+            "detail": "5-2-4"
+          },
+          {
+            "boatNo": 5,
+            "path": "evaluatedScenarioCandidates.candidatePool[87].ticket",
+            "detail": "5-2-6"
+          }
+        ],
+        "scenario": [
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[126].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[126].ticket",
+            "detail": "5-1-6"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[127].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[127].ticket",
+            "detail": "5-1-6"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[128].headBoatNo",
+            "detail": "headBoatNo"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[128].ticket",
+            "detail": "5-1-6"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[128].roles[0]",
+            "detail": "alternate-head"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[128].evidenceChecks[0]",
+            "detail": "alternate-head"
+          }
+        ],
+        "selected": [],
+        "support": [
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[1].outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[1].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[2].outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[2].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[3].outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[3].outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.subScenario.outcome.secondCandidates",
+            "detail": "secondCandidates",
+            "stage": "scenario"
+          },
+          {
+            "boatNo": 5,
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.subScenario.outcome.thirdCandidates",
+            "detail": "thirdCandidates",
+            "stage": "scenario"
+          }
+        ]
+      },
+      "actualHeadReasons": [
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.targetDecisions[2]",
+          "reason": "評価された艇・着順役割を実戦買い目へ反映。",
+          "stage": "candidate"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.secondCandidates[2]",
+          "reason": "正式採用・最有力展開一致40/40 / 実進入・位置関係21/25 / 壁・内側残存経路0/20 / 1マーク後の残し経路8/10 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates[0]",
+          "reason": "正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[172].phaseEvidence.partner.evidence",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[177].phaseEvidence.partner.evidence",
+          "reason": "最有力展開一致40/40 / 実進入・位置関係21/25 / 壁・内側残存経路0/20 / 1マーク後の残し経路8/10 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[178].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[182].phaseEvidence.partners.third",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[186].phaseEvidence.partners.second",
+          "reason": "最有力展開一致40/40 / 実進入・位置関係21/25 / 壁・内側残存経路0/20 / 1マーク後の残し経路8/10 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[187].phaseEvidence.partners.second",
+          "reason": "最有力展開一致40/40 / 実進入・位置関係21/25 / 壁・内側残存経路0/20 / 1マーク後の残し経路8/10 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[188].phaseEvidence.partners.second",
+          "reason": "最有力展開一致40/40 / 実進入・位置関係21/25 / 壁・内側残存経路0/20 / 1マーク後の残し経路8/10 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[189].phaseEvidence.partners.second",
+          "reason": "最有力展開一致40/40 / 実進入・位置関係21/25 / 壁・内側残存経路0/20 / 1マーク後の残し経路8/10 / 取得信頼度5/5",
+          "stage": "scenario"
+        },
+        {
+          "boatNo": 5,
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[190].phaseEvidence.attack",
+          "reason": "5号艇 吉川 昭男 は🏠当地巧者。総合78点。プラス材料はセンター攻め、A2安定、全国勝率上位 6.97。マイナス材料は展示・足D評価。",
           "stage": "scenario"
         }
       ]
