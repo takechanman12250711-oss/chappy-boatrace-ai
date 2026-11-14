@@ -6,6 +6,7 @@ on:
       - 'scripts/theory-validation-phase8-cycle.cjs'
       - 'tests/theory-validation-phase8-cycle.test.cjs'
       - 'tests/phase8-stable-save.test.cjs'
+      - 'tests/phase8-production-guard.test.cjs'
       - 'scripts/run-live-improvement-cycle.cjs'
       - 'scripts/persist-theory-validation-cycle.cjs'
       - 'scripts/test-phase8-single-writer.cjs'
@@ -32,6 +33,7 @@ jobs:
           node-version: 20
       - name: Verify phase8 theory cycle contract
         run: |
+          node tests/phase8-production-guard.test.cjs
           node --check scripts/theory-validation-phase8-cycle.cjs
           node tests/theory-validation-phase8-cycle.test.cjs
           node tests/phase8-stable-save.test.cjs
@@ -45,9 +47,22 @@ jobs:
           grep -q 'persist-theory-validation-cycle.cjs' .github/workflows/collect-wall-established-attacker2-skip-ab.yml
       - name: Guard production prediction files
         shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EXPECTED_HEAD_SHA: ${{ github.sha }}
         run: |
-          git fetch origin "${{ github.base_ref }}" --depth=1
-          changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
+          if [[ ! "${BASE_SHA:-}" =~ ^[0-9a-f]{40}$ || ! "${EXPECTED_HEAD_SHA:-}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo 'Missing or invalid fixed PR comparison SHA.'
+            exit 1
+          fi
+          actual_head="$(git rev-parse HEAD)"
+          if [[ "$actual_head" != "$EXPECTED_HEAD_SHA" ]]; then
+            echo 'Checkout does not match the event commit.'
+            exit 1
+          fi
+          git cat-file -e "$BASE_SHA^{commit}"
+          git merge-base --is-ancestor "$BASE_SHA" "$actual_head"
+          changed="$(git diff --no-renames --name-only "$BASE_SHA" "$actual_head")"
           echo "$changed"
           if echo "$changed" | grep -Eq '^(prediction\.js|js/prediction\.js|js/ai-core\.js|ai-core\.js)$'; then
             echo 'Phase8 validation PR must not modify production prediction logic.'
