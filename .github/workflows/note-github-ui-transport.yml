@@ -20,6 +20,14 @@ on:
           - draft
           - publish
           - recover
+      browser:
+        description: 'auth only: browser-use = saved Browser Use profile (default), github = sign in with the runner own browser using NOTE_LOGIN_ID / NOTE_LOGIN_PASSWORD (login check only, never writes or publishes)'
+        required: false
+        default: browser-use
+        type: choice
+        options:
+          - browser-use
+          - github
       recovery_source_path:
         description: 'recover only: exact immutable data/note-drafts path including its SHA256'
         required: false
@@ -54,6 +62,7 @@ jobs:
     env:
       NOTE_UI_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'publish' }}
       NOTE_IPHONE_HANDOFF: data/note-publish/iphone.json
+      NOTE_UI_BROWSER: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'auth' && inputs.browser || 'browser-use' }}
       NOTE_RECOVERY_SOURCE_PATH: ${{ github.event_name == 'workflow_dispatch' && inputs.recovery_source_path || '' }}
       NOTE_RECOVERY_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.recovery_url || '' }}
     steps:
@@ -82,6 +91,7 @@ jobs:
           node scripts/note-publication-source.test.js
           node --test scripts/note-korogashi-presentation.test.cjs scripts/note-recovery-presentation.test.cjs
           node --test scripts/note-article-series.test.js
+          node --test scripts/note-direct-login.test.js
       - name: Check current handoff before opening a browser
         id: preflight
         env:
@@ -107,7 +117,7 @@ jobs:
           })().catch(error => { console.error(error.message); process.exitCode = 1; });
           NODE
       - name: Require Browser Use connection
-        if: steps.preflight.outputs.ready == 'true'
+        if: steps.preflight.outputs.ready == 'true' && env.NOTE_UI_BROWSER != 'github'
         env:
           BROWSER_USE_API_KEY: ${{ secrets.BROWSER_USE_API_KEY }}
           BROWSER_USE_PROFILE_ID: ${{ secrets.BROWSER_USE_PROFILE_ID }}
@@ -139,6 +149,9 @@ jobs:
         env:
           BROWSER_USE_API_KEY: ${{ secrets.BROWSER_USE_API_KEY }}
           BROWSER_USE_PROFILE_ID: ${{ secrets.BROWSER_USE_PROFILE_ID }}
+          # Used only by the manual auth check with browser=github.
+          NOTE_LOGIN_ID: ${{ env.NOTE_UI_BROWSER == 'github' && secrets.NOTE_LOGIN_ID || '' }}
+          NOTE_LOGIN_PASSWORD: ${{ env.NOTE_UI_BROWSER == 'github' && secrets.NOTE_LOGIN_PASSWORD || '' }}
           NOTE_CLAIM_TOKEN: ${{ github.token }}
           # Token-started runs do not trigger workflow_run; ask for marketing explicitly.
           NOTE_MARKETING_DISPATCH: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'github-actions[bot]' }}
