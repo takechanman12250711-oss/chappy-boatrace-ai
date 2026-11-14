@@ -34,7 +34,7 @@ const commit = (cwd, message) => {
   git(cwd, ['commit', '-m', message]);
   return git(cwd, ['rev-parse', 'HEAD']);
 };
-function fixture(name, change = cwd => write(cwd, 'docs.txt', 'PR documentation\n')) {
+function fixture(name, change = cwd => write(cwd, 'docs.txt', 'PR documentation\n'), advanceMain) {
   const work = path.join(tmp, name);
   fs.mkdirSync(work);
   git(work, ['init', '-b', 'main']);
@@ -44,13 +44,19 @@ function fixture(name, change = cwd => write(cwd, 'docs.txt', 'PR documentation\
   const base = commit(work, 'event base');
   git(work, ['checkout', '-b', 'feature']);
   change(work);
-  commit(work, 'PR changes');
-  git(work, ['checkout', '-b', 'pr-merge', base]);
+  const prHead = commit(work, 'PR changes');
+  let actualBase = base;
+  if (advanceMain) {
+    git(work, ['checkout', 'main']);
+    advanceMain(work);
+    actualBase = commit(work, 'main advances before merge-ref generation');
+  }
+  git(work, ['checkout', '-b', 'pr-merge', actualBase]);
   git(work, ['merge', '--no-ff', '--no-edit', 'feature']);
-  return { work, base, head: git(work, ['rev-parse', 'HEAD']) };
+  return { work, base, prHead, actualBase, head: git(work, ['rev-parse', 'HEAD']) };
 }
 function runGuard(f, overrides = {}) {
-  const env = { ...process.env, BASE_SHA: f.base, EXPECTED_HEAD_SHA: f.head, ...overrides };
+  const env = { ...process.env, BASE_SHA: f.base, PR_HEAD_SHA: f.prHead, EXPECTED_HEAD_SHA: f.head, ...overrides };
   return spawnSync('bash', ['--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', guard], {
     cwd: f.work, env, encoding: 'utf8'
   });
@@ -90,8 +96,18 @@ try {
   assert.equal(git(runner, ['rev-parse', 'origin/main']), laterMain);
   succeeds(f, 'fixed event base remains valid after main-only production changes');
 
+  // The real CI merge-ref can include a later main than the payload's base SHA.
+  // Its first parent is the comparison baseline; main-only production changes
+  // are not changes introduced by this PR.
+  const staleBase = fixture('stale-event-base', undefined,
+    cwd => write(cwd, 'js/prediction.js', '// main-only update included in merge-ref\n'));
+  assert.notEqual(staleBase.base, staleBase.actualBase);
+  assert.match(git(staleBase.work, ['diff', '--name-only', staleBase.base, staleBase.head]), /js\/prediction\.js/);
+  succeeds(staleBase, 'compare the PR merge to its actual first parent, not an older event base');
+
   assert.ok(step.includes('          BASE_SHA: ${{ github.event.pull_request.base.sha }}'), 'workflow must supply the fixed event base');
   assert.ok(step.includes('          EXPECTED_HEAD_SHA: ${{ github.sha }}'), 'workflow must supply the fixed event checkout');
+  assert.ok(step.includes('          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}'), 'workflow must supply the fixed PR head');
 
   for (const file of protectedPaths) {
     const changed = fixture(`changed-${file.replaceAll('/', '-')}`, cwd => write(cwd, file, '// changed in PR\n'));
@@ -107,6 +123,15 @@ try {
   rejects(f, 'unknown event base', { BASE_SHA: '0'.repeat(40) });
   rejects(f, 'unexpected checkout', { EXPECTED_HEAD_SHA: f.base });
   rejects(f, 'missing event checkout', { EXPECTED_HEAD_SHA: '' });
+  rejects(f, 'missing PR head', { PR_HEAD_SHA: '' });
+  rejects(f, 'malformed PR head', { PR_HEAD_SHA: 'feature' });
+  rejects(f, 'unknown PR head', { PR_HEAD_SHA: '0'.repeat(40) });
+  rejects(f, 'incorrect second parent', { PR_HEAD_SHA: f.base });
+  rejects(f, 'event base cannot belong only to the PR-side history', { BASE_SHA: f.prHead });
+
+  const nonMerge = fixture('non-merge-checkout');
+  git(nonMerge.work, ['checkout', '--detach', nonMerge.prHead]);
+  rejects({ ...nonMerge, head: nonMerge.prHead }, 'an event checkout must be a two-parent merge');
 
   const unrelated = fixture('non-ancestor');
   git(unrelated.work, ['checkout', '--orphan', 'other-history']);
@@ -114,7 +139,7 @@ try {
   git(unrelated.work, ['checkout', '--detach', unrelated.head]);
   rejects(unrelated, 'base outside event checkout history', { BASE_SHA: unrelatedBase });
 
-  console.log('phase8 production guard: moving-main shallow regression, 4 protected paths, deletion/rename, and fail-closed identity checks passed');
+  console.log('phase8 production guard: moving-main shallow regression, stale event base/actual merge parents, 4 protected paths, deletion/rename, and fail-closed identity checks passed');
 } finally {
   fs.rmSync(tmp, { recursive: true, force: true });
 }

@@ -50,8 +50,9 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           EXPECTED_HEAD_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          if [[ ! "${BASE_SHA:-}" =~ ^[0-9a-f]{40}$ || ! "${EXPECTED_HEAD_SHA:-}" =~ ^[0-9a-f]{40}$ ]]; then
+          if [[ ! "${BASE_SHA:-}" =~ ^[0-9a-f]{40}$ || ! "${EXPECTED_HEAD_SHA:-}" =~ ^[0-9a-f]{40}$ || ! "${PR_HEAD_SHA:-}" =~ ^[0-9a-f]{40}$ ]]; then
             echo 'Missing or invalid fixed PR comparison SHA.'
             exit 1
           fi
@@ -61,8 +62,17 @@ jobs:
             exit 1
           fi
           git cat-file -e "$BASE_SHA^{commit}"
-          git merge-base --is-ancestor "$BASE_SHA" "$actual_head"
-          changed="$(git diff --no-renames --name-only "$BASE_SHA" "$actual_head")"
+          read -r -a merge_parents <<< "$(git show -s --format=%P "$actual_head")"
+          if [[ "${#merge_parents[@]}" -ne 2 || "${merge_parents[1]:-}" != "$PR_HEAD_SHA" ]]; then
+            echo 'Checkout is not the expected two-parent PR merge.'
+            exit 1
+          fi
+          actual_base="${merge_parents[0]}"
+          git cat-file -e "$actual_base^{commit}"
+          git cat-file -e "$PR_HEAD_SHA^{commit}"
+          git merge-base --is-ancestor "$BASE_SHA" "$actual_base"
+          printf 'Event base: %s; actual merge base: %s; PR head: %s; checkout: %s\n' "$BASE_SHA" "$actual_base" "$PR_HEAD_SHA" "$actual_head"
+          changed="$(git diff --no-renames --name-only "$actual_base" "$actual_head")"
           echo "$changed"
           if echo "$changed" | grep -Eq '^(prediction\.js|js/prediction\.js|js/ai-core\.js|ai-core\.js)$'; then
             echo 'Phase8 validation PR must not modify production prediction logic.'
