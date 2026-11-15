@@ -8,11 +8,15 @@ const { createHash } = require('node:crypto');
 const { buildLatestHandoff } = require('./build-note-publish-handoff');
 const { preparePublication, requirePublicationGate } = require('./note-github-ui-transport');
 const REPOSITORY = 'takechanman12250711-oss/chappy-boatrace-ai';
+const site = require('./site-article-publish.cjs');
+const { publicationKey } = require('./note-article-series');
 
 function assertSourceOnlyChanges(git) {
   const paths = [git(['diff', '--name-only', 'HEAD']), git(['ls-files', '--others', '--exclude-standard'])]
     .join('\n').split('\n').filter(Boolean);
-  if (paths.some(file => !/^data\/note-drafts\/\d{8}\/\d{8}-\d{2}-\d{1,2}-[a-f0-9]{64}\.json$/.test(file))) {
+  // Own-site articles (2026-11-12) are saved in the same commit as their source.
+  if (paths.some(file => !/^data\/note-drafts\/\d{8}\/\d{8}-\d{2}-\d{1,2}-[a-f0-9]{64}\.json$/.test(file) &&
+      !site.ARTICLE_PATH.test(file) && !site.INDEX_PATH.test(file))) {
     throw new Error('note_only_writer_has_unrelated_changes');
   }
   return [...new Set(paths)];
@@ -81,17 +85,35 @@ function persistSourceInWorktree({ payload, guard, rootDir = process.cwd(),
 async function dispatchReadyNote({ env = process.env, request = fetch, rootDir = process.cwd(),
   git = args => execFileSync('git', args, { cwd: rootDir, encoding: 'utf8' }).trim(),
   prepare = preparePublication, build = buildLatestHandoff, guard = requirePublicationGate,
-  persist = persistSourceInWorktree } = {}) {
+  persist = persistSourceInWorktree, now = Date.now, announce = site.announce } = {}) {
   if (env.GITHUB_REPOSITORY !== REPOSITORY || env.GITHUB_REF !== 'refs/heads/main' || !env.NOTE_CLAIM_TOKEN) {
     throw new Error('note_early_dispatch_context_invalid');
   }
-  const gate = await prepare({ rootDir, env, request, handoff: build({ write: false }).payload });
+  const toSite = env.PUBLICATION_TARGET === 'site';
+  if (toSite && env.NOTE_SOURCE_ISOLATED !== 'true') throw new Error('site_publish_requires_isolated_source');
+  const siteConfig = toSite ? site.loadConfig(rootDir) : null;
+  if (toSite && !siteConfig.enabled) return { dispatched: false, reason: 'site_publish_disabled' };
+  let handoff = build({ write: false }).payload;
+  if (toSite) {
+    // Already published on the site: move on to the next race instead of
+    // returning the same candidate every run.
+    handoff = { ...handoff, candidates: (handoff.candidates || []).filter(candidate => {
+      try { return !site.isPublished(rootDir, publicationKey(candidate.raceKey, candidate.articleSeries || 'normal')); }
+      catch { return true; }
+    }) };
+  }
+  const gate = await prepare({ rootDir, env, request, handoff });
   console.log(`NOTE_EARLY_PREFLIGHT=${JSON.stringify({ ok: gate.ok, reason: gate.reason, skipped: gate.skipped })}`);
   if (!gate.ok) return { dispatched: false, reason: gate.reason };
   const check = () => guard(gate.payload, rootDir);
   check();
   const file = gate.payload.sourcePath;
   const isolated = env.NOTE_SOURCE_ISOLATED === 'true';
+  let article = null;
+  if (toSite) {
+    article = site.buildArticle(gate.payload, now());
+    site.writeArticle(rootDir, article);
+  }
   if (!isolated) {
     persist({ payload: gate.payload, rootDir, git, guard: check });
   } else {
@@ -101,11 +123,19 @@ async function dispatchReadyNote({ env = process.env, request = fetch, rootDir =
     git(['add', '--', ...files]);
     if (git(['diff', '--cached', '--name-only', '--', ...files])) {
       git(['-c', 'user.name=github-actions[bot]', '-c', 'user.email=41898282+github-actions[bot]@users.noreply.github.com',
-        'commit', '--only', '-m', `Save audited note source ${gate.payload.raceKey}`, '--', ...files]);
+        'commit', '--only', '-m', `${toSite ? 'Publish site article' : 'Save audited note source'} ${gate.payload.raceKey}`, '--', ...files]);
     }
     pushSourceWithRebase(git, check);
   }
   check();
+  if (toSite) {
+    console.log(`SITE_ARTICLE_PUBLISHED=${JSON.stringify({ publicationKey: article.publicationKey, url: site.articleUrl(siteConfig, article.publicationKey) })}`);
+    let social;
+    try { social = await announce(article, { env, config: siteConfig }); }
+    catch (error) { social = { status: 'failed', reason: String(error.message).slice(0, 80) }; }
+    console.log(`SITE_ARTICLE_ANNOUNCEMENT=${JSON.stringify(social)}`);
+    return { dispatched: false, published: 'site', raceKey: gate.payload.raceKey, social };
+  }
   const response = await request(`https://api.github.com/repos/${REPOSITORY}/actions/workflows/note-github-ui-transport.yml/dispatches`, {
     method: 'POST', headers: { Authorization: `Bearer ${env.NOTE_CLAIM_TOKEN}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
     body: JSON.stringify({ ref: 'main', inputs: { mode: 'publish' } }), signal: AbortSignal.timeout(30000)

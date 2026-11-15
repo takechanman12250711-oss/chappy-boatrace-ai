@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#f3f8ff"/>
+<meta name="description" content="チャッピーボートレースAIの今日の予想。締切前に保存した予想を、買い目まですべて無料で公開しています。結果は外れも含めて全部公開。"/>
+<title>今日の予想｜チャッピーボートレースAI</title>
+<style>
+:root{--bg:#f3f8ff;--card:#fff;--ink:#14263d;--sub:#5a6b80;--line:#dbe5f1;--accent:#1c64c8;--chip:#e8f0fb}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;line-height:1.7;-webkit-text-size-adjust:100%}
+header{padding:20px 16px 8px;max-width:720px;margin:0 auto}
+header a,.links a{color:var(--accent);font-size:14px;text-decoration:none}
+h1{font-size:22px;margin:8px 0 4px}
+.lead{color:var(--sub);font-size:14px;margin:0}
+main{max-width:720px;margin:0 auto;padding:0 16px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+.days{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0 0}
+.days button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 14px;font-size:14px}
+.days b{font-size:16px}
+a.race{display:flex;align-items:center;gap:12px;color:inherit;text-decoration:none}
+.race .no{font-size:20px;font-weight:700;min-width:96px}
+.race small{display:block;color:var(--sub);font-size:13px}
+.chip{display:inline-block;background:var(--chip);color:var(--accent);border-radius:999px;font-size:12px;font-weight:700;padding:1px 9px;margin-right:6px}
+.chip.done{background:#eef1f5;color:#8a96a6}
+.article{white-space:pre-wrap;word-break:break-word;font-size:16px;margin:0}
+.article .h{font-weight:700;font-size:17px}
+.article .center{font-weight:700;color:#b54708}
+.empty{color:var(--sub);font-size:15px}
+.notice{font-size:13px;color:var(--sub)}
+.links{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 0}
+</style>
+</head>
+<body>
+<header>
+  <a href="./">← チャッピーボートレースAI</a>
+  <h1 id="title">今日の予想</h1>
+  <p class="lead" id="lead">締切前に保存した予想を、買い目まですべて無料で公開しています。結果は当たりも外れも全部公開します。</p>
+</header>
+<main>
+  <section id="list">
+    <div class="days">
+      <button type="button" id="prev">← 前の日</button>
+      <b id="day"></b>
+      <button type="button" id="next">次の日 →</button>
+    </div>
+    <div id="races"></div>
+  </section>
+  <section id="detail" hidden>
+    <div class="card"><div class="article" id="free"></div></div>
+    <div class="card"><div class="article" id="paid"></div></div>
+    <p class="notice" id="stamp"></p>
+  </section>
+  <div class="card notice">
+    ※予想は参考情報です。的中を約束するものではありません。舟券の購入は20歳以上の方が、ご自身の判断と責任でお願いします。
+    <div class="links">
+      <a href="yosou.html" id="toList">今日の予想一覧</a>
+      <a href="seiseki.html">これまでの全成績</a>
+    </div>
+  </div>
+</main>
+<script>
+(function () {
+  'use strict';
+  var RAW = 'https://raw.githubusercontent.com/takechanman12250711-oss/chappy-boatrace-ai/main/';
+  var SERIES = { normal: 'AI展開', escape: '本命', manshu: '万舟' };
+  var params = new URLSearchParams(location.search);
+  function jstNow() { return new Date(Date.now() + 9 * 3600000); }
+  function ymd(d) { return d.toISOString().slice(0, 10).replace(/-/g, ''); }
+  var date = /^\d{8}$/.test(params.get('d') || '') ? params.get('d') : ymd(jstNow());
+  var id = /^[a-f0-9]{64}$/.test(params.get('id') || '') ? params.get('id') : '';
+  function label(d) { return Number(d.slice(4, 6)) + '月' + Number(d.slice(6, 8)) + '日'; }
+  function time(iso) { return new Date(Date.parse(iso) + 9 * 3600000).toISOString().slice(11, 16); }
+  function shift(d, days) {
+    var t = new Date(Date.UTC(+d.slice(0, 4), +d.slice(4, 6) - 1, +d.slice(6, 8)) + days * 86400000);
+    return ymd(t);
+  }
+  // New articles appear on GitHub at once; the site copy can lag a few minutes.
+  function load(file) {
+    return fetch(RAW + file + '?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .catch(function () {
+        return fetch(file, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+      });
+  }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function renderText(box, text) {
+    box.textContent = '';
+    String(text).split('\n').forEach(function (line, i, all) {
+      var cls = /^(🚤|🧭|🎟️|🎯|🛡️|🌊|💥|📌)/.test(line) ? 'h' : /^⭐/.test(line) ? 'h center' : '';
+      box.appendChild(el('span', cls, line));
+      if (i < all.length - 1) box.appendChild(document.createTextNode('\n'));
+    });
+  }
+  function showList() {
+    document.getElementById('day').textContent = label(date);
+    var races = document.getElementById('races');
+    races.textContent = '';
+    races.appendChild(el('p', 'empty', '読み込み中…'));
+    load('data/site-articles/' + date + '/index.json').then(function (index) {
+      races.textContent = '';
+      var list = (index && index.articles) || [];
+      if (!list.length) { races.appendChild(el('p', 'empty', 'この日の予想はまだありません。')); return; }
+      list.forEach(function (a) {
+        var card = el('div', 'card');
+        var link = el('a', 'race'); link.href = 'yosou.html?d=' + date + '&id=' + a.id;
+        link.appendChild(el('span', 'no', a.place + a.raceNo + 'R'));
+        var info = el('span');
+        var closed = Date.now() >= Date.parse(a.deadlineAt);
+        info.appendChild(el('span', 'chip' + (closed ? ' done' : ''), closed ? '締切済み' : SERIES[a.articleSeries] || '予想'));
+        info.appendChild(el('small', '', '🕒 締切 ' + time(a.deadlineAt) + '　公開 ' + time(a.publishedAt)));
+        link.appendChild(info);
+        card.appendChild(link);
+        races.appendChild(card);
+      });
+    }).catch(function () {
+      races.textContent = '';
+      races.appendChild(el('p', 'empty', 'この日の予想はまだありません。'));
+    });
+  }
+  function showDetail() {
+    document.getElementById('list').hidden = true;
+    document.getElementById('detail').hidden = false;
+    document.getElementById('lead').hidden = true;
+    document.getElementById('title').textContent = '読み込み中…';
+    load('data/site-articles/' + date + '/' + id + '.json').then(function (a) {
+      document.getElementById('title').textContent = a.place + a.raceNo + 'R ' + (SERIES[a.articleSeries] || '') + '予想';
+      document.title = label(date) + ' ' + a.place + a.raceNo + 'R｜チャッピーボートレースAI';
+      renderText(document.getElementById('free'), a.freeText);
+      renderText(document.getElementById('paid'), a.paidText);
+      document.getElementById('stamp').textContent = '公開 ' + label(date) + ' ' + time(a.publishedAt) + '（締切 ' + time(a.deadlineAt) + '）。公開後に内容は変えていません。';
+      document.getElementById('toList').href = 'yosou.html?d=' + date;
+    }).catch(function () {
+      document.getElementById('title').textContent = '記事が見つかりません';
+    });
+  }
+  document.getElementById('prev').onclick = function () { location.search = '?d=' + shift(date, -1); };
+  document.getElementById('next').onclick = function () { location.search = '?d=' + shift(date, 1); };
+  if (id) showDetail(); else showList();
+})();
+</script>
+</body>
+</html>
