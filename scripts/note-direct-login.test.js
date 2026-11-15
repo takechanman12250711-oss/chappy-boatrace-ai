@@ -3,8 +3,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { loadLoginConfig, safeError, signIn, runDirectAuth, NOTE_LOGIN_URL } = require('./note-direct-login');
 
-function fakePage({ after = 'https://note.com/', form = true, enabled = true, botCheck = 0 } = {}) {
-  const state = { url: 'about:blank', filled: {}, clicks: 0, visited: [] };
+function fakePage({ after = 'https://note.com/', form = true, enabled = true, components = [] } = {}) {
+  const state = { url: 'about:blank', filled: {}, clicks: 0, visited: [], observations: [] };
   const field = name => ({ waitFor: async () => {}, count: async () => (form ? 1 : 0),
     fill: async value => { state.filled[name] = value; } });
   const page = {
@@ -15,7 +15,8 @@ function fakePage({ after = 'https://note.com/', form = true, enabled = true, bo
     getByRole: () => ({ count: async () => (form ? 1 : 0), isEnabled: async () => enabled,
       click: async () => { state.clicks++; state.url = after; } }),
     waitForURL: async () => {},
-    locator: () => ({ count: async () => botCheck })
+    locator: () => ({ count: async () => components.length,
+      nth: index => ({ isVisible: async () => { state.observations.push(index); return components[index]; } }) })
   };
   return page;
 }
@@ -36,13 +37,75 @@ test('one sign-in attempt, accepted only when note leaves the login page', async
   assert.deepEqual(ok.state.filled, { 'メールアドレス または note ID': 'a@example.invalid', 'パスワード': 'secret-value' });
   for (const [page, pattern] of [
     [fakePage({ after: 'https://note.com/login' }), /^note_login_not_accepted$/],
-    [fakePage({ after: 'https://note.com/login', botCheck: 1 }), /^note_login_bot_check$/],
+    [fakePage({ after: 'https://note.com/login', components: [false] }), /^note_login_verification_component_detected$/],
     [fakePage({ after: 'https://accounts.example.invalid/check?x=secret' }), /^note_login_left_note_accounts\.example\.invalid$/],
     [fakePage({ form: false }), /^note_login_form_not_found$/],
     [fakePage({ enabled: false }), /^note_login_button_disabled$/]
   ]) {
     await assert.rejects(signIn(page, config), error => pattern.test(error.message) && !error.message.includes('secret'));
     assert.ok(page.state.clicks <= 1, 'never retried');
+  }
+});
+
+test('verification components describe observations, including hidden fields and visible badges, without diagnosing rejection', async () => {
+  const config = { id: 'a@example.invalid', password: 'secret-value' };
+  for (const [name, components, code] of [
+    ['no component', [], 'note_login_not_accepted'],
+    ['hidden response textarea', [false], 'note_login_verification_component_detected'],
+    ['hidden iframe', [false, false], 'note_login_verification_component_detected'],
+    ['visible badge', [true], 'note_login_verification_component_visible'],
+    ['visible checkbox with hidden response', [false, true], 'note_login_verification_component_visible']
+  ]) {
+    const page = fakePage({ after: 'https://note.com/login', components });
+    await assert.rejects(signIn(page, config), error => error.message === code, name);
+    assert.equal(page.state.clicks, 1, `${name}: no retry`);
+    assert.deepEqual(page.state.observations, components.map((_, index) => index), name);
+  }
+});
+
+test('failed or malformed component observations are unknown, not component absence or login rejection', async () => {
+  const config = { id: 'a@example.invalid', password: 'secret-value "q"\nline' };
+  const raw = () => Object.assign(new Error(`Call log: ${config.id} ${config.password} ページの本文`),
+    { cause: new Error(config.password) });
+  const failing = () => { throw raw(); };
+  const cases = [
+    ['locator failure', page => { page.locator = failing; }],
+    ['count failure', page => { page.locator = () => ({ count: failing }); }],
+    // Even an exception resembling another safe code is an observation failure.
+    ['misleading count exception', page => { page.locator = () => ({ count: async () => { throw new Error('note_login_not_accepted'); } }); }],
+    ['nth failure', page => { page.locator = () => ({ count: async () => 1, nth: failing }); }],
+    ['visibility failure', page => { page.locator = () => ({ count: async () => 1, nth: () => ({ isVisible: failing }) }); }],
+    ['later visibility failure', page => { page.locator = () => ({ count: async () => 2,
+      nth: index => ({ isVisible: async () => { if (index) throw raw(); return true; } }) }); }]
+  ];
+  for (const count of [-1, 1.5, NaN, Infinity, '1', null, undefined, 65, Number.MAX_SAFE_INTEGER]) {
+    cases.push([`invalid count ${String(count)}`, page => { page.locator = () => ({ count: async () => count,
+      nth: () => assert.fail('invalid count must not enumerate components') }); }]);
+  }
+  for (const visible of ['false', 0, null, undefined]) {
+    cases.push([`invalid visibility ${String(visible)}`, page => { page.locator = () => ({ count: async () => 1,
+      nth: () => ({ isVisible: async () => visible }) }); }]);
+  }
+  for (const [name, breakPage] of cases) {
+    const page = fakePage({ after: 'https://note.com/login', components: [false] }); breakPage(page);
+    let closed = 0, checked = 0;
+    const logs = [];
+    const result = runDirectAuth({ env: { NOTE_LOGIN_ID: config.id, NOTE_LOGIN_PASSWORD: config.password },
+      launch: async () => ({ newContext: async () => ({ newPage: async () => page }), close: async () => { closed++; } }),
+      ensureEditorReady: async () => { checked++; }, log: line => logs.push(line) });
+    await assert.rejects(result, error => {
+      assert.equal(error.message, 'note_login_verification_observation_failed', name);
+      assert.equal(error.cause, undefined, name);
+      for (const secret of [config.id, 'secret-value', 'Call log', 'ページ']) {
+        assert.ok(!`${error.message}\n${error.stack}`.includes(secret), `${name}: sanitized error`);
+      }
+      assert.equal(`NOTE_UI_TRANSPORT_FAILED=${error.message}`, 'NOTE_UI_TRANSPORT_FAILED=note_login_verification_observation_failed');
+      return true;
+    });
+    assert.equal(page.state.clicks, 1, `${name}: no retry`);
+    assert.equal(closed, 1, `${name}: browser closed`);
+    assert.equal(checked, 0, `${name}: editor never opened`);
+    assert.deepEqual(logs, [], `${name}: no success logs`);
   }
 });
 
@@ -102,10 +165,12 @@ test('raw browser errors become fixed codes and never carry credentials, page te
   assert.ok(logs.every(line => !leaks({ message: line, stack: '', cause: '' })));
   // Known codes pass through unchanged; anything shaped differently does not.
   for (const code of ['note_login_bot_check', 'note_login_not_accepted', 'note_editor_fields_not_ready',
+    'note_login_verification_component_visible', 'note_login_verification_component_detected', 'note_login_verification_observation_failed',
     'note_editor_session_not_ready_note.com', 'note_login_left_note_accounts.example.invalid']) {
     assert.equal(safeError(new Error(code), 'fallback').message, code);
   }
-  for (const message of ['note_login_bot_check secret-value', 'note_login_left_note_a b', `note_login_${config.password}`, '', undefined]) {
+  for (const message of ['note_login_bot_check secret-value', 'note_login_verification_observation_failed secret-value',
+    'note_login_verification_component_visible\nCall log', 'note_login_left_note_a b', `note_login_${config.password}`, '', undefined]) {
     assert.equal(safeError(message === undefined ? null : new Error(message), 'fallback').message, 'fallback');
   }
 });

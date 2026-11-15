@@ -21,7 +21,8 @@ function loadLoginConfig(env = process.env) {
 // through; every other failure becomes a fixed code with no message, cause or
 // stack from the original.
 const SAFE_CODES = new Set(['note_login_id_missing', 'note_login_password_missing', 'note_login_form_not_found',
-  'note_login_button_disabled', 'note_login_bot_check', 'note_login_not_accepted', 'note_editor_fields_not_ready']);
+  'note_login_button_disabled', 'note_login_bot_check', 'note_login_not_accepted', 'note_editor_fields_not_ready',
+  'note_login_verification_component_visible', 'note_login_verification_component_detected', 'note_login_verification_observation_failed']);
 const SAFE_HOST_CODES = /^(?:note_login_left_note|note_editor_session_not_ready)_[a-z0-9.-]{1,60}$/;
 function safeError(error, fallback) {
   const message = typeof error?.message === 'string' ? error.message : '';
@@ -34,6 +35,29 @@ async function step(fallback, action) {
 const hostOf = value => {
   try { return new URL(value).hostname.replace(/[^a-z0-9.-]/gi, '').slice(0, 60) || 'unknown'; } catch { return 'unknown'; }
 };
+
+async function verificationComponentCode(page) {
+  try {
+    const components = page.locator(
+      'textarea[name="g-recaptcha-response"], iframe[src*="recaptcha"], iframe[src*="hcaptcha"], iframe[src*="turnstile"]'
+    );
+    const count = await components.count();
+    // Bound DOM observations and reject malformed results rather than treating
+    // an incomplete check as absence. A badge/checkbox is not proof of a block.
+    if (!Number.isSafeInteger(count) || count < 0 || count > 64) return 'note_login_verification_observation_failed';
+    if (count === 0) return 'note_login_not_accepted';
+    let visible = false;
+    for (let index = 0; index < count; index++) {
+      const observed = await components.nth(index).isVisible();
+      if (typeof observed !== 'boolean') return 'note_login_verification_observation_failed';
+      visible = visible || observed;
+    }
+    return visible ? 'note_login_verification_component_visible' : 'note_login_verification_component_detected';
+  } catch {
+    // Do not retain browser error text, even if it resembles another safe code.
+    return 'note_login_verification_observation_failed';
+  }
+}
 
 async function signIn(page, config) {
   await step('note_login_page_open_failed', () => page.goto(NOTE_LOGIN_URL, { waitUntil: 'domcontentloaded', timeout: 60000 }));
@@ -60,11 +84,9 @@ async function signIn(page, config) {
     const url = page.url();
     if (hostOf(url) !== 'note.com') throw new Error(`note_login_left_note_${hostOf(url).toLowerCase()}`);
     if (/\/login\/?$/.test(new URL(url).pathname)) {
-      // Tell a bot check apart from a rejected password: the next step differs.
-      const botCheck = await page.locator(
-        'textarea[name="g-recaptcha-response"], iframe[src*="recaptcha"], iframe[src*="hcaptcha"], iframe[src*="turnstile"]'
-      ).count().catch(() => 0);
-      throw new Error(botCheck > 0 ? 'note_login_bot_check' : 'note_login_not_accepted');
+      // Report component observations only; neither presence nor visibility
+      // identifies why the login page remains or proves a visible challenge.
+      throw new Error(await verificationComponentCode(page));
     }
     return true;
   });
