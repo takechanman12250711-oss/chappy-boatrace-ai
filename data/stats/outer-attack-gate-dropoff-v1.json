@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "analysisId": "outer-attack-gate-dropoff-v1",
-  "generatedAt": "2026-11-15T05:40:19.713Z",
+  "generatedAt": "2026-11-15T12:41:32.946Z",
   "productionChanged": false,
   "automaticApplication": false,
   "fixedSignal": {
@@ -16,17 +16,17 @@
     "requiresNegativeRaceFlowGap": true
   },
   "counts": {
-    "total": 4905,
-    "preDeadline": 4887,
+    "total": 4908,
+    "preDeadline": 4890,
     "basisInvalid": 1197,
     "topNot1": 543,
     "noChallengerPair": 0,
-    "noStAttackAdvantage": 1704,
+    "noStAttackAdvantage": 1705,
     "noFlowSuppression": 167,
-    "noExhibitionAdvantage": 1023,
+    "noExhibitionAdvantage": 1024,
     "active": 95,
     "ambiguous": 9,
-    "inactiveOther": 149
+    "inactiveOther": 150
   },
   "rows": [
     {
@@ -122368,6 +122368,40 @@
       ]
     },
     {
+      "raceKey": "20261115-15-8",
+      "selectedAt": "2026-11-15T09:41:00.407Z",
+      "gate": "noStAttackAdvantage",
+      "status": "inactive",
+      "baselineTopBoatNo": 1,
+      "matchedBoatNos": [],
+      "pairs": [
+        {
+          "boatNo": 3,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": -0.7600000000000002,
+            "roleAttack": -0.5829999999999997,
+            "exhibition": 0.8999999999999999,
+            "raceFlow": -4.125
+          }
+        },
+        {
+          "boatNo": 4,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": -0.9,
+            "roleAttack": -0.55,
+            "exhibition": -1.4130000000000003,
+            "raceFlow": -3.5
+          }
+        }
+      ]
+    },
+    {
       "raceKey": "20261115-16-1",
       "selectedAt": "2026-11-14T17:27:58.884Z",
       "gate": "noStAttackAdvantage",
@@ -122649,6 +122683,40 @@
       ]
     },
     {
+      "raceKey": "20261115-20-9",
+      "selectedAt": "2026-11-15T09:41:00.520Z",
+      "gate": "inactiveOther",
+      "status": "inactive",
+      "baselineTopBoatNo": 1,
+      "matchedBoatNos": [],
+      "pairs": [
+        {
+          "boatNo": 3,
+          "matched": false,
+          "attackSignal": true,
+          "flowSuppressed": false,
+          "weightedGaps": {
+            "st": 1.6699999999999997,
+            "roleAttack": 0.6379999999999997,
+            "exhibition": 0.36,
+            "raceFlow": 2.8999999999999986
+          }
+        },
+        {
+          "boatNo": 4,
+          "matched": false,
+          "attackSignal": false,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": -0.45,
+            "roleAttack": -0.5059999999999993,
+            "exhibition": 0.6390000000000001,
+            "raceFlow": -2.275000000000002
+          }
+        }
+      ]
+    },
+    {
       "raceKey": "20261115-22-1",
       "selectedAt": "2026-11-14T17:27:59.366Z",
       "gate": "noExhibitionAdvantage",
@@ -122900,6 +122968,40 @@
             "roleAttack": 1.088999999999999,
             "exhibition": 0,
             "raceFlow": 0
+          }
+        }
+      ]
+    },
+    {
+      "raceKey": "20261115-24-9",
+      "selectedAt": "2026-11-15T09:41:00.184Z",
+      "gate": "noExhibitionAdvantage",
+      "status": "inactive",
+      "baselineTopBoatNo": 1,
+      "matchedBoatNos": [],
+      "pairs": [
+        {
+          "boatNo": 3,
+          "matched": false,
+          "attackSignal": true,
+          "flowSuppressed": false,
+          "weightedGaps": {
+            "st": 1.1,
+            "roleAttack": 0.6929999999999997,
+            "exhibition": 0,
+            "raceFlow": 0
+          }
+        },
+        {
+          "boatNo": 4,
+          "matched": false,
+          "attackSignal": true,
+          "flowSuppressed": true,
+          "weightedGaps": {
+            "st": 0.25999999999999945,
+            "roleAttack": 0.12099999999999937,
+            "exhibition": 0,
+            "raceFlow": -5.649999999999999
           }
         }
       ]
