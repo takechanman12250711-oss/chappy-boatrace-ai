@@ -56,3 +56,26 @@ test("odds and official results cannot alter source groups or counts",()=>{
   p.oddsByTicket={"1-2-3":101,"1-4-3":99};p.result="6-5-4";p.payout=100000;
   const b=reader.fromPrediction(p);assert.deepEqual(a,b);
 });
+
+test("approved wall purchase skip is retained when only saved tickets exist",()=>{
+  const p=clone();p.race={deadlineAt:"2026-11-16T20:07:00+09:00"};
+  p.wallTheory={state:"壁成立",attackerNo:2,wallCandidateNo:3,score:80,grade:"A"};
+  const selector=require("../js/practical-selection"),before=JSON.stringify(p);
+  assert.equal(selector.purchaseDecision(p).status,"skip");
+  const out=boundary.prepare(p,selector,reader);
+  assert.equal(out.readerPresentation.status,"skipped");
+  assert.equal(reader.fromPrediction(out).status,"skipped");
+  assert.deepEqual(out.practicalSelection.tickets,p.practicalTickets);
+  assert.equal(JSON.stringify(p),before);
+});
+test("unavailable purchase-policy computation cannot fall through to a buy recommendation",()=>{
+  const p=clone(),selector={purchaseDecision(){throw Error("policy unavailable");}};
+  const out=boundary.prepare(p,selector,reader);
+  assert.equal(reader.fromPrediction(out).status,"unavailable");
+  assert.deepEqual(out.mainSheet,p.mainSheet);
+});
+
+test("a skipped forecast selection remains skipped rather than empty or selected",()=>{
+ const p=clone(); const out=reader.fromPrediction(p,{status:"skipped",reason:"展開未成立",tickets:[]});
+ assert.equal(out.status,"skipped");assert.equal(out.reason,"展開未成立");assert.deepEqual(out.groups,[]);
+});

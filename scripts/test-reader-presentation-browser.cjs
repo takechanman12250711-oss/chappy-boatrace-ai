@@ -34,6 +34,7 @@ async function main(){
       await page.goto("http://127.0.0.1:"+server.address().port);
       await page.waitForFunction(()=>window.ChappyPracticalVisiblePanel&&window.ChappyFinalDisplayUserContract&&window.ChappyFinalDisplayOwner);
       if(!early)await page.evaluate(install);
+      await page.addScriptTag({url:"/js/practical-selection.js"});
       await page.addScriptTag({url:"/js/main-cover-display-boundary.js"});
       await page.evaluate(()=>dispatchEvent(new Event("chappy:prediction-runtime-ready")));
       const p=structuredClone(fixture.bundle.record.prediction);
@@ -64,11 +65,14 @@ async function main(){
       assert.deepEqual((await snapshot()).groups,s.groups);
       const quotes=await page.evaluate(()=>[...ChappyFinalMobileUi.buildOddsMap(__lastRendered)]);
       assert.equal(new Map(quotes).get("1-2-3"),101);assert.equal(new Map(quotes).get("1-4-3"),null);
+      assert.equal(await page.evaluate(()=>ChappyFinalMobileUi.buildOddsMap({mainSheet:{tickets:[{ticket:"1-2-3"}]},practicalTickets:[{ticket:"1-2-3",odds:30}]}).get("1-2-3")),30);
       const skipped=structuredClone(p);skipped.practicalSelection={tickets:p.practicalTickets,purchaseDecision:{status:"skip",reason:"壁艇条件"}};
       await render(skipped);s=await snapshot();assert.equal(s.status,"skipped");assert.equal(s.groups.length,0);assert.equal(s.legacyVisible,0);assert.match(s.text,/0点・0円/);
+      const wall=structuredClone(p);wall.race={deadlineAt:"2026-11-16T20:07:00+09:00"};wall.wallTheory={state:"壁成立",attackerNo:2,wallCandidateNo:3,score:80,grade:"A"};
+      await render(wall);s=await snapshot();assert.equal(s.status,"skipped");assert.equal(s.groups.length,0);assert.equal(s.legacyVisible,0);
       const empty=structuredClone(p);empty.practicalSelection={tickets:[]};
       await render(empty);assert.equal((await snapshot()).status,"empty");
-      const missing=structuredClone(p);delete missing.practicalTickets;await render(missing);assert.equal((await snapshot()).status,"unavailable");
+      const missing=structuredClone(p);delete missing.mainSheet.flowTickets;await render(missing);assert.equal((await snapshot()).status,"unavailable");
       // A followed immediately by B: delayed wrappers and visibility restoration must retain B.
       const b={mainSheet:{honmei:{boatNo:2},tickets:[{ticket:"2-3-4"}],coverTickets:[],flowTickets:[]},manshuSheet:{tickets:[]},practicalTickets:[{ticket:"2-3-4"}]};
       await page.evaluate(([a,b])=>{renderAll(a);renderAll(b);},[p,b]);

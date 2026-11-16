@@ -80,6 +80,9 @@
       referenceOriginalCount:0,referenceOverlapCount:0,explanation:explanation(prediction)});
     if(selection?.purchaseDecision?.status==="skip")
       return state("skipped",String(selection.purchaseDecision.reason||"購入を見送ります。"));
+    if(selection?.purchaseDecision?.status==="unavailable")
+      return state("unavailable","購入方針の確認中です。");
+    if(selection?.status==="skipped")return state("skipped",String(selection.reason||"購入を見送ります。"));
     const central=Array.isArray(selection?.tickets)?selection.tickets:prediction.practicalTickets;
     if(!Array.isArray(central))return state("unavailable","買い目の選定を確認中です。");
     if(!central.length)return state("empty","選定された買い目はありません。");

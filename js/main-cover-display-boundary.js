@@ -478,8 +478,17 @@
     if (reader?.fromPrediction) {
       // Preserve complete pools instead of feeding clipped 3/2/2/1 display rows back.
       const resolved = resolveSelection(prediction, selector);
-      const selection = resolved.selection;
-      const source = resolved.selectedAtBoundary ? {...prediction, practicalSelection: selection} : prediction;
+      let selection = resolved.selection;
+      // Stored tickets may predate the purchase-policy wrapper. Reuse the
+      // established purchase decision without selecting or changing any ticket.
+      if (!selection?.purchaseDecision && typeof selector?.purchaseDecision === "function") {
+        let decision;
+        try { decision = selector.purchaseDecision(prediction); }
+        catch (_) { decision = {status:"unavailable"}; }
+        if (!decision || !["skip","unchanged"].includes(decision.status)) decision={status:"unavailable"};
+        selection = {...(selection || {}), tickets:selection?.tickets ?? prediction.practicalTickets, purchaseDecision:decision};
+      }
+      const source = selection && selection !== prediction.practicalSelection ? {...prediction, practicalSelection: selection} : prediction;
       const readerPresentation = reader.fromPrediction(source, selection);
       if (readerPresentation) return {...source, readerPresentation};
     }

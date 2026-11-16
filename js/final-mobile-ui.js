@@ -90,15 +90,15 @@
   function buildOddsMap(prediction) {
     const map = new Map();
     const seen = new WeakSet();
-    const record = (ticket, value) => {
+    const record = (ticket, value, explicitMissing = false) => {
       const key = normalizeExactTicket(ticket);
       const odds = numericOdds(value);
-      if (key && !map.has(key)) map.set(key, odds);
+      if (key && (odds || explicitMissing) && !map.has(key)) map.set(key, odds);
     };
-    const walk = (value, depth = 0) => {
+    const walk = (value, depth = 0, explicitMap = false) => {
       if (depth > 6 || value === null || value === undefined) return;
       if (Array.isArray(value)) {
-        value.forEach(item => walk(item, depth + 1));
+        value.forEach(item => walk(item, depth + 1, explicitMap));
         return;
       }
       if (typeof value !== "object") return;
@@ -111,20 +111,19 @@
       Object.entries(value).forEach(([key, child]) => {
         if (/^[1-6]-[1-6]-[1-6]$/.test(key)) {
           if (typeof child === "object" && child) {
-            record(key, child.odds ?? child.currentOdds ?? child.finalOdds ?? child.value ?? child.oddsText);
+            record(key, child.odds ?? child.currentOdds ?? child.finalOdds ?? child.value ?? child.oddsText, explicitMap);
           } else {
-            record(key, child);
+            record(key, child, explicitMap);
           }
         }
-        walk(child, depth + 1);
+        walk(child, depth + 1, explicitMap);
       });
     };
 
+    // Only an explicit current-map key may reserve a missing value.
+    // A ticket row with no odds field must allow later saved-row fallback.
+    [prediction?.oddsByTicket,prediction?.trifectaOdds,prediction?.odds].forEach(source=>walk(source,0,true));
     [
-      // Explicit current odds maps precede snapshot ticket rows.
-      prediction?.oddsByTicket,
-      prediction?.trifectaOdds,
-      prediction?.odds,
       prediction?.mainSheet,
       prediction?.manshuSheet,
       prediction?.ticketSheets,
