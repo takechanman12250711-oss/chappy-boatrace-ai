@@ -18,6 +18,7 @@
     "refs/tags/note-published/0ff2869dd43ac55d164653451b153ee9eee70fcd6bc97f39f1e98087671909dc:41dc7504033451193ad1496f283008b60848d9e9",
     "refs/tags/note-published/10609c180e35619ac535faf891130d7a5d978589c6bf1fc88620c57799779047:26bedbf87ce95cc56086fed7ee22ed8977c2d622",
     "refs/tags/note-published/117912a14db3cde2d3962bf5b519f8f9344c31af1f648794d86a393d5dc3084b:e3e576e19ea667ea3e6b209249992474d4330028",
+    "refs/tags/note-published/127a5d3ce401ede7a68ba3a75d8f838f203e85ce6b1b0fcbb320f6f00be0333d:2cd247b1233193525c2abd726a246f4f2f745156",
     "refs/tags/note-published/155e04b636e92542628b2bc6c760675ba1948ffd80980dd80add687f91fedc67:5a8d977eca359c4a60ee08b4c6ab126676123d07",
     "refs/tags/note-published/16748bbe9ffeac90d4ec170aa8729ad4a07536866757cbca1aad4a567354110a:581654c3f99de47c06e91f108761a26b5626caf1",
     "refs/tags/note-published/18c91dcc0095c2cddd023b949f824982a14100fb735d7745a05c24d50fcc2edc:94758b21586558f46fc4f93388e2ea075321b677",
@@ -87,6 +88,7 @@
     "refs/tags/note-published/620e50502ef7bc09ce661f15f1679097e311c463b9b21f52a297e3f211460e8d:0045d61d76c3d9b2bd244d1101ac99095bef72c7",
     "refs/tags/note-published/631c67bf401ae7946ff21acec797826a127a157673747de694fc06005d147d01:14075fcf45e79f4c0d3475c85897c92dfd15cbe8",
     "refs/tags/note-published/63ce4774e862f495d5ed89a1a5b2502aaaa6fee54db589e60ca184f8d43892fe:3ad4964a9b6387e605b4ae6a4d49bb305f933795",
+    "refs/tags/note-published/65ab26d8a513aaf7313a5d769149704a64437268b6a3748b00debdccc8563070:4d454eff288283ad0cae2d2a670e1473025c4e0f",
     "refs/tags/note-published/65c2e8b62548eea40f32c1173374538609c3fd69ab22cf34dd1047e9f42fb6f5:01229f77986f0bbecfaafd35ef2a0cd7039be02a",
     "refs/tags/note-published/677ff40f494ec0b383959c91832bb113d26fc23d9ba1c5321f685d49299c920a:61c9d2c0e21e86174c9ed43032b7d4c74a6f1d13",
     "refs/tags/note-published/680dfd39744785c1d606ad9556e660f559aea21716c8cefa3aaec41074e5dfb2:63fe85d6375b3bbe4c6c9776d266cfb627406b2f",
@@ -297,18 +299,52 @@
         }
       },
       "settlement": {
-        "status": "pending",
-        "reason": "official_result_pending"
+        "status": "hit",
+        "combination": "1-3-4",
+        "payoutPer100Yen": 500,
+        "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261116&jcd=24&rno=10",
+        "evidenceId": "882cc8f2e3813afef34100fdb06fc3a03ead993fc1fc68f962e672c9d75a2ca6"
       },
       "publishedSettlement": {
-        "status": "pending",
-        "reason": "official_result_pending",
+        "status": "hit",
+        "combination": "1-3-4",
+        "payoutPer100Yen": 500,
+        "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261116&jcd=24&rno=10",
+        "evidenceId": "d643c3c633203d6c9c598a590fa203fb2477d6267283cef489af33861b117031",
         "method": "published-main-sections-v1",
         "publishedTicketCount": 36,
         "sectionsSha256": "65d9fbcb354f3cbb8fc6b0df8f48cb6be33e2224d625e218670e7ab694699396",
-        "referenceTicketCount": 6
+        "referenceTicketCount": 6,
+        "matchedSections": [
+          "🎯 本命",
+          "🌊 流し"
+        ]
       },
-      "winningProvenance": null,
+      "winningProvenance": {
+        "version": "note-result-provenance-v1",
+        "publicationKey": "20261116-24-10:normal",
+        "raceKey": "20261116-24-10",
+        "articleSeries": "normal",
+        "sourceSha256": "a7bd9cb84e55038c6a09510dacf3a3ceef2d0433036dc5ddf08aac7ac9019042",
+        "combination": "1-3-4",
+        "settlementEvidenceId": "d643c3c633203d6c9c598a590fa203fb2477d6267283cef489af33861b117031",
+        "sectionsSha256": "65d9fbcb354f3cbb8fc6b0df8f48cb6be33e2224d625e218670e7ab694699396",
+        "matchedSections": [
+          "🎯 本命",
+          "🌊 流し"
+        ],
+        "origins": [
+          {
+            "categoryId": "main",
+            "sourceField": "record.prediction.mainSheet.tickets"
+          },
+          {
+            "categoryId": "flow",
+            "sourceField": "record.prediction.mainSheet.flowTickets"
+          }
+        ],
+        "provenanceSha256": "f36b652bfc8a78cd9bdb6eddcf384a4e2bd41f08902973bd3ace15c7c00080ec"
+      },
       "socialContext": {
         "version": "source-context-v1",
         "sourceSha256": "a7bd9cb84e55038c6a09510dacf3a3ceef2d0433036dc5ddf08aac7ac9019042",
@@ -316,6 +352,20 @@
         "firstBoats": [
           "1"
         ]
+      },
+      "publicResultObservation": {
+        "version": "note-result-observation-v1",
+        "evidenceId": "d643c3c633203d6c9c598a590fa203fb2477d6267283cef489af33861b117031",
+        "firstResultSeenAt": "2026-11-16T11:04:36.774Z",
+        "officialSourceCheckedAt": "2026-11-16T11:04:36.722Z",
+        "noteVerifiedAt": null
+      },
+      "resultObservation": {
+        "version": "note-result-observation-v1",
+        "evidenceId": "882cc8f2e3813afef34100fdb06fc3a03ead993fc1fc68f962e672c9d75a2ca6",
+        "firstResultSeenAt": "2026-11-16T11:04:36.774Z",
+        "officialSourceCheckedAt": "2026-11-16T11:04:36.722Z",
+        "noteVerifiedAt": null
       }
     },
     {
@@ -390,23 +440,246 @@
         }
       },
       "settlement": {
-        "status": "pending",
-        "reason": "official_result_stale"
+        "status": "miss",
+        "combination": "3-2-1",
+        "payoutPer100Yen": 4050,
+        "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261116&jcd=15&rno=10",
+        "evidenceId": "3c350ff41ad4d9c3c6da40da616b5efd3317edad55ea2e8fec962967f3a7ad8f"
       },
       "publishedSettlement": {
-        "status": "pending",
-        "reason": "official_result_stale",
+        "status": "hit",
+        "combination": "3-2-1",
+        "payoutPer100Yen": 4050,
+        "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261116&jcd=15&rno=10",
+        "evidenceId": "dca248d85988beda406f1c8c1d021a8853a4e4c5a4dcdba6b524e6805d76b875",
         "method": "published-main-sections-v1",
         "publishedTicketCount": 38,
         "sectionsSha256": "050b41bff4895a4f4e5786bc8ae0bb961852028f0b578e2c4d355eb3fd314926",
-        "referenceTicketCount": 6
+        "referenceTicketCount": 6,
+        "matchedSections": [
+          "💥 万舟狙い"
+        ]
       },
-      "winningProvenance": null,
+      "winningProvenance": {
+        "version": "note-result-provenance-v1",
+        "publicationKey": "20261116-15-10:normal",
+        "raceKey": "20261116-15-10",
+        "articleSeries": "normal",
+        "sourceSha256": "cff146d7cbddf5190a8aefc31745c32eb34384426930689e5507def24d2ed0c2",
+        "combination": "3-2-1",
+        "settlementEvidenceId": "dca248d85988beda406f1c8c1d021a8853a4e4c5a4dcdba6b524e6805d76b875",
+        "sectionsSha256": "050b41bff4895a4f4e5786bc8ae0bb961852028f0b578e2c4d355eb3fd314926",
+        "matchedSections": [
+          "💥 万舟狙い"
+        ],
+        "origins": [
+          {
+            "categoryId": "manshu",
+            "sourceField": "record.prediction.manshuSheet.tickets"
+          }
+        ],
+        "provenanceSha256": "ba346e2221988ea73ab640df420e8e2c1d01459167a10464240f051cf05a01d8"
+      },
       "socialContext": {
         "version": "source-context-v1",
         "sourceSha256": "cff146d7cbddf5190a8aefc31745c32eb34384426930689e5507def24d2ed0c2",
         "preview": "最有力展開は1号艇逃げ。",
         "firstBoats": [
+          "1"
+        ]
+      },
+      "publicResultObservation": {
+        "version": "note-result-observation-v1",
+        "evidenceId": "dca248d85988beda406f1c8c1d021a8853a4e4c5a4dcdba6b524e6805d76b875",
+        "firstResultSeenAt": "2026-11-16T11:04:37.625Z",
+        "officialSourceCheckedAt": "2026-11-16T11:04:37.574Z",
+        "noteVerifiedAt": null
+      },
+      "resultObservation": {
+        "version": "note-result-observation-v1",
+        "evidenceId": "3c350ff41ad4d9c3c6da40da616b5efd3317edad55ea2e8fec962967f3a7ad8f",
+        "firstResultSeenAt": "2026-11-16T11:04:37.625Z",
+        "officialSourceCheckedAt": "2026-11-16T11:04:37.574Z",
+        "noteVerifiedAt": null
+      }
+    },
+    {
+      "raceKey": "20261116-24-11",
+      "articleSeries": "normal",
+      "publicationKey": "20261116-24-11:normal",
+      "url": "https://note.com/great_robin3243/n/nccd0a3d69df0",
+      "place": "大村",
+      "raceNo": 11,
+      "deadlineAt": "2026-11-16T20:07:00+09:00",
+      "price": 0,
+      "publishedAt": "2026-11-16T19:55:17.000+09:00",
+      "sourceSha256": "978627238536aa03c7073ab09bd0c1e0987690f8ce6daa63794837d8fa844e81",
+      "ticketCount": 7,
+      "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261116&jcd=24&rno=11",
+      "publicationEvidence": {
+        "version": "note-publication-evidence-v1",
+        "receiptCommitSha": "2cd247b1233193525c2abd726a246f4f2f745156",
+        "publisherCommitSha": "c6841cc970821b5129bee01a94d1f29d46b9def7",
+        "sourceSha256": "978627238536aa03c7073ab09bd0c1e0987690f8ce6daa63794837d8fa844e81",
+        "presentationVersion": "readable-v8",
+        "rendererSha256": "bd765b2e3339e61853218d7bc41e9ec2b43bd5deaec2abfa67e40bbbf1a74447",
+        "publicationSourceSha256": "82d2e7f3d92e23aaf0edd3c6788e1d2a4300f5f7c5bc6737b08fd5248aaabd57",
+        "generatorSha256": "2f4b9769f34e29287e8b23bae208a694c39eca66700850397a64879619d48be3",
+        "publishedDisplayProof": {
+          "version": "published-ticket-sections-v1",
+          "presentationVersion": "readable-v8",
+          "paidTextSha256": "dda97597bf07bb1982da073ff40cc1f3bc81bf597521b754198c47e5fb8f5684",
+          "sectionsSha256": "c5f2bb2c002771af09bb44e0188eefd87a5e41229b5e7e3e6884b28747c4b8fb",
+          "publishedTicketsSha256": "f1bb6377268953f56ef3d5d35ab0389a0de5c0b2397f73cc6fb066e8de43eb5d",
+          "publishedTicketCount": 37,
+          "sections": [
+            {
+              "label": "🎯 本命",
+              "ticketCount": 6,
+              "ticketsSha256": "96525ca03b0b080e5a75fa1f17d5faec62afb26e9279b87f60717750fda4b27e",
+              "includedInPublishedResult": true
+            },
+            {
+              "label": "🛡️ 押さえ",
+              "ticketCount": 8,
+              "ticketsSha256": "fa8c010120480a788aad2e08cb5bdebbebe9c5a3a22ea0ce6648959a633a2156",
+              "includedInPublishedResult": true
+            },
+            {
+              "label": "🌊 流し",
+              "ticketCount": 12,
+              "ticketsSha256": "5971afaec53a075491c18a53783038455ed92aab1950bc434c4bb114f5b58c87",
+              "includedInPublishedResult": true
+            },
+            {
+              "label": "💥 万舟狙い",
+              "ticketCount": 17,
+              "ticketsSha256": "8d83cda677e5f41f17fcc166061d61757baf5af709956f109c5bb7a726b2ea3c",
+              "includedInPublishedResult": true
+            },
+            {
+              "label": "🧾 別会計の参考予想",
+              "ticketCount": 4,
+              "ticketsSha256": "f9db11504ca05b938d674b09facc9d418b5b4f671550dfc748971666ebc61de9",
+              "includedInPublishedResult": false
+            }
+          ],
+          "modelSubset": {
+            "version": "note-korogashi-display-v1",
+            "label": "⭐ 中心の買い目",
+            "sourceSha256": "978627238536aa03c7073ab09bd0c1e0987690f8ce6daa63794837d8fa844e81",
+            "ticketCount": 7,
+            "ticketsSha256": "9cd68e223e381b3db25ed618766733f1cd86abd73b28e13a2aeef9c8aa1a5acb",
+            "includedInPublishedResult": false
+          }
+        }
+      },
+      "settlement": {
+        "status": "pending",
+        "reason": "official_result_pending"
+      },
+      "publishedSettlement": {
+        "status": "pending",
+        "reason": "official_result_pending",
+        "method": "published-main-sections-v1"
+      },
+      "winningProvenance": null,
+      "socialContext": {
+        "version": "source-context-v1",
+        "sourceSha256": "978627238536aa03c7073ab09bd0c1e0987690f8ce6daa63794837d8fa844e81",
+        "preview": "最有力展開は1号艇逃げ。",
+        "firstBoats": [
+          "1"
+        ]
+      }
+    },
+    {
+      "raceKey": "20261116-15-11",
+      "articleSeries": "normal",
+      "publicationKey": "20261116-15-11:normal",
+      "url": "https://note.com/great_robin3243/n/n6feaafb21989",
+      "place": "丸亀",
+      "raceNo": 11,
+      "deadlineAt": "2026-11-16T20:14:00+09:00",
+      "price": 0,
+      "publishedAt": "2026-11-16T20:03:09.000+09:00",
+      "sourceSha256": "bb3c9292a5144790623d3af2ca8f35bc49a712ff80b39b1c9fc6aa8cefd1c49b",
+      "ticketCount": 10,
+      "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261116&jcd=15&rno=11",
+      "publicationEvidence": {
+        "version": "note-publication-evidence-v1",
+        "receiptCommitSha": "4d454eff288283ad0cae2d2a670e1473025c4e0f",
+        "publisherCommitSha": "5c456cba87704d8c88eb259ff45566f1408fae14",
+        "sourceSha256": "bb3c9292a5144790623d3af2ca8f35bc49a712ff80b39b1c9fc6aa8cefd1c49b",
+        "presentationVersion": "readable-v9",
+        "rendererSha256": "fc25ab24264f9ca0a72c7a0faacd7014d2b7d9991ef7e69639980b7f61c7a2a6",
+        "publicationSourceSha256": "be6bd68379b0b60e9ae451cd2f858c957a37607aa144159858c8c2d1504dfc85",
+        "generatorSha256": "2f4b9769f34e29287e8b23bae208a694c39eca66700850397a64879619d48be3",
+        "publishedDisplayProof": {
+          "version": "published-ticket-sections-v1",
+          "presentationVersion": "readable-v9",
+          "paidTextSha256": "6a70a66c13d98ba01ffc41998b25bb8dd82719cf1d6ffe41cbd752db32ffb0d8",
+          "sectionsSha256": "13458ed95132c2b23cca19495bf4e8ec482a8ad95e39f0dfe887bfcf461f8116",
+          "publishedTicketsSha256": "8120751fee52e0f1be31a3256b154bff990aa0affcfe0d6a7d795cb650639daf",
+          "publishedTicketCount": 30,
+          "sections": [
+            {
+              "label": "🎯 本命",
+              "ticketCount": 4,
+              "ticketsSha256": "c7d40b642ee564590f50c878a9c90aeffdd3a4ffc6d3e38caa3370ce830b3b36",
+              "includedInPublishedResult": true
+            },
+            {
+              "label": "🛡️ 押さえ",
+              "ticketCount": 6,
+              "ticketsSha256": "d4f0e19e0b634e7e21c570a0584fdf3bf9b71f750dfe70a8f8ae0dc5872030db",
+              "includedInPublishedResult": true
+            },
+            {
+              "label": "🌊 流し",
+              "ticketCount": 8,
+              "ticketsSha256": "573d64c10dbb052b30499637d8b383cd2e4d66055fd3cb276aac35de82c5d3ce",
+              "includedInPublishedResult": true
+            },
+            {
+              "label": "💥 万舟狙い",
+              "ticketCount": 16,
+              "ticketsSha256": "7b48161b8f0aa1bf571d07b47bfb2bdcd065525061547a2f1ef37f8bd9435ef5",
+              "includedInPublishedResult": true
+            },
+            {
+              "label": "🧾 別会計の参考予想",
+              "ticketCount": 4,
+              "ticketsSha256": "20af27fb0ac7990292eabc394972e34595f3dc1ab18acf2bbfee45b7b048d36c",
+              "includedInPublishedResult": false
+            }
+          ],
+          "modelSubset": {
+            "version": "note-korogashi-display-v1",
+            "label": "⭐ 中心の買い目",
+            "sourceSha256": "bb3c9292a5144790623d3af2ca8f35bc49a712ff80b39b1c9fc6aa8cefd1c49b",
+            "ticketCount": 10,
+            "ticketsSha256": "2636500e348e166d40096217156bccb7e2a8fe23a73902d202faf53900cb3098",
+            "includedInPublishedResult": false
+          }
+        }
+      },
+      "settlement": {
+        "status": "pending",
+        "reason": "official_result_pending"
+      },
+      "publishedSettlement": {
+        "status": "pending",
+        "reason": "official_result_pending",
+        "method": "published-main-sections-v1"
+      },
+      "winningProvenance": null,
+      "socialContext": {
+        "version": "source-context-v1",
+        "sourceSha256": "bb3c9292a5144790623d3af2ca8f35bc49a712ff80b39b1c9fc6aa8cefd1c49b",
+        "preview": "最有力展開は3コース攻め。",
+        "firstBoats": [
+          "3",
           "1"
         ]
       }
@@ -433,11 +706,25 @@
     "deliveryEnabled": false,
     "x": {
       "status": "awaiting_connection",
-      "items": []
+      "items": [
+        {
+          "id": "x:882cc8f2e3813afef34100fdb06fc3a03ead993fc1fc68f962e672c9d75a2ca6",
+          "status": "awaiting_connection",
+          "publicationKey": "20261116-24-10:normal",
+          "text": "11/16 AI展開予想｜大村10R 的中\n6点で 1-3-4\n公式払戻（100円あたり）500円\n公式結果\nhttps://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261116&jcd=24&rno=10\n全結果一覧（無料）\nhttps://note.com/great_robin3243/n/na76b6c6c18ff"
+        }
+      ]
     },
     "line": {
       "status": "awaiting_connection",
-      "items": []
+      "items": [
+        {
+          "id": "line:882cc8f2e3813afef34100fdb06fc3a03ead993fc1fc68f962e672c9d75a2ca6",
+          "status": "awaiting_connection",
+          "publicationKey": "20261116-24-10:normal",
+          "text": "11/16 AI展開予想｜大村10R 的中\n6点で 1-3-4\n公式払戻（100円あたり）500円\n公式結果\nhttps://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261116&jcd=24&rno=10\n全結果一覧（無料）\nhttps://note.com/great_robin3243/n/na76b6c6c18ff"
+        }
+      ]
     }
   },
   "officialResults": {
@@ -447,14 +734,112 @@
       "date": "20261116",
       "jcd": "24",
       "raceNo": 10,
-      "checkedAt": "2026-11-16T10:42:31.983Z",
+      "checkedAt": "2026-11-16T11:04:36.722Z",
       "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261116&jcd=24&rno=10",
-      "resultAvailable": false,
-      "status": "not_finished",
+      "resultAvailable": true,
+      "status": "finished",
       "void": false,
-      "finishers": [],
-      "starts": [],
-      "winningMethod": "",
+      "finishers": [
+        {
+          "rank": 1,
+          "boat": 1,
+          "registerNo": "4096",
+          "racerName": "石橋道友",
+          "raceTime": "1'49\"8"
+        },
+        {
+          "rank": 2,
+          "boat": 3,
+          "registerNo": "4702",
+          "racerName": "三浦敬太",
+          "raceTime": "1'50\"6"
+        },
+        {
+          "rank": 3,
+          "boat": 4,
+          "registerNo": "4985",
+          "racerName": "井本昌也",
+          "raceTime": "1'51\"7"
+        },
+        {
+          "rank": 4,
+          "boat": 5,
+          "registerNo": "4695",
+          "racerName": "尾崎雄二",
+          "raceTime": "1'53\"1"
+        },
+        {
+          "rank": 5,
+          "boat": 2,
+          "registerNo": "4598",
+          "racerName": "加藤政彦",
+          "raceTime": ""
+        },
+        {
+          "rank": 6,
+          "boat": 6,
+          "registerNo": "5282",
+          "racerName": "中本大樹",
+          "raceTime": ""
+        }
+      ],
+      "starts": [
+        {
+          "course": 1,
+          "boat": 1,
+          "st": 0.17,
+          "marker": "",
+          "falseStart": false,
+          "lateStart": false,
+          "raw": ".17 逃げ"
+        },
+        {
+          "course": 2,
+          "boat": 2,
+          "st": 0.12,
+          "marker": "",
+          "falseStart": false,
+          "lateStart": false,
+          "raw": ".12"
+        },
+        {
+          "course": 3,
+          "boat": 3,
+          "st": 0.12,
+          "marker": "",
+          "falseStart": false,
+          "lateStart": false,
+          "raw": ".12"
+        },
+        {
+          "course": 4,
+          "boat": 4,
+          "st": 0.12,
+          "marker": "",
+          "falseStart": false,
+          "lateStart": false,
+          "raw": ".12"
+        },
+        {
+          "course": 5,
+          "boat": 5,
+          "st": 0.12,
+          "marker": "",
+          "falseStart": false,
+          "lateStart": false,
+          "raw": ".12"
+        },
+        {
+          "course": 6,
+          "boat": 6,
+          "st": 0.1,
+          "marker": "",
+          "falseStart": false,
+          "lateStart": false,
+          "raw": ".10"
+        }
+      ],
+      "winningMethod": "逃げ",
       "trifecta": {
         "combination": "1-3-4",
         "boats": [
@@ -466,12 +851,140 @@
         "payoutText": "¥500",
         "popularity": 1
       }
+    },
+    "20261116-15-10": {
+      "ok": true,
+      "source": "boatrace-official",
+      "date": "20261116",
+      "jcd": "15",
+      "raceNo": 10,
+      "checkedAt": "2026-11-16T11:04:37.574Z",
+      "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261116&jcd=15&rno=10",
+      "resultAvailable": true,
+      "status": "finished",
+      "void": false,
+      "finishers": [
+        {
+          "rank": 1,
+          "boat": 3,
+          "registerNo": "4320",
+          "racerName": "峰竜太",
+          "raceTime": "1'47\"4"
+        },
+        {
+          "rank": 2,
+          "boat": 2,
+          "registerNo": "4739",
+          "racerName": "中村晃朋",
+          "raceTime": "1'48\"9"
+        },
+        {
+          "rank": 3,
+          "boat": 1,
+          "registerNo": "3942",
+          "racerName": "寺田祥",
+          "raceTime": "1'50\"5"
+        },
+        {
+          "rank": 4,
+          "boat": 4,
+          "registerNo": "3997",
+          "racerName": "北村征嗣",
+          "raceTime": "1'51\"3"
+        },
+        {
+          "rank": 5,
+          "boat": 6,
+          "registerNo": "4914",
+          "racerName": "吉田裕平",
+          "raceTime": "1'52\"4"
+        },
+        {
+          "rank": 6,
+          "boat": 5,
+          "registerNo": "4528",
+          "racerName": "黒井達矢",
+          "raceTime": "1'53\"0"
+        }
+      ],
+      "starts": [
+        {
+          "course": 1,
+          "boat": 1,
+          "st": 0.13,
+          "marker": "",
+          "falseStart": false,
+          "lateStart": false,
+          "raw": ".13"
+        },
+        {
+          "course": 2,
+          "boat": 2,
+          "st": 0.09,
+          "marker": "",
+          "falseStart": false,
+          "lateStart": false,
+          "raw": ".09"
+        },
+        {
+          "course": 3,
+          "boat": 3,
+          "st": 0.06,
+          "marker": "",
+          "falseStart": false,
+          "lateStart": false,
+          "raw": ".06 まくり差し"
+        },
+        {
+          "course": 4,
+          "boat": 4,
+          "st": 0.1,
+          "marker": "",
+          "falseStart": false,
+          "lateStart": false,
+          "raw": ".10"
+        },
+        {
+          "course": 5,
+          "boat": 5,
+          "st": 0.09,
+          "marker": "",
+          "falseStart": false,
+          "lateStart": false,
+          "raw": ".09"
+        },
+        {
+          "course": 6,
+          "boat": 6,
+          "st": 0.19,
+          "marker": "",
+          "falseStart": false,
+          "lateStart": false,
+          "raw": ".19"
+        }
+      ],
+      "winningMethod": "まくり差し",
+      "trifecta": {
+        "combination": "3-2-1",
+        "boats": [
+          3,
+          2,
+          1
+        ],
+        "payout": 4050,
+        "payoutText": "¥4,050",
+        "popularity": 14
+      }
     }
   },
   "resultAttempts": {
     "20261116-24-10": {
-      "checkedAt": "2026-11-16T10:42:30.290Z",
-      "status": "pending"
+      "checkedAt": "2026-11-16T11:04:35.194Z",
+      "status": "hit"
+    },
+    "20261116-15-10": {
+      "checkedAt": "2026-11-16T11:04:35.194Z",
+      "status": "miss"
     }
   },
   "korogashiIndex": {
@@ -492,22 +1005,82 @@
       ],
       "publishedArticles": 1,
       "publishedTicketCount": 38,
-      "status": "pending",
-      "matchedSections": [],
+      "status": "hit",
+      "matchedSections": [
+        {
+          "articleSeries": "normal",
+          "label": "💥 万舟狙い"
+        }
+      ],
       "sources": [
         {
           "publicationKey": "20261116-15-10:normal",
           "sourceSha256": "cff146d7cbddf5190a8aefc31745c32eb34384426930689e5507def24d2ed0c2",
           "publishedAt": "2026-11-16T19:30:19.000+09:00",
           "sectionsSha256": "050b41bff4895a4f4e5786bc8ae0bb961852028f0b578e2c4d355eb3fd314926",
+          "status": "hit",
+          "evidenceId": "dca248d85988beda406f1c8c1d021a8853a4e4c5a4dcdba6b524e6805d76b875"
+        }
+      ],
+      "sourceSha256": "94f73ea1d29e24fa28281792e62c3f5166684a760fb07b26c3421ee85774bd73",
+      "combination": "3-2-1",
+      "payoutPer100Yen": 4050,
+      "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261116&jcd=15&rno=10",
+      "firstResultSeenAt": "2026-11-16T11:04:37.625Z",
+      "noteVerifiedAt": null,
+      "evidenceId": "f993feaeb3f37d55739108dc77173ccbf770a913c231d72e330e5a6042dcb897",
+      "winningProvenance": [
+        {
+          "version": "note-result-provenance-v1",
+          "publicationKey": "20261116-15-10:normal",
+          "raceKey": "20261116-15-10",
+          "articleSeries": "normal",
+          "sourceSha256": "cff146d7cbddf5190a8aefc31745c32eb34384426930689e5507def24d2ed0c2",
+          "combination": "3-2-1",
+          "settlementEvidenceId": "dca248d85988beda406f1c8c1d021a8853a4e4c5a4dcdba6b524e6805d76b875",
+          "sectionsSha256": "050b41bff4895a4f4e5786bc8ae0bb961852028f0b578e2c4d355eb3fd314926",
+          "matchedSections": [
+            "💥 万舟狙い"
+          ],
+          "origins": [
+            {
+              "categoryId": "manshu",
+              "sourceField": "record.prediction.manshuSheet.tickets"
+            }
+          ],
+          "provenanceSha256": "ba346e2221988ea73ab640df420e8e2c1d01459167a10464240f051cf05a01d8"
+        }
+      ]
+    },
+    {
+      "version": "published-main-race-result-v1",
+      "publicationKey": "20261116-15-11:published-main",
+      "raceKey": "20261116-15-11",
+      "place": "丸亀",
+      "raceNo": 11,
+      "deadlineAt": "2026-11-16T20:14:00+09:00",
+      "publishedAt": "2026-11-16T20:03:09.000+09:00",
+      "articleSeries": [
+        "normal"
+      ],
+      "publishedArticles": 1,
+      "publishedTicketCount": null,
+      "status": "pending",
+      "matchedSections": [],
+      "sources": [
+        {
+          "publicationKey": "20261116-15-11:normal",
+          "sourceSha256": "bb3c9292a5144790623d3af2ca8f35bc49a712ff80b39b1c9fc6aa8cefd1c49b",
+          "publishedAt": "2026-11-16T20:03:09.000+09:00",
+          "sectionsSha256": null,
           "status": "pending",
           "evidenceId": null
         }
       ],
-      "sourceSha256": "143a6a017c5ae41ee34ddc2f3f935085a601e4ad59b52ea639259f455635d1bd",
+      "sourceSha256": "fa6cde8530591b668575ec45408694d14da49ae6f4a3d7008af1ebf97f4cc02c",
       "combination": null,
       "payoutPer100Yen": null,
-      "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261116&jcd=15&rno=10",
+      "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261116&jcd=15&rno=11",
       "firstResultSeenAt": null,
       "noteVerifiedAt": null
     },
@@ -524,22 +1097,91 @@
       ],
       "publishedArticles": 1,
       "publishedTicketCount": 36,
-      "status": "pending",
-      "matchedSections": [],
+      "status": "hit",
+      "matchedSections": [
+        {
+          "articleSeries": "normal",
+          "label": "🎯 本命"
+        },
+        {
+          "articleSeries": "normal",
+          "label": "🌊 流し"
+        }
+      ],
       "sources": [
         {
           "publicationKey": "20261116-24-10:normal",
           "sourceSha256": "a7bd9cb84e55038c6a09510dacf3a3ceef2d0433036dc5ddf08aac7ac9019042",
           "publishedAt": "2026-11-16T19:19:46.000+09:00",
           "sectionsSha256": "65d9fbcb354f3cbb8fc6b0df8f48cb6be33e2224d625e218670e7ab694699396",
+          "status": "hit",
+          "evidenceId": "d643c3c633203d6c9c598a590fa203fb2477d6267283cef489af33861b117031"
+        }
+      ],
+      "sourceSha256": "34061229fd887be6060ff7b7bfdd9219623e305a327770aac507b24f544f5e0c",
+      "combination": "1-3-4",
+      "payoutPer100Yen": 500,
+      "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261116&jcd=24&rno=10",
+      "firstResultSeenAt": "2026-11-16T11:04:36.774Z",
+      "noteVerifiedAt": null,
+      "evidenceId": "c78d971b4881d6f380a77c811cfafaaa7494621609424d32004f0d869082df69",
+      "winningProvenance": [
+        {
+          "version": "note-result-provenance-v1",
+          "publicationKey": "20261116-24-10:normal",
+          "raceKey": "20261116-24-10",
+          "articleSeries": "normal",
+          "sourceSha256": "a7bd9cb84e55038c6a09510dacf3a3ceef2d0433036dc5ddf08aac7ac9019042",
+          "combination": "1-3-4",
+          "settlementEvidenceId": "d643c3c633203d6c9c598a590fa203fb2477d6267283cef489af33861b117031",
+          "sectionsSha256": "65d9fbcb354f3cbb8fc6b0df8f48cb6be33e2224d625e218670e7ab694699396",
+          "matchedSections": [
+            "🎯 本命",
+            "🌊 流し"
+          ],
+          "origins": [
+            {
+              "categoryId": "main",
+              "sourceField": "record.prediction.mainSheet.tickets"
+            },
+            {
+              "categoryId": "flow",
+              "sourceField": "record.prediction.mainSheet.flowTickets"
+            }
+          ],
+          "provenanceSha256": "f36b652bfc8a78cd9bdb6eddcf384a4e2bd41f08902973bd3ace15c7c00080ec"
+        }
+      ]
+    },
+    {
+      "version": "published-main-race-result-v1",
+      "publicationKey": "20261116-24-11:published-main",
+      "raceKey": "20261116-24-11",
+      "place": "大村",
+      "raceNo": 11,
+      "deadlineAt": "2026-11-16T20:07:00+09:00",
+      "publishedAt": "2026-11-16T19:55:17.000+09:00",
+      "articleSeries": [
+        "normal"
+      ],
+      "publishedArticles": 1,
+      "publishedTicketCount": null,
+      "status": "pending",
+      "matchedSections": [],
+      "sources": [
+        {
+          "publicationKey": "20261116-24-11:normal",
+          "sourceSha256": "978627238536aa03c7073ab09bd0c1e0987690f8ce6daa63794837d8fa844e81",
+          "publishedAt": "2026-11-16T19:55:17.000+09:00",
+          "sectionsSha256": null,
           "status": "pending",
           "evidenceId": null
         }
       ],
-      "sourceSha256": "c1880269c1217a11c973a82947224ce4a8f71039e838b9a81a47d78f9e9e049a",
+      "sourceSha256": "e46561905be02480b0cd1aac073cdf033595baf9a30f851b1c22c0592f7f109d",
       "combination": null,
       "payoutPer100Yen": null,
-      "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261116&jcd=24&rno=10",
+      "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261116&jcd=24&rno=11",
       "firstResultSeenAt": null,
       "noteVerifiedAt": null
     }
