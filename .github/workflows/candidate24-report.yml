@@ -2,9 +2,9 @@ name: Build candidate24 performance
 on:
   push:
     branches: [main]
-    paths: ['scripts/build-candidate24-report.js', 'scripts/build-race-review-progress.js', 'scripts/refresh-race-review-results.js', 'scripts/race-review-evidence.js', 'scripts/test-race-review-progress.js', 'scripts/test-review-report-save.js', '.github/workflows/candidate24-report.yml']
+    paths: ['scripts/build-candidate24-report.js', 'scripts/build-race-review-progress.js', 'scripts/refresh-race-review-results.js', 'scripts/race-review-evidence.js', 'scripts/test-race-review-progress.js', 'scripts/test-race-review-progress-memory.js', 'scripts/test-review-report-save.js', '.github/workflows/candidate24-report.yml']
   pull_request:
-    paths: ['scripts/build-candidate24-report.js', 'scripts/build-race-review-progress.js', 'scripts/refresh-race-review-results.js', 'scripts/race-review-evidence.js', 'scripts/test-race-review-progress.js', 'scripts/test-review-report-save.js', 'scripts/test-exhibition-candidate24.js', '.github/workflows/candidate24-report.yml']
+    paths: ['scripts/build-candidate24-report.js', 'scripts/build-race-review-progress.js', 'scripts/refresh-race-review-results.js', 'scripts/race-review-evidence.js', 'scripts/test-race-review-progress.js', 'scripts/test-race-review-progress-memory.js', 'scripts/test-review-report-save.js', 'scripts/test-exhibition-candidate24.js', '.github/workflows/candidate24-report.yml']
   workflow_run:
     workflows: ['Collect official race results', 'Collect live note independently']
     types: [completed]
@@ -62,6 +62,7 @@ jobs:
           node-version: '20'
       - run: node scripts/test-exhibition-candidate24.js
       - run: node scripts/test-race-review-progress.js
+      - run: node scripts/test-race-review-progress-memory.js
       - run: node scripts/test-review-report-save.js
       - run: node scripts/restore-daily-prediction-source.js --all
       - run: node scripts/build-candidate24-report.js

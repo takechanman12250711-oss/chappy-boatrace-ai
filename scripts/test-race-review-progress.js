@@ -171,6 +171,88 @@ assert.equal(Object.hasOwn(runDiagnosis(original).selectionLoss.rows[0], 'practi
 console.log('selection evidence: identity, final dispositions, separate stage history, fail-closed diagnostics and unchanged metrics passed');
 console.log('selection loss: six classes, exact cohort, historical separation, exclusions and immutable evidence passed');
 console.log('race review: pre-race evidence, immutable tickets, deduplication, method retention, 100R boundaries, pending/refund/payout passed');
+
+{
+  const { assess, prepareBundles, buildPrepared, classify, summarizeLosses, actualSelectionDiagnostic } = require('./build-race-review-progress');
+  const { buildReport: performanceReport } = require('./build-candidate24-report');
+  // Frozen pre-streaming implementation: a regression oracle for preparation,
+  // tie order, counters, complete accounting and original history indexes.
+function legacyBuildProgress(bundles, results, { generatedAt = new Date().toISOString(), activeMethod = '' } = {}) {
+  const excluded = {}, selected = new Map();
+  for (const bundle of bundles) {
+    const item = assess(bundle);
+    if (item.reason) { excluded[item.reason] = (excluded[item.reason] || 0) + 1; continue; }
+    // A race is counted once, using its latest valid pre-deadline snapshot.
+    const previous = selected.get(item.row.raceKey);
+    if (!previous || item.saved > previous.saved || (item.saved === previous.saved && item.method < previous.method)) selected.set(item.row.raceKey, item);
+  }
+  const groups = new Map();
+  for (const item of selected.values()) {
+    if (!groups.has(item.method)) groups.set(item.method, []);
+    groups.get(item.method).push(item.row);
+  }
+  const cohorts = [...groups].map(([method, rows]) => {
+    const diagnostics = [];
+    const report = performanceReport(rows, results, ({ row, pool, practical, result }) => {
+      const actual = result.trifecta.combination;
+      diagnostics.push({ raceKey: row.raceKey, selectedAt: row.selectedAt, actual,
+        payoutPer100: result.trifecta.payout, classification: classify(pool, practical, actual),
+        candidateTicketCount: pool.length, practicalTicketCount: practical.length,
+        practicalOutsideCandidate: practical.filter(t => !pool.includes(t)),
+        recordedDecisionReasons: row.selectionReasons[actual] || [],
+        ...(row.practicalSelectionEvidence ? { practicalSelectionEvidence:
+          actualSelectionDiagnostic(row.practicalSelectionEvidence, actual, pool) } : {}) });
+    });
+    diagnostics.sort((a, b) => a.selectedAt.localeCompare(b.selectedAt) || a.raceKey.localeCompare(b.raceKey));
+    const count = report.practical.races;
+    return { method, legacy: method.startsWith('legacy:'), active: method === `method:${activeMethod}`,
+      latestPredictionAt: rows.map(r => r.selectedAt).sort().at(-1), captured: rows.length,
+      settled: count, pending: report.pending, excludedRefundOrVoid: report.excludedRefundOrVoid,
+      unknownPayout: report.unknownPayout, completedWindows: Math.floor(count / 100),
+      currentWindowCount: count % 100, nextReviewAt: (Math.floor(count / 100) + 1) * 100,
+      from: report.from, to: report.to, practical: report.practical, candidate24: report.candidate24,
+      selectionLoss: summarizeLosses(diagnostics) };
+  }).sort((a, b) => b.latestPredictionAt.localeCompare(a.latestPredictionAt) || a.method.localeCompare(b.method));
+  return { version: 'race-review-progress-v1', generatedAt, reviewSize: 100, unitYen: 100,
+    predictionLogicChanged: false, autoApply: false, approvalRequired: true,
+    selectionLossContract: { version: 'race-review-selection-loss-v1', diagnosticOnly: true,
+      basis: 'Same settled cohort as race-review-progress; stored candidate tickets only.',
+      limitation: 'Missing tickets and saved decision reasons describe observations, not proven causes. Net hit difference is not gross selection omissions.' },
+    captured: selected.size, settled: cohorts.reduce((sum, g) => sum + g.settled, 0),
+    pending: cohorts.reduce((sum, g) => sum + g.pending, 0), excluded, cohorts };
+}
+  assert.equal(require('node:crypto').createHash('sha256').update(legacyBuildProgress.toString()).digest('hex'),
+    'b6744efc5f8f8f7cfba9dae414ac761a8d544a97a1906bb3cff1e0ab90a1d37b', 'the pre-streaming oracle is fixed without Git history');
+  const equalFirst=bundle(2),equalSecond=bundle(2);
+  equalFirst.record.prediction.practicalTickets=equalFirst.baselinePracticalTickets=['1-2-4'];
+  const tiedHigh=bundle(1,'c'.repeat(64)),tiedLow=bundle(1);
+  const invalidAudit=bundle(3);invalidAudit.generationAudit.contentReady=false;
+  const invalidIdentity=bundle(4);invalidIdentity.record.raceKey='wrong';
+  const unknownPayout=bundle(5),refunded=bundle(6),pending=bundle(7);
+  const pendingLegacy=bundle(9);delete pendingLegacy.record.reviewEvidence;
+  const input=[diagnosed,tiedHigh,tiedLow,equalFirst,equalSecond,invalidAudit,invalidIdentity,
+    unknownPayout,refunded,pending,pendingLegacy,later,original];
+  input[0]=structuredClone(input[0]);
+  input[0].record.prediction.unusedHugeTree={marker:'DO_NOT_RETAIN_UNNEEDED_PREDICTION',padding:'x'.repeat(16384)};
+  const inputBefore=JSON.stringify(input);
+  const results=[result(diagnosed),result(tiedLow),result(equalFirst),
+    result(unknownPayout,{trifecta:{combination:'1-2-3',payout:null}}),result(refunded,{refund:true})];
+  const options={generatedAt:'2030-01-20T00:00:00.000Z',activeMethod:method};
+  const expected=legacyBuildProgress(input,results,options);
+  assert.deepEqual(buildProgress(input,results,options),expected,'public API exactly matches the frozen prior implementation');
+  let scanned=0;
+  function* sources(){for(const b of input){scanned++;yield b;}}
+  const prepared=prepareBundles(sources());
+  assert.equal(scanned,input.length,'prepare every source, including invalid snapshots');
+  assert.deepEqual(buildPrepared(prepared,results,options),expected,'incremental prepared output keeps the complete prior report shape');
+  assert.deepEqual(prepared.excluded,{auditUnconfirmed:1,invalidIdentity:1});
+  assert.equal(prepared.selected.get(tiedLow.record.raceKey).method,'method:'+method,'method tie-break stays lexical');
+  assert.deepEqual(prepared.selected.get(equalFirst.record.raceKey).row.prediction.practicalTickets,['1-2-4'],'identical method/time keeps first input');
+  assert.equal(JSON.stringify([...prepared.selected.values()]).includes('DO_NOT_RETAIN_UNNEEDED_PREDICTION'),false,'only assessed report rows survive');
+  assert.equal(JSON.stringify(input),inputBefore,'audit, tickets, full saved history and original sources stay unchanged');
+  console.log('streaming preparation: complete legacy output, latest/ties, invalid counters, unknown/pending/refund and immutable history passed');
+}
+
 (async () => {
   const fs = require('node:fs'), path = require('node:path'), os = require('node:os');
   const { refresh } = require('./refresh-race-review-results');

@@ -15,6 +15,13 @@ on:
       - 'scripts/outer-attack-live-source.js'
       - 'scripts/save-live-verification-sources.js'
       - 'scripts/partner-forward.cjs'
+      - 'scripts/promotion-head-priority-comparison.cjs'
+      - 'scripts/promotion-head-priority-forward.cjs'
+      - 'scripts/promotion-role-priority-diagnostic.cjs'
+      - 'scripts/candidate-promotion-execution-evidence.cjs'
+      - 'tests/promotion-head-priority-comparison.test.cjs'
+      - 'tests/promotion-head-priority-forward.test.cjs'
+      - 'config/promotion-head-priority-forward-v1.json'
       - 'scripts/test-partner-forward.cjs'
       - 'scripts/independent-head-forward-v2.cjs'
       - 'scripts/test-independent-head-forward-v2.cjs'
@@ -80,6 +87,13 @@ on:
       - 'scripts/outer-attack-live-source.js'
       - 'scripts/save-live-verification-sources.js'
       - 'scripts/partner-forward.cjs'
+      - 'scripts/promotion-head-priority-comparison.cjs'
+      - 'scripts/promotion-head-priority-forward.cjs'
+      - 'scripts/promotion-role-priority-diagnostic.cjs'
+      - 'scripts/candidate-promotion-execution-evidence.cjs'
+      - 'tests/promotion-head-priority-comparison.test.cjs'
+      - 'tests/promotion-head-priority-forward.test.cjs'
+      - 'config/promotion-head-priority-forward-v1.json'
       - 'scripts/test-partner-forward.cjs'
       - 'scripts/independent-head-forward-v2.cjs'
       - 'scripts/test-independent-head-forward-v2.cjs'
@@ -178,10 +192,12 @@ jobs:
             config
             js
             scripts
+            tests
             data/stats
             data/note-drafts
             data/official-start-rank-cache
             data/partner-forward
+            data/promotion-head-priority-forward
             data/independent-autonomous-forward
             data/independent-rule-forward
             data/independent-head-forward-v2
@@ -196,6 +212,7 @@ jobs:
           node scripts/test-note-source-concurrency.js
           node --test scripts/official-start-rank-cache.test.cjs
           node --test scripts/test-partner-forward.cjs scripts/independent-role-selector.test.cjs scripts/independent-rule-forward.test.cjs scripts/independent-autonomous.test.cjs
+          node --test tests/promotion-head-priority-comparison.test.cjs tests/promotion-head-priority-forward.test.cjs
           node --test scripts/test-independent-head-forward-v2.cjs scripts/test-head-forward-contract.cjs scripts/test-head-forward-artifact.cjs scripts/test-head-forward-capture.cjs scripts/test-head-forward-report.cjs
           node --test scripts/independent-flow-roles.test.cjs scripts/independent-partner-selector.test.cjs scripts/independent-route-water.test.cjs scripts/independent-pair-route.test.cjs scripts/independent-weather.test.cjs scripts/independent-weather-v2.test.cjs
           node --test scripts/test-omura-reference.cjs
@@ -288,6 +305,38 @@ jobs:
         if: always() && (steps.partner-capture.outcome == 'failure' || steps.partner-artifact.outcome == 'failure' || steps.partner-confirm.outcome == 'failure')
         run: exit 1
 
+      # Shadow comparisons run after note handoff and keep their own protocol.
+      - name: Capture head-priority protocol or race comparison
+        id: promotion-head-capture
+        if: always() && github.event_name != 'pull_request'
+        continue-on-error: true
+        run: node scripts/promotion-head-priority-forward.cjs capture /tmp/promotion-head-priority-seal
+      - name: Seal head-priority evidence before its admission deadline
+        id: promotion-head-artifact
+        if: always() && github.event_name != 'pull_request' && steps.promotion-head-capture.outcome == 'success' && steps.promotion-head-capture.outputs.count != '0'
+        continue-on-error: true
+        timeout-minutes: 1
+        uses: actions/upload-artifact@v4
+        with:
+          name: promotion-head-priority-${{ github.run_id }}-${{ github.run_attempt }}-${{ steps.promotion-head-capture.outputs.manifest-sha256 }}
+          path: /tmp/promotion-head-priority-seal/*.json
+          retention-days: 90
+          if-no-files-found: error
+      - name: Confirm head-priority remote registration or race seal
+        id: promotion-head-confirm
+        if: always() && github.event_name != 'pull_request' && steps.promotion-head-artifact.outputs.artifact-id != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROMOTION_HEAD_ARTIFACT_ID: ${{ steps.promotion-head-artifact.outputs.artifact-id }}
+          PROMOTION_HEAD_ARTIFACT_DIGEST: ${{ steps.promotion-head-artifact.outputs.artifact-digest }}
+        run: node scripts/promotion-head-priority-forward.cjs seal /tmp/promotion-head-priority-seal
+      - name: Preserve head-priority evidence after publication handoff
+        id: promotion-head-save
+        if: always() && github.event_name != 'pull_request'
+        continue-on-error: true
+        run: node scripts/save-live-verification-sources.js
+
       - name: Capture independent role selections and explicit skips
         id: independent-capture
         if: github.event_name != 'pull_request'
@@ -379,6 +428,10 @@ jobs:
         run: node scripts/save-live-verification-sources.js
       - name: Surface paired head coverage failures after preserving notes and attempts
         if: always() && github.event_name != 'pull_request' && (steps.head-forward-capture.outcome == 'failure' || steps.head-forward-attempt-save.outcome == 'failure' || steps.head-forward-artifact.outcome == 'failure' || steps.head-forward-confirm.outcome == 'failure' || steps.head-forward-receipt-save.outcome == 'failure')
+        run: exit 1
+
+      - name: Report head-priority failures after preserving sources
+        if: always() && (steps.promotion-head-capture.outcome == 'failure' || steps.promotion-head-artifact.outcome == 'failure' || steps.promotion-head-confirm.outcome == 'failure' || steps.promotion-head-save.outcome == 'failure')
         run: exit 1
 
   # GitHub delays the 5-minute schedule heavily (on 2026-11-06 runs started

@@ -152,4 +152,27 @@ function diagnosePromotionRolePriorities(input) {
   return {...result, status: !rows.length ? "not-applicable" : bound === rows.length ? "bound" : bound ? "partial" : "unknown",
     reason: rows.length ? "" : "NO_FINAL_PROMOTION_ROWS", rows};
 }
-module.exports = {VERSION, diagnosePromotionRolePriorities};
+// Unlike the selected-only diagnostic, this resolves the actual selector-time
+// consumed observation reference, without inventing a final promotion row.
+function resolveQueueRolePriorities(row, snapshot) {
+  const fail=reason=>unknown(row,reason);
+  try {
+    if(!row||!ticket(row.ticket)||!text(row.sourceCategory)||!finite(row.priorityScore)) return fail("QUEUE_ROW_UNAVAILABLE");
+    if(!snapshot||snapshot.version!=="candidate-validation-evidence-v1"||snapshot.status!=="captured"||
+        snapshot.resultUsedForGeneration!==false||Object.hasOwn(snapshot,"diagnostic")||!Array.isArray(snapshot.observations))
+      return fail("QUEUE_VALIDATION_UNAVAILABLE");
+    const ref=row.validationRef;
+    if(ref?.field!=="candidateValidationEvidence.observations"||!Number.isInteger(ref.index)||ref.index<0||ref.index>=snapshot.observations.length)
+      return fail("CONSUMED_OBSERVATION_REFERENCE_INVALID");
+    const observation=snapshot.observations[ref.index];
+    if(!observation||observation.stage!=="selection"||observation.valid!==true||observation.ticket!==row.ticket||
+        observation.sourceCategory!==row.sourceCategory||!finite(observation.priorityScore)||observation.priorityScore!==row.priorityScore||
+        observation.purchaseEligible!==true||observation.expansionEligible!==false||
+        !ids(observation.validBranchIds)||!LIST_KEYS.every(key=>ids(observation[key]))||observation.validIndependentBranchIds.length!==0||
+        !Array.isArray(observation.coverage)||!Array.isArray(observation.physicalCoverage))
+      return fail("CONSUMED_OBSERVATION_UNAVAILABLE");
+    return positionalValues(row,observation,snapshot.branches,{field:ref.field,index:ref.index,stage:observation.stage,
+      ticket:observation.ticket,sourceCategory:observation.sourceCategory});
+  } catch (_) { return fail("QUEUE_ROLE_VALUES_UNAVAILABLE"); }
+}
+module.exports = {VERSION, diagnosePromotionRolePriorities, resolveQueueRolePriorities};

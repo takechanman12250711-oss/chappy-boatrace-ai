@@ -46,3 +46,11 @@ description: 予想結果の振り返り、外れ分析、改善案の採否、�
 - 満枠判定はコース判定より先なので、未実行courseを補わない。実mapping/formal/lookup/艇番fallbackを区別する。後段trim/置換は既存meta・decisionとの照合、wrapper救済は既存の厳密mismatchDiagnosticが認定した前後対応だけを使う。観測欠測・参照不一致・診断失敗はunknown/KEEP_Aで、元A保存を止めない。
 - これは新順位や比較候補を作る機能ではなく、rankingProposed/usableForPrediction/automaticApplicationはfalse、alternativeTicketsはnull。旧原本へ後付けしない。日次compactやreview縮約行は新queueを保持しないため、将来比較にはSHA固定の不変原本を参照する。
 - selectorの観測metadata追加でも予想コード指紋が変わる。旧b36群や完了済み100枠へ混ぜず、将来の比較規則・期間・同点/未知処理・封印/結果結合を別に固定する。旧partner-forward B/Dのprotocolへ新queue比較を流し込まない。
+
+
+## 頭役割priorityの前向きB1比較
+
+- 正本は `config/promotion-head-priority-forward-v1.json` と `docs/research/promotion-head-priority-forward-v1.md`。純粋比較器は実validationRefで保存役割値を読み、現queueのA原順再現後にBだけ頭枝priority降順・同点queueIndexへ並べる。元90ゲート・前選定・点数・購入コース条件は保持する。役割/候補の再生成や再資格判定をしない。
+- 純粋比較器のsourceReferenceVerified=falseと、外側の実原本byte照合sourceBytesVerified=trueを区別する。曖昧/欠測/不一致は有効Aを保持してB=A、後段変換は非適用、不正Aはineligible。封印した有効Aのunknown/非適用も母数に含め、非封印・全開催coverageの未集約を0件にしない。
+- 期間開始前のremote登録を必要とし、締切前に全snapshotのcanonical manifest SHAをartifact名へcommitする。seal/reportで全manifestと個別membership・id/digest/run/head/時刻を照合する。これは遠隔hash commitmentで、ZIP実体の包含検査と混同しない。登録欠測時に期間を自動延長しない。
+- 既存live-noteの公開引き継ぎ後にcapture/seal/saveし、新研究の失敗で既存の証拠保存をskipさせない。reportは期間終了後だけ公式結果を結合し、同点数・1点100円の仮想成績、追加/消失的中・払戻差・未知/返還/結果待ちを区別する。adoptionGate=null/予想利用・自動適用falseを維持し、旧100枠や本番会計へ混ぜない。
