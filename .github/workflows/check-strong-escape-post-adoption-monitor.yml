@@ -11,6 +11,7 @@ on:
       - "scripts/restore-daily-prediction-source.js"
       - "scripts/build-strong-escape-post-adoption-monitor.js"
       - "scripts/strong-escape-monitor-sources.cjs"
+      - "scripts/strong-escape-monitor-parallel.cjs"
       - "scripts/test-strong-escape-monitor-sources.cjs"
       - "scripts/fixtures/strong-escape-monitor-before-source-streaming.js"
       - "scripts/daily-prediction-source-archive.js"
@@ -61,4 +62,4 @@ jobs:
       - name: Check syntax
         run: node --check scripts/build-strong-escape-post-adoption-monitor.js
       - name: Build exact post-adoption comparison
-        run: node scripts/build-strong-escape-post-adoption-monitor.js
+        run: node scripts/build-strong-escape-post-adoption-monitor.js --parallel

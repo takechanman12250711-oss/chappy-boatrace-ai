@@ -37,6 +37,17 @@ function deferred() {
   return { promise, resolve };
 }
 
+const SCHEDULE_FIXTURE_ORIGINS = new Set([
+  "https://chappy-boatrace-api.vercel.app",
+  "https://chappy-boatrace-read-api.takechanman12250711.workers.dev"
+]);
+function isScheduleFixtureUrl(value) {
+  try {
+    const url = new URL(value);
+    return SCHEDULE_FIXTURE_ORIGINS.has(url.origin) && url.pathname === "/api/schedule";
+  } catch (_) { return false; }
+}
+
 async function expectedEvidence() {
   const manifest = await readJson("data/predictions/index-manifest.json");
   const savedResultFiles = new Set(await readdir(path.join(ROOT, "data/results")));
@@ -195,22 +206,25 @@ async function runScenario(name, run) {
   // midnight JST; fixed Date values leave the real timers/watchdogs running.
   await page.clock.setFixedTime(savedClockAt);
   page.setDefaultTimeout(15_000);
-  const info = { name, pageErrors: [], consoleErrors: [], consoleErrorDetails: [], badResponses: [], failedRequests: [], scheduleReadsStubbed: 0 };
+  const info = { name, pageErrors: [], consoleErrors: [], consoleErrorDetails: [], badResponses: [], failedRequests: [], scheduleReadsStubbed: 0, scheduleReadsByOrigin: {} };
   diagnostics.push(info);
   page.on("pageerror", error => info.pageErrors.push(String(error.stack || error)));
   page.on("console", message => { if (message.type() === "error") { info.consoleErrors.push(message.text()); info.consoleErrorDetails.push({ text: message.text(), ...message.location() }); } });
   page.on("response", response => { if (response.status() >= 400) { const detail = { url: response.url(), status: response.status() }; info.badResponses.push(detail); mark("http-error", detail); } });
   page.on("requestfailed", request => info.failedRequests.push({ url: request.url(), error: request.failure()?.errorText }));
-  await page.route("https://chappy-boatrace-api.vercel.app/api/schedule?*", async route => {
+  // Match only this unrelated read on both origins used by the real fallback.
+  await page.route(isScheduleFixtureUrl, async route => {
+    const url = new URL(route.request().url());
     info.scheduleReadsStubbed += 1;
-    const date = new URL(route.request().url()).searchParams.get("date");
+    info.scheduleReadsByOrigin[url.origin] = (info.scheduleReadsByOrigin[url.origin] || 0) + 1;
+    const date = url.searchParams.get("date");
     await route.fulfill({ json: { ok: true, date, venues: [] }, headers: { "access-control-allow-origin": "*" } });
   });
   try {
     await run(page);
     assert.deepEqual(info.pageErrors, [], `${name}: uncaught page errors`);
     assert.deepEqual(info.consoleErrors, [], `${name}: unexpected browser console errors`);
-    mark("scenario-passed", { name });
+    mark("scenario-passed", { name, scheduleReadsStubbed: info.scheduleReadsStubbed, scheduleReadsByOrigin: info.scheduleReadsByOrigin });
   } catch (error) {
     info.failure = String(error.stack || error);
     await screenshot(page, `${name}-failure`).catch(() => {});

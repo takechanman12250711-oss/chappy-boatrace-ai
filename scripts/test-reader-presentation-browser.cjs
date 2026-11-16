@@ -44,7 +44,20 @@ async function main(){
       p.raceFlow={summary:"本命は5号艇という古い説明。現在の保存根拠とは別です。"};
       const original=JSON.stringify(p),expected=reader.fromPrediction(p);
       const shortExplanation=value=>String(value).trim().split(/(?<=。)/).slice(0,2).join("").slice(0,180);
-      async function render(input){await installReaderPresentationCapture(page);await page.evaluate(value=>{window.__readerRawInput=value;window.__readerRawBefore=JSON.stringify(value);renderAll(value);},input);await page.waitForTimeout(650);await assertReaderPresentation(page);assert.equal(await page.evaluate(()=>JSON.stringify(__readerRawInput)===__readerRawBefore),true,"raw forecast input remains unchanged");}
+      async function render(input){
+        await installReaderPresentationCapture(page);
+        await page.evaluate(value=>{window.__readerRawInput=value;window.__readerRawBefore=JSON.stringify(value);renderAll(value);},input);
+        await page.waitForTimeout(650);
+        // The card is enhanced in a timer; bright adds its intro on a later
+        // animation frame. Wait for that frame's current root, not elapsed time.
+        await page.waitForFunction(()=>{
+          const layout=document.querySelector("#resultArea>.v3-root"),capture=window.__chappyReaderPresentationDiagnostic;
+          const intro=layout?.querySelector(":scope > .chappy-bright-intro .chappy-flow-preview p");
+          return capture?.root===layout&&Boolean(intro?.textContent);
+        },null,{timeout:5000});
+        await assertReaderPresentation(page);
+        assert.equal(await page.evaluate(()=>JSON.stringify(__readerRawInput)===__readerRawBefore),true,"raw forecast input remains unchanged");
+      }
       async function snapshot(){return page.evaluate(()=>{
         const area=document.getElementById("resultArea"),card=area.querySelector("[data-reader-contract]");
         const groups=[...card.querySelectorAll("[data-reader-group]")].map(g=>({
