@@ -64,6 +64,9 @@ on:
       - "scripts/publish-note-queue.js"
       - "scripts/test-all-race-notes.js"
       - "scripts/practical-selection-evidence.js"
+      - "scripts/promotion-role-priority-diagnostic.cjs"
+      - "tests/promotion-role-priority-diagnostic.test.cjs"
+      - "tests/practical-promotion-capture.test.cjs"
       - "scripts/test-practical-selection-evidence.js"
       - "scripts/test-candidate-validation-evidence.cjs"
       - "js/practical-selection.js"
@@ -146,6 +149,9 @@ on:
       - "scripts/publish-note-queue.js"
       - "scripts/test-all-race-notes.js"
       - "scripts/practical-selection-evidence.js"
+      - "scripts/promotion-role-priority-diagnostic.cjs"
+      - "tests/promotion-role-priority-diagnostic.test.cjs"
+      - "tests/practical-promotion-capture.test.cjs"
       - "scripts/test-practical-selection-evidence.js"
       - "scripts/test-candidate-validation-evidence.cjs"
       - "js/practical-selection.js"
@@ -202,7 +208,7 @@ jobs:
 
       - name: Check note generator and regression
         run: |
-          node --test tests/forecast-reader-contract.test.cjs tests/prediction-quality-review.test.cjs tests/note-reader-presentation.test.cjs tests/note-reader-default.test.cjs tests/race-review-fingerprint.test.cjs tests/note-reader-publication-proof.test.cjs
+          node --test tests/forecast-reader-contract.test.cjs tests/prediction-quality-review.test.cjs tests/note-reader-presentation.test.cjs tests/note-reader-default.test.cjs tests/race-review-fingerprint.test.cjs tests/note-reader-publication-proof.test.cjs tests/promotion-role-priority-diagnostic.test.cjs tests/practical-promotion-capture.test.cjs
           node --check js/note-generator.js
           node --check scripts/test-note-copy-cleanup.js
           node --check scripts/test-note-karatsu-regression.js

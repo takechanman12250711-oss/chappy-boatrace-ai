@@ -32,3 +32,9 @@ description: 予想結果の振り返り、外れ分析、改善案の採否、�
 - 同じ方式の比較には `race-review-evidence.js` の保存指紋と対象期間を固定する。指紋にはnote-generatorと相対require依存も含まれ、sourceCommit数を方式数と扱わない。リポジトリ内の依存名はOSに関係なくPOSIXで解決し、Windowsだけの誤った指紋を新方式へ読み替えない。
 
 - 「正式な主展開の頭」と「保存厳選に含まれる頭」を別に集計する。固定比較CLIのselectedHeadCoverage/selectedHeadAllocationとbyGenerationAndSourceを使い、配分の投資・払戻・的中が元の合計と一致することを確認する。頭別の異なる投資配分は記述統計であり、同予算代替や未使用期間の改善実証としない。
+
+## 候補補完の役割別priorityを読む診断
+
+- 新しい保存では `practicalSelectionEvidence.promotionRolePriorityDiagnostic` を読む。正本は `scripts/promotion-role-priority-diagnostic.cjs` と既存capture。KEEP_A・別選定なしの診断であり、boundは単一保存観測との値の一致を指す。昇格時刻・消費観測ID・予想改善の証明とはしない。
+- 最終A/selection/validationの原順と、同じ観測・scenario/source/kind・各位置の役割枝を照合する。曖昧・欠測・矛盾・救済前snapshotはunknown。未保存のphysical score/branchIdや古いpromotion行を後付けしない。branch.priorityScoreを確率やrole.scoreへ読み替えない。
+- diagnosticCodeSha256は診断/captureコードの識別子で、予想methodとは別。診断の失敗は既存Aを失敗へ変えない。実レースで読める割合や比較条件を先に確認し、新順位・閾値・自動採用・100R再収集へ直結させない。

@@ -141,6 +141,65 @@ assert.match(area.querySelector('#raceResultStatus').textContent,/公式結果�
 area.innerHTML='<div class="prediction-error">APIエラーの詳細</div>';
 window.dispatchEvent(new window.CustomEvent('chappy:view-changed',{detail:{view:'prediction'}}));
 assert.equal(area.textContent,'APIエラーの詳細','navigation retains specific errors without replacing them');
+// Load the real shared contract after the markerless legacy coverage above.
+load('forecast-reader-contract.js');
+load('main-cover-display-boundary.js');
+const sourcePrediction = require('./fixtures/reader-presentation.json').bundle.record.prediction;
+const shared = {...fixture(11), ...JSON.parse(JSON.stringify(sourcePrediction)), race:fixture(11).race, entries:fixture(11).entries,
+  raceFlow:{summary:'本命は5号艇という古い説明。現在の保存根拠とは別です。'}};
+delete shared.practicalSelection;
+const sharedBefore=JSON.stringify(shared);
+const contract=window.ChappyForecastReaderContract;
+const expected=contract.fromPrediction(shared);
+assert.equal(expected.status,'selected');
+assert.deepEqual(Array.from(expected.groups,g=>g.tickets.length),[7,13,17,4]);
+function sharedRender(input) {
+  window.renderAll(input);flush();window.ChappyFinalDisplayUserContract.apply();window.ChappyBrightMobileLayout.organize(input);
+  return area.querySelector('[data-reader-contract]');
+}
+function sharedGroups(card) {return [...card.querySelectorAll('.chappy-final-buy-group')].map(group=>({
+  label:group.querySelector('.chappy-final-buy-label').textContent,tickets:[...renderedSet(group)].sort()
+}));}
+const expectedGroups=JSON.parse(JSON.stringify(expected.groups.map(g=>({label:g.label,tickets:[...g.tickets].sort()}))));
+const card=sharedRender(shared);
+assert(card);
+assert.equal(card.querySelector('.chappy-final-buy-total').textContent,'本命7点');
+assert.deepEqual(sharedGroups(card),expectedGroups,'every displayed group must match the shared source contract');
+assert.equal(card.querySelectorAll('.chappy-final-buy-group:not([data-reader-group])').length,0);
+assert.equal(card.querySelectorAll('.is-cover,.is-flow,.is-manshu,.chappy-bright-manshu').length,0);
+const groups=[...card.querySelectorAll('[data-reader-group]')];
+assert.deepEqual(groups.map(g=>g.hasAttribute('open')),[true,false,false,false]);
+const shortExplanation=value=>String(value).trim().split(/(?<=。)/).slice(0,2).join('').slice(0,180);
+assert.equal(area.querySelector('.chappy-flow-preview p').textContent,shortExplanation(contract.explanation(shared).text));
+assert.doesNotMatch(area.querySelector('.chappy-flow-preview p').textContent,/古い説明|本命は5号艇/);
+groups[0].removeAttribute('open');groups[1].setAttribute('open','');
+const cardHtml=card.innerHTML;
+for(let i=0;i<4;i++)window.ChappyBrightMobileLayout.organize(shared);
+assert.equal(area.querySelector('[data-reader-contract]'),card);
+assert.equal(card.innerHTML,cardHtml,'reorganizing must not rewrite shared groups, counts or disclosure state');
+assert.deepEqual(groups.map(g=>g.hasAttribute('open')),[false,true,false,false]);
+assert.equal(JSON.stringify(shared),sharedBefore,'source tickets, A order and scores remain unchanged');
+const unverified=JSON.parse(JSON.stringify(shared));
+unverified.verificationEvidence.mainScenario.label='矛盾する説明';
+sharedRender(unverified);
+assert.equal(area.querySelector('.chappy-flow-preview p').textContent,'展開の根拠は確認中です。');
+assert.deepEqual(sharedGroups(area.querySelector('[data-reader-contract]')),expectedGroups);
+for(const status of ['skipped','empty','unavailable']) {
+  const input=JSON.parse(JSON.stringify(shared));
+  if(status==='skipped')input.practicalSelection={tickets:input.practicalTickets,purchaseDecision:{status:'skip',reason:'壁艇条件'}};
+  if(status==='empty')input.practicalSelection={tickets:[]};
+  if(status==='unavailable')delete input.mainSheet.flowTickets;
+  const original=JSON.stringify(input),zeroCard=sharedRender(input);
+  assert.equal(zeroCard.dataset.readerStatus,status);
+  assert.equal(zeroCard.querySelectorAll('.chappy-final-buy-group').length,0);
+  assert.equal(zeroCard.querySelectorAll('.chappy-final-buy-total').length,0);
+  assert.match(zeroCard.textContent,/購入推奨0点・0円/);
+  const html=zeroCard.innerHTML;
+  for(let i=0;i<4;i++)window.ChappyBrightMobileLayout.organize(input);
+  assert.equal(zeroCard.innerHTML,html);
+  assert.equal(JSON.stringify(input),original);
+}
+
 console.log('Bright mobile DOM: ordered layout, exact category ticket sets, immutable inputs, six boat colours, latest-render guard, safe text, 24-card filters passed');
 
 process.exit(0);

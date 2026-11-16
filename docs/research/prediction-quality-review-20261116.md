@@ -195,3 +195,32 @@ CIの旧DOM fixtureを新しい描画root照合へ合わせた際、旧レース
 Claude Codeはhead890b9a0と本人承認を実受領し、同じPR/contractを使い別実装を作らないと返答した。その読取確認点に対応し、保存済み購入判断がない場合も既存selectorのpurchaseDecisionだけを読み、アプリと同じ壁の購入見送りを補完する。券の再選定はしない。旧UMDのglobal登録は元の属性状態まで復元し、初回/キャッシュ済み/未定義/明示undefined/window環境を検査。current v10の復旧依存にその既存policyコード指紋を追加した。価格はすでにv10=0円で、公開元テストも確認済み。最終変更headの追補共有とCIは別に記録する。
 
 保存済みの未知purchase statusも、再計算せずアプリ・記事の共通contractで確認中へ停止する。default source gateの実壁条件、初回/キャッシュimportと元globalの復元、既存判断の再計算禁止、current policy依存の改竄拒否を含む93検査・起動3検査が合格。共有cacheを20261116-3へ更新し、実Edgeの390px・early/late描画も合格。大村実原本の7/13/17/4点は追加照合後も同じ。選定ロジックとcore予想は変更していない。
+
+
+## 候補補完の位置別priority診断（選定不変）
+
+`scripts/promotion-role-priority-diagnostic.cjs` と既存 `practical-selection-evidence.capture()` を接続した。最終AのcandidatePromotion行について、保存された単一のselection観測と値が一致し、同じscenario/source/kindのqualifiedな役割枝が1・2・3着へ一意に対応する場合だけ、各枝のpriorityを診断する。記録されたpriorityと位置最大値は別に示す。branch priorityは逃げ確率やrole.scoreではなく、これを頭優先・最小値優先などの新順位へ変換しない。
+
+最終行のbranchIdsはenrich時のvalidBranchIdsと照合し、元のinputBranchIdsと同じだとは仮定しない。観測の重複除去はstageをkeyに含まないため、値の一致は、昇格時に消費した観測IDや昇格時刻の証明ではない。通常のphysicalCoverageはevaluationId/boatNo/position/roleの4fieldで、保存されていないscore/branchIdを補完しない。存在する値の矛盾・複数対応はunknown。
+
+baseline・最終selection・validationの原順が異なる場合、invalid経路、曖昧な観測、欠測、複数役割を分離できない枝、救済前snapshotはunknown。旧snapshotをunwrapして最終Aの完全根拠へ昇格しない。出力はKEEP_A・alternativeTickets:null・rankingProposed/usableForPrediction/automaticApplication=false。診断の例外・誤用途・JSON循環はcapture-errorへ分離し、元予想の保存を止めない。過去原本のbackfillは行わない。
+
+新sidecar `promotionRolePriorityDiagnostic` のdiagnosticCodeSha256は診断moduleとcapture投影コードの組を指紋化する。予想方式の指紋は引き続きb36ecb0212d212af85ce977322a0a799774265c4bc6152ef82d4d1123c7586b5で不変。専用17件＋保存接続4件が合格し、既存の34種類の合成fixtureで選定全体が旧moduleと不変、既存の全レース収集fixtureも合格した。
+
+これは診断の実装とfixture検証まで。新規実レースでのbound/unknown比率、未使用期間の順位比較、精度改善、本番稼働は未確認。次は、同じ締切前原本から何件の位置根拠を一意に読めるかを確認し、不足する保存契約を明らかにする。100Rの収集自体を目標にせず、過去の結果に合わせた閾値や重みの調整はしない。
+
+独立レビューで、旧projectionがdiagnostic属性を落とすと新診断の救済前マーカー拒否が無効になる例を再現・修正した。旧証拠の形は変えず、新sidecarへ渡すguard用の存在情報だけを保持する。元Aと旧投影が同じでも診断はunknownに止まる統合検査を追加した。
+
+
+## a15f2ec3の後発CI不備への対応
+
+a15f2ec3のCIは58件中49成功・6失敗・3取消で終了した。失敗6件の原因は4種類で、cache alignmentの同じ原因が3jobに現れた。formation-displayのindex照合はquery順に依存していたため、実URLのpath/vを検査するよう修正し、保存fixtureを使う検査全体も合格。cache-test-alignmentは旧literal generation blockだけを認識し、現在のscriptVersion版を未対応としていたため、旧8世代の移行と現在版の再実行不変・重複拒否を保って対応した。
+
+成績画面の2つの404は、JST日付が翌日に変わってまだ存在しない20261117要約を要求していた。統計応答やアプリは変更せず、実保存要約と結果の共通日付へブラウザDateだけを固定し、その実結果ファイルをCI sparse checkoutへ追加する。console errorを無視しない。[固定版PlaywrightのClock.setFixedTime](https://github.com/microsoft/playwright/blob/v1.55.0/docs/src/api/class-clock.md)はDateを固定してタイマーを進行させるAPIで、待機・watchdogの検査を残す。
+
+同じ成績harnessと改変していないHEADの実データをEdgeで実行し、43採用/40詳細の照合、初回/再入/連打/遅延cold navigation、390px幅、console errorなし・404なしが合格。local artifactは ../artifacts/stats-mobile-edge-1794844563039（元reportの固定WebKitラベルを実WebKit確認へ転用しない。edge-run-metadata.jsonでEdge置換と元report SHAを明記）。Linux/WebKit全体は新CIで別確認する。
+
+
+post-predictionの実画面検査では、旧bright organizerが共通カードの本命点数を全券数で上書きし、空の旧区分を追加していた。共通markerのあるカードではこの3つの旧変換だけを止め、markerなしの旧表示は維持した。導入文も共通contractの確認済み説明を使い、未確認時に古い展開文へ戻さない。bright assetのreader cacheを20261117-1へ更新した。
+
+実bright JS/CSSを読み込むNode DOM統合とEdge early/lateが合格。本命7・追加13・穴17・参考4の全区分、本命見出し7点、外来区分0、原順/原本不変、開閉維持、見送り/空/確認中を検査した。WebKit診断は既存の厳密な本命点数検査を残し、外来区分0も必須にした。コハクが診断/captureとCI修正、bright関連5ファイルを独立点検し、指摘修正後の重大指摘なしを確認した。4種類の原因への修正はローカル検査までで、次の固定headのCI成功、Linux/WebKit、本番確認には転用しない。

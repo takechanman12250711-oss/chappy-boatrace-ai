@@ -12,9 +12,10 @@ async function main(){
     if(pathname==="/"){
       const index=fs.readFileSync(path.join(base,"index.html"),"utf8");
       const src=name=>index.match(new RegExp('<script src="(js/'+name+'\\.js\\?[^"]+)"'))[1];
+      const brightCss=index.match(/<link rel="stylesheet" href="(css\/bright-mobile-layout\.css\?[^"]+)"/)[1];
       res.setHeader("Content-Type","text/html; charset=utf-8");
-      res.end('<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><div id="resultArea"></div>'+
-        '<script src="'+src("forecast-reader-contract")+'"></script><script src="'+src("result-void-compat")+'"></script></body></html>');
+      res.end('<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="'+brightCss+'"></head><body><div id="resultArea"></div>'+
+        '<script src="'+src("forecast-reader-contract")+'"></script><script src="'+src("result-void-compat")+'"></script><script src="'+src("bright-mobile-layout")+'"></script></body></html>');
       return;
     }
     const target=path.resolve(base,"."+pathname);
@@ -32,13 +33,15 @@ async function main(){
         '<div class="v3-root"><section class="v3-boat-evaluation"></section><section class="v3-main-newspaper"><h3>旧本命</h3></section><section class="v3-manshu-newspaper"><div class="v3-section-body"></div></section><section class="v3-practical-section"></section></div>';};};
       if(early)await page.addInitScript(install);
       await page.goto("http://127.0.0.1:"+server.address().port);
-      await page.waitForFunction(()=>window.ChappyPracticalVisiblePanel&&window.ChappyFinalDisplayUserContract&&window.ChappyFinalDisplayOwner);
+      await page.waitForFunction(()=>window.ChappyPracticalVisiblePanel&&window.ChappyFinalDisplayUserContract&&window.ChappyFinalDisplayOwner&&window.ChappyBrightMobileLayout);
       if(!early)await page.evaluate(install);
       await page.addScriptTag({url:"/js/practical-selection.js"});
       await page.addScriptTag({url:"/js/main-cover-display-boundary.js"});
       await page.evaluate(()=>dispatchEvent(new Event("chappy:prediction-runtime-ready")));
       const p=structuredClone(fixture.bundle.record.prediction);
-      const expected=reader.fromPrediction(p);
+      p.raceFlow={summary:"本命は5号艇という古い説明。現在の保存根拠とは別です。"};
+      const original=JSON.stringify(p),expected=reader.fromPrediction(p);
+      const shortExplanation=value=>String(value).trim().split(/(?<=。)/).slice(0,2).join("").slice(0,180);
       async function render(input){await page.evaluate(value=>renderAll(value),input);await page.waitForTimeout(650);}
       async function snapshot(){return page.evaluate(()=>{
         const area=document.getElementById("resultArea"),card=area.querySelector("[data-reader-contract]");
@@ -50,6 +53,11 @@ async function main(){
             return out;
           })}));
         return {status:card.dataset.readerStatus,groups,text:card.textContent,
+          header:card.querySelector(".chappy-final-buy-total")?.textContent||null,
+          allLabels:[...card.querySelectorAll(".chappy-final-buy-group .chappy-final-buy-label")].map(n=>n.textContent),
+          foreignGroupCount:card.querySelectorAll(".chappy-final-buy-group:not([data-reader-group])").length,
+          open:[...card.querySelectorAll("[data-reader-group]")].map(n=>n.open),
+          intro:area.querySelector(".chappy-flow-preview p")?.textContent||null,
           legacyVisible:[...area.querySelectorAll(".v3-main-newspaper,.v3-manshu-newspaper,.chappy-practical-visible-panel")].filter(n=>!n.hidden).length,
           fallback:area.querySelectorAll(".is-practical-fallback").length,
           overflow:document.documentElement.scrollWidth>390};
@@ -58,6 +66,30 @@ async function main(){
       assert.deepEqual(s.groups.map(g=>({label:g.label,tickets:[...g.tickets].sort()})),expected.groups.map(g=>({label:g.label,tickets:[...g.tickets].sort()})));
       assert.equal(s.legacyVisible,0);assert.equal(s.fallback,0);assert.equal(s.overflow,false);
       assert.match(s.text,/本命7点.*公開予想37点/);
+      assert.equal(s.header,"本命7点");assert.equal(s.foreignGroupCount,0);
+      assert.deepEqual(s.allLabels,expected.groups.map(g=>g.label));
+      assert.deepEqual(s.open,[true,false,false,false]);
+      assert.equal(s.intro,shortExplanation(reader.explanation(p).text));
+      assert.doesNotMatch(s.intro,/古い説明|本命は5号艇/);
+      assert.equal(JSON.stringify(p),original);
+      const sourceA=await page.evaluate(()=>__lastRendered.practicalTickets.map(r=>r.ticket));
+      assert.deepEqual(sourceA,p.practicalTickets.map(r=>r.ticket),"saved A original order");
+      await page.evaluate(()=>{
+        const groups=[...document.querySelectorAll("[data-reader-group]")];
+        groups[0].open=false;groups[1].open=true;
+        for(let i=0;i<4;i++)ChappyBrightMobileLayout.organize(__lastRendered);
+      });
+      await page.waitForTimeout(250);
+      const repeated=await snapshot();
+      assert.deepEqual(repeated.groups,s.groups);assert.deepEqual(repeated.allLabels,s.allLabels);
+      assert.equal(repeated.foreignGroupCount,0);assert.equal(repeated.header,s.header);assert.equal(repeated.intro,s.intro);
+      assert.deepEqual(repeated.open,[false,true,false,false]);
+      assert.deepEqual(await page.evaluate(()=>__lastRendered.practicalTickets.map(r=>r.ticket)),sourceA);
+      const unverified=structuredClone(p);unverified.verificationEvidence.mainScenario.label="矛盾する説明";
+      await render(unverified);const unknown=await snapshot();
+      assert.equal(unknown.intro,"展開の根拠は確認中です。");assert.deepEqual(unknown.groups,s.groups);
+      await render(p);
+
       if(process.env.CHAPPY_READER_SCREENSHOT)await page.screenshot({path:process.env.CHAPPY_READER_SCREENSHOT.replace(/\.png$/,early?"-early.png":"-late.png"),fullPage:true});
       const flagged=structuredClone(p);
       const firstBoat=flagged.preRaceConditions.boats[0],nextBoat=flagged.preRaceConditions.boats[1];
@@ -66,6 +98,8 @@ async function main(){
       await render(flagged);const flaggedView=await snapshot();
       assert.match(flaggedView.text,/展示STはF0.02/);assert.match(flaggedView.text,/隣の2号艇の展示STはL0.99/);
       assert.deepEqual(flaggedView.groups,s.groups);
+      assert.equal(flaggedView.header,"本命7点");assert.equal(flaggedView.foreignGroupCount,0);
+      assert.equal(flaggedView.intro,shortExplanation(reader.explanation(flagged).text));
       // Current map values beat older snapshot rows, including explicit missing quotes.
       p.mainSheet.tickets[0].odds=9;p.oddsByTicket={"1-2-3":101,"1-4-3":null};
       await render(p);
@@ -74,12 +108,12 @@ async function main(){
       assert.equal(new Map(quotes).get("1-2-3"),101);assert.equal(new Map(quotes).get("1-4-3"),null);
       assert.equal(await page.evaluate(()=>ChappyFinalMobileUi.buildOddsMap({mainSheet:{tickets:[{ticket:"1-2-3"}]},practicalTickets:[{ticket:"1-2-3",odds:30}]}).get("1-2-3")),30);
       const skipped=structuredClone(p);skipped.practicalSelection={tickets:p.practicalTickets,purchaseDecision:{status:"skip",reason:"壁艇条件"}};
-      await render(skipped);s=await snapshot();assert.equal(s.status,"skipped");assert.equal(s.groups.length,0);assert.equal(s.legacyVisible,0);assert.match(s.text,/0点・0円/);
+      await render(skipped);s=await snapshot();assert.equal(s.status,"skipped");assert.equal(s.groups.length,0);assert.equal(s.legacyVisible,0);assert.match(s.text,/0点・0円/);assert.equal(s.allLabels.length,0);assert.equal(s.foreignGroupCount,0);assert.equal(s.header,null);
       const wall=structuredClone(p);wall.race={deadlineAt:"2026-11-16T20:07:00+09:00"};wall.wallTheory={state:"壁成立",attackerNo:2,wallCandidateNo:3,score:80,grade:"A"};
-      await render(wall);s=await snapshot();assert.equal(s.status,"skipped");assert.equal(s.groups.length,0);assert.equal(s.legacyVisible,0);
+      await render(wall);s=await snapshot();assert.equal(s.status,"skipped");assert.equal(s.groups.length,0);assert.equal(s.legacyVisible,0);assert.equal(s.allLabels.length,0);assert.equal(s.header,null);
       const empty=structuredClone(p);empty.practicalSelection={tickets:[]};
-      await render(empty);assert.equal((await snapshot()).status,"empty");
-      const missing=structuredClone(p);delete missing.mainSheet.flowTickets;await render(missing);assert.equal((await snapshot()).status,"unavailable");
+      await render(empty);s=await snapshot();assert.equal(s.status,"empty");assert.equal(s.allLabels.length,0);assert.equal(s.foreignGroupCount,0);assert.equal(s.header,null);
+      const missing=structuredClone(p);delete missing.mainSheet.flowTickets;await render(missing);s=await snapshot();assert.equal(s.status,"unavailable");assert.equal(s.allLabels.length,0);assert.equal(s.foreignGroupCount,0);assert.equal(s.header,null);
       // A followed immediately by B: delayed wrappers and visibility restoration must retain B.
       const b={mainSheet:{honmei:{boatNo:2},tickets:[{ticket:"2-3-4"}],coverTickets:[],flowTickets:[]},manshuSheet:{tickets:[]},practicalTickets:[{ticket:"2-3-4"}]};
       await page.evaluate(([a,b])=>{renderAll(a);renderAll(b);},[p,b]);

@@ -334,6 +334,7 @@ try {
           versionMatches: Boolean(savedReader?.version && savedReader.version === reader?.VERSION &&
             readerCard.dataset.readerContract === savedReader.version),
           groupsMatch: JSON.stringify(canonical(groups)) === JSON.stringify(canonical(expectedGroups)),
+          foreignGroupCount: readerCard.querySelectorAll(".chappy-final-buy-group:not([data-reader-group])").length,
           countsMatch: groups.every(g => g.countText === g.tickets.length + "点") &&
             all.length === savedReader?.allCount && primary.length === savedReader?.primaryCount,
           noDuplicateTickets: all.length === new Set(all).size,
@@ -452,6 +453,7 @@ try {
       sharedReader.expectedStatus === sharedReader.actualStatus &&
       sharedReader.versionMatches &&
       sharedReader.groupsMatch &&
+      sharedReader.foreignGroupCount === 0 &&
       sharedReader.countsMatch &&
       sharedReader.noDuplicateTickets &&
       sharedReader.referenceAccountingMatches &&
