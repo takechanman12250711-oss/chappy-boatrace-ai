@@ -53,7 +53,9 @@ jobs:
        (github.event.workflow_run.conclusion == 'success' &&
         github.event.workflow_run.head_repository.full_name == github.repository &&
         github.event.workflow_run.head_branch == 'main'))
-    runs-on: ubuntu-latest
+    # Playwright 1.55.0 cannot install its browser on Ubuntu 26.04, which
+    # ubuntu-latest is moving to. Same pin as Note GitHub UI Transport.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     # Hold the shared editor lock only through registration and public verification.
     concurrency:
