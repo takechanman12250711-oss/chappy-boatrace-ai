@@ -160,12 +160,12 @@ test('v7 rewords only two free lines of v6; frozen v6 reproduces v6 bytes', () =
   for (const [, to] of PLAIN_WORDING) assert.doesNotMatch(to, /必勝|絶対|確実|儲か|保証/);
 });
 
-test('v8 (default) is byte-identical to v7 for 1-7 tickets; frozen v7 reproduces v7 bytes', () => {
+test('v8 is byte-identical to v7 for 1-7 tickets; frozen v7 reproduces v7 bytes', () => {
   const frozenV7 = require('./note-recovery-readable-v7.cjs');
   const center = require('./note-center-presentation.cjs'), plain = require('./note-plain-presentation.cjs');
   for (const make of [fixture, ...['escape', 'manshu'].map(kind => () => { const b = independentFixture(); b.monitor.kind = kind; return b; })]) {
     const b = make(), before = JSON.stringify(b);
-    const v7 = readableArticle(b.article, b, { presentationVersion: 'readable-v7' }), v8 = readableArticle(b.article, b);
+    const v7 = readableArticle(b.article, b, { presentationVersion: 'readable-v7' }), v8 = readableArticle(b.article, b, { presentationVersion: 'readable-v8' });
     assert.deepEqual(v7, frozenV7.readableArticle(b.article, b));
     assert.equal(v8.presentationVersion, 'readable-v8');
     assert.deepEqual(v8, { ...v7, presentationVersion: 'readable-v8' });
@@ -177,4 +177,23 @@ test('v8 (default) is byte-identical to v7 for 1-7 tickets; frozen v7 reproduces
   }
   assert.equal(require('./note-ticket-limit.cjs').MAX_PUBLICATION_TICKETS, 10);
   assert.throws(() => center.parsePaidText('x'), /plain_model_appendix_invalid/);
+});
+
+test('v9 (default) is byte-identical to v8 when no scenario section applies; frozen v8 reproduces v8 bytes', () => {
+  const frozenV8 = require('./note-recovery-readable-v8.cjs');
+  const scenario = require('./note-scenario-presentation.cjs'), center = require('./note-center-presentation.cjs');
+  for (const make of [fixture, ...['escape', 'manshu'].map(kind => () => { const b = independentFixture(); b.monitor.kind = kind; return b; })]) {
+    const b = make(), before = JSON.stringify(b);
+    const v8 = readableArticle(b.article, b, { presentationVersion: 'readable-v8' }), v9 = readableArticle(b.article, b);
+    assert.deepEqual(v8, frozenV8.readableArticle(b.article, b));
+    assert.equal(v9.presentationVersion, 'readable-v9');
+    assert.deepEqual(v9, { ...v8, presentationVersion: 'readable-v9' });
+    assert.deepEqual(scenario.parsePaidText(v9.paidText), center.parsePaidText(v8.paidText));
+    assert.deepEqual(sectionProof(v9.paidText, 'readable-v9', { sourceSha256: 'a'.repeat(64) }),
+      { ...sectionProof(v8.paidText, 'readable-v8', { sourceSha256: 'a'.repeat(64) }), presentationVersion: 'readable-v9' });
+    assert.equal(JSON.stringify(b), before);
+  }
+  assert.deepEqual([...scenario.SCENARIO_LABELS], ['🌀 波乱のシナリオ', '😼 チャッピーの「もしかして」']);
+  assert.deepEqual({ ...scenario.SCENARIO_BY_REASON }, { '別頭の独立展開': '🌀 波乱のシナリオ', '残し艇を使う押さえ展開': '😼 チャッピーの「もしかして」' });
+  for (const label of scenario.SCENARIO_LABELS) assert.doesNotMatch(label, /必勝|絶対|確実|儲か|保証/);
 });

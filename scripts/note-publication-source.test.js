@@ -46,8 +46,10 @@ async function main() {
   Date.now = () => clock;
   const freePayload = publicationPayload(sourcePath, root, clock);
   assert.equal(freePayload.canPublish, true);
-  assert.equal(freePayload.presentationVersion, 'readable-v8');
+  assert.equal(freePayload.presentationVersion, 'readable-v9');
   // v8 only widens the ticket count: with 1-7 tickets every published byte is v7.
+  const v8Payload = publicationPayload(sourcePath, root, clock, { presentationVersion: 'readable-v8' });
+  for (const field of ['title', 'freeText', 'paidText', 'body', 'price', 'practicalTicketCount']) assert.equal(freePayload[field], v8Payload[field], `v9 keeps the v8 ${field}`);
   const v7Payload = publicationPayload(sourcePath, root, clock, { presentationVersion: 'readable-v7' });
   for (const field of ['title', 'freeText', 'paidText', 'body', 'price', 'practicalTicketCount']) assert.equal(freePayload[field], v7Payload[field], `v8 keeps the v7 ${field}`);
   assert.deepEqual({ ...JSON.parse(freePayload.publishedDisplayProofJson), presentationVersion: 'readable-v7' }, JSON.parse(v7Payload.publishedDisplayProofJson));
@@ -134,7 +136,7 @@ async function main() {
   };
   for (const count of [8, 10]) {
     const wide = sized(count), widePayload = publicationPayload(wide.file, root, clock);
-    assert.equal(widePayload.presentationVersion, 'readable-v8');
+    assert.equal(widePayload.presentationVersion, 'readable-v9');
     assert.equal(widePayload.practicalTicketCount, count);
     assert.equal(widePayload.price, 0);
     assert.deepEqual(verifyPublicationSource(widePayload, root, clock), widePayload);
@@ -153,16 +155,101 @@ async function main() {
       articleSeries: 'normal', publicationKey: widePayload.publicationKey, publishedAt: new Date(clock + 1000).toISOString(),
       sourceSha256: wide.sourceSha256, ticketCount: count,
       publicationEvidence: { version: 'note-publication-evidence-v1', sourceSha256: wide.sourceSha256, receiptCommitSha: 'c'.repeat(40),
-        publisherCommitSha: 'd'.repeat(40), presentationVersion: 'readable-v8', publishedDisplayProof: wideProof } };
+        publisherCommitSha: 'd'.repeat(40), presentationVersion: 'readable-v9', publishedDisplayProof: wideProof } };
     const sections = require('./note-published-ticket-sections');
     const after = Date.parse(bundle.record.deadlineAt) + 1000;
     assert.equal(sections.publishedTicketSections(row, wide.sizedBytes, clock + 2000).status, 'pending');
     const verified = sections.publishedTicketSections(row, wide.sizedBytes, after);
     assert.equal(verified.status, 'verified');
-    assert.equal(verified.presentationVersion, 'readable-v8');
+    assert.equal(verified.presentationVersion, 'readable-v9');
     assert.ok(wide.tickets.every(ticket => verified.unionTickets.includes(ticket)));
     assert.equal(sections.publishedTicketSections({ ...row, ticketCount: count - 1 }, wide.sizedBytes, after).status, 'review');
     assert.equal(sections.classifyPublishedTickets(row, wide.sizedBytes, wide.tickets[count - 1], after).status, 'hit');
+  }
+  // 2026-11-16 owner decision (readable-v9): saved independent-scenario tickets that are in
+  // none of the four pools are published in their own two sections.
+  {
+    const scenario = require('./note-scenario-presentation.cjs'), sections = require('./note-published-ticket-sections');
+    const independent = (ticket, reason, more = {}) => ({ ticket, odds: 80, category: '独立展開', displayCategory: '独立展開',
+      candidateKind: 'independent-scenario', scenarioClassificationReason: reason, ...more });
+    const build = extra => {
+      const copy = structuredClone(bundle);
+      const tickets = [{ ticket: '1-2-3', odds: 20, category: '本命' }, { ticket: '1-2-4', odds: 25, category: '本命' }, ...extra];
+      copy.baselinePracticalTickets = structuredClone(tickets);
+      copy.record.prediction.practicalTickets = structuredClone(tickets);
+      copy.article = generator.generateArticle(copy.record.prediction);
+      copy.capturedAt = new Date(clock).toISOString();
+      const text = JSON.stringify(copy), file = `data/note-drafts/20300914/20300914-23-10-${sha(text)}.json`;
+      fs.writeFileSync(path.join(root, file), text);
+      return { file, text, sourceSha256: sha(text), count: tickets.length };
+    };
+    const both = build([independent('5-1-3', '別頭の独立展開'), independent('5-1-4', '別頭の独立展開'), independent('1-6-2', '残し艇を使う押さえ展開')]);
+    const p9 = publicationPayload(both.file, root, clock);
+    assert.equal(p9.presentationVersion, 'readable-v9');
+    assert.equal(p9.practicalTicketCount, 5);
+    assert.deepEqual(verifyPublicationSource(p9, root, clock), p9);
+    assert.deepEqual(requirePublicationGate(p9, root, clock), p9);
+    assert.ok(p9.paidText.includes('\n\n🌀 波乱のシナリオ\n\n5 → 1 → 3・4\n2点\n\n😼 チャッピーの「もしかして」\n\n1 → 6 → 2\n1点\n\n'));
+    assert.ok(p9.paidText.indexOf('💥 万舟狙い') < p9.paidText.indexOf('🌀 波乱のシナリオ') && p9.paidText.indexOf('😼') < p9.paidText.indexOf('📌 合計（重複なし）'));
+    assert.ok(p9.freeText.includes('🌀 波乱のシナリオ：2点\n😼 チャッピーの「もしかして」：1点'));
+    assert.deepEqual(require('./note-readable-article').ticketsIn(p9.freeText), []);
+    assert.doesNotMatch(p9.body, /コロがし|実戦厳選|延べ|有料|独立展開|必勝|絶対|確実|儲か|保証/);
+    const proof9 = parsePublishedDisplayProof(p9);
+    assert.deepEqual(proof9.sections.map(section => [section.label, section.ticketCount, section.includedInPublishedResult]), [
+      ['🎯 本命', 2, true], ['🛡️ 押さえ', 1, true], ['🌊 流し', 1, true], ['💥 万舟狙い', 1, true],
+      ['🌀 波乱のシナリオ', 2, true], ['😼 チャッピーの「もしかして」', 1, true]]);
+    assert.equal(proof9.publishedTicketCount, 8);
+    assert.equal(proof9.modelSubset.ticketCount, 5);
+    assert.equal(JSON.stringify(proof9).includes('5-1-3'), false);
+    // The frozen v8 and v7 code still refuse the same original.
+    for (const presentationVersion of ['readable-v8', 'readable-v7']) {
+      assert.throws(() => publicationPayload(both.file, root, clock, { presentationVersion }), /readable_category_membership_missing/);
+    }
+    const row = { raceKey: p9.raceKey, deadlineAt: bundle.record.deadlineAt, place: bundle.record.place, raceNo: bundle.record.raceNo,
+      articleSeries: 'normal', publicationKey: p9.publicationKey, publishedAt: new Date(clock + 1000).toISOString(),
+      sourceSha256: both.sourceSha256, ticketCount: both.count,
+      publicationEvidence: { version: 'note-publication-evidence-v1', sourceSha256: both.sourceSha256, receiptCommitSha: 'c'.repeat(40),
+        publisherCommitSha: 'd'.repeat(40), presentationVersion: 'readable-v9', publishedDisplayProof: proof9 } };
+    const after = Date.parse(bundle.record.deadlineAt) + 1000;
+    assert.equal(sections.publishedTicketSections(row, both.text, clock + 2000).status, 'pending');
+    const verified = sections.publishedTicketSections(row, both.text, after);
+    assert.equal(verified.status, 'verified');
+    assert.deepEqual(verified.sections.slice(4), [{ label: '🌀 波乱のシナリオ', tickets: ['5-1-3', '5-1-4'] }, { label: '😼 チャッピーの「もしかして」', tickets: ['1-6-2'] }]);
+    assert.deepEqual(sections.classifyPublishedTickets(row, both.text, '5-1-4', after).matchedSections, ['🌀 波乱のシナリオ']);
+    assert.deepEqual(sections.classifyPublishedTickets(row, both.text, '1-6-2', after).matchedSections, ['😼 チャッピーの「もしかして」']);
+    assert.equal(sections.classifyPublishedTickets(row, both.text, '6-5-4', after).status, 'miss');
+    // A tampered proof (a ticket moved between the two sections) is rejected.
+    const moved = structuredClone(row); moved.publicationEvidence.publishedDisplayProof.sections[4].ticketCount = 1;
+    assert.equal(sections.publishedTicketSections(moved, both.text, after).status, 'review');
+    const { isPublishedSectionLabel } = require('./note-result-presentation');
+    for (const label of scenario.SCENARIO_LABELS) {
+      assert.equal(isPublishedSectionLabel('normal', label), true);
+      assert.equal(isPublishedSectionLabel('escape', label), false);
+    }
+    // Only one of the two sections appears when only that family was saved.
+    const one = publicationPayload(build([independent('1-6-2', '残し艇を使う押さえ展開')]).file, root, clock);
+    assert.ok(one.paidText.includes('😼 チャッピーの「もしかして」') && !one.paidText.includes('🌀'));
+    // A ticket already in a saved pool stays in that pool even when its family is 独立展開.
+    const pooled = publicationPayload(build([independent('2-1-3', '別頭の独立展開')]).file, root, clock);
+    assert.ok(!pooled.paidText.includes('🌀') && !pooled.paidText.includes('😼'));
+    // Any other family, an unknown reason, or copies that disagree still stop the whole article.
+    for (const extra of [
+      [{ ticket: '4-1-2', odds: 30, category: '検証済み救済' }],
+      [independent('5-1-3', '未知の展開')],
+      [independent('5-1-3', '別頭の独立展開', { candidateKind: 'other' })],
+      [independent('5-1-3', '別頭の独立展開', { displayCategory: '本線' })]
+    ]) assert.throws(() => publicationPayload(build(extra).file, root, clock), /readable_category_membership_missing/);
+    const disagree = structuredClone(JSON.parse(both.text));
+    disagree.record.prediction.practicalTickets[2].scenarioClassificationReason = '残し艇を使う押さえ展開';
+    const disagreeText = JSON.stringify(disagree), disagreeFile = `data/note-drafts/20300914/20300914-23-10-${sha(disagreeText)}.json`;
+    fs.writeFileSync(path.join(root, disagreeFile), disagreeText);
+    assert.throws(() => publicationPayload(disagreeFile, root, clock), /readable_category_membership_missing/);
+    // Parser rejects reordered, duplicated or pool-overlapping scenario sections.
+    const base = scenario.parsePaidText(p9.paidText).basePaidText;
+    assert.throws(() => scenario.category.parsePaidSections(base.replace('5 → 1 → 3・4\n2点', '5 → 1 → 3\n2点')), /count_mismatch/);
+    assert.throws(() => scenario.category.parsePaidSections(base.replace('1 → 6 → 2\n1点', '1 → 2 → 3\n1点')), /family_invalid/);
+    const swapped = base.replace('🌀 波乱のシナリオ', 'X').replace('😼 チャッピーの「もしかして」', '🌀 波乱のシナリオ').replace('X', '😼 チャッピーの「もしかして」');
+    assert.throws(() => scenario.category.parsePaidSections(swapped), /family_invalid/);
   }
   // Eleven tickets stay blocked with the publication-gate reason.
   const oversized = structuredClone(bundle);

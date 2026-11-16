@@ -507,3 +507,23 @@ PR #1476 のmain反映後、手動実行 run 43792690334（`mode=auth`・`browse
 - 変えていないこと：保存原本のSHA一致、展示後、締切120秒超、0円、同じレース・種類は1回、本文入力前の原子的予約、「投稿する」1回、結果不明なら再投稿しない、ログインなし画面での全文一致確認とreceipt。
 - 未確認：8〜10点の実記事の公開（main反映後の最初の該当レースで確認）、結果カードの画像に8〜10点の記事が載ったときの実表示。
 - 検証: `node scripts/note-publication-source.test.js`（8点・10点の公開payload、証明、締切後の照合、v7では拒否、11点は監査で停止）、`node --test scripts/note-free-explanation.test.cjs`（v8＝v7のバイト、固定v7）、`node --test scripts/note-recovery-presentation.test.cjs`（v7 claimの復旧）、`node scripts/note-github-ui-transport.test.js`、`node --test scripts/note-korogashi-draft.test.cjs`。
+
+## 2026-11-16 独立展開の買い目を2つの区分に載せる（readable-v9、本人決定）
+
+10点までへの変更後、当日の保存原本 129件のうち 61件（最新の原本で数えると53レース中22レース）が `readable_category_membership_missing` で見送りになった。保存済みの実戦厳選に、4つの保存プール（`mainSheet.tickets`・`coverTickets`・`flowTickets`・`manshuSheet.tickets`）のどれにも入っていない「独立展開」の買い目があり、記事に載せる区分が無かったためである。本人の決定で、区分を2つ足した。
+
+| 区分名（本人決定） | 保存原本の `scenarioClassificationReason` | 意味 |
+|---|---|---|
+| 🌀 波乱のシナリオ | 別頭の独立展開 | 本命とは別の艇が1着になる展開 |
+| 😼 チャッピーの「もしかして」 | 残し艇を使う押さえ展開 | 1着の流れは同じで、別の艇が2・3着に残る展開 |
+
+- 区分名は Claude と ChatGPT（チャッピー）で共通。記事・報告・会話でこの表記をそのまま使う。
+- 載せる条件：通常AI記事で、`baselinePracticalTickets` の行が `category: 独立展開`・`candidateKind: independent-scenario`・上表の理由を持ち、`record.prediction.practicalTickets` の同じ券も同じ分類であること。4つのプールに入っている券は、分類が独立展開でもそのプールの区分のまま。
+- 振り分けは保存された分類だけで決める。オッズ・順位・結果では決めない。上表以外の分類（例：検証済み救済）や分類が食い違う券がプール外にあれば、従来どおり記事全体を見送る。
+- 並びは 本命 → 押さえ → 流し → 万舟狙い → 🌀 → 😼 → 参考予想 → 合計 → ⭐ 中心の買い目。該当券があるときだけ区分を出す。該当券が無い記事は readable-v8 と title・無料部分・買い目欄・全文が同じバイト（テストと実データで照合）。
+- 2つの区分は公開予想（的中判定の対象）に含む。無料部分の点数の内訳にも区分名と点数が出る（券そのものは出ない）。的中時の掲載欄名もこの区分名になる（`note-result-presentation.js`、結果カード `note-result-card.cjs`）。元区分の表示（本命・押さえ・流し・万舟狙い）は従来の4プールだけで、この2区分に当たった場合は掲載欄名で伝える。
+- 正本は `scripts/note-scenario-presentation.cjs`。`note-category-article.js`・`note-korogashi-presentation.cjs`・`note-plain-presentation.cjs`・`note-center-presentation.cjs`・`note-ticket-limit.cjs` は1バイトも変えていない。v8 は `scripts/note-recovery-readable-v8.cjs` と HISTORICAL（指紋14個）に固定し、変更前の claim は v8 として復旧照合する。公開済み記事は変更しない。
+- 変えていないこと：予想・買い目・点数・順序、1〜10点、展示後、締切120秒超、0円、同じレース・種類は1回、原子的予約、「投稿する」1回、結果不明なら再投稿しない、ログインなし画面での全文一致確認とreceipt。独立監視の記事には区分を足さない。
+- 実データ（2026-11-16 の保存原本 129件、読むだけ）：68件は v8 と同じバイト、58件が新しく公開可能、3件は「検証済み救済」の券がプール外のため見送りのまま。最新の原本で数えると 53レース中 52レースが公開可能。
+- 未確認：この2区分を含む実記事の公開と、note の本文での絵文字・かぎかっこの表示（ログインなし画面での全文一致確認で確かめる）、的中時の結果カードの実表示。
+- 検証: `node scripts/note-publication-source.test.js`、`node --test scripts/note-free-explanation.test.cjs scripts/note-recovery-presentation.test.cjs scripts/note-result-card.test.cjs`。
