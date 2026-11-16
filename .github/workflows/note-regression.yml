@@ -8,6 +8,11 @@ on:
       - "scripts/note-independent-monitor-fixture.js"
       - "js/note-generator.js"
       - "js/forecast-reader-contract.js"
+      - "scripts/note-reader-presentation.cjs"
+      - "tests/note-reader-presentation.test.cjs"
+      - "tests/note-reader-publication-proof.test.cjs"
+      - "scripts/race-review-evidence.js"
+      - "tests/race-review-fingerprint.test.cjs"
       - "scripts/note-reader-preview.cjs"
       - "scripts/build-fixed-head-baseline.cjs"
       - "tests/prediction-quality-review.test.cjs"
@@ -37,6 +42,7 @@ on:
       - "scripts/note-scenario-presentation*"
       - "scripts/note-recovery*"
       - "scripts/fixtures/note-recovery-code.json"
+      - "scripts/fixtures/note-recovery-v9-code.json"
       - "scripts/note-published-ticket-sections*"
       - "scripts/note-result-provenance*"
       - "scripts/note-cover*"
@@ -82,6 +88,11 @@ on:
     paths:
       - "js/note-generator.js"
       - "js/forecast-reader-contract.js"
+      - "scripts/note-reader-presentation.cjs"
+      - "tests/note-reader-presentation.test.cjs"
+      - "tests/note-reader-publication-proof.test.cjs"
+      - "scripts/race-review-evidence.js"
+      - "tests/race-review-fingerprint.test.cjs"
       - "scripts/note-reader-preview.cjs"
       - "scripts/build-fixed-head-baseline.cjs"
       - "tests/prediction-quality-review.test.cjs"
@@ -111,6 +122,7 @@ on:
       - "scripts/note-scenario-presentation*"
       - "scripts/note-recovery*"
       - "scripts/fixtures/note-recovery-code.json"
+      - "scripts/fixtures/note-recovery-v9-code.json"
       - "scripts/note-published-ticket-sections*"
       - "scripts/note-result-provenance*"
       - "scripts/note-cover*"
@@ -186,7 +198,7 @@ jobs:
 
       - name: Check note generator and regression
         run: |
-          node --test tests/forecast-reader-contract.test.cjs tests/prediction-quality-review.test.cjs
+          node --test tests/forecast-reader-contract.test.cjs tests/prediction-quality-review.test.cjs tests/note-reader-presentation.test.cjs tests/race-review-fingerprint.test.cjs tests/note-reader-publication-proof.test.cjs
           node --check js/note-generator.js
           node --check scripts/test-note-copy-cleanup.js
           node --check scripts/test-note-karatsu-regression.js

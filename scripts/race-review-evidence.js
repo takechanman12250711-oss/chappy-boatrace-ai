@@ -16,7 +16,8 @@ function methodFingerprint(root = path.resolve(__dirname, '..')) {
     const content = fs.readFileSync(path.join(root, relative), 'utf8');
     files.set(relative, content);
     for (const match of content.matchAll(/require\(\s*["'](\.[^"']+)["']\s*\)/g)) {
-      let dependency = path.normalize(path.join(path.dirname(relative), match[1]));
+      // Repository names in the fingerprint are POSIX paths on every host.
+      let dependency = path.posix.normalize(path.posix.join(path.posix.dirname(relative), match[1]));
       if (!path.extname(dependency)) dependency += '.js';
       if (/^(js|config)\//.test(dependency)) visit(dependency);
     }

@@ -1013,3 +1013,31 @@ test('v8 claims recover with frozen v8 code while new publication uses v9', asyn
     } finally { f.cleanup(); }
   }
 });
+
+test('old and current v9 dependency sets both retain the approved v9 default', async()=>{
+ for(const normal of [false,true]){
+  const f=original(normal);
+  try{
+   const old=await pinned(f,'readable-v9'),current=await pinned(f,'current-v9-code');
+   assert.equal(old.recoveryEvidence.presentationVersion,'readable-v9');
+   assert.equal(current.recoveryEvidence.presentationVersion,'readable-v9');
+   for(const field of ['title','freeText','paidText','body','price','publishedDisplayProofJson'])
+    assert.equal(current.payload[field],old.payload[field]);
+   assert.equal(publicationPayload(f.sourcePath,f.rootDir,f.identity.sourceTime).presentationVersion,'readable-v9');
+   assert.equal(require('./note-recovery-presentation.cjs').CURRENT_VERSION,'readable-v9');
+   assert.equal(hash(fs.readFileSync(path.join(__dirname,'note-recovery-readable-v9.cjs'))),
+     require('./note-recovery-presentation.cjs').HISTORICAL['readable-v9'].rendererSha256);
+  }finally{f.cleanup();}
+ }
+});
+test('a hybrid of old and new v9 dependencies cannot be accepted by renderer identity alone',async()=>{
+ const f=original();
+ try{
+  const mock=requestFixture(f.identity,{version:'readable-v9',rootDir:f.rootDir,mutate:async(url,result)=>{
+   if(!url.includes('/contents/scripts/note-pricing.js'))return result;
+   const old=await result.json(),bytes=fs.readFileSync(path.join(__dirname,'note-pricing.js'));
+   return response({...old,sha:blobSha(bytes),content:bytes.toString('base64')});
+  }});
+  await assert.rejects(()=>recoveryClaimStatus(f.identity,env,mock.request,f.rootDir),/dependency_unreviewed/);
+ }finally{f.cleanup();}
+});
