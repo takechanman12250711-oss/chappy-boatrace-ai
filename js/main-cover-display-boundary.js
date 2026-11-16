@@ -472,9 +472,17 @@
     };
   }
 
-  function prepare(prediction, selector) {
+  function prepare(prediction, selector, reader) {
     if (!prediction || typeof prediction !== "object") return prediction;
 
+    if (reader?.fromPrediction) {
+      // Preserve complete pools instead of feeding clipped 3/2/2/1 display rows back.
+      const resolved = resolveSelection(prediction, selector);
+      const selection = resolved.selection;
+      const source = resolved.selectedAtBoundary ? {...prediction, practicalSelection: selection} : prediction;
+      const readerPresentation = reader.fromPrediction(source, selection);
+      if (readerPresentation) return {...source, readerPresentation};
+    }
     const displayRows = resolveNormalDisplayRows(prediction, selector);
     if (!displayRows.available) return prediction;
 
@@ -537,7 +545,7 @@
 
         return original.call(
           this,
-          prepare(adaptedPrediction, root.ChappyPracticalSelection),
+          prepare(adaptedPrediction, root.ChappyPracticalSelection, root.ChappyForecastReaderContract),
           ...args
         );
       };

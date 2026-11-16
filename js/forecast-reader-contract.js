@@ -72,5 +72,43 @@
     if(!overlap)return "参考予想は"+original+"点で別集計です。上記と同じ券は再掲していません。";
     return "参考予想は元の台帳で"+original+"点（上記と重複"+overlap+"点、追加表示"+(original-overlap)+"点）。別集計です。";
   }
-  return {VERSION,MAIN,ADDITIONAL,HOLE,REFERENCE,valid,tickets,groupTickets,verifiedHead,explanation,referenceSummary};
+  // Read the complete snapshot before display-only clipping. Never select by odds/results.
+  function fromPrediction(prediction, selection=prediction?.practicalSelection) {
+    if(!prediction||typeof prediction!=="object")return null;
+    const state=(status,reason)=>({version:VERSION,status,reason,groups:[],centralTickets:[],
+      primaryTickets:[],allTickets:[],primaryCount:0,allCount:0,
+      referenceOriginalCount:0,referenceOverlapCount:0,explanation:explanation(prediction)});
+    if(selection?.purchaseDecision?.status==="skip")
+      return state("skipped",String(selection.purchaseDecision.reason||"購入を見送ります。"));
+    const central=Array.isArray(selection?.tickets)?selection.tickets:prediction.practicalTickets;
+    if(!Array.isArray(central))return state("unavailable","買い目の選定を確認中です。");
+    if(!central.length)return state("empty","選定された買い目はありません。");
+    try {
+      const main=tickets(prediction.mainSheet?.tickets),cover=tickets(prediction.mainSheet?.coverTickets),
+        flow=tickets(prediction.mainSheet?.flowTickets),hole=tickets(prediction.manshuSheet?.tickets);
+      const selected=tickets(central),pool=new Set([...main,...cover,...flow,...hole]);
+      for(const row of central) {
+        const ticket=typeof row==="string"?row:row.ticket;
+        if(pool.has(ticket))continue;
+        const allowed=r=>r&&r.category==="独立展開"&&r.candidateKind==="independent-scenario"&&
+          (r.displayCategory===undefined||r.displayCategory==="独立展開")&&
+          ["別頭の独立展開","残し艇を使う押さえ展開"].includes(r.scenarioClassificationReason);
+        if(!allowed(row))throw Error("reader_contract_center_membership_missing");
+        if(Array.isArray(prediction.practicalTickets)&&!prediction.practicalTickets.some(r=>r.ticket===ticket&&allowed(r)))
+          throw Error("reader_contract_center_copy_mismatch");
+      }
+      if(Array.isArray(selection?.tickets)&&Array.isArray(prediction.practicalTickets)&&
+          JSON.stringify(selected)!==JSON.stringify(tickets(prediction.practicalTickets)))
+        throw Error("reader_contract_center_copy_mismatch");
+      const ledger=prediction.manshuForecastLedger||prediction.manshuSheet?.forecastLedger||
+        prediction.aiCore?.manshuForecastLedger;
+      const references=ledger===undefined?[]:tickets(ledger.forecasts.flatMap(f=>f.formation.expandedTickets));
+      const model=groupTickets({centralTickets:central,additionalTickets:[...main,...cover,...flow],
+        holeTickets:hole,referenceTickets:references});
+      return {...model,status:"selected",explanation:explanation(prediction)};
+    } catch(error) {
+      return {...state("unavailable","保存された買い目の整合性を確認中です。"),error:error.message};
+    }
+  }
+  return {VERSION,MAIN,ADDITIONAL,HOLE,REFERENCE,valid,tickets,groupTickets,verifiedHead,explanation,referenceSummary,fromPrediction};
 });

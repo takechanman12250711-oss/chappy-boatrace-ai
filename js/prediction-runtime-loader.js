@@ -9,6 +9,7 @@
   const ODDS_PRIORITY_WAIT_MS = 2500;
   const PRELOAD_LOOKAHEAD = 2;
   const scripts = [
+    "js/forecast-reader-contract.js",
     "js/boat-identity.js",
     "js/theory.js",
     "js/history-insights-base.js",
@@ -46,6 +47,8 @@
     "js/manshu-display-reliability.js"
   ];
   const SCRIPT_VERSIONS = Object.freeze({
+    "js/forecast-reader-contract.js": "20261116-1",
+    "js/main-cover-display-boundary.js": "20261116-reader1",
     "js/formation-odds-display.js": "20261021-exact-formation1",
     "js/note-generator.js": "20260923-wall-purchase1",
     "js/practical-selection.js": "20261003-escape-partner-v13",
