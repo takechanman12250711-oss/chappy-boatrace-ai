@@ -19,10 +19,17 @@ async function step(fallback, action) {
   try { return await action(); } catch (error) { throw safeError(error, fallback); }
 }
 
+// 2026-11-16: with the same saved state, the editor showed no title/body field
+// in a headless browser (run 43788103199 on the runner, and headless Chrome on
+// the owner's PC) but was ready in a normal window on the same PC. So this
+// check opens a normal window; the workflow gives it a virtual display (xvfb).
+// Nothing else about the browser is changed or disguised.
+const LAUNCH_OPTIONS = Object.freeze({ headless: false });
+
 async function runSavedStateAuth({ env = process.env, loadStorageState, ensureEditorReady, launch, log = console.log } = {}) {
   const storageState = await step('note_state_invalid', async () => loadStorageState(env));
   const browser = await step('note_state_browser_start_failed',
-    () => (launch || (() => require('playwright').chromium.launch({ headless: true })))());
+    () => (launch || (() => require('playwright').chromium.launch({ ...LAUNCH_OPTIONS })))());
   try {
     const page = await step('note_state_browser_start_failed', async () => {
       const context = await browser.newContext({ storageState, locale: 'ja-JP', timezoneId: 'Asia/Tokyo' });
@@ -41,4 +48,4 @@ async function runSavedStateAuth({ env = process.env, loadStorageState, ensureEd
   }
 }
 
-module.exports = { safeError, runSavedStateAuth };
+module.exports = { LAUNCH_OPTIONS, safeError, runSavedStateAuth };
