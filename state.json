@@ -576,11 +576,11 @@
       },
       "settlement": {
         "status": "pending",
-        "reason": "official_result_stale"
+        "reason": "official_result_pending"
       },
       "publishedSettlement": {
         "status": "pending",
-        "reason": "official_result_stale",
+        "reason": "official_result_pending",
         "method": "published-main-sections-v1",
         "publishedTicketCount": 37,
         "sectionsSha256": "c5f2bb2c002771af09bb44e0188eefd87a5e41229b5e7e3e6884b28747c4b8fb",
@@ -978,6 +978,32 @@
         "payoutText": "¥4,050",
         "popularity": 14
       }
+    },
+    "20261116-24-11": {
+      "ok": true,
+      "source": "boatrace-official",
+      "date": "20261116",
+      "jcd": "24",
+      "raceNo": 11,
+      "checkedAt": "2026-11-16T11:12:51.650Z",
+      "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261116&jcd=24&rno=11",
+      "resultAvailable": false,
+      "status": "not_finished",
+      "void": false,
+      "finishers": [],
+      "starts": [],
+      "winningMethod": "",
+      "trifecta": {
+        "combination": "1-2-4",
+        "boats": [
+          1,
+          2,
+          4
+        ],
+        "payout": 810,
+        "payoutText": "¥810",
+        "popularity": 1
+      }
     }
   },
   "resultAttempts": {
@@ -988,6 +1014,10 @@
     "20261116-15-10": {
       "checkedAt": "2026-11-16T11:04:35.194Z",
       "status": "miss"
+    },
+    "20261116-24-11": {
+      "checkedAt": "2026-11-16T11:12:48.112Z",
+      "status": "pending"
     }
   },
   "korogashiIndex": {
