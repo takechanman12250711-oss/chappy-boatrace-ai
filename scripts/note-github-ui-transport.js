@@ -1007,6 +1007,12 @@ async function run({ env = process.env } = {}) {
     if (mode !== 'auth') throw new Error('direct_login_auth_mode_only');
     return require('./note-direct-login').runDirectAuth({ env, ensureEditorReady });
   }
+  // Login check that reuses a saved signed-in state in the runner's own
+  // browser. Read-only auth mode only, like the direct login check above.
+  if (String(env.NOTE_UI_BROWSER || '').trim() === 'github-state') {
+    if (mode !== 'auth') throw new Error('saved_state_auth_mode_only');
+    return require('./note-saved-state-auth').runSavedStateAuth({ env, loadStorageState, ensureEditorReady });
+  }
 
   // Invalid/missing credentials and stale handoffs must stop before browser setup.
   const browserUse = loadBrowserUseConfig(env);
