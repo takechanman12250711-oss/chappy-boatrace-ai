@@ -472,3 +472,13 @@ Browser Useの残高0（402）で公開が止まっているため、課金な�
 - 未確認：noteが、GitHubのランナーからのセッション再利用を受け付けるか。セッションの有効期間。main反映後の手動実行1回で判断する。
 - この確認が通っても、公開処理はまだBrowser Use経由のままである。公開をこの経路へ切り替えるのは、確認結果を見てからの別の変更とする。
 - 検証: `node --test scripts/note-saved-state-auth.test.js`、`node scripts/note-github-ui-transport.test.js`。
+
+## 2026-11-16 保存した状態の確認は「画面あり」のブラウザで行う
+
+PR #1474 のmain反映後、手動実行 run 43788103199（`mode=auth`・`browser=github-state`）は `note_editor_fields_not_ready` で停止した。`NOTE_UI_STATE_LOADED=true`、最終的な場所は `editor_https`（ログイン画面へは戻されていない）、タイトル欄・本文欄は未検出、frame 1件。
+
+- 本人のパソコンで同じ保存状態を使って切り分けた。画面なし（headless）のChromeでは同じ `note_editor_fields_not_ready`（場所 `editor_https`・欄なし）。画面あり（通常のウィンドウ）のChromeでは編集画面のタイトル欄・本文欄が使えた。入力はしていない。
+- したがって、この停止は保存状態やGitHubの場所より先に、画面なしのブラウザで編集画面の欄が出ないことで説明できる。Playwright同梱Chromiumでの画面あり確認は、パソコンへの取得が通信で完了せず未実施。
+- 確認処理は通常のウィンドウで開く（`LAUNCH_OPTIONS = { headless: false }`）。workflowは `browser=github-state` のときだけ `xvfb-run -a` で仮想の画面を与える。ブラウザの名乗りや指紋の変更、機械よけの解決手段は使わない。
+- 未確認：GitHubのランナーで画面ありにすれば欄が出るか。main反映後の手動実行1回で判断する。通らなければ、パソコンに投稿させる案（Issue #1460 のB）を検討する。
+- 公開処理はBrowser Use経由のまま変更していない。

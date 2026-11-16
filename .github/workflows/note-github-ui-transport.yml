@@ -162,6 +162,8 @@ jobs:
         run: |
           if [ "$NOTE_UI_MODE" = "publish" ]; then
             node scripts/publish-note-queue.js
+          elif [ "$NOTE_UI_BROWSER" = "github-state" ]; then
+            xvfb-run -a node scripts/note-github-ui-transport.js
           else
             node scripts/note-github-ui-transport.js
           fi

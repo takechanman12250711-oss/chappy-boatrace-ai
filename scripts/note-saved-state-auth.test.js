@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { safeError, runSavedStateAuth } = require('./note-saved-state-auth');
+const { LAUNCH_OPTIONS, safeError, runSavedStateAuth } = require('./note-saved-state-auth');
 const { loadStorageState, run } = require('./note-github-ui-transport');
 
 const SECRET = 'cookie-value-must-never-be-logged';
@@ -69,6 +69,13 @@ test('browser start failures never carry the original error text', async () => {
     error => error.message === 'note_state_browser_start_failed');
   assert.equal(safeError(new Error(SECRET), 'fallback_code').message, 'fallback_code');
   assert.equal(safeError(new Error('note_state_missing'), 'fallback_code').message, 'note_state_missing');
+});
+
+test('the check opens a normal window and the workflow gives it a virtual display', () => {
+  assert.deepEqual({ ...LAUNCH_OPTIONS }, { headless: false });
+  assert.ok(Object.isFrozen(LAUNCH_OPTIONS));
+  const workflow = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', '.github', 'workflows', 'note-github-ui-transport.yml'), 'utf8');
+  assert.match(workflow, /"\$NOTE_UI_BROWSER" = "github-state" \]; then\r?\n\s+xvfb-run -a node scripts\/note-github-ui-transport\.js/);
 });
 
 test('the transport uses the saved state only in auth mode', async () => {
