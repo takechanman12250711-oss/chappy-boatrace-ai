@@ -59,6 +59,13 @@ async function main(){
       assert.equal(s.legacyVisible,0);assert.equal(s.fallback,0);assert.equal(s.overflow,false);
       assert.match(s.text,/本命7点.*公開予想37点/);
       if(process.env.CHAPPY_READER_SCREENSHOT)await page.screenshot({path:process.env.CHAPPY_READER_SCREENSHOT.replace(/\.png$/,early?"-early.png":"-late.png"),fullPage:true});
+      const flagged=structuredClone(p);
+      const firstBoat=flagged.preRaceConditions.boats[0],nextBoat=flagged.preRaceConditions.boats[1];
+      firstBoat.exhibitionST=.02;firstBoat.exhibitionStartMarker="F";firstBoat.startExhibition={...firstBoat.startExhibition,st:.02,marker:"F"};
+      nextBoat.exhibitionST=.99;nextBoat.exhibitionStartMarker="L";nextBoat.startExhibition={...nextBoat.startExhibition,st:.99,marker:"L"};
+      await render(flagged);const flaggedView=await snapshot();
+      assert.match(flaggedView.text,/展示STはF0.02/);assert.match(flaggedView.text,/隣の2号艇の展示STはL0.99/);
+      assert.deepEqual(flaggedView.groups,s.groups);
       // Current map values beat older snapshot rows, including explicit missing quotes.
       p.mainSheet.tickets[0].odds=9;p.oddsByTicket={"1-2-3":101,"1-4-3":null};
       await render(p);

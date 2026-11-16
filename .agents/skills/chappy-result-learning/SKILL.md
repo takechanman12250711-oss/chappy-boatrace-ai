@@ -30,3 +30,5 @@ description: 予想結果の振り返り、外れ分析、改善案の採否、�
 
 - `escape-main-audit.pool` は `candidate24Tickets` のみで、全保存候補の和集合ではない。pool不明を別にし、pool外の選定券や的中も確認してから生成不足と選定不足を分ける。正式なmain/cover/flow/manshuと独立枝の不足は元bundleで確認する。
 - 同じ方式の比較には `race-review-evidence.js` の保存指紋と対象期間を固定する。指紋にはnote-generatorと相対require依存も含まれ、sourceCommit数を方式数と扱わない。リポジトリ内の依存名はOSに関係なくPOSIXで解決し、Windowsだけの誤った指紋を新方式へ読み替えない。
+
+- 「正式な主展開の頭」と「保存厳選に含まれる頭」を別に集計する。固定比較CLIのselectedHeadCoverage/selectedHeadAllocationとbyGenerationAndSourceを使い、配分の投資・払戻・的中が元の合計と一致することを確認する。頭別の異なる投資配分は記述統計であり、同予算代替や未使用期間の改善実証としない。

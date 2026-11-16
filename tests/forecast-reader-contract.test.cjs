@@ -4,7 +4,7 @@ const contract=require('../js/forecast-reader-contract');
 const source=fs.readFileSync(require.resolve('../js/forecast-reader-contract'),'utf8');
 const context={window:{}};vm.runInNewContext(source,context);const browser=context.window.ChappyForecastReaderContract;
 const input=()=>({centralTickets:['1-2-3','1-2-4'],additionalTickets:['1-2-3','1-2-5','2-1-3'],holeTickets:['2-1-3','5-1-2'],referenceTickets:['1-2-3','4-1-2']});
-const prediction=()=>({mainSheet:{honmei:{boatNo:1},tickets:['1-2-3','1-2-4']},verificationEvidence:{mainScenario:{headBoatNo:1,attackerBoatNo:1,attackerCourse:1,type:'escape',label:'1号艇逃げ'}},preRaceConditions:{boats:[{boatNo:1,course:1,courseOfficial:true,avgST:.14,exhibitionST:.14,exhibitionTime:6.9},{boatNo:2,course:2,courseOfficial:true,exhibitionST:.06}]}});
+const prediction=()=>({mainSheet:{honmei:{boatNo:1},tickets:['1-2-3','1-2-4']},verificationEvidence:{mainScenario:{headBoatNo:1,attackerBoatNo:1,attackerCourse:1,type:'escape',label:'1号艇逃げ'}},preRaceConditions:{boats:[{boatNo:1,course:1,courseOfficial:true,avgST:.14,exhibitionST:.14,exhibitionStartMarker:"",exhibitionTime:6.9},{boatNo:2,course:2,courseOfficial:true,exhibitionST:.06,exhibitionStartMarker:""}]}});
 test('browser and note use identical grouping and explanation bytes',()=>{
   assert.equal(JSON.stringify(browser.groupTickets(input())),JSON.stringify(contract.groupTickets(input())));
   assert.equal(browser.explanation(prediction()).text,contract.explanation(prediction()).text);
@@ -55,4 +55,38 @@ test('missing, contradictory or duplicate official courses prevent verified scen
   for(const change of [p=>delete p.verificationEvidence.mainScenario.attackerCourse,p=>p.verificationEvidence.mainScenario.attackerCourse=4,p=>p.preRaceConditions.boats[0].courseOfficial=false,p=>p.preRaceConditions.boats.push({boatNo:6,course:1,courseOfficial:true})]){
     const p=prediction();change(p);assert.equal(contract.explanation(p).verified,false);
   }
+});
+
+test('exhibition F/L marks survive formatting in both shared runtimes',()=>{
+ const p=prediction();p.preRaceConditions.boats[0].exhibitionST=.02;p.preRaceConditions.boats[0].exhibitionStartMarker='F';
+ p.preRaceConditions.boats[1].exhibitionST=.99;p.preRaceConditions.boats[1].exhibitionStartMarker='L';
+ const r=contract.explanation(p);assert.match(r.text,/展示STはF0.02/);assert.match(r.text,/隣の2号艇の展示STはL0.99/);
+ assert.doesNotMatch(r.text,/展示STは0.02|展示STは0.99/);
+ assert.equal(browser.explanation(p).text,r.text);
+});
+test('missing, conflicting or unknown exhibition flags cannot be shown as clean positive ST',()=>{
+ for(const change of [b=>delete b.exhibitionStartMarker,b=>b.exhibitionStartMarker='X',
+  b=>b.exhibitionStartMarker=null,b=>b.startExhibition={st:.14,marker:'F'},b=>b.startExhibition={st:.06,marker:''}]){
+  const p=prediction();change(p.preRaceConditions.boats[0]);
+  const r=contract.explanation(p);assert.doesNotMatch(r.text,/展示ST|隣の/);assert.match(r.text,/平均STは0.14/);
+ }
+});
+test('nested saved markers and missing numeric ST remain factual without inventing zero',()=>{
+ assert.equal(contract.exhibitionStText({exhibitionST:.02,startExhibition:{st:.02,marker:'F'}}),'F0.02');
+ assert.equal(contract.exhibitionStText({exhibitionST:-.02,exhibitionStartMarker:'F'}),'F0.02');
+ assert.equal(contract.exhibitionStText({exhibitionST:-.02,exhibitionStartMarker:''}),null);
+ assert.equal(contract.exhibitionStText({exhibitionST:null,exhibitionStartMarker:'L'}),'L（数値未取得）');
+ assert.equal(contract.exhibitionStText({exhibitionST:null,exhibitionStartMarker:''}),null);
+ assert.equal(contract.exhibitionStText({exhibitionST:'F0.02',exhibitionStartMarker:'F'}),null);
+});
+
+test('saved Toda case exhibition signs remain attached to the formal third-course head and its neighbor',()=>{
+ // Minimal projection of source 0cff0b53175acfe1544d86d36817007dd8e97991d90b55de0fc6228288251a40.
+ const p={mainSheet:{honmei:{boatNo:3},tickets:['3-1-5']},
+  verificationEvidence:{mainScenario:{headBoatNo:3,attackerBoatNo:3,attackerCourse:3,type:'threeAttack',label:'3コース攻め'}},
+  preRaceConditions:{boats:[{boatNo:3,course:3,courseOfficial:true,exhibitionST:.02,exhibitionStartMarker:'F'},
+   {boatNo:4,course:4,courseOfficial:true,exhibitionST:.03,exhibitionStartMarker:'F'}]}};
+ const r=contract.explanation(p);assert.equal(r.verified,true);
+ assert.match(r.text,/3号艇の展示STはF0.02/);assert.match(r.text,/隣の4号艇の展示STはF0.03/);
+ assert.equal(browser.explanation(p).text,r.text);
 });

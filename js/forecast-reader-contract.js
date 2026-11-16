@@ -44,6 +44,19 @@
     if(scenario.attackerBoatNo!==undefined&&Number(scenario.attackerBoatNo)!==head)return null;
     return head;
   }
+  function exhibitionStText(boat){
+    if(!boat||typeof boat!=="object")return null;
+    const markers=[boat.exhibitionStartMarker,boat.startExhibition?.marker].filter(v=>v!==undefined);
+    if(!markers.length||markers.some(v=>typeof v!=="string"||!["","F","L"].includes(v.trim().toUpperCase())))return null;
+    const flags=[...new Set(markers.map(v=>v.trim().toUpperCase()))];
+    if(flags.length!==1)return null;
+    const flag=flags[0],values=[boat.exhibitionST,boat.startExhibition?.st].filter(v=>v!==undefined&&v!==null);
+    if(values.some(v=>typeof v!=="number"||!Number.isFinite(v)||v<(flag==="F"?-1:0)||v>1))return null;
+    const magnitude=values.map(v=>flag==="F"?Math.abs(v):v);
+    if(magnitude.length>1&&magnitude.some(v=>v!==magnitude[0]))return null;
+    if(!magnitude.length)return flag?flag+"（数値未取得）":null;
+    return flag+magnitude[0].toFixed(2);
+  }
   function explanation(prediction){
     const head=verifiedHead(prediction),s=prediction?.verificationEvidence?.mainScenario;
     const labels={escape:head+"号艇逃げ",sashi:"2コース差し",threeAttack:"3コース攻め",fourAttack:"4カド攻め"};
@@ -58,12 +71,14 @@
     const numeric=(v,min,max)=>typeof v==="number"&&Number.isFinite(v)&&v>=min&&v<=max;
     const facts=[];
     if(numeric(boat?.avgST,0,1))facts.push("平均STは"+boat.avgST.toFixed(2));
-    if(numeric(boat?.exhibitionST,0,1))facts.push("展示STは"+boat.exhibitionST.toFixed(2));
+    const mainStart=exhibitionStText(boat);
+    if(mainStart)facts.push("展示STは"+mainStart);
     if(numeric(boat?.exhibitionTime,5,9))facts.push("展示タイムは"+boat.exhibitionTime.toFixed(2)+"秒");
     const neighbors=boats.filter(b=>Number(b.course)===Number(boat?.course)+1&&Number(b.boatNo)!==head);
     const other=neighbors.length===1?neighbors[0]:null;
-    const comparison=boat?.courseOfficial===true&&other?.courseOfficial===true&&numeric(other.exhibitionST,0,1)&&numeric(boat?.exhibitionST,0,1)
-      ? "\n隣の"+other.boatNo+"号艇の展示STは"+other.exhibitionST.toFixed(2)+"。展示STと平均STは分けて確認します。":"";
+    const otherStart=exhibitionStText(other);
+    const comparison=boat?.courseOfficial===true&&other?.courseOfficial===true&&mainStart&&otherStart
+      ? "\n隣の"+other.boatNo+"号艇の展示STは"+otherStart+"。展示STと平均STは分けて確認します。":"";
     return {verified:true,text:"中心となる展開は"+s.label+"。"+(facts.length?"\n"+head+"号艇の"+facts.join("、")+"。":"")+comparison};
   }
   function referenceSummary(model){
@@ -113,5 +128,5 @@
       return {...state("unavailable","保存された買い目の整合性を確認中です。"),error:error.message};
     }
   }
-  return {VERSION,MAIN,ADDITIONAL,HOLE,REFERENCE,valid,tickets,groupTickets,verifiedHead,explanation,referenceSummary,fromPrediction};
+  return {VERSION,MAIN,ADDITIONAL,HOLE,REFERENCE,valid,tickets,groupTickets,verifiedHead,exhibitionStText,explanation,referenceSummary,fromPrediction};
 });

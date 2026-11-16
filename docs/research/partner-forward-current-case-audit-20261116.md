@@ -49,3 +49,19 @@ Dの3件の喪失を「本番v1.3の保護漏れ」と呼べない。研究B/D�
 Aは32的中・回収率99.369%、Bは28・89.190%、Dは34・100.036%。D対Aの差は同投資84,000円で払戻+560円。gate未登録・INSUFFICIENT_EVIDENCE・自動適用なしを維持する。
 
 次の最小検証は、`build-race-review-progress.js` の `selectionEvidence()` と `actualSelectionDiagnostic()` で関係券の位置・priority・枝ID・最終集合を並べること。現指紋のcandidate24内・選定外156件へ広げる場合も、全保存プールと本番と同じ成立枝・保護条件を先に照合する。priorityだけの改善、的中3件の事後保護、採用基準を作らない。
+
+## 既存ヘルパーによる15候補の構造化照合
+
+ミナトが上記3原本から15候補を絞り、既存 `selectionEvidence()` と `actualSelectionDiagnostic()` を実行した。ヘルパーblobは `6d7fe819bbe731b1e7b5248a6468037f8d09d666`、SHA256 `71627f567838e6b14f0335a8ad600445af207d1eea72ce33eb14a2e19410aedb`。同一性・配列件数・index・券・判定項目を維持し、不要項目を省いた46,327 byteの投影を使った。全履歴をそのまま再実行したとは扱わない。3原本とも保存証拠statusはvalidatedで、snapshot A・原本baseline・証拠内の券集合が一致した。
+
+| 原本 | 関係券（3桁略記） | 保存physical位置 | 同scenario/source内のqualified全3位置 |
+| --- | --- | --- | --- |
+| 20261028-13-6 | 123/124/126/135/145/143 | 各1・2・3 | 保存あり（context/trim等の再構成による購入適格判定ではない） |
+| 20261031-04-6 | 123/124/126 | 1・3 | unknown |
+| 同 | 146 | 1・2・3 | unknown |
+| 20261101-06-2 | 123/124/125/126 | 1・2・3 | unknown |
+| 同 | 145 | 1・3 | unknown |
+
+前者の123/124/135/145/143はobservations[0/1/6/10/9]、canonical:1/base-formation:main、126はobservations[3]、canonical:1/base-formation:flowに保存根拠がある。実置換126→135はcandidateDecisions[3/12/129]と[15/130]のreasonCodeでも確認できた。残る2原本ではphysicalCoverageに1着があっても、保存された同qualified枝群の全3位置は確認できずunknownとした。異なる観測やsourceの根拠は合成しない。
+
+事後actualSelectionDiagnosticは143/123/124について、いずれもactualFinalDisposition=selected・actualInCandidatePool=true。これはAの的中と保存段階記録の照合であり、候補の役割判断が正しかったという証明ではない。結果を選定や根拠の再生成に使っていない。

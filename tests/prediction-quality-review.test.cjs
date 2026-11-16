@@ -65,3 +65,28 @@ test('preview refuses swapped baseline copies, unknown scenarios and missing sou
   const c=bundle();c.record.prediction.verificationEvidence.mainScenario.type='unknown';
   assert.equal(preview.build(c,{sourceSha256:sha}).explanationVerified,false);
 });
+
+test('formal main and selected heads are distinct; allocation conserves every ticket, yen and hit',()=>{
+ const r=benchmark.build(audit([
+  row({head:3,selected:['1-2-3','3-1-2'],actual:'1-2-3',practicalHit:true}),
+  row({raceKey:'20261115-24-2',head:4,selected:['4-1-2'],actual:'4-1-2',practicalHit:true})
+ ]),{sourceSha256:sha});
+ assert.deepEqual(r.total.mainHeads,{'3':1,'4':1});
+ assert.equal(r.total.selectedHeadCoverage.boat1Races,1);assert.equal(r.total.selectedHeadCoverage.mixedHeadRaces,1);
+ assert.equal(r.total.selectedHeadCoverage.formalHeadMissingRaces,0);
+ const values=Object.values(r.total.selectedHeadAllocation);
+ assert.equal(values.reduce((n,g)=>n+g.stakeYen,0),r.total.stakeYen);
+ assert.equal(values.reduce((n,g)=>n+g.returnYen,0),r.total.current.returnYen);
+ assert.equal(values.reduce((n,g)=>n+g.hits,0),r.total.current.hits);
+ assert.equal(r.total.selectedHeadAllocation.boat1Head.tickets,1);
+ assert.equal(r.byGenerationAndSource.g1['daily-primary'].races,2);
+ assert.match(r.allocationNote,/descriptive.*different stakes/);
+});
+test('unknown formal heads stay unknown and malformed allocation evidence is rejected',()=>{
+ const x=benchmark.evaluate(row({head:null}));
+ assert.equal(benchmark.summarize([x]).selectedHeadCoverage.formalHeadUnknownRaces,1);
+ const y=benchmark.evaluate(row());delete y.selectedHeadCounts;
+ assert.throws(()=>benchmark.summarize([y]),/selected_heads_invalid/);
+ const z=benchmark.evaluate(row({actual:'2-1-3',practicalHit:true}));z.winningHead=6;
+ assert.throws(()=>benchmark.summarize([z]),/winning_head_invalid/);
+});
