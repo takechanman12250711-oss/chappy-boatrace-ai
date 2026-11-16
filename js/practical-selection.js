@@ -2491,6 +2491,7 @@
     // A sidecar only: selection never reads these observations. Keep category
     // scopes separate; purchase eligibility does not imply expansion eligibility.
     const validationObservations = new Map();
+    const consumedValidationObservations = new WeakMap();
     const validationPick = (value, keys) => Object.fromEntries(
       keys.filter(key => value?.[key] !== undefined).map(key => [key, value[key]])
     );
@@ -2510,6 +2511,8 @@
       if (!validationObservations.has(key)) {
         validationObservations.set(key, { ...JSON.parse(key), stage });
       }
+      // Reference the actual consumed validation, not a later selected-only guess.
+      try { consumedValidationObservations.set(validation, validationObservations.get(key)); } catch (_) { /* sidecar only */ }
       return validation;
     }
     function validationEvidence(tickets) {
@@ -4060,22 +4063,72 @@
             )
         );
 
+    // Observational only. Nothing in selection or purchase policy reads this tree.
+    let candidatePromotionExecution;
+    const promotionObservationRefs = [];
+    function observePromotion(fn) {
+      try { fn(); } catch (_) {
+        candidatePromotionExecution = {version:"candidate-promotion-execution-v1", status:"unknown",
+          reasonCode:"EXECUTION_SNAPSHOT_UNAVAILABLE", purpose:"diagnostic-only", action:"KEEP_A",
+          alternativeTickets:null, rankingProposed:false, resultUsedForGeneration:false,
+          usableForPrediction:false, automaticApplication:false};
+      }
+    }
+    observePromotion(() => {
+      candidatePromotionExecution = {version:"candidate-promotion-execution-v1", status:"captured",
+        purpose:"diagnostic-only", action:"KEEP_A", alternativeTickets:null, rankingProposed:false,
+        resultUsedForGeneration:false, usableForPrediction:false, automaticApplication:false,
+        maximumCount:MAXIMUM_COUNT,candidateCount:candidates.length,
+        before:{selectedTickets:selected.map(row=>row.ticket), usedTickets:[...used],
+          remainingSlots:MAXIMUM_COUNT-selected.length},
+        queue:candidateOnlyPromotionPool.map((candidate, queueIndex) => {
+          const {row,validation}=candidate;
+          promotionObservationRefs.push(consumedValidationObservations.get(validation));
+          return {queueIndex,candidateIndex:candidates.indexOf(candidate),ticket:row.ticket,
+            sourceCategory:row.sourceCategory,priorityScore:row.priorityScore,
+            validationRef:null,courseEvaluated:false};
+        }), transitions:[]};
+    });
+    function promotionDisposition(queueIndex, disposition, reasonCode, course) {
+      observePromotion(() => {
+        if (candidatePromotionExecution.status !== "captured") return;
+        Object.assign(candidatePromotionExecution.queue[queueIndex], {disposition,reasonCode,
+          selectedCountBefore:selected.length,remainingSlotsBefore:MAXIMUM_COUNT-selected.length},course);
+      });
+    }
+    function promotionTransition(kind, reference) {
+      observePromotion(() => {
+        if (candidatePromotionExecution.status !== "captured") return;
+        const transitions=candidatePromotionExecution.transitions;
+        const before=transitions.length ? transitions[transitions.length-1].afterTickets : candidatePromotionExecution.afterPromotionTickets;
+        const after=selected.map(row=>row.ticket);
+        if (JSON.stringify(before)!==JSON.stringify(after)) transitions.push({kind,reference,beforeTickets:before.slice(),afterTickets:after});
+      });
+    }
     candidateOnlyPromotionPool.forEach(
-      ({ row }) => {
+      ({ row }, queueIndex) => {
         if (
           selected.length >=
           MAXIMUM_COUNT
         ) {
+          promotionDisposition(queueIndex,"maximum-reached","MAXIMUM_REACHED");
           return;
         }
 
         const promotedHeadBoatNo =
           ticketBoats(row.ticket)[0];
-        const promotedHeadCourse =
-          courseOf(
-            validationContext,
-            promotedHeadBoatNo
-          ) || promotedHeadBoatNo;
+        const promotedHeadCourseLookup = courseOf(validationContext,promotedHeadBoatNo);
+        const promotedHeadCourse = promotedHeadCourseLookup || promotedHeadBoatNo;
+        let promotionCourse;
+        observePromotion(() => {
+          if (candidatePromotionExecution.status !== "captured") return;
+          promotionCourse = {courseEvaluated:true,headBoatNo:promotedHeadBoatNo,
+            courseMappingFormal:validationContext.courseMappingFormal===true,
+            mappedCourse:validationContext.courseByBoat.get(promotedHeadBoatNo) ?? null,
+            courseOfResult:promotedHeadCourseLookup,effectiveCourse:promotedHeadCourse,
+            courseSource:validationContext.courseMappingFormal===true && promotedHeadCourseLookup
+              ? "saved-course-lookup" : "boat-number-fallback"};
+        });
         if (
           promotedHeadCourse === 2 ||
           promotedHeadCourse >= 4
@@ -4094,6 +4147,8 @@
                   promotedHeadBoatNo
                 ? "4〜6号艇頭の候補補完は購入対象外。"
                 : `${promotedHeadBoatNo}号艇は実${promotedHeadCourse}コースの外頭となるため候補補完の購入対象外。`;
+          promotionDisposition(queueIndex,"course-excluded",isSecondCourseHead
+            ? "SECOND_COURSE_HEAD_CANDIDATE_PROMOTION_PRUNED" : "OUTER_HEAD_CANDIDATE_PROMOTION_PRUNED",promotionCourse);
           recordDecision(
             row,
             false,
@@ -4120,6 +4175,7 @@
             "3着まで物理根拠がそろう高優先度候補を最大10点の空き枠へ補完。"
         };
 
+        promotionDisposition(queueIndex,"adopted","CANDIDATE_ONLY_PROMOTED",promotionCourse);
         used.add(promoted.ticket);
         selected.push(promoted);
         recordDecision(
@@ -4131,6 +4187,9 @@
       }
     );
 
+    observePromotion(() => {
+      if (candidatePromotionExecution.status === "captured") candidatePromotionExecution.afterPromotionTickets=selected.map(row=>row.ticket);
+    });
     const strongEscapeTrim =
       strongEscapeTrimPlan(
         prediction,
@@ -4175,6 +4234,7 @@
       );
     }
 
+    promotionTransition("strongEscapeTrim","expansionSummary.strongEscapeTrim");
     const weakTwoHeadTrimmedTickets =
       new Set(
         selected
@@ -4239,6 +4299,7 @@
       );
     }
 
+    promotionTransition("weakTwoHeadTrim","candidateDecisions.WEAK_TWO_HEAD_INDEPENDENT");
     candidates.forEach(
       ({ row, validation }) => {
         const wasSelected =
@@ -4883,6 +4944,7 @@
         candidateDecisions
       );
 
+    promotionTransition("priorityGateReplacement","expansionSummary.priorityGateReplacement");
     // Category, candidate disposition, explanation and verification tickets
     // must describe the same final selection on the app and note paths.
     const escapeRolePartnerReplacement = (() => {
@@ -4925,6 +4987,7 @@
         removedTicket: removedRow.ticket, removedPriorityScore: removedRow.priorityScore,
         reason, pointCountBefore: selected.length, pointCountAfter: selected.length};
     })();
+    promotionTransition("escapeRolePartnerReplacement","expansionSummary.escapeRolePartnerReplacement");
     candidateOutcomes = aggregateCandidateOutcomes(candidateDecisions);
 
     const selectedExpansionBoundary =
@@ -5667,6 +5730,22 @@
         verificationTickets
     };
 
+    const finalValidationEvidence=validationEvidence(finalizedTickets);
+    observePromotion(() => {
+      if (candidatePromotionExecution.status !== "captured") return;
+      if (finalValidationEvidence.status !== "captured") throw Error("validation unavailable");
+      const finalObservations=[...validationObservations.values()].filter(row=>finalValidationEvidence.poolTickets.includes(row.ticket));
+      candidatePromotionExecution.queue.forEach((row,index)=>{
+        const consumed=promotionObservationRefs[index];
+        const observationIndex=finalObservations.indexOf(consumed);
+        if (observationIndex<0 || JSON.stringify(consumed)!==JSON.stringify(finalValidationEvidence.observations[observationIndex]) ||
+            consumed.ticket!==row.ticket || consumed.sourceCategory!==row.sourceCategory || consumed.priorityScore!==row.priorityScore)
+          throw Error("consumed validation missing");
+        row.validationRef={field:"candidateValidationEvidence.observations",index:observationIndex};
+      });
+      candidatePromotionExecution.selectorFinalTickets=finalizedTickets.map(row=>row.ticket);
+      candidatePromotionExecution=JSON.parse(JSON.stringify(candidatePromotionExecution));
+    });
     return {
       status: "selected",
       reason:
@@ -5692,7 +5771,8 @@
       evidence,
       tickets:
         finalizedTickets,
-      candidateValidationEvidence: validationEvidence(finalizedTickets),
+      candidateValidationEvidence: finalValidationEvidence,
+      candidatePromotionExecution,
       excludedCandidates,
       candidateDecisions,
       candidateOutcomes,

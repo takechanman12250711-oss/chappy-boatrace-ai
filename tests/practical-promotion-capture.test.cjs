@@ -76,3 +76,29 @@ test('legacy projection cannot erase a generator diagnostic marker and create a 
  assert.equal(d.status,'unknown');assert.equal(d.rows.length,1);assert.equal(d.rows[0].reason,'FINAL_VALIDATION_UNAVAILABLE');
  assert.equal(d.action,'KEEP_A');assert.equal(d.alternativeTickets,null);assert.equal(JSON.stringify(f),before);
 });
+
+
+test('execution helper throws, malformed returns and cycles are isolated before legacy capture serialization',()=>{
+ const helper=require('../scripts/candidate-promotion-execution-evidence.cjs'),original=helper.capturePromotionExecution;
+ const flags={version:'candidate-promotion-execution-v1',purpose:'diagnostic-only',status:'unknown',reasonCode:'SYNTHETIC_UNKNOWN',
+  action:'KEEP_A',alternativeTickets:null,rankingProposed:false,resultUsedForGeneration:false,usableForPrediction:false,automaticApplication:false};
+ const replacements=[()=>{throw Error('probe');},()=>null,()=>undefined,()=>[],()=>({}),
+  ()=>({...flags,alternativeTickets:['6-5-4']}),()=>({...flags,automaticApplication:true}),
+  ()=>({...flags,purpose:'prediction'}),()=>({...flags,status:'captured'}),
+  ()=>{const x={...flags};x.cycle=x;return x;},()=>({...flags,toJSON(){return {...flags,automaticApplication:true};}})];
+ for(const replacement of replacements){
+  const f=fixture();f.selection.candidatePromotionExecution={version:'candidate-promotion-execution-v1'};
+  const before=JSON.stringify(f);helper.capturePromotionExecution=replacement;
+  try{const result=capture(f.record,f.baseline,f.selection),e=result.candidatePromotionExecutionEvidence;
+   assert.equal(result.status,'captured');assert.deepEqual(result.practicalTickets,['3-1-5','1-2-5']);
+   assert.equal(e.status,'unknown');assert.equal(e.reasonCode,'EXECUTION_CAPTURE_UNAVAILABLE');
+   assert.equal(e.action,'KEEP_A');assert.equal(e.alternativeTickets,null);assert.equal(e.automaticApplication,false);
+   assert.equal(JSON.stringify(f),before);
+  }finally{helper.capturePromotionExecution=original;}
+ }
+ const result={...flags,queue:[{notes:[]}]},f=fixture();f.selection.candidatePromotionExecution={};
+ helper.capturePromotionExecution=()=>result;
+ try{const captured=capture(f.record,f.baseline,f.selection).candidatePromotionExecutionEvidence;
+  captured.queue[0].notes.push('independent-copy');assert.deepEqual(result.queue[0].notes,[]);
+ }finally{helper.capturePromotionExecution=original;}
+});

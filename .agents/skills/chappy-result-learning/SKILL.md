@@ -38,3 +38,11 @@ description: 予想結果の振り返り、外れ分析、改善案の採否、�
 - 新しい保存では `practicalSelectionEvidence.promotionRolePriorityDiagnostic` を読む。正本は `scripts/promotion-role-priority-diagnostic.cjs` と既存capture。KEEP_A・別選定なしの診断であり、boundは単一保存観測との値の一致を指す。昇格時刻・消費観測ID・予想改善の証明とはしない。
 - 最終A/selection/validationの原順と、同じ観測・scenario/source/kind・各位置の役割枝を照合する。曖昧・欠測・矛盾・救済前snapshotはunknown。未保存のphysical score/branchIdや古いpromotion行を後付けしない。branch.priorityScoreを確率やrole.scoreへ読み替えない。
 - diagnosticCodeSha256は診断/captureコードの識別子で、予想methodとは別。診断の失敗は既存Aを失敗へ変えない。実レースで読める割合や比較条件を先に確認し、新順位・閾値・自動採用・100R再収集へ直結させない。
+
+
+## 候補補完の実行時キュー観測
+
+- 新しい不変note/source原本では `practicalSelectionEvidence.candidatePromotionExecutionEvidence` を読む。正本は `scripts/candidate-promotion-execution-evidence.cjs` とselector内の実行時観測。補完直前のselected/used/残枠、実queue原順と元candidate位置、消費validationの完成配列参照、実処置、後段変換への参照を保存する。既存役割/coverageを複製・再資格判定せず、候補を再生成しない。
+- 満枠判定はコース判定より先なので、未実行courseを補わない。実mapping/formal/lookup/艇番fallbackを区別する。後段trim/置換は既存meta・decisionとの照合、wrapper救済は既存の厳密mismatchDiagnosticが認定した前後対応だけを使う。観測欠測・参照不一致・診断失敗はunknown/KEEP_Aで、元A保存を止めない。
+- これは新順位や比較候補を作る機能ではなく、rankingProposed/usableForPrediction/automaticApplicationはfalse、alternativeTicketsはnull。旧原本へ後付けしない。日次compactやreview縮約行は新queueを保持しないため、将来比較にはSHA固定の不変原本を参照する。
+- selectorの観測metadata追加でも予想コード指紋が変わる。旧b36群や完了済み100枠へ混ぜず、将来の比較規則・期間・同点/未知処理・封印/結果結合を別に固定する。旧partner-forward B/Dのprotocolへ新queue比較を流し込まない。

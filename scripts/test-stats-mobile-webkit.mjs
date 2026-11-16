@@ -195,10 +195,11 @@ async function runScenario(name, run) {
   // midnight JST; fixed Date values leave the real timers/watchdogs running.
   await page.clock.setFixedTime(savedClockAt);
   page.setDefaultTimeout(15_000);
-  const info = { name, pageErrors: [], consoleErrors: [], failedRequests: [], scheduleReadsStubbed: 0 };
+  const info = { name, pageErrors: [], consoleErrors: [], consoleErrorDetails: [], badResponses: [], failedRequests: [], scheduleReadsStubbed: 0 };
   diagnostics.push(info);
   page.on("pageerror", error => info.pageErrors.push(String(error.stack || error)));
-  page.on("console", message => { if (message.type() === "error") info.consoleErrors.push(message.text()); });
+  page.on("console", message => { if (message.type() === "error") { info.consoleErrors.push(message.text()); info.consoleErrorDetails.push({ text: message.text(), ...message.location() }); } });
+  page.on("response", response => { if (response.status() >= 400) { const detail = { url: response.url(), status: response.status() }; info.badResponses.push(detail); mark("http-error", detail); } });
   page.on("requestfailed", request => info.failedRequests.push({ url: request.url(), error: request.failure()?.errorText }));
   await page.route("https://chappy-boatrace-api.vercel.app/api/schedule?*", async route => {
     info.scheduleReadsStubbed += 1;
