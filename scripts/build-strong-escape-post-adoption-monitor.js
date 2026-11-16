@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const Module = require("node:module");
+const {readMonitorSources} = require("./strong-escape-monitor-sources.cjs");
 
 global.window = global;
 require("../js/boat-identity");
@@ -13,7 +14,6 @@ const productionSelector = require("../js/practical-selection");
 const START_DATE = "20260813";
 const ADOPTION_PRS = [320, 322];
 const ADOPTION_MERGED_AT = "2026-08-12T04:43:06Z";
-const predictionDirectory = path.join(process.cwd(), "data", "predictions");
 const outputPath = path.join(process.cwd(), "data", "stats", "strong-escape-post-adoption-monitor.json");
 
 function loadSelectorBeforeStrongEscapeTrim() {
@@ -147,16 +147,9 @@ function build() {
   const seen = new Set();
   let latestDate = null;
 
-  const files = fs.readdirSync(predictionDirectory)
-    .filter(name => /^\d{8}\.json$/.test(name))
-    .sort();
-
-  for (const filename of files) {
-    const date = filename.slice(0, 8);
-    if (date < START_DATE) continue;
+  for (const {date, data} of readMonitorSources({startDate: START_DATE})) {
     latestDate = date;
     byDate[date] ||= emptyStats();
-    const data = JSON.parse(fs.readFileSync(path.join(predictionDirectory, filename), "utf8"));
 
     for (const row of rowsOf(data)) {
       add(total, { observedRows: 1, comparable: false });
