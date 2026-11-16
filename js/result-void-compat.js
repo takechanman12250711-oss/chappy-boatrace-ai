@@ -35,7 +35,7 @@
     style("chappy-final-mobile-structure11-style",`css/final-mobile-structure11.css?v=${STRUCTURE_STYLE_BUILD}`);
     style("chappy-manshu-formation-style",`css/manshu-formation-fix.css?v=${MANSHU_STYLE_BUILD}`);
     style("chappy-final-display-controller-style",`css/final-display-controller.css?v=${OWNER_BUILD}&compact=20260915-1`);
-    script("chappy-final-display-owner",`js/final-display-owner-v2.js?reader=20261116-1&v=${OWNER_BUILD}&display=20260915-lazy1&compact=20260915-1&visibility=20260915-2&wallPurchase=20260923-1&bright=20261007-1`,loadUserContract);
+    script("chappy-final-display-owner",`js/final-display-owner-v2.js?reader=20261116-2&v=${OWNER_BUILD}&display=20260915-lazy1&compact=20260915-1&visibility=20260915-2&wallPurchase=20260923-1&bright=20261007-1`,loadUserContract);
   }
   style("chappy-final-mobile-ui-style",`css/final-mobile-ui.css?v=${BUILD}`);
   style("chappy-final-home-v2-photo-style",`css/final-home-v2-photo.css?v=${BUILD}`);
