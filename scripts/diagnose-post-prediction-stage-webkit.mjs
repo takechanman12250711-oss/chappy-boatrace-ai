@@ -191,6 +191,16 @@ try {
     mark("render-all-start");
     const renderSummary = await page.evaluate(() => {
       const prediction = window.__chappyDiagnosticPrediction;
+      const reader = window.ChappyForecastReaderContract;
+      const adapted = window.ChappyRenderAdapter?.applyAiCoreAdapter
+        ? window.ChappyRenderAdapter.applyAiCoreAdapter(prediction) : prediction;
+      const prepared = window.ChappyMainCoverDisplayBoundary?.prepare
+        ? window.ChappyMainCoverDisplayBoundary.prepare(adapted, window.ChappyPracticalSelection, reader) : adapted;
+      // Freeze the same full source the final UI consumes before rendering.
+      // A later DOM rewrite must not redefine the expected ticket set.
+      const expectedReader = reader?.fromPrediction ? reader.fromPrediction(prepared) : null;
+      window.__chappyDiagnosticReaderExpected = expectedReader
+        ? JSON.parse(JSON.stringify(expectedReader)) : null;
       window.renderAll(prediction);
       const root = document.getElementById("resultArea");
       return {
@@ -268,6 +278,90 @@ try {
         ? Math.max(0, sectionRect.right - window.innerWidth)
         : 0;
       const trueManshuEmptyRect = trueManshuEmpty?.getBoundingClientRect();
+      const readerCards = [...(root?.querySelectorAll("[data-reader-contract]") || [])];
+      const readerCard = readerCards[0], reader = window.ChappyForecastReaderContract;
+      const savedReader = window.__chappyDiagnosticReaderExpected;
+      let sharedReader = { active: Boolean(readerCard), cardCount: readerCards.length };
+      if (readerCard) {
+        const clean = value => String(value || "").replace(/\s+/g, " ").trim();
+        const exact = value => /^[1-6]-[1-6]-[1-6]$/.test(value) && new Set(value.split("-")).size === 3;
+        const expandReader = notation => {
+          const axes = String(notation || "").replace(/\s+/g, "").replace(/全/g, "123456").split("-");
+          if (axes.length !== 3 || axes.some(axis => !/^[1-6]+$/.test(axis))) return [];
+          return [...axes[0]].flatMap(a => [...axes[1]].flatMap(b => [...axes[2]]
+            .map(c => a + "-" + b + "-" + c).filter(exact)));
+        };
+        const groupNodes = [...readerCard.querySelectorAll("[data-reader-group]")];
+        const groups = groupNodes.map(node => ({
+          label: clean(node.querySelector(".chappy-final-buy-label")?.textContent),
+          tickets: [...node.querySelectorAll(".chappy-final-buy-line")].flatMap(line =>
+            expandReader(line.querySelector(".chappy-final-buy-formation")?.textContent)),
+          countText: clean(node.querySelector(".chappy-final-buy-meta")?.textContent)
+        }));
+        const canonical = rows => rows.map(g => ({ label: g.label, tickets: [...g.tickets].sort() }));
+        const expectedGroups = savedReader?.groups || [];
+        const all = groups.flatMap(g => g.tickets);
+        const primary = groups.filter(g => g.label !== reader?.REFERENCE).flatMap(g => g.tickets);
+        const notes = [...readerCard.querySelectorAll(".chappy-category-note")].map(node => clean(node.textContent));
+        const actualReference = notes.filter(line => line.startsWith("参考予想"));
+        const expectedReference = savedReader?.referenceOriginalCount
+          ? [clean(reader?.referenceSummary?.(savedReader))] : [];
+        const selected = savedReader?.status === "selected";
+        const defaultOpen = groupNodes.map(node => node.open);
+        const defaultDisclosureMatches = selected
+          ? groupNodes.length > 0 && groupNodes.every((node, i) => node.open === (i === 0)) &&
+            [...readerCard.querySelectorAll("details.chappy-ticket-disclosure")].every(node => !node.open)
+          : groupNodes.length === 0;
+        // Measure every source family, including initially collapsed holes,
+        // then restore the app's real default disclosure state.
+        groupNodes.forEach(node => { node.open = true; });
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        const cardRect = readerCard.getBoundingClientRect();
+        const lineRects = [...readerCard.querySelectorAll(".chappy-final-buy-line")].map(node => node.getBoundingClientRect());
+        const left = Math.min(cardRect.left, ...lineRects.map(rect => rect.left));
+        const right = Math.max(cardRect.right, ...lineRects.map(rect => rect.right));
+        const visible = node => {
+          const rect = node.getBoundingClientRect(), style = getComputedStyle(node);
+          return rect.width > 0 && rect.height > 0 && style.display !== "none" && style.visibility !== "hidden";
+        };
+        const legacyVisibleCount = [...(root?.querySelectorAll(
+          ".v3-main-newspaper,.v3-manshu-newspaper,.chappy-practical-visible-panel,.is-practical-fallback") || [])].filter(visible).length;
+        sharedReader = {
+          ...sharedReader,
+          expectedAvailable: Boolean(savedReader && reader?.fromPrediction),
+          expectedStatus: savedReader?.status || "",
+          actualStatus: readerCard.dataset.readerStatus || "",
+          versionMatches: Boolean(savedReader?.version && savedReader.version === reader?.VERSION &&
+            readerCard.dataset.readerContract === savedReader.version),
+          groupsMatch: JSON.stringify(canonical(groups)) === JSON.stringify(canonical(expectedGroups)),
+          countsMatch: groups.every(g => g.countText === g.tickets.length + "点") &&
+            all.length === savedReader?.allCount && primary.length === savedReader?.primaryCount,
+          noDuplicateTickets: all.length === new Set(all).size,
+          referenceAccountingMatches: JSON.stringify(actualReference) === JSON.stringify(expectedReference),
+          mainCountMatches: !selected || clean(readerCard.querySelector(".chappy-final-buy-total")?.textContent) ===
+            "本命" + savedReader.centralTickets.length + "点",
+          primaryCountMatches: !selected || notes.includes("本命" + savedReader.centralTickets.length +
+            "点／追加候補を含む公開予想" + savedReader.primaryCount + "点。すべて購入する前提ではありません。"),
+          stateMessageMatches: selected || (all.length === 0 &&
+            clean(readerCard.textContent).includes("購入推奨0点・0円") &&
+            Boolean(savedReader?.reason) && clean(readerCard.textContent).includes(clean(savedReader.reason))),
+          defaultDisclosureMatches,
+          expectedGroups: expectedGroups.map(g => ({ label: g.label, count: g.tickets.length })),
+          actualGroups: groups.map(g => ({ label: g.label, count: g.tickets.length })),
+          referenceOriginalCount: savedReader?.referenceOriginalCount,
+          referenceOverlapCount: savedReader?.referenceOverlapCount,
+          primaryCount: savedReader?.primaryCount,
+          allCount: savedReader?.allCount,
+          legacyVisibleCount,
+          cardWidth: cardRect.width,
+          leftOverflow: Math.max(0, -left),
+          rightOverflow: Math.max(0, right - window.innerWidth),
+          contentOverflow: Math.max(0, readerCard.scrollWidth - readerCard.clientWidth)
+        };
+        groupNodes.forEach((node, i) => { node.open = defaultOpen[i]; });
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      }
+
       const boatName = root?.querySelector(".v3-paper-player-line .v3-boat-title strong");
       const boatCard = boatName?.closest(".v3-paper-card");
       const boatPanel = boatName?.closest(".v3-boat-tab-panel");
@@ -283,6 +377,7 @@ try {
 
       return {
         elapsedMs: Math.round(performance.now() - startedAt),
+        sharedReader,
         raceLoading: root?.dataset?.raceLoading || "",
         fallbackVisible: Boolean(fallback),
         fallbackSignature: manshuSection?.dataset?.manshuDisplaySignature || "",
@@ -349,6 +444,31 @@ try {
     });
     mark("post-render-responsive-finished", responsiveSummary);
 
+    const sharedReaderActive = responsiveSummary.sharedReader?.active === true;
+    const sharedReader = responsiveSummary.sharedReader;
+    if (sharedReaderActive && !(
+      sharedReader.cardCount === 1 &&
+      sharedReader.expectedAvailable &&
+      sharedReader.expectedStatus === sharedReader.actualStatus &&
+      sharedReader.versionMatches &&
+      sharedReader.groupsMatch &&
+      sharedReader.countsMatch &&
+      sharedReader.noDuplicateTickets &&
+      sharedReader.referenceAccountingMatches &&
+      sharedReader.mainCountMatches &&
+      sharedReader.primaryCountMatches &&
+      sharedReader.stateMessageMatches &&
+      sharedReader.defaultDisclosureMatches &&
+      sharedReader.legacyVisibleCount === 0 &&
+      responsiveSummary.viewportWidth === 390 &&
+      sharedReader.cardWidth > 0 &&
+      sharedReader.leftOverflow <= 1 &&
+      sharedReader.rightOverflow <= 1 &&
+      sharedReader.contentOverflow <= 1
+    )) {
+      throw new Error("Shared reader source/display regression: " + JSON.stringify(sharedReader));
+    }
+
     const legacyManshuFallbackVisible =
       responsiveSummary.fallbackVisible === true &&
       Boolean(responsiveSummary.fallbackSignature);
@@ -371,6 +491,7 @@ try {
 
     if (
       requireManshuFallback &&
+      !sharedReaderActive &&
       !legacyManshuFallbackVisible &&
       !integratedManshuBoardVisible &&
       !compactManshuBoardVisible &&
@@ -406,6 +527,7 @@ try {
 
     if (
       requireManshuFallback &&
+      !sharedReaderActive &&
       legacyManshuFallbackVisible &&
       (
         responsiveSummary.viewportWidth !== 390 ||
@@ -424,6 +546,7 @@ try {
 
     if (
       requireManshuFallback &&
+      !sharedReaderActive &&
       (integratedManshuBoardVisible || compactManshuBoardVisible) &&
       (
         responsiveSummary.viewportWidth !== 390 ||
@@ -437,7 +560,7 @@ try {
       );
     }
 
-    if (compactManshuBoardVisible) {
+    if (!sharedReaderActive && compactManshuBoardVisible) {
       const disclosure = page.locator(".v3-manshu-newspaper details.chappy-ticket-disclosure").first();
       if (await disclosure.count()) {
         const children = disclosure.locator(".chappy-ticket-children");

@@ -184,3 +184,10 @@ CIの旧DOM fixtureを新しい描画root照合へ合わせた際、旧レース
 旧head052100fのmobile CIは、ubuntu-latestが26.04へ移った環境で、固定したPlaywright1.55.0のWebKit依存を入れられず停止した。同版の[公式nativeDeps定義](https://github.com/microsoft/playwright/blob/v1.55.0/packages/playwright-core/src/server/registry/nativeDeps.ts)でUbuntu24.04の対応を確認し、このjobをubuntu-24.04へ固定した。ブラウザ検査を削除・skipしていない。
 
 同headのcharter jobは、load-performance内のprediction-runtime URL文字列がvパラメータ先頭を前提としていたため停止した。実際のscript要素のvをURLで読むようにし、readerキャッシュパラメータの順序と独立して世代を検査する。構文と実indexを使う当該cache照合はローカルで合格。履歴データを必要とするload-performance全体とUbuntu/WebKitの実実行は新head CIで確認する。
+
+
+## 本命の見直しに対する本人承認とv10接続
+
+本人が「本命は変えていい！」と明示承認したため、上記の区分選択待ちを解消した。新規記事のv10既定、source本文照合、公開proofと成績元分類、旧v9復旧を接続する。通常AIは保存厳選を本命として一度だけ示し、アプリと共通contractを使う。独立記事は旧本文を保持する。過去原本・元券・成績台帳は不変。予想ロジック改善の実証、本番反映、最終headでのClaude Code受領は別に確認する。
+
+独立レビューで2点を追加修正した。参考元台帳と本文が異なる場合は、アプリと記事の全区分・券集合・参考元数/重複数/公開数/全体数を照合して停止する。旧v9に加え、PR中に互換検証したv9の完全な15依存組も固定し、旧/互換v9とv10は復旧可能、組を跨ぐ混在は拒否する。大村11Rの実原本SHA978627238536aa03c7073ab09bd0c1e0987690f8ce6daa63794837d8fa844e81を元監査へ通したプレビュー（`omura11-readable-v10-preview-20261116.txt`）は本命7・追加13・穴17・参考4点で、全区分がアプリと一致した。未公開の確認例であり、当時の予想・原稿は変更していない。

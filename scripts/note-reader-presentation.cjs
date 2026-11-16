@@ -1,6 +1,6 @@
 "use strict";
-// Proposed readable-v10 adapter. Kept out of the publisher/default until
-// receipt reconstruction, recovery and result readers support this grammar.
+// Owner-approved readable-v10 presentation, shared with the app.
+// Immutable source reconstruction, recovery and result readers verify this grammar.
 const {createHash}=require("node:crypto");
 const reader=require("../js/forecast-reader-contract");
 const scenario=require("./note-scenario-presentation.cjs");
@@ -27,6 +27,13 @@ function sourceModel(bundle,article=bundle.article){
     holeTickets:source.filter(g=>g.label===category.NORMAL_LABELS[3]).flatMap(g=>g.tickets),
     referenceTickets:source.find(g=>g.label===category.REFERENCE)?.tickets||[]
   });
+  // Central order is checked above. Every displayed family and accounting
+  // field must also agree; an article-only reference list cannot drift from
+  // the app's saved ledger, even when its overlap hides all extra lines.
+  const groups=value=>value.groups.map(g=>({label:g.label,tickets:[...g.tickets].sort()}));
+  check(JSON.stringify(groups(app))===JSON.stringify(groups(model))&&
+    ["referenceOriginalCount","referenceOverlapCount","primaryCount","allCount"].every(key=>app[key]===model[key]),
+    "reader_app_presentation_mismatch");
   return {...model,explanation:reader.explanation(p)};
 }
 function footer(model){
@@ -117,7 +124,7 @@ function article(article,bundle,{legacyReader}={}){
     ...retained.filter(p=>!/^今日の予想一覧|^はじめての方へ|^https:\/\//.test(p)),
     "🧭 展開の考え方\n"+model.explanation.text,
     "🎟️ この記事の買い目\n"+model.groups.map(g=>g.label+"："+g.tickets.length+"点").join("\n"),
-    "💡 本命は保存された中心の選定です。追加候補をすべて購入する前提ではありません。",
+    "💡 本命を先に掲載しています。追加候補をすべて購入する前提ではありません。",
     ...(model.referenceOriginalCount?[reader.referenceSummary(model)]:[]),
     "📊 結果は当たりも外れも公開し、本命と追加候補を分けて示します。参考予想は別集計です。",
     ...retained.filter(p=>/^今日の予想一覧|^はじめての方へ|^https:\/\//.test(p)),FREE_NOTICE

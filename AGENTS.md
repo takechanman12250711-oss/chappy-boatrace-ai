@@ -127,3 +127,12 @@ Claude CodeのWeb/iOSと、この会話の実行環境は認証もファイル�
 - escapeのバッジは「本命予想」（記事タイトル・原本・独立監視区分は従来どおり）。チャッピー少年は使わない。的中速報用 `chappy-hit-cover.jpg` は素材のみで未接続。
 - 生成元は `scripts/design/make_note_covers.py`。社員の顔イラスト原画は `assets/note/cover-faces/`（組織図ページの400x400画像と同一。`assets/staff` のプロフィール表とは別物）。Python Playwrightで `CHROMIUM_PATH=/opt/pw-browsers/chromium python3 scripts/design/make_note_covers.py` を実行すると再生成できる（Noto Sans CJK JPが必要）。投稿ごとの画像生成APIは使わない。
 - 公開済み記事の本文・買い目・価格・公開日時・表紙は変更しない。main反映と、次の新規公開記事での表紙表示確認は別に報告する。
+
+
+## 2026-11-16 本人承認：本命の見直しと記事・アプリの共通表示
+
+本人が「本命は変えていい！」と明示承認。新規公開は readable-v10・0円とし、通常AI記事の「🎯 本命」は保存済みの実戦厳選を最初に一度だけ表示する。残りは「追加候補」「穴候補（配当未確認）」「参考予想（別集計）」へ重複なしで分け、アプリも同じ `js/forecast-reader-contract.js` を使う。旧本命プールの成績を新本命へ読み替えず、元券・元順序・区分別の元台帳・公開済み記事は保持する。独立記事の本文はv9と同じで、系列も混合しない。
+
+正本は `scripts/note-reader-presentation.cjs`。新規publisher/source/receiptはv10の本文・本命subset証明・元原稿SHAを照合する。v1〜v9のclaimは各凍結版で復元し、v9を新しい本命の意味へ読み替えない。展示後・締切余裕・購入見送り・原子的予約・結果不明時の再投稿停止・匿名全文確認は維持する。
+
+この表示変更自体は予想精度改善の実証ではない。本命や将来の選定ロジックの改善は、展開→コース→ST/スリット→展示/足→残し/拾いの保存根拠を使い、同点数比較と未使用期間の検証を行う。過去原本への結果に合わせた後付けや、1号艇以外へ件数を合わせる変更は行わない。Claude Codeにも同じPR・固定head・共通contractを共有し、別実装を作らない。

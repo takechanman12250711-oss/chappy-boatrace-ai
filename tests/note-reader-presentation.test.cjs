@@ -27,6 +27,7 @@ test("new grammar round trips source groups and identifies the main as counted o
 test("reference ledger counts survive complete overlap with main without reprinting",()=>{
  const b=copy();
  b.article.paidText=b.article.paidText.split("本命とは別会計")[0]+"本命とは別会計の参考予想\n1-2-3";
+ b.record.prediction.manshuForecastLedger={forecasts:[{formation:{expandedTickets:["1-2-3"]}}]};
  const model=moduleReader.sourceModel(b),text=moduleReader.paidTextFromSource(b);
  assert.equal(model.referenceOverlapCount,1);assert.equal(model.groups.some(g=>g.label===reader.REFERENCE),false);
  assert.equal(moduleReader.parsePaidText(text).model.referenceOriginalCount,1);
@@ -83,6 +84,7 @@ test("formation regrouping round trips varied saved orders without changing sour
   p.mainSheet.tickets=rows.slice(0,8);p.mainSheet.coverTickets=rows.slice(8,16);p.mainSheet.flowTickets=rows.slice(16,24);p.manshuSheet.tickets=rows.slice(24);
   b.baselinePracticalTickets=rows.slice(0,7);b.article.practicalTickets=rows.slice(0,7);p.practicalTickets=rows.slice(0,7);
   b.article.paidText="🔥 実戦厳選\n\n"+rows.slice(0,7).map(r=>r.ticket).join("\n")+"\n\n計 7点";
+  delete p.manshuForecastLedger;
   const parsed=moduleReader.parsePaidText(moduleReader.paidTextFromSource(b));
   assert.deepEqual([...parsed.model.allTickets].sort(),rows.map(r=>r.ticket).sort());
  }
@@ -94,4 +96,39 @@ test("note and app share the same stop condition for contradictory, empty or una
   assert.notEqual(reader.fromPrediction(b.record.prediction).status,"selected");
   assert.throws(()=>moduleReader.article(b.article,b),/app_selection_unavailable/);
  }
+});
+
+test("reference surplus or missing source on either side stops without changing the immutable input",()=>{
+ const variants=[
+  b=>b.record.prediction.manshuForecastLedger.forecasts.push({formation:{expandedTickets:["6-5-4"]}}),
+  b=>b.article.paidText+="\n6-5-4",
+  b=>b.article.paidText=b.article.paidText.replace("\n4-1-2",""),
+  b=>b.record.prediction.manshuForecastLedger.forecasts[0].formation.expandedTickets.shift()
+ ];
+ for(const change of variants){
+  const b=copy();change(b);const before=JSON.stringify(b);
+  assert.equal(reader.fromPrediction(b.record.prediction).status,"selected");
+  assert.throws(()=>moduleReader.sourceModel(b),/reader_app_presentation_mismatch/);
+  assert.equal(JSON.stringify(b),before);
+ }
+});
+test("overlap metadata disagreement stops even when every displayed group and total is identical",()=>{
+ const b=copy();b.article.paidText+="\n1-2-3";
+ const before=JSON.stringify(b),app=reader.fromPrediction(b.record.prediction);
+ assert.equal(app.referenceOriginalCount,4);assert.equal(app.referenceOverlapCount,0);
+ assert.equal(app.primaryCount,37);assert.equal(app.allCount,41);
+ assert.throws(()=>moduleReader.sourceModel(b),/reader_app_presentation_mismatch/);
+ assert.equal(JSON.stringify(b),before);
+});
+test("family disagreement stops even when its ticket union and all counts remain the same",()=>{
+ const b=copy(),before=JSON.stringify(b),original=reader.fromPrediction;
+ reader.fromPrediction=p=>{
+  const app=original(p),groups=structuredClone(app.groups);
+  const hole=groups.find(g=>g.label===reader.HOLE),additional=groups.find(g=>g.label===reader.ADDITIONAL);
+  additional.tickets.push(hole.tickets.shift());
+  return {...app,groups};
+ };
+ try{assert.throws(()=>moduleReader.sourceModel(b),/reader_app_presentation_mismatch/);}
+ finally{reader.fromPrediction=original;}
+ assert.equal(JSON.stringify(b),before);
 });

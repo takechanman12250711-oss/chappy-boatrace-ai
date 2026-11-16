@@ -179,12 +179,12 @@ test('v8 is byte-identical to v7 for 1-7 tickets; frozen v7 reproduces v7 bytes'
   assert.throws(() => center.parsePaidText('x'), /plain_model_appendix_invalid/);
 });
 
-test('v9 (default) is byte-identical to v8 when no scenario section applies; frozen v8 reproduces v8 bytes', () => {
+test('explicit historical v9 is byte-identical to v8 when no scenario section applies; frozen v8 reproduces v8 bytes', () => {
   const frozenV8 = require('./note-recovery-readable-v8.cjs');
   const scenario = require('./note-scenario-presentation.cjs'), center = require('./note-center-presentation.cjs');
   for (const make of [fixture, ...['escape', 'manshu'].map(kind => () => { const b = independentFixture(); b.monitor.kind = kind; return b; })]) {
     const b = make(), before = JSON.stringify(b);
-    const v8 = readableArticle(b.article, b, { presentationVersion: 'readable-v8' }), v9 = readableArticle(b.article, b);
+    const v8 = readableArticle(b.article, b, { presentationVersion: 'readable-v8' }), v9 = readableArticle(b.article, b, {presentationVersion:'readable-v9'});
     assert.deepEqual(v8, frozenV8.readableArticle(b.article, b));
     assert.equal(v9.presentationVersion, 'readable-v9');
     assert.deepEqual(v9, { ...v8, presentationVersion: 'readable-v9' });

@@ -73,16 +73,28 @@ export async function capturePredictionViews(page,outputDir,step) {
     await page.screenshot({path:path.join(outputDir,`bright-prediction-${width}.png`),fullPage:true});
     // Open via keyboard and retain focus after repeated close/open.
     const summaries=page.locator('.chappy-final-buy-summary>.chappy-final-buy-group>summary,.chappy-practical-visible-panel>summary');
+    const disclosureStates=[];
     for(const summary of await summaries.all()){
-      await summary.focus();await summary.press('Enter');await settle(page);
+      const wasOpen=await summary.evaluate(el=>el.parentElement.open);
+      disclosureStates.push({summary,wasOpen});
+      await summary.focus();
+      // The reader main is open by default; exercise both keyboard transitions
+      // from a known closed state, then restore each original state after capture.
+      if(wasOpen){await summary.press('Enter');await settle(page);}
+      assert(!(await summary.evaluate(el=>el.parentElement.open)),'disclosure starts closed for keyboard check');
+      await summary.press('Enter');await settle(page);
       assert(await summary.evaluate(el=>el.parentElement.open),'keyboard opens disclosure');
-      await summary.press('Enter');assert(!(await summary.evaluate(el=>el.parentElement.open)),'keyboard closes disclosure');
+      await summary.press('Enter');await settle(page);assert(!(await summary.evaluate(el=>el.parentElement.open)),'keyboard closes disclosure');
       assert(await summary.evaluate(el=>document.activeElement===el),'focus remains on summary');
       await summary.press('Enter');
     }
     await settle(page);await assertCanvas(page,'#predictionSection',width);
     await page.screenshot({path:path.join(outputDir,`bright-prediction-open-${width}.png`),fullPage:true});
-    for(const summary of await summaries.all())await summary.press('Enter');
+    for(const {summary,wasOpen} of disclosureStates){
+      if((await summary.evaluate(el=>el.parentElement.open))!==wasOpen)await summary.press('Enter');
+      await settle(page);
+      assert.equal(await summary.evaluate(el=>el.parentElement.open),wasOpen,'restore disclosure initial state');
+    }
     step('bright-prediction-captured',{sourceCommit,width,order,...result});
   }
   await page.setViewportSize({width:390,height:844});

@@ -87,7 +87,7 @@ async function main() {
     const built = JSON.parse(execFileSync(process.execPath, ['-e',
       'console.log(JSON.stringify(require(process.argv[1]).buildLatestHandoff({write:false}).payload))',
       path.join(__dirname, 'build-note-publish-handoff.js')], { cwd: root, encoding: 'utf8' }));
-    assert.equal(built.candidates[0].sourcePath, saved.path);
+    assert.equal(built.candidates[0].sourcePath, saved.path.split(path.sep).join('/'));
     assert.equal(fs.readFileSync(oldHandoff, 'utf8'), 'old');
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 
