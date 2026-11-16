@@ -20,9 +20,11 @@ const same = (a, b) => equal(sorted(a), sorted(b));
 const requireValue = (value, reason) => { if (!value) throw Error(reason); };
 const LABELS = Object.freeze(['中心の買い目', '相手を広げるなら', '別の展開を考えるなら', '高配当を狙うなら', '別会計の参考予想']);
 const REFERENCE = LABELS[4];
-const modelPresentation = version => [modelV3.PRESENTATION_VERSION, 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7', 'readable-v8'].includes(version);
+const modelPresentation = version => [modelV3.PRESENTATION_VERSION, 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7', 'readable-v8', 'readable-v9'].includes(version);
 // v7 words the model appendix plainly; v8 is the same wording with 1-10 tickets.
-const plainModel = version => version === 'readable-v8' ? require('./note-center-presentation.cjs')
+// v9 adds the two independent-scenario sections for tickets outside the four saved pools.
+const plainModel = version => version === 'readable-v9' ? require('./note-scenario-presentation.cjs')
+  : version === 'readable-v8' ? require('./note-center-presentation.cjs')
   : version === 'readable-v7' ? require('./note-plain-presentation.cjs') : null;
 const categoryPresentation = version => version === categoryV2.PRESENTATION_VERSION || modelPresentation(version);
 const DESCRIPTIONS = Object.freeze([
@@ -253,9 +255,10 @@ function requireLegacyRenderer(evidence) {
     (!evidence.presentationVersion || evidence.presentationVersion === LEGACY_READABLE.presentationVersion), 'published_renderer_unreviewed');
 }
 function reconstructDisplay(source, presentationVersion, sourceSha256) {
-  requireValue(['readable-v1', categoryV2.PRESENTATION_VERSION, modelV3.PRESENTATION_VERSION, 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7', 'readable-v8'].includes(presentationVersion), 'published_display_proof_unsupported');
+  requireValue(['readable-v1', categoryV2.PRESENTATION_VERSION, modelV3.PRESENTATION_VERSION, 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7', 'readable-v8', 'readable-v9'].includes(presentationVersion), 'published_display_proof_unsupported');
   const { bundle, series, central } = source;
-  const sections = categoryPresentation(presentationVersion)
+  const sections = presentationVersion === 'readable-v9' ? require('./note-scenario-presentation.cjs').sourceSections(bundle, series)
+    : categoryPresentation(presentationVersion)
     ? categoryV2.sourceSections(bundle, series) : sourceSections(bundle, series, central);
   const paidText = plainModel(presentationVersion) ? plainModel(presentationVersion).paidTextFromSource(bundle, series)
     : modelPresentation(presentationVersion) ? modelV3.paidTextFromSource(bundle, series)
@@ -277,7 +280,7 @@ function publishedTicketSections(row, bytes, now = Date.now()) {
     requireRendererEvidence(evidence, row.sourceSha256);
     const proof = evidence.publishedDisplayProof;
     if (!proof) requireLegacyRenderer(evidence);
-    else requireValue(proof.version === VERSION && ['readable-v1', categoryV2.PRESENTATION_VERSION, modelV3.PRESENTATION_VERSION, 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7', 'readable-v8']
+    else requireValue(proof.version === VERSION && ['readable-v1', categoryV2.PRESENTATION_VERSION, modelV3.PRESENTATION_VERSION, 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7', 'readable-v8', 'readable-v9']
       .includes(proof.presentationVersion), 'published_display_proof_unsupported');
     const presentationVersion = proof?.presentationVersion || 'readable-v1';
     requireValue(!evidence.presentationVersion || evidence.presentationVersion === presentationVersion, 'published_display_proof_mismatch');
@@ -313,7 +316,7 @@ function verifiedModelSubset(row, bytes, receipt, now = Date.now()) {
   const presentationVersion = proof?.presentationVersion || 'readable-v1';
   // readable-v2 shows categories, not the practical selection. A count match,
   // even an accidental exact ticket match, is never proof of a center section.
-  requireValue(['readable-v1', modelV3.PRESENTATION_VERSION, 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7', 'readable-v8'].includes(presentationVersion), 'model_selection_presentation_unsupported');
+  requireValue(['readable-v1', modelV3.PRESENTATION_VERSION, 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7', 'readable-v8', 'readable-v9'].includes(presentationVersion), 'model_selection_presentation_unsupported');
   if (proof) requireValue(proof.version === VERSION, 'published_display_proof_unsupported');
   const evidence = row.publicationEvidence;
   if (evidence) {

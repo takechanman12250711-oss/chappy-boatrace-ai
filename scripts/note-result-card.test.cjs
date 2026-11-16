@@ -293,3 +293,25 @@ test('v2 category names cannot be rebound to a different article family even wit
     assert.equal(publicContent(report,{now:NOW}).matchedSections[0].label,label);
   }
 });
+
+test('readable-v9 scenario sections are literal normal-series headings and fit beside the other four', async () => {
+  const labels = [...require('./note-category-article').NORMAL_LABELS, ...require('./note-scenario-presentation.cjs').SCENARIO_LABELS];
+  const report = aggregateFixture();
+  report.articleSeries = ['normal'];
+  report.matchedSections = labels.map(label => ({ articleSeries: 'normal', label }));
+  report.evidenceId = aggregateDigest(report);
+  const content = publicContent(report, { now: NOW });
+  assert.equal(content.matchedSections.length, 6);
+  const alt = altText(content);
+  assert(alt.includes('AI展開予想・🌀 波乱のシナリオ') && alt.includes('AI展開予想・😼 チャッピーの「もしかして」'));
+  for (const label of labels.slice(4)) {
+    const other = { ...report, articleSeries: ['escape'], matchedSections: [{ articleSeries: 'escape', label }] };
+    other.evidenceId = aggregateDigest(other);
+    assert.throws(() => publicContent(other, { now: NOW }), /matched_sections_invalid/);
+  }
+  const card = await renderCard(report, { now: NOW });
+  assert.equal(card.width, 1200);
+  const single = { ...report, matchedSections: [{ articleSeries: 'normal', label: labels[5] }] };
+  single.evidenceId = aggregateDigest(single);
+  assert.notEqual((await renderCard(single, { now: NOW })).sha256, card.sha256);
+});
