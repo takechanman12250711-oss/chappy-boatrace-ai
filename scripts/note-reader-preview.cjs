@@ -6,48 +6,32 @@ const fs=require('node:fs'),path=require('node:path'),{createHash}=require('node
 const scenario=require('./note-scenario-presentation.cjs');
 const category=require('./note-category-article');
 const {seriesOfBundle}=require('./note-article-series');
-const {savedMainHead}=require('./note-free-explanation.cjs');
+const reader=require('../js/forecast-reader-contract');
 const {FREE_NOTICE}=require('./note-readable-article');
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 function explanation(bundle) {
-  const p=bundle.record.prediction,head=savedMainHead(p),s=p.verificationEvidence?.mainScenario;
-  const labels={escape:`${head}号艇逃げ`,sashi:'2コース差し',threeAttack:'3コース攻め',fourAttack:'4カド攻め'};
-  if (!head || !labels[s?.type] || s.label!==labels[s.type]) return {verified:false,text:'展開の根拠は確認中です。'};
+  const prediction=bundle.record.prediction;
   const source=scenario.sourceSections(bundle,'normal').find(g=>g.label===category.NORMAL_LABELS[0]);
-  if (!source?.tickets.length || source.tickets.some(t=>Number(t[0])!==head)) return {verified:false,text:'展開の根拠は確認中です。'};
-  // Saved structured identity, not arbitrary old ranking prose. Describe only
-  // factual input values; do not infer an advantage from one number.
-  const boat=p.preRaceConditions?.boats?.find(b=>Number(b.boatNo)===head);
-  const facts=[];
-  const numeric=(value,min,max)=>typeof value==='number' && Number.isFinite(value) && value>=min && value<=max;
-  if (numeric(boat?.avgST,0,1)) facts.push(`平均STは${boat.avgST.toFixed(2)}`);
-  if (numeric(boat?.exhibitionST,0,1)) facts.push(`展示STは${boat.exhibitionST.toFixed(2)}`);
-  if (numeric(boat?.exhibitionTime,5,9)) facts.push(`展示タイムは${boat.exhibitionTime.toFixed(2)}秒`);
-  const other=p.preRaceConditions?.boats?.find(b=>Number(b.course)===Number(boat?.course)+1 && Number(b.boatNo)!==head);
-  const comparison=boat?.courseOfficial===true && other?.courseOfficial===true &&
-    numeric(other.exhibitionST,0,1) && numeric(boat?.exhibitionST,0,1)
-    ? `\n隣の${other.boatNo}号艇の展示STは${other.exhibitionST.toFixed(2)}。展示STと平均STは分けて確認します。` : '';
-  return {verified:true,text:`中心となる展開は${s.label}。`+(facts.length?`\n${head}号艇の${facts.join('、')}。`:'')+comparison};
+  const head=reader.verifiedHead(prediction);
+  if(!source?.tickets.length||!head||source.tickets.some(t=>Number(t[0])!==head))
+    return {verified:false,text:'展開の根拠は確認中です。'};
+  return reader.explanation(prediction);
 }
 function build(bundle,{sourceSha256}={}) {
   if (seriesOfBundle(bundle)!=='normal') throw Error('reader_preview_normal_only');
   if (!/^[a-f0-9]{64}$/.test(sourceSha256||'')) throw Error('reader_preview_source_hash_required');
   const baseline=scenario.sourceSubset(bundle),source=scenario.sourceSections(bundle,'normal');
-  const seen=new Set(baseline),groups=[{label:'🎯 本命',tickets:[...baseline]}];
-  const add=(label,tickets)=>{
-    const unique=[...new Set(tickets)].filter(t=>!seen.has(t));
-    unique.forEach(t=>seen.add(t));if(unique.length)groups.push({label,tickets:unique});
-  };
-  // The saved practical selection is shown once at the top. The main, cover
-  // and flow pools are additional candidates, never a second competing main.
   const primary=source.filter(g=>g.label!==category.REFERENCE);
-  add('追加候補',primary.filter(g=>g.label!==category.NORMAL_LABELS[3]).flatMap(g=>g.tickets));
-  add('穴候補（配当未確認）',primary.filter(g=>g.label===category.NORMAL_LABELS[3]).flatMap(g=>g.tickets));
-  const primaryCount=seen.size;
   const references=source.find(g=>g.label===category.REFERENCE)?.tickets||[];
-  add('参考予想（別集計）',references);
+  const model=reader.groupTickets({
+    centralTickets:baseline,
+    additionalTickets:primary.filter(g=>g.label!==category.NORMAL_LABELS[3]).flatMap(g=>g.tickets),
+    holeTickets:primary.filter(g=>g.label===category.NORMAL_LABELS[3]).flatMap(g=>g.tickets),
+    referenceTickets:references
+  });
+  const {groups,primaryCount}=model;
   const allSource=new Set([...baseline,...source.flatMap(g=>g.tickets)]);
-  if (seen.size!==allSource.size || [...seen].some(t=>!allSource.has(t))) throw Error('reader_preview_union_changed');
+  if(model.allCount!==allSource.size||model.allTickets.some(t=>!allSource.has(t)))throw Error('reader_preview_union_changed');
   const e=explanation(bundle),record=bundle.record;
   if (!/^\d{8}$/.test(record.date)||!Number.isFinite(Date.parse(record.deadlineAt))) throw Error('reader_preview_identity_invalid');
   const deadline=new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(Date.parse(record.deadlineAt));
@@ -59,7 +43,7 @@ function build(bundle,{sourceSha256}={}) {
     ...(references.length?[`参考予想は${references.length}点で別集計です。上記と同じ券は再掲していません。`]:[]),
     FREE_NOTICE].join('\n\n');
   const displayed=category.ticketsIn(text);
-  if(displayed.length!==seen.size||new Set(displayed).size!==displayed.length||displayed.some(t=>!seen.has(t)))throw Error('reader_preview_display_invalid');
+  if(displayed.length!==model.allCount||new Set(displayed).size!==displayed.length||displayed.some(t=>!model.allTickets.includes(t)))throw Error('reader_preview_display_invalid');
   return {version:'note-reader-preview-v1',previewOnly:true,publishable:false,sourceSha256,
     explanationVerified:e.verified,groups,primaryCount,referenceOriginalCount:references.length,
     referenceOverlapCount:references.filter(t=>primary.some(g=>g.tickets.includes(t))).length,

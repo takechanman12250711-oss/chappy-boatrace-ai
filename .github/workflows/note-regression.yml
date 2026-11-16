@@ -7,6 +7,11 @@ on:
       - "scripts/save-independent-monitor-note.js"
       - "scripts/note-independent-monitor-fixture.js"
       - "js/note-generator.js"
+      - "js/forecast-reader-contract.js"
+      - "scripts/note-reader-preview.cjs"
+      - "scripts/build-fixed-head-baseline.cjs"
+      - "tests/prediction-quality-review.test.cjs"
+      - "tests/forecast-reader-contract.test.cjs"
       - "js/saved-note-draft.js"
       - "js/script.js"
       - "js/app-runtime-loader.js"
@@ -76,6 +81,11 @@ on:
       - main
     paths:
       - "js/note-generator.js"
+      - "js/forecast-reader-contract.js"
+      - "scripts/note-reader-preview.cjs"
+      - "scripts/build-fixed-head-baseline.cjs"
+      - "tests/prediction-quality-review.test.cjs"
+      - "tests/forecast-reader-contract.test.cjs"
       - "js/saved-note-draft.js"
       - "js/script.js"
       - "js/app-runtime-loader.js"
@@ -162,6 +172,7 @@ jobs:
             .github/workflows
             .agents/skills
             .claude/skills
+            tests
             assets/note
 
       - uses: actions/setup-node@v4
@@ -175,6 +186,7 @@ jobs:
 
       - name: Check note generator and regression
         run: |
+          node --test tests/forecast-reader-contract.test.cjs tests/prediction-quality-review.test.cjs
           node --check js/note-generator.js
           node --check scripts/test-note-copy-cleanup.js
           node --check scripts/test-note-karatsu-regression.js
