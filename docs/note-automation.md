@@ -494,3 +494,16 @@ PR #1476 のmain反映後、手動実行 run 43792690334（`mode=auth`・`browse
 - 未確認：`saved-state` での本文入力・表紙のアップロード・公開設定・公開クリック・公開確認（authで確かめたのは編集画面の欄まで）。Browser Useは日本のプロキシ経由だったが、ランナーは海外にあり、noteの表示や受け付けが同じかは実記事で確かめる。ログイン状態の有効期間と、利用のたびにCookieが更新される場合に保存した状態が古くなるかも未確認。切れた場合は `note_editor_session_not_ready_<host>` で予約後に止まり得るため、本人のパソコンでログインし直してSecretを更新する。
 - 開始の証拠は、変数を設定した後の最初の公開receiptとログインなし画面での確認であり、main反映や変数の設定だけでは再開済みとしない。
 - 検証: `node --test scripts/note-saved-state-auth.test.js`、`node scripts/note-github-ui-transport.test.js`、`node --test scripts/note-queue-expiry.test.cjs`、`node --test scripts/note-marketing.test.js scripts/note-marketing-reports.test.js`。
+
+## 2026-11-16 公開できる買い目を10点までに（readable-v8、本人指示）
+
+本人の指示で、記事を公開できる「中心の買い目」（保存済みの実戦厳選）の点数を1〜7点から1〜10点へ広げた。予想そのものは以前から成立展開時に最大10点（docs/CHAPPY_CHARTER.md）で、8〜10点のレースは公開ゲートで `publication_ticket_count_exceeds_7` として見送られていた。予想・買い目の作り方・オッズ・順序は変えていない。
+
+- 上限の正本は `scripts/note-ticket-limit.cjs` の `MAX_PUBLICATION_TICKETS = 10`。公開ゲート（`note-publication-source.js`・`note-github-ui-transport.js`）、無料一覧（`note-marketing-content.js`）、結果判定（`note-marketing-reports.js`・`note-published-ticket-sections.js`）、X告知（`note-marketing-social.js`）、結果カード（`note-result-card.cjs`）が同じ値を読む。見送りの固定コードは `publication_ticket_count_exceeds_limit`／`ticket_count_exceeds_limit` に改名した。
+- 新規公開は readable-v8。v8 は v7 の本文をそのまま使い、記事末尾の「⭐ 中心の買い目」欄だけが1〜10点を受け付ける。1〜7点のときは title・無料部分・買い目欄・全文が v7 と同じバイト（テストで照合）。価格は0円のまま。
+- v3 の欄（`note-korogashi-presentation.cjs`、1〜7点）と v7 の言い回し（`note-plain-presentation.cjs`）は復旧照合のため1バイトも変えていない。v8 用の欄は `scripts/note-center-presentation.cjs` が同じ規則を点数だけ広げて持つ。
+- v7 は `scripts/note-recovery-readable-v7.cjs`（変更前の renderer と同一バイト）と `note-recovery-presentation.cjs` の HISTORICAL（指紋12個）に固定した。変更前の claim は v7 として復旧照合し、v7 のコードは8点以上を受け付けない。公開済み記事の本文・買い目・receipt は変更しない。
+- 11点以上は保存原本の監査（`STORED_TICKETS_INVALID`）で止まる。独立監視の原本（`note-independent-monitor-source.js`）とコロがしの1レース（`note-korogashi-draft.cjs`・`note-korogashi-lifecycle.cjs`）は1〜7点のまま。8〜10点の記事はコロがしの対象にならず、切り詰めもしない。
+- 変えていないこと：保存原本のSHA一致、展示後、締切120秒超、0円、同じレース・種類は1回、本文入力前の原子的予約、「投稿する」1回、結果不明なら再投稿しない、ログインなし画面での全文一致確認とreceipt。
+- 未確認：8〜10点の実記事の公開（main反映後の最初の該当レースで確認）、結果カードの画像に8〜10点の記事が載ったときの実表示。
+- 検証: `node scripts/note-publication-source.test.js`（8点・10点の公開payload、証明、締切後の照合、v7では拒否、11点は監査で停止）、`node --test scripts/note-free-explanation.test.cjs`（v8＝v7のバイト、固定v7）、`node --test scripts/note-recovery-presentation.test.cjs`（v7 claimの復旧）、`node scripts/note-github-ui-transport.test.js`、`node --test scripts/note-korogashi-draft.test.cjs`。

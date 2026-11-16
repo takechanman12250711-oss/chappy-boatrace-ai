@@ -56,7 +56,7 @@ function publicContent(row, { now = Date.now(), previousDay, indexUrl = INDEX_UR
   }
   if (!Object.hasOwn(LABELS, row.articleSeries) || row.publicationKey !== `${row.raceKey}:${row.articleSeries}` ||
       row.place !== VENUES[Number(venue) - 1] || row.raceNo !== Number(race)) throw Error('result_card_identity_invalid');
-  if (!Number.isInteger(row.ticketCount) || row.ticketCount < 1 || row.ticketCount > 7) throw Error('result_card_ticket_count_invalid');
+  if (!Number.isInteger(row.ticketCount) || row.ticketCount < 1 || row.ticketCount > require('./note-ticket-limit.cjs').MAX_PUBLICATION_TICKETS) throw Error('result_card_ticket_count_invalid');
   if (typeof row.sourceSha256 !== 'string' || !/^[a-f0-9]{64}$/.test(row.sourceSha256)) throw Error('result_card_source_hash_invalid');
   if (typeof row.url !== 'string' || !/^https:\/\/note\.com\/great_robin3243\/n\/n[a-f0-9]{1,64}$/.test(row.url)) throw Error('result_card_note_url_invalid');
   const deadline = timestamp(row.deadlineAt), published = timestamp(row.publishedAt);

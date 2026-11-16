@@ -22,7 +22,9 @@ const PATHS = Object.freeze({
   navigationSha256: 'scripts/note-marketing-content.js',
   navigationConfigSha256: 'config/note-marketing.json',
   freeExplanationSha256: 'scripts/note-free-explanation.cjs',
-  plainSha256: 'scripts/note-plain-presentation.cjs'
+  plainSha256: 'scripts/note-plain-presentation.cjs',
+  centerSha256: 'scripts/note-center-presentation.cjs',
+  ticketLimitSha256: 'scripts/note-ticket-limit.cjs'
 });
 const COMMON = Object.freeze({
   generatorSha256: LEGACY_READABLE.generatorSha256,
@@ -38,8 +40,10 @@ const FROZEN = Object.freeze({
   navigationSha256: 'scripts/note-recovery-marketing-content-v1.cjs',
   navigationConfigSha256: 'config/note-marketing.recovery-v1.json'
 });
-const CURRENT_VERSION = 'readable-v7';
+const CURRENT_VERSION = 'readable-v8';
 const HISTORICAL = Object.freeze({
+  // Frozen 2026-11-16 when readable-v8 widened the publication gate to 1-10 tickets. Renderer copy: note-recovery-readable-v7.cjs.
+  'readable-v7': Object.freeze({"rendererSha256":"63fd455cc349ec32fd2b47ffe6b6208209dc869fcce6a0f9c2465f83c31dbc5f","publicationSourceSha256":"8ca6d8c0a314e69d8893958b4e14ee7e4536859219d896a2cc439b0d713276af","generatorSha256":"2f4b9769f34e29287e8b23bae208a694c39eca66700850397a64879619d48be3","categorySha256":"ee5b85c309ba1cb896c5b9efea46dc8a4a3bbdeaf781995faa6ec596a16c5f87","modelSha256":"992a8f844f90c3a22cb20cbcc6de4bb87d0d990d35e888495775973a146666d6","publishedSectionsSha256":"466a113fa82dfbbc2fd31227e65c6111cb78936592a6240db37c4ef949cc3213","seriesSha256":"71c1b74fdb3008c69e1ece95620d5063fab824aab0f5522edce1b2a602b7a443","pricingSha256":"4bc9caf2bfbae904f7f3765abbf98c2212a9e1bf9e2b6e3cde109806ddb53243","navigationSha256":"ff8bfe63255042919160491dafd3ed591e23d717568efe21408830cd81423c4f","navigationConfigSha256":"71b0960e64ea111fe97e174c4dd090b69d23278aa1995eb0aaa25951e71101fe","freeExplanationSha256":"32d9ae3a503d277e68200c94b2dcbefd0fceac143aec8bd6606e39e91a2ef1bc","plainSha256":"1a7e9ec3e294b4ae9e53994889be1fddff7da4e46ab4e30ef5087e03c74d144f"}),
   // Frozen 2026-11-01 when readable-v7 reworded two free lines. Renderer copy: note-recovery-readable-v6.cjs.
   'readable-v6': Object.freeze({"rendererSha256":"444ee57feb9410336a235ac03edf55865512f359076871f5ba0b2ff473084c11","publicationSourceSha256":"9a445164da6fcefbcbb2b80256290ab02983d4cfa20cb6d727173e3b3eaa5f4a","generatorSha256":"2f4b9769f34e29287e8b23bae208a694c39eca66700850397a64879619d48be3","categorySha256":"ee5b85c309ba1cb896c5b9efea46dc8a4a3bbdeaf781995faa6ec596a16c5f87","modelSha256":"992a8f844f90c3a22cb20cbcc6de4bb87d0d990d35e888495775973a146666d6","publishedSectionsSha256":"a78b48e95b4394b3f7fdc5f7a6a2ea01464aaf48609ae6ac703b6a3d783b0ce6","seriesSha256":"71c1b74fdb3008c69e1ece95620d5063fab824aab0f5522edce1b2a602b7a443","pricingSha256":"fff91db520c33f17e6886f2cbfb04a1905640200deef02886f25ec71ff9e53d6","navigationSha256":"ff8bfe63255042919160491dafd3ed591e23d717568efe21408830cd81423c4f","navigationConfigSha256":"71b0960e64ea111fe97e174c4dd090b69d23278aa1995eb0aaa25951e71101fe","freeExplanationSha256":"32d9ae3a503d277e68200c94b2dcbefd0fceac143aec8bd6606e39e91a2ef1bc"}),
   // Frozen 2026-10-28 when readable-v6 made new articles free. Renderer copy: note-recovery-readable-v5.cjs.
@@ -136,6 +140,10 @@ async function verifyRecoveryPresentation(identity, claimSha, { base, options, r
     check(hash(fs.readFileSync(path.join(__dirname, 'note-recovery-readable-v1.cjs'))) === LEGACY_READABLE.rendererSha256,
       'publication_recovery_local_renderer_changed');
     check(frozen.navigationSha256 === HISTORICAL['readable-v2'].navigationSha256, 'publication_recovery_local_dependency_changed');
+    if (presentationVersion === 'readable-v7') {
+      for (const key of ['categorySha256', 'modelSha256', 'freeExplanationSha256', 'plainSha256']) check(current[key] === expected[key], 'publication_recovery_local_dependency_changed');
+      check(hash(fs.readFileSync(path.join(__dirname, 'note-recovery-readable-v7.cjs'))) === expected.rendererSha256, 'publication_recovery_local_renderer_changed');
+    }
     if (presentationVersion === 'readable-v6') {
       for (const key of ['categorySha256', 'modelSha256', 'freeExplanationSha256']) check(current[key] === expected[key], 'publication_recovery_local_dependency_changed');
       check(hash(fs.readFileSync(path.join(__dirname, 'note-recovery-readable-v6.cjs'))) === expected.rendererSha256, 'publication_recovery_local_renderer_changed');

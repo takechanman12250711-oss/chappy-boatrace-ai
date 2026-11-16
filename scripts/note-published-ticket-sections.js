@@ -6,6 +6,7 @@ const { createHash } = require('node:crypto');
 const { seriesOfBundle, publicationKey } = require('./note-article-series');
 const categoryV2 = require('./note-category-article');
 const modelV3 = require('./note-korogashi-presentation.cjs');
+const { MAX_PUBLICATION_TICKETS } = require('./note-ticket-limit.cjs');
 const V2_LABELS = categoryV2.LABELS, V2_PRIMARY_LABELS = categoryV2.PRIMARY_LABELS;
 const VERSION = 'published-ticket-sections-v1';
 const EVIDENCE_VERSION = 'note-publication-evidence-v1';
@@ -19,7 +20,10 @@ const same = (a, b) => equal(sorted(a), sorted(b));
 const requireValue = (value, reason) => { if (!value) throw Error(reason); };
 const LABELS = Object.freeze(['中心の買い目', '相手を広げるなら', '別の展開を考えるなら', '高配当を狙うなら', '別会計の参考予想']);
 const REFERENCE = LABELS[4];
-const modelPresentation = version => [modelV3.PRESENTATION_VERSION, 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7'].includes(version);
+const modelPresentation = version => [modelV3.PRESENTATION_VERSION, 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7', 'readable-v8'].includes(version);
+// v7 words the model appendix plainly; v8 is the same wording with 1-10 tickets.
+const plainModel = version => version === 'readable-v8' ? require('./note-center-presentation.cjs')
+  : version === 'readable-v7' ? require('./note-plain-presentation.cjs') : null;
 const categoryPresentation = version => version === categoryV2.PRESENTATION_VERSION || modelPresentation(version);
 const DESCRIPTIONS = Object.freeze([
   'この買い目を中心に検討します。', '相手を広げたい場合の追加候補です。',
@@ -70,7 +74,7 @@ function describe(sections, presentationVersion) {
 }
 
 function parsePaidSections(paidText, presentationVersion) {
-  if (presentationVersion === 'readable-v7') return require('./note-plain-presentation.cjs').parsePaidText(paidText).sections;
+  if (plainModel(presentationVersion)) return plainModel(presentationVersion).parsePaidText(paidText).sections;
   if (modelPresentation(presentationVersion)) return modelV3.parsePaidText(paidText).sections;
   if (presentationVersion === categoryV2.PRESENTATION_VERSION) return categoryV2.parsePaidSections(paidText);
   requireValue(presentationVersion === 'readable-v1', 'published_presentation_version_unsupported');
@@ -141,8 +145,7 @@ function sectionProof(paidText, presentationVersion = 'readable-v1', { sourceSha
     publishedTicketCount: result.publishedTicketCount,
     sections: sections.map(section => ({ label: section.label, ticketCount: section.tickets.length,
       ticketsSha256: hash(JSON.stringify(section.tickets)), includedInPublishedResult: section.label !== reference })),
-    ...(modelPresentation(presentationVersion) ? { modelSubset: (presentationVersion === 'readable-v7'
-      ? require('./note-plain-presentation.cjs') : modelV3).modelProof(paidText, sourceSha256) } : {}) };
+    ...(modelPresentation(presentationVersion) ? { modelSubset: (plainModel(presentationVersion) || modelV3).modelProof(paidText, sourceSha256) } : {}) };
 }
 
 function removeAsides(text) {
@@ -231,7 +234,7 @@ function verifiedSource(row, bytes, now) {
     row.publicationKey === publicationKey(row.raceKey, series) &&
     [deadline, published, captured].every(Number.isFinite) && captured <= published && published < deadline && published <= now, 'source_identity_mismatch');
   const central = ticketRows(bundle.baselinePracticalTickets, 'published_tickets_unverified');
-  requireValue(central.length > 0 && central.length <= 7 && central.length === row.ticketCount && unique(central).length === central.length &&
+  requireValue(central.length > 0 && central.length <= MAX_PUBLICATION_TICKETS && central.length === row.ticketCount && unique(central).length === central.length &&
     same(central, ticketRows(record.prediction?.practicalTickets, 'published_tickets_unverified')), 'published_tickets_unverified');
   if (series !== 'normal') {
     requireValue(same(central, ticketRows(bundle.monitor?.tickets, 'monitor_tickets_mismatch')) &&
@@ -250,11 +253,11 @@ function requireLegacyRenderer(evidence) {
     (!evidence.presentationVersion || evidence.presentationVersion === LEGACY_READABLE.presentationVersion), 'published_renderer_unreviewed');
 }
 function reconstructDisplay(source, presentationVersion, sourceSha256) {
-  requireValue(['readable-v1', categoryV2.PRESENTATION_VERSION, modelV3.PRESENTATION_VERSION, 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7'].includes(presentationVersion), 'published_display_proof_unsupported');
+  requireValue(['readable-v1', categoryV2.PRESENTATION_VERSION, modelV3.PRESENTATION_VERSION, 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7', 'readable-v8'].includes(presentationVersion), 'published_display_proof_unsupported');
   const { bundle, series, central } = source;
   const sections = categoryPresentation(presentationVersion)
     ? categoryV2.sourceSections(bundle, series) : sourceSections(bundle, series, central);
-  const paidText = presentationVersion === 'readable-v7' ? require('./note-plain-presentation.cjs').paidTextFromSource(bundle, series)
+  const paidText = plainModel(presentationVersion) ? plainModel(presentationVersion).paidTextFromSource(bundle, series)
     : modelPresentation(presentationVersion) ? modelV3.paidTextFromSource(bundle, series)
     : presentationVersion === categoryV2.PRESENTATION_VERSION ? categoryV2.paidTextFromSections(sections) : paidTextFromSections(sections);
   return { sections, paidText, proof: sectionProof(paidText, presentationVersion, { sourceSha256 }) };
@@ -274,7 +277,7 @@ function publishedTicketSections(row, bytes, now = Date.now()) {
     requireRendererEvidence(evidence, row.sourceSha256);
     const proof = evidence.publishedDisplayProof;
     if (!proof) requireLegacyRenderer(evidence);
-    else requireValue(proof.version === VERSION && ['readable-v1', categoryV2.PRESENTATION_VERSION, modelV3.PRESENTATION_VERSION, 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7']
+    else requireValue(proof.version === VERSION && ['readable-v1', categoryV2.PRESENTATION_VERSION, modelV3.PRESENTATION_VERSION, 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7', 'readable-v8']
       .includes(proof.presentationVersion), 'published_display_proof_unsupported');
     const presentationVersion = proof?.presentationVersion || 'readable-v1';
     requireValue(!evidence.presentationVersion || evidence.presentationVersion === presentationVersion, 'published_display_proof_mismatch');
@@ -310,7 +313,7 @@ function verifiedModelSubset(row, bytes, receipt, now = Date.now()) {
   const presentationVersion = proof?.presentationVersion || 'readable-v1';
   // readable-v2 shows categories, not the practical selection. A count match,
   // even an accidental exact ticket match, is never proof of a center section.
-  requireValue(['readable-v1', modelV3.PRESENTATION_VERSION, 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7'].includes(presentationVersion), 'model_selection_presentation_unsupported');
+  requireValue(['readable-v1', modelV3.PRESENTATION_VERSION, 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7', 'readable-v8'].includes(presentationVersion), 'model_selection_presentation_unsupported');
   if (proof) requireValue(proof.version === VERSION, 'published_display_proof_unsupported');
   const evidence = row.publicationEvidence;
   if (evidence) {
@@ -327,7 +330,7 @@ function verifiedModelSubset(row, bytes, receipt, now = Date.now()) {
   const model = modelPresentation(presentationVersion) ? reconstructed.proof.modelSubset
     : { ...reconstructed.proof.sections[0], sourceSha256: row.sourceSha256 };
   requireValue(model.label === (presentationVersion === 'readable-v1' ? LABELS[0]
-    : presentationVersion === 'readable-v7' ? require('./note-plain-presentation.cjs').LABEL : modelV3.MODEL_LABEL) &&
+    : plainModel(presentationVersion) ? plainModel(presentationVersion).LABEL : modelV3.MODEL_LABEL) &&
     model.ticketCount === source.central.length && model.ticketsSha256 === hash(JSON.stringify(sorted(source.central))) &&
     model.sourceSha256 === row.sourceSha256, 'model_selection_source_mismatch');
   return Object.freeze({ version: 'note-korogashi-selection-evidence-v1', presentationVersion,
