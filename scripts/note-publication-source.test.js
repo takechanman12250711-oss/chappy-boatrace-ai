@@ -46,7 +46,11 @@ async function main() {
   Date.now = () => clock;
   const freePayload = publicationPayload(sourcePath, root, clock);
   assert.equal(freePayload.canPublish, true);
-  assert.equal(freePayload.presentationVersion, 'readable-v7');
+  assert.equal(freePayload.presentationVersion, 'readable-v8');
+  // v8 only widens the ticket count: with 1-7 tickets every published byte is v7.
+  const v7Payload = publicationPayload(sourcePath, root, clock, { presentationVersion: 'readable-v7' });
+  for (const field of ['title', 'freeText', 'paidText', 'body', 'price', 'practicalTicketCount']) assert.equal(freePayload[field], v7Payload[field], `v8 keeps the v7 ${field}`);
+  assert.deepEqual({ ...JSON.parse(freePayload.publishedDisplayProofJson), presentationVersion: 'readable-v7' }, JSON.parse(v7Payload.publishedDisplayProofJson));
   assert.doesNotMatch(freePayload.freeText, /保存済みの実戦厳選/);
   assert.equal(require('./note-plain-presentation.cjs').fromModelText(publicationPayload(sourcePath, root, clock, { presentationVersion: 'readable-v6' }).paidText), freePayload.paidText, 'v7 keeps the v6 tickets; only the end heading and notice change');
   assert.equal(freePayload.price, 0);
@@ -111,12 +115,58 @@ async function main() {
     { ...displayProof, paidText: payload.paidText }]) {
     assert.throws(() => parsePublishedDisplayProof({ ...payload, publishedDisplayProofJson: JSON.stringify(tampered) }), /proof_mismatch/);
   }
-  assert.equal(MAX_PUBLICATION_TICKETS, 7);
-  assert.equal(requirePublicationTicketCount({ practicalTickets: Array(7).fill({ ticket: '1-2-3' }) }), 7);
-  assert.throws(() => requirePublicationTicketCount({ practicalTickets: Array(8).fill({ ticket: '1-2-3' }) }), /exceeds_7/);
-  // The new appendix must not replace the established oversized-source reason.
+  assert.equal(MAX_PUBLICATION_TICKETS, 10);
+  assert.equal(requirePublicationTicketCount({ practicalTickets: Array(10).fill({ ticket: '1-2-3' }) }), 10);
+  assert.throws(() => requirePublicationTicketCount({ practicalTickets: Array(11).fill({ ticket: '1-2-3' }) }), /exceeds_limit/);
+  // 2026-11-16 owner decision: 8-10 saved practical tickets are published as v8.
+  const allTickets = ['1-2-3', '1-2-4', '1-2-5', '1-2-6', '1-3-2', '1-3-4', '1-3-5', '1-3-6', '1-4-2', '1-4-3', '1-4-5'];
+  const sized = count => {
+    const copy = structuredClone(bundle);
+    const tickets = allTickets.slice(0, count).map(ticket => ({ ticket, odds: 20, category: '本命' }));
+    copy.baselinePracticalTickets = structuredClone(tickets);
+    copy.record.prediction.practicalTickets = structuredClone(tickets);
+    copy.record.prediction.mainSheet.tickets = structuredClone(tickets);
+    copy.article = generator.generateArticle(copy.record.prediction);
+    copy.capturedAt = new Date(clock).toISOString();
+    const sizedBytes = JSON.stringify(copy), file = `data/note-drafts/20300914/20300914-23-10-${sha(sizedBytes)}.json`;
+    fs.writeFileSync(path.join(root, file), sizedBytes);
+    return { file, sizedBytes, sourceSha256: sha(sizedBytes), tickets: allTickets.slice(0, count) };
+  };
+  for (const count of [8, 10]) {
+    const wide = sized(count), widePayload = publicationPayload(wide.file, root, clock);
+    assert.equal(widePayload.presentationVersion, 'readable-v8');
+    assert.equal(widePayload.practicalTicketCount, count);
+    assert.equal(widePayload.price, 0);
+    assert.deepEqual(verifyPublicationSource(widePayload, root, clock), widePayload);
+    assert.deepEqual(requirePublicationGate(widePayload, root, clock), widePayload);
+    const wideProof = parsePublishedDisplayProof(widePayload);
+    assert.deepEqual(wideProof.modelSubset, { version: 'note-korogashi-display-v1', label: '⭐ 中心の買い目',
+      sourceSha256: wide.sourceSha256, ticketCount: count, ticketsSha256: sha(JSON.stringify([...wide.tickets].sort())), includedInPublishedResult: false });
+    assert.ok(widePayload.paidText.includes(`\n${count}点\n\nAIがいちばん自信のある買い目です。`));
+    assert.doesNotMatch(widePayload.body, /コロがし|実戦厳選|延べ|有料/);
+    assert.deepEqual(require('./note-readable-article').ticketsIn(widePayload.freeText), []);
+    assert.deepEqual([...require('./note-center-presentation.cjs').parsePaidText(widePayload.paidText).modelTickets].sort(), [...wide.tickets].sort());
+    // The frozen v7 code never widens: an 8-10 ticket original cannot become a v7 article.
+    assert.throws(() => publicationPayload(wide.file, root, clock, { presentationVersion: 'readable-v7' }), /korogashi_model_ticket_count_invalid/);
+    // After the deadline the published row verifies from the immutable original and its receipt proof.
+    const row = { raceKey: widePayload.raceKey, deadlineAt: bundle.record.deadlineAt, place: bundle.record.place, raceNo: bundle.record.raceNo,
+      articleSeries: 'normal', publicationKey: widePayload.publicationKey, publishedAt: new Date(clock + 1000).toISOString(),
+      sourceSha256: wide.sourceSha256, ticketCount: count,
+      publicationEvidence: { version: 'note-publication-evidence-v1', sourceSha256: wide.sourceSha256, receiptCommitSha: 'c'.repeat(40),
+        publisherCommitSha: 'd'.repeat(40), presentationVersion: 'readable-v8', publishedDisplayProof: wideProof } };
+    const sections = require('./note-published-ticket-sections');
+    const after = Date.parse(bundle.record.deadlineAt) + 1000;
+    assert.equal(sections.publishedTicketSections(row, wide.sizedBytes, clock + 2000).status, 'pending');
+    const verified = sections.publishedTicketSections(row, wide.sizedBytes, after);
+    assert.equal(verified.status, 'verified');
+    assert.equal(verified.presentationVersion, 'readable-v8');
+    assert.ok(wide.tickets.every(ticket => verified.unionTickets.includes(ticket)));
+    assert.equal(sections.publishedTicketSections({ ...row, ticketCount: count - 1 }, wide.sizedBytes, after).status, 'review');
+    assert.equal(sections.classifyPublishedTickets(row, wide.sizedBytes, wide.tickets[count - 1], after).status, 'hit');
+  }
+  // Eleven tickets stay blocked with the publication-gate reason.
   const oversized = structuredClone(bundle);
-  const oversizedTickets = ['1-2-3', '1-2-4', '1-2-5', '1-2-6', '1-3-2', '1-3-4', '1-3-5', '1-3-6']
+  const oversizedTickets = allTickets
     .map(ticket => ({ ticket, odds: 20, category: '本命' }));
   oversized.baselinePracticalTickets = structuredClone(oversizedTickets);
   oversized.record.prediction.practicalTickets = structuredClone(oversizedTickets);
@@ -125,7 +175,9 @@ async function main() {
   const oversizedBytes = JSON.stringify(oversized);
   const oversizedPath = `data/note-drafts/20300914/20300914-23-10-${sha(oversizedBytes)}.json`;
   fs.writeFileSync(path.join(root, oversizedPath), oversizedBytes);
-  assert.throws(() => publicationPayload(oversizedPath, root, clock), /publication_ticket_count_exceeds_7/);
+  // The original's own audit (at most 10 practical tickets) refuses it before the gate is reached.
+  assert.throws(() => publicationPayload(oversizedPath, root, clock), error => error.message === 'publication_content_audit_blocked' &&
+    JSON.stringify(error.issueCodes) === '["STORED_TICKETS_INVALID"]');
   assert.deepEqual(verifyPublicationSource(freePayload, root, clock), freePayload);
   assert.deepEqual(requirePublicationGate(freePayload, root, clock), freePayload);
   // A v5 (200-yen) payload is no longer the current publication.

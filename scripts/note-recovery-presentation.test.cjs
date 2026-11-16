@@ -104,7 +104,7 @@ test('historical v1-v5 recovery pins exact old body and proof; new publication u
       assert.equal(fs.readFileSync(path.join(f.rootDir, f.sourcePath), 'utf8'), before);
       assert.throws(() => requirePublicationGate(p.payload, f.rootDir, f.identity.sourceTime), /handoff_mismatch/);
       const current = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime);
-      assert.equal(current.presentationVersion, 'readable-v7');
+      assert.equal(current.presentationVersion, 'readable-v8');
       assert.equal(current.price, 0);
       assert.equal(p.payload.price, 200);
       // The free v6 keeps the exact paid-section bytes of v5; only free wording and the paywall change.
@@ -967,8 +967,31 @@ test('free v6 claims recover with frozen v6 code while new publication uses v7',
     const v6 = require('./note-recovery-readable-v6.cjs').readableArticle(f.bundle.article, f.bundle);
     assert.equal(p.payload.freeText, v6.freeText, 'recovered v6 body is the frozen v6 body');
     const current = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime);
-    assert.equal(current.presentationVersion, 'readable-v7');
-    assert.equal(current.paidText, require('./note-plain-presentation.cjs').fromModelText(p.payload.paidText), 'v7 keeps the v6 tickets; only the end heading and notice change');
+    assert.equal(current.presentationVersion, 'readable-v8');
+    assert.equal(current.paidText, require('./note-plain-presentation.cjs').fromModelText(p.payload.paidText), 'v7/v8 keep the v6 tickets; only the end heading and notice change');
     assert.notEqual(current.freeText, p.payload.freeText);
   } finally { f.cleanup(); }
+});
+
+test('v7 claims recover with frozen v7 code while new publication uses v8', async () => {
+  for (const normal of [false, true]) {
+    const f = original(normal);
+    try {
+      const p = await pinned(f, 'readable-v7');
+      assert.equal(p.recoveryEvidence.presentationVersion, 'readable-v7');
+      assert.equal(p.payload.presentationVersion, 'readable-v7');
+      assert.equal(p.payload.price, 0);
+      assert.deepEqual(requireRecoveryPublicationGate(p.payload, p.recoveryEvidence, f.rootDir), p.payload);
+      const v7 = require('./note-recovery-readable-v7.cjs').readableArticle(f.bundle.article, f.bundle);
+      assert.equal(v7.presentationVersion, 'readable-v7');
+      if (!normal) assert.equal(p.payload.freeText, v7.freeText.trim(), 'recovered v7 body is the frozen v7 body');
+      const current = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime);
+      assert.equal(current.presentationVersion, 'readable-v8');
+      for (const field of ['title', 'freeText', 'paidText', 'body', 'price']) assert.equal(current[field], p.payload[field], `v8 keeps the v7 ${field}`);
+      // A v7 payload is no longer the current publication, and a current claim is not recovered as v7.
+      assert.throws(() => requirePublicationGate(p.payload, f.rootDir, f.identity.sourceTime), /handoff_mismatch/);
+      const now = await pinned(f, 'readable-v8');
+      assert.equal(now.recoveryEvidence.presentationVersion, 'readable-v8');
+    } finally { f.cleanup(); }
+  }
 });
