@@ -12,8 +12,21 @@ const { mergeOfficialResults, resultRaceKey } = require('./collect-results');
 const VERSION = 'official-result-source-checkpoint-v1';
 const RECEIPT = 'data/stats/result-source-checkpoint.json';
 const CODE_PATHS = ['scripts', 'js', 'api', 'config', '.github/workflows/collect-results.yml'];
+// These exact note-auth files are independent of official-result acquisition.
+// The checkpoint test checks the acquisition import graph before permitting
+// this exception. Keep all other source paths, including descendants, guarded.
+const INDEPENDENT_NOTE_AUTH = new Set([
+  'scripts/note-github-ui-transport.js',
+  'scripts/note-saved-state-auth.js',
+  'scripts/note-saved-state-auth.test.js',
+]);
 const sha256 = value => createHash('sha256').update(value).digest('hex');
 const git = (root, args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 128 * 1024 * 1024 }).trimEnd();
+function sourceCodeChanged(root, from, to) {
+  // A rename to an ignored path must still expose the protected source deletion.
+  return git(root, ['diff', '--name-only', '--no-renames', '-z', from, to, '--', ...CODE_PATHS])
+    .split('\0').filter(Boolean).some(file => !INDEPENDENT_NOTE_AUTH.has(file));
+}
 const blob = (root, ref, file) => {
   const row = git(root, ['ls-tree', ref, '--', file]);
   if (!row) return null;
@@ -109,7 +122,7 @@ function apply({ root = process.cwd(), bundle, context }) {
   identity(context, true);
   validate({ root, bundle, context });
   if (git(root, ['status', '--porcelain'])) throw Error('Source publication checkout must be clean');
-  if (git(root, ['diff', '--name-only', context.sourceSha, 'HEAD', '--', ...CODE_PATHS]))
+  if (sourceCodeChanged(root, context.sourceSha, 'HEAD'))
     throw Error('Source code changed after acquisition; collect again from current main');
   if (blob(root, context.sourceSha, RECEIPT) !== bundle.receiptBaseBlob || blob(root, 'HEAD', RECEIPT) !== bundle.receiptBaseBlob)
     throw Error('Source receipt changed after acquisition');
@@ -134,7 +147,7 @@ function apply({ root = process.cwd(), bundle, context }) {
 function guardPush({ root = process.cwd(), bundle, context, destination = 'refs/remotes/origin/main' }) {
   identity(context, true);
   validate({ root, bundle, context });
-  if (git(root, ['diff', '--name-only', context.sourceSha, destination, '--', ...CODE_PATHS]))
+  if (sourceCodeChanged(root, context.sourceSha, destination))
     throw Error('Source code changed before push');
   if (blob(root, destination, RECEIPT) !== bundle.receiptBaseBlob) throw Error('Source receipt changed before push');
   for (const file of bundle.files) {

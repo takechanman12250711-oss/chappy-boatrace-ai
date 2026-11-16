@@ -8,6 +8,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync, spawnSync } = require('node:child_process');
 const { createHash } = require('node:crypto');
+const { builtinModules } = require('node:module');
 const { mergeOfficialResults } = require('./collect-results.js');
 const { acquire, validate, apply, guardPush, targetDates, validateResult, VERSION, RECEIPT } = require('./result-source-checkpoint.cjs');
 
@@ -19,9 +20,48 @@ const recentDates = ['20261007', '20261008', '20261009'];
 const queuedDate = '20260909';
 const resultPath = date => `data/results/${date}.json`;
 const hash = content => createHash('sha256').update(content).digest('hex');
+const independentNoteAuth = [
+  'scripts/note-github-ui-transport.js',
+  'scripts/note-saved-state-auth.js',
+  'scripts/note-saved-state-auth.test.js',
+];
 const git = (cwd, args) => execFileSync('git', args, {
   cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
 }).trimEnd();
+
+// This CI contract covers the acquisition entry point and its static CommonJS
+// imports. Unknown loaders fail closed; it is not a general JavaScript analyzer.
+// Read tracked index bytes when a dependency is omitted by a sparse checkout.
+function acquisitionDependencies(root) {
+  const tracked = new Set(git(root, ['ls-files', '-z', '--', 'scripts', 'js', 'api', 'config']).split('\0').filter(Boolean));
+  const builtins = new Set(builtinModules.map(name => name.replace(/^node:/, '')));
+  const visited = new Set(), pending = ['scripts/result-source-checkpoint.cjs', 'scripts/collect-results.js'];
+  const literalRequire = /\brequire\s*\(\s*(['"])([^'"\\\r\n]+)\1\s*\)/g;
+  while (pending.length) {
+    const file = pending.pop();
+    if (visited.has(file)) continue;
+    assert.ok(tracked.has(file), `Unknown acquisition dependency: ${file}`);
+    assert.ok(!independentNoteAuth.includes(file), `Acquisition now depends on note auth: ${file}`);
+    visited.add(file);
+    const absolute = path.join(root, file);
+    const source = fs.existsSync(absolute) ? fs.readFileSync(absolute, 'utf8') : git(root, ['show', `:${file}`]);
+    if (file.endsWith('.json')) { JSON.parse(source); continue; }
+    const calls = [...source.matchAll(literalRequire)];
+    const remaining = source.replace(literalRequire, '').replace(/\brequire\.main\b/g, '');
+    assert.doesNotMatch(remaining, /\brequire\b|\b(?:import|eval|Function|createRequire)\s*\(/,
+      `Unsupported acquisition loader: ${file}`);
+    for (const call of calls) {
+      const requested = call[2];
+      if (builtins.has(requested.replace(/^node:/, ''))) continue;
+      assert.ok(requested.startsWith('.'), `Unknown acquisition import: ${file} -> ${requested}`);
+      const base = path.posix.normalize(path.posix.join(path.posix.dirname(file), requested));
+      const resolved = [base, `${base}.js`, `${base}.json`, `${base}/index.js`].find(candidate => tracked.has(candidate));
+      assert.ok(resolved, `Unknown acquisition dependency: ${file} -> ${requested}`);
+      pending.push(resolved);
+    }
+  }
+  return [...visited].sort();
+}
 
 function write(root, file, value) {
   const absolute = path.join(root, file);
@@ -133,6 +173,118 @@ function cli(f, command, env = {}) {
 }
 
 try {
+  assert.ok(acquisitionDependencies(repositoryRoot).length >= 4,
+    'the note-auth exception requires a complete tracked acquisition import graph');
+  const independence = fixture('note-auth-dependency-contract');
+  fs.writeFileSync(path.join(independence.root, 'scripts/result-source-checkpoint.cjs'), "require('./collect-results');\n");
+  fs.writeFileSync(path.join(independence.root, 'scripts/collect-results.js'), 'module.exports = {};\n');
+  fs.writeFileSync(path.join(independence.root, 'scripts/note-saved-state-auth.js'), 'module.exports = {};\n');
+  commit(independence.root, 'tracked acquisition dependency contract');
+  fs.rmSync(path.join(independence.root, 'scripts/collect-results.js'));
+  assert.deepEqual(acquisitionDependencies(independence.root),
+    ['scripts/collect-results.js', 'scripts/result-source-checkpoint.cjs'], 'sparse dependencies use Git index bytes');
+  for (const [source, error] of [
+    ["require('./note-saved-state-auth');\n", /now depends on note auth/],
+    ["module.require('./note-saved-state-auth');\n", /now depends on note auth/],
+    ["require('./unknown-acquisition');\n", /Unknown acquisition dependency/],
+    ["require('unknown-external-package');\n", /Unknown acquisition import/],
+    ['require(dynamicName);\n', /Unsupported acquisition loader/],
+    ["const load = require; load('./note-saved-state-auth');\n", /Unsupported acquisition loader/],
+    ["import('./note-saved-state-auth.js');\n", /Unsupported acquisition loader/],
+  ]) {
+    fs.writeFileSync(path.join(independence.root, 'scripts/collect-results.js'), source);
+    assert.throws(() => acquisitionDependencies(independence.root), error);
+  }
+
+  // Reproduce the delayed real handoff: unrelated note auth files may be added
+  // or updated while an already verified official-result artifact is queued.
+  for (const operation of ['apply', 'guard-push']) for (const existing of [false, true]) {
+    const independent = fixture(`note-auth-${operation}-${existing}`);
+    if (existing) {
+      for (const file of independentNoteAuth) write(independent.root, file, { oldNoteAuth: true });
+      independent.sourceSha = commit(independent.root, 'old independent note auth');
+      git(independent.root, ['push', 'origin', 'main']);
+    }
+    const bundle = capture(independent);
+    if (operation === 'apply') {
+      for (const file of independentNoteAuth) write(independent.root, file, { unrelatedNoteAuth: true });
+      commit(independent.root, 'independent note auth changes');
+      const receipt = apply({ root: independent.root, bundle, context: context(independent) });
+      assert.equal(receipt.sourceSha, independent.sourceSha);
+      for (const file of bundle.files) assert.equal(fs.readFileSync(path.join(independent.root, file.path), 'utf8'), file.content);
+    } else {
+      apply({ root: independent.root, bundle, context: context(independent) });
+      commit(independent.root, 'save acquired official source');
+      const other = concurrentClone(independent);
+      for (const file of independentNoteAuth) write(other, file, { unrelatedNoteAuth: true });
+      const destination = advanceRemote(independent, other, independentNoteAuth[0], { unrelatedNoteAuth: true });
+      assert.equal(guardPush({ root: independent.root, bundle, context: context(independent) }).checkedDestination, destination);
+      assertClean(independent);
+    }
+  }
+  for (const operation of ['apply', 'guard-push']) for (const file of [
+    'scripts/note-saved-state-auth-extra.js', 'scripts/note-saved-state-auth.js/child.js',
+    'scripts/collect-results.js', 'config/another-config.json',
+  ]) {
+    const conflict = fixture(`note-auth-conflict-${operation}-${file.replace(/[^a-z]/g, '-')}`);
+    const bundle = capture(conflict);
+    if (operation === 'guard-push') {
+      apply({ root: conflict.root, bundle, context: context(conflict) });
+      commit(conflict.root, 'save acquired official source');
+      const other = concurrentClone(conflict);
+      write(other, independentNoteAuth[0], { unrelated: true });
+      advanceRemote(conflict, other, file, { protectedChange: true });
+      assert.throws(() => guardPush({ root: conflict.root, bundle, context: context(conflict) }), /Source code changed/);
+    } else {
+      write(conflict.root, independentNoteAuth[0], { unrelated: true });
+      write(conflict.root, file, { protectedChange: true });
+      commit(conflict.root, 'mixed protected code and independent note auth');
+      assert.throws(() => apply({ root: conflict.root, bundle, context: context(conflict) }), /Source code changed/);
+    }
+    assertClean(conflict);
+  }
+  // Disable rename detection so an ignored destination cannot hide deletion
+  // of an acquisition input with identical bytes.
+  for (const operation of ['apply', 'guard-push']) {
+    const renamed = fixture(`note-auth-rename-${operation}`);
+    const bundle = capture(renamed);
+    const rename = directory => git(directory, ['mv', 'scripts/collect-results.js', independentNoteAuth[0]]);
+    if (operation === 'apply') {
+      rename(renamed.root); commit(renamed.root, 'rename protected code to independent note path');
+      assert.throws(() => apply({ root: renamed.root, bundle, context: context(renamed) }), /Source code changed/);
+    } else {
+      apply({ root: renamed.root, bundle, context: context(renamed) });
+      commit(renamed.root, 'save acquired official source');
+      const other = concurrentClone(renamed); rename(other);
+      commit(other, 'rename protected code to independent note path');
+      git(other, ['push', 'origin', 'main']); git(renamed.root, ['fetch', '--no-tags', 'origin', 'main']);
+      assert.throws(() => guardPush({ root: renamed.root, bundle, context: context(renamed) }), /Source code changed/);
+    }
+    assertClean(renamed);
+  }
+
+  for (const operation of ['apply', 'guard-push']) for (const changed of ['result', 'receipt']) {
+    const conflict = fixture(`note-auth-data-conflict-${operation}-${changed}`);
+    const bundle = capture(conflict);
+    const file = changed === 'result' ? resultPath(recentDates[0]) : RECEIPT;
+    const value = changed === 'result' ? official(recentDates[0], [completedRace(recentDates[0], 1, '6-5-4')]) : { newer: true };
+    const expected = changed === 'result' ? /Official result changed/ : /Source receipt changed/;
+    if (operation === 'apply') {
+      write(conflict.root, independentNoteAuth[0], { unrelated: true });
+      write(conflict.root, file, value);
+      commit(conflict.root, 'independent note auth with competing official source');
+      assert.throws(() => apply({ root: conflict.root, bundle, context: context(conflict) }), expected);
+    } else {
+      apply({ root: conflict.root, bundle, context: context(conflict) });
+      commit(conflict.root, 'save acquired official source');
+      const other = concurrentClone(conflict);
+      write(other, independentNoteAuth[0], { unrelated: true });
+      advanceRemote(conflict, other, file, value);
+      assert.throws(() => guardPush({ root: conflict.root, bundle, context: context(conflict) }), expected);
+    }
+    assertClean(conflict);
+  }
+
   // Recent correction refreshes are retained. Queue overlap is fetched only once
   // if complete, while disabled dates never enter the artifact or runner calls.
   const targets = fixture('target-dates', [
