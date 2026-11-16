@@ -12,13 +12,33 @@ const FORMATION=/^(?:[1-6](?:・[1-6])*) → (?:[1-6](?:・[1-6])*) → (?:[1-6]
 const FREE_NOTICE="※予想は参考情報です。舟券の購入は20歳以上の方が、ご自身の判断と責任でお願いします。";
 const check=(ok,reason)=>{if(!ok)throw Error(reason);};
 const hash=value=>createHash("sha256").update(value).digest("hex");
+// Read the established purchase policy without selecting tickets. The legacy
+// module registers a Node global on first import; restore that reference so
+// rendering cannot replace a caller's selector or test fixture.
+function purchaseSelection(prediction){
+  if(prediction.practicalSelection?.purchaseDecision){
+    const selection=prediction.practicalSelection;
+    return ['skip','unchanged','unavailable'].includes(selection.purchaseDecision.status)?selection:
+      {...selection,purchaseDecision:{status:'unavailable'}};
+  }
+  const host=typeof window==='undefined'?globalThis:window;
+  const had=Object.hasOwn(host,'ChappyPracticalSelection'),previous=host.ChappyPracticalSelection;
+  let decision;
+  try{decision=require('../js/practical-selection').purchaseDecision(prediction);}
+  catch(_){decision={status:'unavailable'};}
+  finally{if(had)host.ChappyPracticalSelection=previous;else delete host.ChappyPracticalSelection;}
+  if(!decision||!['skip','unchanged'].includes(decision.status))decision={status:'unavailable'};
+  return {...(prediction.practicalSelection||{}),tickets:prediction.practicalSelection?.tickets??prediction.practicalTickets,purchaseDecision:decision};
+}
 function sourceModel(bundle,article=bundle.article){
   check(seriesOfBundle(bundle)==="normal","reader_normal_source_required");
   const p=bundle.record.prediction;
   check(p?.practicalSelection?.purchaseDecision?.status!=="skip"&&p?.practicalSelection?.status!=="skipped"&&
     article?.purchaseDecision?.status!=="skip"&&!/^【購入見送り】/m.test(String(article?.freeText||"")+"\n"+String(article?.paidText||"")),
     "reader_purchase_skipped");
-  const central=scenario.sourceSubset(bundle),app=reader.fromPrediction(p);
+  const central=scenario.sourceSubset(bundle),selection=purchaseSelection(p);
+  const app=reader.fromPrediction({...p,practicalSelection:selection},selection);
+  check(app?.status!=="skipped","reader_purchase_skipped");
   check(app?.status==="selected"&&JSON.stringify(app.centralTickets)===JSON.stringify(central),"reader_app_selection_unavailable");
   const source=scenario.sourceSections(bundle,"normal",article);
   const model=reader.groupTickets({

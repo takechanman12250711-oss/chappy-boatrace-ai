@@ -108,3 +108,14 @@ test("default source gate still blocks expired snapshots, altered handoffs, byte
  const skipFile=store(root,skipped);
  assert.throws(()=>publicationPayload(skipFile.name,root,now),/reader_purchase_skipped/);
 });
+
+test('the actual source gate blocks the same approved wall when the original saved no purchase decision',t=>{
+ const root=rootFor(t),b=normal(),p=b.record.prediction;
+ p.wallTheory={state:'壁成立',attackerNo:2,wallCandidateNo:3,score:80,grade:'A'};
+ delete p.practicalSelection;delete b.article.purchaseDecision;
+ assert.doesNotMatch(b.article.freeText+b.article.paidText,/【購入見送り】/);
+ const saved=store(root,b),selector=require('../js/practical-selection'),boundary=require('../js/main-cover-display-boundary');
+ assert.equal(boundary.prepare(p,selector,contract).readerPresentation.status,'skipped');
+ assert.throws(()=>publicationPayload(saved.name,root,Date.parse(b.record.selectedAt)),/reader_purchase_skipped/);
+ assert.equal(fs.readFileSync(path.join(root,saved.name),'utf8'),saved.bytes);
+});

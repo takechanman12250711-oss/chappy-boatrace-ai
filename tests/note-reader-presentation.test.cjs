@@ -132,3 +132,67 @@ test("family disagreement stops even when its ticket union and all counts remain
  finally{reader.fromPrediction=original;}
  assert.equal(JSON.stringify(b),before);
 });
+
+test('missing saved purchase policy uses the same approved wall skip without selecting or mutating source',()=>{
+ const b=copy(),p=b.record.prediction;p.race={deadlineAt:'2026-11-16T20:07:00+09:00'};
+ p.wallTheory={state:'壁成立',attackerNo:2,wallCandidateNo:3,score:80,grade:'A'};
+ delete p.practicalSelection?.purchaseDecision;delete b.article.purchaseDecision;
+ const selector=require('../js/practical-selection'),boundary=require('../js/main-cover-display-boundary');
+ const previous=globalThis.ChappyPracticalSelection,canary={select(){throw Error('must not reselect saved tickets');}};
+ globalThis.ChappyPracticalSelection=canary;const before=JSON.stringify(b);
+ try{
+  assert.equal(boundary.prepare(p,selector,reader).readerPresentation.status,'skipped');
+  assert.throws(()=>moduleReader.sourceModel(b),/reader_purchase_skipped/);
+  assert.equal(globalThis.ChappyPracticalSelection,canary);assert.equal(JSON.stringify(b),before);
+ }finally{globalThis.ChappyPracticalSelection=previous;}
+});
+test('missing policy computation failures and unknown policy states stop note main recommendations',()=>{
+ const selector=require('../js/practical-selection'),original=selector.purchaseDecision;
+ for(const resolve of [()=>{throw Error('unavailable');},()=>null,()=>({status:'unknown'})]){
+  const b=copy();delete b.record.prediction.practicalSelection?.purchaseDecision;const before=JSON.stringify(b);
+  selector.purchaseDecision=resolve;
+  try{assert.throws(()=>moduleReader.sourceModel(b),/reader_app_selection_unavailable/);assert.equal(JSON.stringify(b),before);}
+  finally{selector.purchaseDecision=original;}
+ }
+});
+
+test('policy import restores absent, own-undefined and existing selector references on first and cached load',()=>{
+ const {spawnSync}=require('node:child_process');
+ const script=`const assert=require('node:assert/strict');
+ const mode=process.argv[1],host=mode==='window'?{}:globalThis;
+ if(mode==='window')globalThis.window=host;
+ const canary={select(){throw Error('selection must not run');}};
+ if(mode==='undefined')host.ChappyPracticalSelection=undefined;
+ else if(mode==='existing'||mode==='window')host.ChappyPracticalSelection=canary;
+ const had=Object.hasOwn(host,'ChappyPracticalSelection'),previous=host.ChappyPracticalSelection;
+ const adapter=require('./scripts/note-reader-presentation.cjs'),bundle=structuredClone(require('./scripts/fixtures/reader-presentation.json').bundle);
+ delete bundle.record.prediction.practicalSelection?.purchaseDecision;
+ const before=JSON.stringify(bundle),core=require.resolve('./js/practical-selection');
+ assert.equal(require.cache[core],undefined);
+ for(let i=0;i<2;i++){
+  assert.equal(adapter.sourceModel(bundle).centralTickets.length,7);
+  assert.equal(Object.hasOwn(host,'ChappyPracticalSelection'),had);
+  assert.equal(host.ChappyPracticalSelection,previous);
+  assert.equal(JSON.stringify(bundle),before);
+ }`;
+ for(const mode of ['absent','undefined','existing','window']){
+  const child=spawnSync(process.execPath,['-e',script,mode],{cwd:require('node:path').join(__dirname,'..'),encoding:'utf8'});
+  assert.equal(child.status,0,mode+': '+child.stdout+child.stderr);
+ }
+});
+test('an existing saved purchase decision is retained without recalculation',()=>{
+ const b=copy(),p=b.record.prediction,selector=require('../js/practical-selection'),prior=selector.purchaseDecision;
+ p.practicalSelection={tickets:structuredClone(p.practicalTickets),purchaseDecision:{status:'unchanged'}};
+ const before=JSON.stringify(b);selector.purchaseDecision=()=>{throw Error('saved decision must not be recalculated');};
+ try{assert.equal(moduleReader.sourceModel(b).centralTickets.length,7);assert.equal(JSON.stringify(b),before);}
+ finally{selector.purchaseDecision=prior;}
+});
+
+test('an unknown saved purchase status stops both article and app without recalculation',()=>{
+ const b=copy(),p=b.record.prediction;
+ p.practicalSelection={tickets:structuredClone(p.practicalTickets),purchaseDecision:{status:'unknown'}};
+ const selector=require('../js/practical-selection'),prior=selector.purchaseDecision,before=JSON.stringify(b);
+ selector.purchaseDecision=()=>{throw Error('saved policy must not be recalculated');};
+ try{assert.equal(reader.fromPrediction(p).status,'unavailable');assert.throws(()=>moduleReader.sourceModel(b),/reader_app_selection_unavailable/);assert.equal(JSON.stringify(b),before);}
+ finally{selector.purchaseDecision=prior;}
+});

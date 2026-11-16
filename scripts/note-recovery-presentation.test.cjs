@@ -1033,7 +1033,7 @@ test('frozen v9 claims recover while current v10 pins its shared app and article
    assert.deepEqual(requireRecoveryPublicationGate(current.payload,current.recoveryEvidence,f.rootDir),current.payload);
    assert.equal(publicationPayload(f.sourcePath,f.rootDir,f.identity.sourceTime).presentationVersion,'readable-v10');
    assert.equal(require('./note-recovery-presentation.cjs').CURRENT_VERSION,'readable-v10');
-   for(const file of ['scripts/note-reader-presentation.cjs','js/forecast-reader-contract.js','scripts/note-recovery-readable-v9.cjs'])
+   for(const file of ['scripts/note-reader-presentation.cjs','js/forecast-reader-contract.js','scripts/note-recovery-readable-v9.cjs','js/practical-selection.js'])
     assert.ok(current.calls.some(url=>url.includes('/contents/'+file+'?')));
    assert.equal(hash(fs.readFileSync(path.join(__dirname,'note-recovery-readable-v9.cjs'))),
      require('./note-recovery-presentation.cjs').HISTORICAL['readable-v9'].rendererSha256);
@@ -1050,7 +1050,7 @@ test('frozen v9 claims recover while current v10 pins its shared app and article
 test('a changed v10 common display dependency fails recovery without executing downloaded code',async()=>{
  const f=original(true);
  try{
-  for(const file of ['scripts/note-reader-presentation.cjs','js/forecast-reader-contract.js','scripts/note-recovery-readable-v9.cjs']){
+  for(const file of ['scripts/note-reader-presentation.cjs','js/forecast-reader-contract.js','scripts/note-recovery-readable-v9.cjs','js/practical-selection.js']){
    const mock=requestFixture(f.identity,{version:'current-v10-code',rootDir:f.rootDir,mutate:async(url,result)=>{
     if(!url.includes('/contents/'+file+'?'))return result;
     const old=await result.json(),bytes=Buffer.from('throw Error("must-never-execute");');

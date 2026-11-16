@@ -28,7 +28,8 @@ const PATHS = Object.freeze({
   scenarioSha256: 'scripts/note-scenario-presentation.cjs',
   readerPresentationSha256: 'scripts/note-reader-presentation.cjs',
   readerContractSha256: 'js/forecast-reader-contract.js',
-  legacyV9RendererSha256: 'scripts/note-recovery-readable-v9.cjs'
+  legacyV9RendererSha256: 'scripts/note-recovery-readable-v9.cjs',
+  purchasePolicySha256: 'js/practical-selection.js'
 });
 const COMMON = Object.freeze({
   generatorSha256: LEGACY_READABLE.generatorSha256,

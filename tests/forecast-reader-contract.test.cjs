@@ -90,3 +90,12 @@ test('saved Toda case exhibition signs remain attached to the formal third-cours
  assert.match(r.text,/3号艇の展示STはF0.02/);assert.match(r.text,/隣の4号艇の展示STはF0.03/);
  assert.equal(browser.explanation(p).text,r.text);
 });
+
+test('browser and Node reject unknown saved purchase decisions instead of inventing a main recommendation',()=>{
+ const p=structuredClone(require('../scripts/fixtures/reader-presentation.json').bundle.record.prediction);
+ for(const decision of [{status:'unknown'},{}, {status:'unavailable'}]){
+  p.practicalSelection={tickets:structuredClone(p.practicalTickets),purchaseDecision:decision};
+  const before=JSON.stringify(p),a=contract.fromPrediction(p),b=browser.fromPrediction(p);
+  assert.equal(a.status,'unavailable');assert.equal(a.allCount,0);assert.equal(JSON.stringify(a),JSON.stringify(b));assert.equal(JSON.stringify(p),before);
+ }
+});
