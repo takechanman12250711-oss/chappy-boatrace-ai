@@ -118,14 +118,33 @@ jobs:
           KOROGASHI_ARTIFACT_DIGEST: ${{ steps.korogashi-artifact.outputs.artifact-digest }}
         run: node scripts/note-korogashi-run.cjs confirm /tmp/note-korogashi-stage.json
       - run: npm install --no-save playwright@1.55.0
+      # NOTE_UI_ROUTE=saved-state uses the runner's own browser with the saved
+      # sign-in state, so the browser must be installed here. Unset keeps the
+      # remote Browser Use browser and installs nothing.
+      - name: Restore cached Playwright browser
+        if: vars.NOTE_UI_ROUTE == 'saved-state'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-1.55.0-${{ runner.os }}
+      - name: Install local browser for the saved sign-in state
+        if: vars.NOTE_UI_ROUTE == 'saved-state'
+        run: npx playwright install --with-deps chromium
       - name: Update and verify free guide and daily index
         id: index
         env:
           NOTE_OFFICIAL_REFRESH_STARTED: ${{ steps.korogashi-prepare.outputs.official-refresh-started }}
+          NOTE_UI_ROUTE: ${{ vars.NOTE_UI_ROUTE || 'browser-use' }}
           BROWSER_USE_API_KEY: ${{ secrets.BROWSER_USE_API_KEY }}
           BROWSER_USE_PROFILE_ID: ${{ secrets.BROWSER_USE_PROFILE_ID }}
+          NOTE_STATE_JSON_BASE64: ${{ vars.NOTE_UI_ROUTE == 'saved-state' && secrets.NOTE_STATE_JSON_BASE64 || '' }}
           NOTE_CLAIM_TOKEN: ${{ github.token }}
-        run: node scripts/update-note-marketing.js
+        run: |
+          if [ "$NOTE_UI_ROUTE" = "saved-state" ]; then
+            xvfb-run -a node scripts/update-note-marketing.js
+          else
+            node scripts/update-note-marketing.js
+          fi
       - name: Surface course registration failures after normal updates
         if: always() && (steps.korogashi-prepare.outcome == 'failure' || steps.korogashi-artifact.outcome == 'failure' || steps.korogashi-confirm.outcome == 'failure')
         run: exit 1

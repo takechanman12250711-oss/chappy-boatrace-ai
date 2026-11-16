@@ -5,7 +5,7 @@ const { client } = require('./note-marketing-store');
 const { markResultsVerified } = require('./note-marketing-reports');
 const { readEditorContent } = require('./note-editor-content');
 const { fillDraft, waitForVisibleAcrossFrames } = require('./note-browserbase-draft-save');
-const { loadBrowserUseConfig, createBrowserUseSession, stopBrowserUseSession } = require('./note-github-ui-transport');
+const { prepareNoteBrowser } = require('./note-github-ui-transport');
 const korogashi = require('./note-korogashi-lifecycle.cjs');
 const BODY = '.note-common-styles__textnote-body';
 async function readPublic(page, article) {
@@ -131,12 +131,11 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
   const observed = JSON.stringify(state) === JSON.stringify(loaded.state) ? loaded :
     {state,head:await store.save(state,loaded.head)};
   const journal = createUpdateJournal(store, observed, config, clock);
-  const connection = loadBrowserUseConfig(env);
-  const session = await createBrowserUseSession(connection);
+  const noteBrowser = prepareNoteBrowser(env);
   let browser, publicContext;
   const updates = [];
   try {
-    browser = await require('playwright').chromium.connectOverCDP(session.cdpUrl);
+    browser = await noteBrowser.open(require('playwright').chromium);
     const context = browser.contexts()[0];
     if (!context) throw new Error('marketing_saved_profile_missing');
     const page = await context.newPage();
@@ -180,7 +179,7 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
   } finally {
     if (publicContext) await publicContext.close().catch(()=>{});
     if (browser) await browser.close().catch(()=>{});
-    const stopped = await stopBrowserUseSession(connection, session.id).catch(()=>({ok:false}));
+    const stopped = await noteBrowser.stop().catch(()=>({ok:false}));
     if (!stopped.ok) console.error('NOTE_MARKETING_BROWSER_STOP_FAILED=true');
   }
 }
