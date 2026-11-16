@@ -224,3 +224,15 @@ a15f2ec3のCIは58件中49成功・6失敗・3取消で終了した。失敗6件
 post-predictionの実画面検査では、旧bright organizerが共通カードの本命点数を全券数で上書きし、空の旧区分を追加していた。共通markerのあるカードではこの3つの旧変換だけを止め、markerなしの旧表示は維持した。導入文も共通contractの確認済み説明を使い、未確認時に古い展開文へ戻さない。bright assetのreader cacheを20261117-1へ更新した。
 
 実bright JS/CSSを読み込むNode DOM統合とEdge early/lateが合格。本命7・追加13・穴17・参考4の全区分、本命見出し7点、外来区分0、原順/原本不変、開閉維持、見送り/空/確認中を検査した。WebKit診断は既存の厳密な本命点数検査を残し、外来区分0も必須にした。コハクが診断/captureとCI修正、bright関連5ファイルを独立点検し、指摘修正後の重大指摘なしを確認した。4種類の原因への修正はローカル検査までで、次の固定headのCI成功、Linux/WebKit、本番確認には転用しない。
+
+
+## 保存原本の可読性とCI取得範囲の追加確認
+
+元の大村11R原本SHA978627...を変更せず読み、純粋診断を実行した。候補補完1-3-2はselection観測index4に一意に一致し、1/2/3着priority94/74/87、最大は1着だった。戸田の2着最大の例をすべての1頭補完へ一般化しない。結果・払戻・候補再生成・select/capture再実行は使わず、元JSONと券は不変。作業artifactは ../artifacts/promotion-role-priority-saved-read-omura11-20261117.json。過去原本へ新sidecarを追記したものではない。
+
+10/28〜11/16のnote原本2455blobを、暗黙fetchを無効にしたローカル在庫で確認したところ、本文があるのはこの1blobだけだった。2455件の本文を検証した意味でも、全体のbound率でもない。原本の不足を再生成で埋めず、今後の比較で必要な候補母集団と保存契約を先に確定する。
+
+e32f9a44のCIでは4jobがテスト前のcheckoutで10/12分の上限に達した。3jobは全blobのfetch、1jobは18447ファイルの展開42%で停止。対象はformation display、final display activation、third-place 1-2-4 rescue、mobile startup terminal。タイムアウトを伸ばしたり検査を外したりせず、それぞれの実依存を含むsparse checkoutへ限定する。[actions/checkout v4公式実装](https://github.com/actions/checkout/blob/v4/src/git-source-provider.ts)はsparseCheckout指定時にblob:noneでfetchするため、データ全量の取得と展開を避けられる。新固定headでのCI完了は別に確認する。
+
+
+実Gitのsparse check-rulesでHEADの18443 tracked pathsを検査し、formationは全non-data1926＋指定2file、他3workflowは全non-data1926だけになることを確認。省略dataへのFSアクセスを禁止した状態で、4workflowの既存Node構文/検査47コマンドが合格した。追加checkout設定以外のtrigger/run/timeout/failure artifactは元と同じ。コハクも4検査と差分を独立確認し重大指摘なし。専用YAML parserとGitHub上のfresh checkout時間は未確認で、新CIを省略しない。
