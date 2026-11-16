@@ -5,6 +5,7 @@ const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { raceDateFromKey } = require('./build-note-iphone-handoff');
 const { requireSeries, publicationKey, seriesOfBundle } = require('./note-article-series');
+const { startEditorLoadObserver } = require('./note-editor-load-observer.cjs');
 
 const DEFAULT_HANDOFF = path.join(process.cwd(), 'data', 'note-publish', 'iphone.json');
 const { NOTE_PRICE_YEN: EXPECTED_PRICE_YEN, isRecordedPrice, isFreePrice, priceForPresentation } = require('./note-pricing');
@@ -286,32 +287,55 @@ function logEditorReadinessFailure(page, finalUrl, title, body, editability) {
 }
 
 async function ensureEditorReady(page, findVisible) {
-  await page.goto(NOTE_EDITOR_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
-  await page.waitForTimeout(1000);
-  if (!isEditorUrl(page.url())) {
-    let host = 'unknown';
-    try { host = new URL(page.url()).hostname || 'unknown'; } catch {}
-    throw new Error(`note_editor_session_not_ready_${host}`);
+  const observation = startEditorLoadObserver(page);
+  let failed = false;
+  try {
+    let navigation;
+    try {
+      navigation = await page.goto(NOTE_EDITOR_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    } catch (error) {
+      observation.navigationFailed();
+      throw error;
+    }
+    observation.navigation(navigation);
+    observation.stage('initial_wait');
+    await page.waitForTimeout(1000);
+    observation.stage('initial_host');
+    if (!isEditorUrl(page.url())) {
+      let host = 'unknown';
+      try { host = new URL(page.url()).hostname || 'unknown'; } catch {}
+      throw new Error(`note_editor_session_not_ready_${host}`);
+    }
+    observation.stage('fields');
+    const locate = findVisible || require('./note-browserbase-draft-save').waitForVisibleAcrossFrames;
+    const title = await locate(page, ['textarea[placeholder*="タイトル"]', 'input[placeholder*="タイトル"]', '[aria-label*="タイトル"]']);
+    const body = await locate(page, ['textarea[placeholder*="本文"]', '[data-placeholder*="本文"][contenteditable="true"]', '.ProseMirror[contenteditable="true"]', '[contenteditable="true"][role="textbox"]']);
+    const finalUrl = page.url();
+    const editability = { title: 'not_checked', body: 'not_checked' };
+    const checkEditable = async (field, locator) => {
+      let status = 'not_editable';
+      const editable = await locator.isEditable().catch(() => { status = 'check_failed'; return false; });
+      editability[field] = editable ? 'editable' : status;
+      return editable;
+    };
+    // Preserve the original short-circuit order. Missing fields or a changed host
+    // must not trigger extra locator calls, waits, retries, or any article writes.
+    if (!isEditorUrl(finalUrl) || !title || !body ||
+        !(await checkEditable('title', title)) || !(await checkEditable('body', body))) {
+      logEditorReadinessFailure(page, finalUrl, title, body, editability);
+      throw new Error('note_editor_fields_not_ready');
+    }
+    observation.stage('ready');
+    return page.url();
+  } catch (error) {
+    failed = true;
+    throw error;
+  } finally {
+    const record = observation.stop();
+    if (failed) {
+      try { console.error(`NOTE_UI_EDITOR_LOAD=${JSON.stringify(record)}`); } catch {}
+    }
   }
-  const locate = findVisible || require('./note-browserbase-draft-save').waitForVisibleAcrossFrames;
-  const title = await locate(page, ['textarea[placeholder*="タイトル"]', 'input[placeholder*="タイトル"]', '[aria-label*="タイトル"]']);
-  const body = await locate(page, ['textarea[placeholder*="本文"]', '[data-placeholder*="本文"][contenteditable="true"]', '.ProseMirror[contenteditable="true"]', '[contenteditable="true"][role="textbox"]']);
-  const finalUrl = page.url();
-  const editability = { title: 'not_checked', body: 'not_checked' };
-  const checkEditable = async (field, locator) => {
-    let status = 'not_editable';
-    const editable = await locator.isEditable().catch(() => { status = 'check_failed'; return false; });
-    editability[field] = editable ? 'editable' : status;
-    return editable;
-  };
-  // Preserve the original short-circuit order. Missing fields or a changed host
-  // must not trigger extra locator calls, waits, retries, or any article writes.
-  if (!isEditorUrl(finalUrl) || !title || !body ||
-      !(await checkEditable('title', title)) || !(await checkEditable('body', body))) {
-    logEditorReadinessFailure(page, finalUrl, title, body, editability);
-    throw new Error('note_editor_fields_not_ready');
-  }
-  return page.url();
 }
 
 async function clickVisibleText(page, texts) {
