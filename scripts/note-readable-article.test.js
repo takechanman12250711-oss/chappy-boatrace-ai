@@ -6,6 +6,45 @@ const readableArticle = (article, bundle) => currentReadableArticle(article, bun
 const readableArticleV2 = (article, bundle) => currentReadableArticle(article, bundle, { presentationVersion: 'readable-v2' });
 const { sectionProof } = require('./note-published-ticket-sections');
 const { fixture } = require('./note-independent-monitor-fixture');
+const centerFixture = require('./fixtures/note-center-orphan-v9.cjs');
+
+test('v9 preserves v8 bytes for classified sources and keeps an unclassified saved center in its own section', () => {
+  const center = require('./note-center-presentation-v9.cjs');
+  const categories = require('./note-center-categories-v9.cjs');
+  for (const count of [1, 7, 8, 9, 10]) {
+    const b = centerFixture.normalBundle({ orphan: false, count }), before = JSON.stringify(b);
+    const current = currentReadableArticle(b.article, b);
+    const old = currentReadableArticle(b.article, b, { presentationVersion: 'readable-v8' });
+    assert.equal(current.presentationVersion, 'readable-v9');
+    assert.equal(old.presentationVersion, 'readable-v8');
+    for (const field of ['title', 'freeText', 'paidText', 'fullText']) assert.equal(current[field], old[field]);
+    assert.equal(JSON.stringify(b), before);
+  }
+  const b = centerFixture.normalBundle(), before = JSON.stringify(b);
+  const article = currentReadableArticle(b.article, b), parsed = center.parsePaidText(article.paidText);
+  assert.equal(article.presentationVersion, 'readable-v9');
+  assert.deepEqual(parsed.sections.map(section => section.label), [categories.CENTER_LABEL, ...categories.NORMAL_LABELS, categories.REFERENCE]);
+  assert.deepEqual(parsed.sections[0].tickets.slice().sort(), centerFixture.practical.slice().sort());
+  assert.deepEqual(parsed.sections.slice(1,5).map(section => section.tickets.slice().sort()), centerFixture.pools.map(rows => rows.slice().sort()));
+  assert.deepEqual(parsed.sections.at(-1).tickets.slice().sort(), centerFixture.reference.slice().sort());
+  assert.deepEqual(center.sourceSubset(b), centerFixture.practical, 'immutable baseline priority is preserved');
+  assert.equal(parsed.modelTickets.length, 10);
+  assert.equal(categories.totals(parsed.sections).primary, new Set([...centerFixture.pools.flat(), ...centerFixture.practical]).size);
+  assert.equal(JSON.stringify(b), before);
+  assert.throws(() => currentReadableArticle(b.article, b, { presentationVersion: 'readable-v8' }), /category_membership_missing/);
+  assert.deepEqual(ticketsIn(article.freeText), []);
+  assert.doesNotMatch(article.fullText, /有料|実戦厳選|コロがし|延べ/);
+  assert.throws(() => center.parsePaidText(article.paidText.replace('10点\n\n🎯 本命', '9点\n\n🎯 本命')), /section_count_mismatch/);
+  assert.throws(() => center.parsePaidText(article.paidText.replace(categories.CENTER_LABEL, '🎯 推測した本命')));
+  for (const mutate of [b => { b.baselinePracticalTickets[0].ticket = '6-5-4'; },
+    b => { b.article.practicalTickets[0].ticket = '6-5-4'; },
+    b => { b.record.prediction.practicalTickets[0].ticket = '6-5-4'; }]) {
+    const changed = centerFixture.normalBundle(); mutate(changed);
+    assert.throws(() => currentReadableArticle(changed.article, changed), /source_mismatch/);
+  }
+  assert.throws(() => currentReadableArticle(centerFixture.normalBundle({ count: 11 }).article,
+    centerFixture.normalBundle({ count: 11 })), /ticket_count_invalid/);
+});
 test('independent original remains immutable, reasons move before the paywall', () => {
   for (const kind of ['escape', 'manshu']) {
     const b = fixture(); b.monitor.kind = kind;

@@ -104,7 +104,7 @@ test('historical v1-v5 recovery pins exact old body and proof; new publication u
       assert.equal(fs.readFileSync(path.join(f.rootDir, f.sourcePath), 'utf8'), before);
       assert.throws(() => requirePublicationGate(p.payload, f.rootDir, f.identity.sourceTime), /handoff_mismatch/);
       const current = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime);
-      assert.equal(current.presentationVersion, 'readable-v8');
+      assert.equal(current.presentationVersion, 'readable-v9');
       assert.equal(current.price, 0);
       assert.equal(p.payload.price, 200);
       // The free v6 keeps the exact paid-section bytes of v5; only free wording and the paywall change.
@@ -967,7 +967,7 @@ test('free v6 claims recover with frozen v6 code while new publication uses v7',
     const v6 = require('./note-recovery-readable-v6.cjs').readableArticle(f.bundle.article, f.bundle);
     assert.equal(p.payload.freeText, v6.freeText, 'recovered v6 body is the frozen v6 body');
     const current = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime);
-    assert.equal(current.presentationVersion, 'readable-v8');
+    assert.equal(current.presentationVersion, 'readable-v9');
     assert.equal(current.paidText, require('./note-plain-presentation.cjs').fromModelText(p.payload.paidText), 'v7/v8 keep the v6 tickets; only the end heading and notice change');
     assert.notEqual(current.freeText, p.payload.freeText);
   } finally { f.cleanup(); }
@@ -986,12 +986,43 @@ test('v7 claims recover with frozen v7 code while new publication uses v8', asyn
       assert.equal(v7.presentationVersion, 'readable-v7');
       if (!normal) assert.equal(p.payload.freeText, v7.freeText.trim(), 'recovered v7 body is the frozen v7 body');
       const current = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime);
-      assert.equal(current.presentationVersion, 'readable-v8');
+      assert.equal(current.presentationVersion, 'readable-v9');
       for (const field of ['title', 'freeText', 'paidText', 'body', 'price']) assert.equal(current[field], p.payload[field], `v8 keeps the v7 ${field}`);
       // A v7 payload is no longer the current publication, and a current claim is not recovered as v7.
       assert.throws(() => requirePublicationGate(p.payload, f.rootDir, f.identity.sourceTime), /handoff_mismatch/);
       const now = await pinned(f, 'readable-v8');
       assert.equal(now.recoveryEvidence.presentationVersion, 'readable-v8');
+    } finally { f.cleanup(); }
+  }
+});
+
+test('published v8 claims retain exact code, body and price while v9 fingerprints bind both new helpers', async () => {
+  const registry = require('./note-recovery-presentation.cjs');
+  assert.equal(registry.CURRENT_VERSION, 'readable-v9');
+  assert.equal(registry.PATHS.centerV9Sha256, 'scripts/note-center-presentation-v9.cjs');
+  assert.equal(registry.PATHS.centerCategoriesV9Sha256, 'scripts/note-center-categories-v9.cjs');
+  assert.equal(hash(fs.readFileSync(path.join(__dirname, 'note-recovery-readable-v8.cjs'))), registry.HISTORICAL['readable-v8'].rendererSha256);
+  for (const normal of [false, true]) {
+    const f = original(normal);
+    try {
+      const p = await pinned(f, 'readable-v8');
+      assert.equal(p.recoveryEvidence.presentationVersion, 'readable-v8');
+      assert.equal(p.payload.presentationVersion, 'readable-v8');
+      assert.equal(p.payload.price, 0);
+      assert.deepEqual(requireRecoveryPublicationGate(p.payload, p.recoveryEvidence, f.rootDir), p.payload);
+      const current = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime);
+      assert.equal(current.presentationVersion, 'readable-v9');
+      for (const field of ['title', 'freeText', 'paidText', 'body', 'price', 'practicalTicketCount']) assert.equal(current[field], p.payload[field]);
+      assert.throws(() => requirePublicationGate(p.payload, f.rootDir, f.identity.sourceTime), /handoff_mismatch/);
+      assert.equal((await pinned(f, 'readable-v9')).recoveryEvidence.presentationVersion, 'readable-v9');
+      for (const file of ['scripts/note-center-presentation-v9.cjs', 'scripts/note-center-categories-v9.cjs']) {
+        const mock = requestFixture(f.identity, { version: 'readable-v9', rootDir: f.rootDir, mutate: async (url, result) => {
+          if (!url.includes('/contents/' + file + '?')) return result;
+          const data = await result.json(), changed = Buffer.concat([Buffer.from(data.content, 'base64'), Buffer.from('\n')]);
+          return response({ ...data, sha: blobSha(changed), content: changed.toString('base64') });
+        } });
+        await assert.rejects(recoveryClaimStatus(f.identity, env, mock.request, f.rootDir), /publication_recovery_dependency_unreviewed/);
+      }
     } finally { f.cleanup(); }
   }
 });

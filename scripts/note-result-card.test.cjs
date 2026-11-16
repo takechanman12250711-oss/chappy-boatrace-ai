@@ -37,6 +37,14 @@ function aggregateDigest(report) {
   return digest([report.version, report.raceKey, report.sourceSha256, report.combination, report.payoutPer100Yen,
     report.publishedTicketCount, JSON.stringify(report.matchedSections)].join('|'));
 }
+test('the explicit normal center section is accepted without a guessed pool label', () => {
+  const report=aggregateFixture();
+  report.matchedSections=[{articleSeries:'normal',label:'🎯 中心の買い目'}];
+  report.evidenceId=aggregateDigest(report);
+  assert.deepEqual(publicContent(report,{now:NOW}).matchedSections,report.matchedSections);
+  assert(altText(publicContent(report,{now:NOW})).includes('🎯 中心の買い目'));
+  assert.throws(()=>publicContent({...report,matchedSections:[{articleSeries:'escape',label:'🎯 中心の買い目'}]},{now:NOW}),/matched_sections_invalid/);
+});
 
 test('public race aggregate shows all published main sections once per actual race, separate from center scope', async () => {
   const report = aggregateFixture(), before = structuredClone(report);

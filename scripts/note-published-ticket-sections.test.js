@@ -278,6 +278,32 @@ function modelInput(presentationVersion = 'readable-v3', bundle) {
   return args;
 }
 
+test('v9 public results include the saved unclassified center while reference-only and research tickets stay outside the result', () => {
+  const f = require('./fixtures/note-center-orphan-v9.cjs');
+  const b = f.normalBundle();
+  b.record.prediction.candidate24Tickets = [{ ticket: '6-5-4' }];
+  const before = JSON.stringify(b), args = modelInput('readable-v9', b);
+  args.row.price = 0; args.receipt.price = 0;
+  const result = publishedTicketSections(args.row, args.bytes, args.now);
+  assert.equal(result.status, 'verified');
+  assert.equal(result.presentationVersion, 'readable-v9');
+  assert.equal(result.sections[0].label, '🎯 中心の買い目');
+  assert.equal(result.publishedTicketCount, new Set([...f.pools.flat(), ...f.practical]).size);
+  assert.equal(result.referenceTicketCount, f.reference.length);
+  assert.equal(args.receipt.publishedDisplayProof.modelSubset.ticketCount, 10);
+  assert.deepEqual(classifyPublishedTickets(args.row, args.bytes, '4-1-2', args.now).matchedSections, ['🎯 中心の買い目']);
+  assert.equal(classifyPublishedTickets(args.row, args.bytes, '4-1-5', args.now).status, 'miss');
+  assert.equal(classifyPublishedTickets(args.row, args.bytes, '6-5-4', args.now).status, 'miss');
+  assert.equal(verifiedModelSubset(args.row, args.bytes, args.receipt, args.beforeDeadline).ticketCount, 10);
+  assert.deepEqual(publishedTicketSections(args.row, args.bytes, Date.parse(args.row.deadlineAt)), { status: 'pending', reason: 'official_result_pending' });
+  assert.equal(JSON.stringify(b), before);
+  const forged = clone(args.row); forged.publicationEvidence.publishedDisplayProof.sections[0].ticketCount--;
+  assert.equal(publishedTicketSections(forged, args.bytes, args.now).reason, 'published_display_proof_mismatch');
+  const seven = modelInput('readable-v9', f.normalBundle({ count: 7 }));
+  assert.equal(publishedTicketSections(seven.row, seven.bytes, seven.now).sections.some(s => s.label === '🎯 中心の買い目'), false);
+  assert.equal(classifyPublishedTickets(seven.row, seven.bytes, '4-1-2', seven.now).status, 'miss', 'reference overlap alone never creates a saved center');
+});
+
 test('v3 appends a source-bound model proof without changing v2 categories, union or matched labels', () => {
   const args = modelInput(), v2 = categoryInput(JSON.parse(args.bytes));
   const result = publishedTicketSections(args.row, args.bytes, args.now);

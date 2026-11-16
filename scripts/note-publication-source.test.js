@@ -46,7 +46,7 @@ async function main() {
   Date.now = () => clock;
   const freePayload = publicationPayload(sourcePath, root, clock);
   assert.equal(freePayload.canPublish, true);
-  assert.equal(freePayload.presentationVersion, 'readable-v8');
+  assert.equal(freePayload.presentationVersion, 'readable-v9');
   // v8 only widens the ticket count: with 1-7 tickets every published byte is v7.
   const v7Payload = publicationPayload(sourcePath, root, clock, { presentationVersion: 'readable-v7' });
   for (const field of ['title', 'freeText', 'paidText', 'body', 'price', 'practicalTicketCount']) assert.equal(freePayload[field], v7Payload[field], `v8 keeps the v7 ${field}`);
@@ -134,7 +134,7 @@ async function main() {
   };
   for (const count of [8, 10]) {
     const wide = sized(count), widePayload = publicationPayload(wide.file, root, clock);
-    assert.equal(widePayload.presentationVersion, 'readable-v8');
+    assert.equal(widePayload.presentationVersion, 'readable-v9');
     assert.equal(widePayload.practicalTicketCount, count);
     assert.equal(widePayload.price, 0);
     assert.deepEqual(verifyPublicationSource(widePayload, root, clock), widePayload);
@@ -153,17 +153,56 @@ async function main() {
       articleSeries: 'normal', publicationKey: widePayload.publicationKey, publishedAt: new Date(clock + 1000).toISOString(),
       sourceSha256: wide.sourceSha256, ticketCount: count,
       publicationEvidence: { version: 'note-publication-evidence-v1', sourceSha256: wide.sourceSha256, receiptCommitSha: 'c'.repeat(40),
-        publisherCommitSha: 'd'.repeat(40), presentationVersion: 'readable-v8', publishedDisplayProof: wideProof } };
+        publisherCommitSha: 'd'.repeat(40), presentationVersion: 'readable-v9', publishedDisplayProof: wideProof } };
     const sections = require('./note-published-ticket-sections');
     const after = Date.parse(bundle.record.deadlineAt) + 1000;
     assert.equal(sections.publishedTicketSections(row, wide.sizedBytes, clock + 2000).status, 'pending');
     const verified = sections.publishedTicketSections(row, wide.sizedBytes, after);
     assert.equal(verified.status, 'verified');
-    assert.equal(verified.presentationVersion, 'readable-v8');
+    assert.equal(verified.presentationVersion, 'readable-v9');
     assert.ok(wide.tickets.every(ticket => verified.unionTickets.includes(ticket)));
     assert.equal(sections.publishedTicketSections({ ...row, ticketCount: count - 1 }, wide.sizedBytes, after).status, 'review');
     assert.equal(sections.classifyPublishedTickets(row, wide.sizedBytes, wide.tickets[count - 1], after).status, 'hit');
   }
+  // The saved center is its own evidence. Do not force its unclassified
+  // ticket into a main/cover/flow/manshu pool or promote a reference-only row.
+  const orphanFixture = require('./fixtures/note-center-orphan-v9.cjs');
+  const saveBundle = value => {
+    const text = JSON.stringify(value), sha256 = sha(text);
+    const file = `data/note-drafts/${value.record.date}/${value.record.raceKey}-${sha256}.json`;
+    fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+    fs.writeFileSync(path.join(root, file), text);
+    return { file, text, sha256 };
+  };
+  const orphan = orphanFixture.normalBundle(), originalBytes = JSON.stringify(orphan);
+  const saved = saveBundle(orphan), savedClock = Date.parse(orphan.capturedAt);
+  const orphanPayload = publicationPayload(saved.file, root, savedClock);
+  const orphanProof = parsePublishedDisplayProof(orphanPayload);
+  assert.equal(orphanPayload.presentationVersion, 'readable-v9');
+  assert.equal(orphanPayload.practicalTicketCount, 10);
+  assert.equal(orphanPayload.price, 0);
+  assert.equal(orphanProof.sections[0].label, '🎯 中心の買い目');
+  assert.equal(orphanProof.sections[0].ticketCount, 10);
+  assert.equal(orphanProof.sections[0].includedInPublishedResult, true);
+  assert.equal(orphanProof.sections.at(-1).includedInPublishedResult, false);
+  assert.deepEqual(verifyPublicationSource(orphanPayload, root, savedClock), orphanPayload);
+  assert.deepEqual(requirePublicationGate(orphanPayload, root, savedClock), orphanPayload);
+  assert.throws(() => publicationPayload(saved.file, root, savedClock, { presentationVersion: 'readable-v8' }), /category_membership_missing/);
+  assert.equal(JSON.stringify(orphan), originalBytes);
+  assert.equal(fs.readFileSync(path.join(root, saved.file), 'utf8'), originalBytes);
+  for (const field of ['baselinePracticalTickets', 'article', 'record']) {
+    const changed = structuredClone(orphan);
+    const rows = field === 'baselinePracticalTickets' ? changed[field]
+      : field === 'article' ? changed.article.practicalTickets : changed.record.prediction.practicalTickets;
+    rows[0].ticket = '6-5-4';
+    assert.throws(() => publicationPayload(saveBundle(changed).file, root, savedClock));
+  }
+  const noExhibition = structuredClone(orphan);
+  noExhibition.record.exhibitionSnapshot.entries[0].exhibition.displayTime = null;
+  assert.throws(() => publicationPayload(saveBundle(noExhibition).file, root, savedClock), /note_exhibition_not_verified/);
+  assert.throws(() => requirePublicationGate(orphanPayload, root, Date.parse(orphan.record.deadlineAt) - 120000), /audit_blocked/);
+  const tooMany = orphanFixture.normalBundle({ count: 11 });
+  assert.throws(() => publicationPayload(saveBundle(tooMany).file, root, savedClock), error => error.issueCodes?.includes('STORED_TICKETS_INVALID'));
   // Eleven tickets stay blocked with the publication-gate reason.
   const oversized = structuredClone(bundle);
   const oversizedTickets = allTickets

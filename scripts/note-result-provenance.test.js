@@ -37,7 +37,7 @@ function input({ bundle = normalBundle(), combination = '1-4-3', presentationVer
     version: 'note-publication-evidence-v1', receiptCommitSha: 'a'.repeat(40), publisherCommitSha: 'b'.repeat(40),
     sourceSha256: row.sourceSha256, ...LEGACY_READABLE
   };
-  if (['readable-v2', 'readable-v3'].includes(presentationVersion)) {
+  if (['readable-v2', 'readable-v3', 'readable-v9'].includes(presentationVersion)) {
     const { readableArticle } = require('./note-readable-article');
     const article = readableArticle(bundle.article, bundle, { presentationVersion });
     row.publicationEvidence.presentationVersion = presentationVersion;
@@ -57,6 +57,21 @@ function input({ bundle = normalBundle(), combination = '1-4-3', presentationVer
 }
 
 const derive = f => winningProvenance(f.row, f.bytes, f.settlement, f.section, f.now);
+test('new center publication retains actual pool origins without guessing a missing classification', () => {
+  const classified = input({presentationVersion:'readable-v9',combination:'1-4-3'});
+  assert(derive(classified));
+  const centerOnly = input({presentationVersion:'readable-v9',combination:'1-2-4'});
+  assert.equal(centerOnly.settlement.status,'hit');
+  assert(centerOnly.settlement.matchedSections.includes('🎯 中心の買い目'));
+  assert.equal(derive(centerOnly),null);
+  const overlap=normalBundle();
+  overlap.article.paidText+='\n・1-2-4';
+  const both=input({bundle:overlap,presentationVersion:'readable-v9',combination:'1-2-4'});
+  assert.equal(both.settlement.status,'hit');
+  assert.equal(both.section.publishedTicketCount,new Set(both.section.unionTickets).size);
+  assert.equal(both.section.referenceTicketCount,2);
+  assert.equal(derive(both),null);
+});
 const binding = f => ({
   publicationKey: f.row.publicationKey, raceKey: f.row.raceKey, articleSeries: f.row.articleSeries,
   sourceSha256: f.row.sourceSha256, status: f.settlement.status, combination: f.settlement.combination,
