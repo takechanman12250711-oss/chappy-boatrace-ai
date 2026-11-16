@@ -461,3 +461,14 @@ Browser Useの残高不足（`browser_use_create_failed_402`）で、接続前�
 - 検証: `node --test scripts/note-direct-login.test.js`、`node scripts/note-github-ui-transport.test.js`。
 - 2026-11-13 事前調査：2025年6月の個人開発記録に、GitHub Actionsからnoteへメール・パスワードでログインする自動投稿がreCAPTCHAで止まった例がある（`g-recaptcha-response`）。同じ筆者は別の記録で、ログイン済みブラウザのセッションCookieを再利用する方式へ切り替えている。いずれも第三者の過去の記録で、現在のnoteと本アカウントでの結果は未確認。2026-11-15の診断修正後は、ログイン画面に残った場合に既存の確認用部品を観測し、可視の部品があれば `note_login_verification_component_visible`、部品はあるがすべて不可視なら `note_login_verification_component_detected`、部品がなければ `note_login_not_accepted` と報告する。可視のバッジやチェック欄を含め、部品の存在・可視性だけで機械よけによる拒否、明示的なチャレンジ、ID・パスワードの誤りとは断定しない。件数・可視性の取得失敗や不正値、観測上限64件超は `note_login_verification_observation_failed` とし、部品なしや不受理へ読み替えない。旧版runの `note_login_bot_check` からも、可視のチャレンジがあったか、資格情報が正しかったか、停止原因は遡って判断できない。ログイン送信は従来どおり1回だけで、自動再試行しない。
 - 2026-11-14 レビュー指摘への対応（PR #1469）：ブラウザのライブラリは、入力に失敗したときのエラー文に入力値そのものを載せる（Playwright 1.55.0 の Call log に `fill("入力値")`）。そのままだとIDやパスワードが `NOTE_UI_TRANSPORT_FAILED=` の出力に混ざるため、この確認処理が外へ出すエラーは、あらかじめ決めたコードだけに限定した。画面を開く・欄を探す・入力・送信・結果確認・編集画面確認・ブラウザ起動のどこで失敗しても、元のエラー文・原因・スタックは引き継がず、段階ごとの固定コード（例 `note_login_input_failed`）に置き換える。実ブラウザで、無効化したパスワード欄への入力失敗を再現し、修正前は出力にダミーのパスワードが含まれ、修正後は固定コードだけになることを確認した。実アカウントでの実行と、GitHubのSecretマスク後の表示は未確認。
+
+## 2026-11-16 保存したログイン状態でGitHubのブラウザが編集画面へ届くかの確認（authのみ）
+
+Browser Useの残高0（402）で公開が止まっているため、課金なしの候補として、本人のパソコンでログインした状態（Playwright `storageState`）をGitHub Actionsのブラウザで再利用する経路を確認する。本人がパソコンの利用を選んだため、iPhoneだけで完結する要件より、この節の手順を優先する（Issue #1460 の引き継ぎ）。
+
+- 本人のWindowsパソコンで、専用プロファイルのChromeを開き、本人がnoteへログインした。同じブラウザで `https://note.com/notes/new` から編集画面のタイトル欄・本文欄の表示を確認した（入力なし）。note.com のCookieだけを取り出し、base64にしてSecret `NOTE_STATE_JSON_BASE64` へ登録した（2026-11-15 21:13 UTC）。一時ファイルは登録後に削除した。Cookie・stateは会話、リポジトリ、ログに出していない。
+- `scripts/note-saved-state-auth.js`。`Note GitHub UI Transport` の手動実行で `mode=auth`・`browser=github-state` を選んだときだけ動く。Secretのstateを読み込んだブラウザで編集画面を1回開き、タイトル欄・本文欄が使えることを確認して終了する。ログイン操作・記事の入力・予約・公開はしない。draft／publish／recover では使えない（`saved_state_auth_mode_only`）。
+- ログへ出すのは固定の結果コードだけ。ブラウザの例外文・Cookie・ページ本文は出さない。失敗しても自動で再試行しない。
+- 未確認：noteが、GitHubのランナーからのセッション再利用を受け付けるか。セッションの有効期間。main反映後の手動実行1回で判断する。
+- この確認が通っても、公開処理はまだBrowser Use経由のままである。公開をこの経路へ切り替えるのは、確認結果を見てからの別の変更とする。
+- 検証: `node --test scripts/note-saved-state-auth.test.js`、`node scripts/note-github-ui-transport.test.js`。
