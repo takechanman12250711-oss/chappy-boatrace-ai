@@ -276,6 +276,7 @@ export async function capturePredictionViews(page,outputDir,step) {
     return {
       visibleViews:['race','prediction','result'].filter(view=>!document.getElementById(`${view}Section`).hidden),
       priorPredictionCount:area.querySelectorAll('.chappy-bright-race-intro,.chappy-final-buy-summary').length,
+      staleTicketCount:area.querySelectorAll('.v3-root,.v3-manshu-newspaper,[data-manshu-display-fallback],.v3-formation-row').length,
       loading:area.dataset.raceLoading==='true',
       statusVisible:Boolean(rect&&rect.width>0&&rect.height>0),
       statusText:status?.textContent.trim()||'',
@@ -284,6 +285,7 @@ export async function capturePredictionViews(page,outputDir,step) {
   });
   assert.deepEqual(revisit.visibleViews,['prediction']);
   assert.equal(revisit.priorPredictionCount,0,'prior prediction and ticket groups are cleared');
+  assert.equal(revisit.staleTicketCount,0,'old roots, manshu panels and fallback tickets stay cleared after Back');
   assert.equal(revisit.loading,false,'no stuck loading state after return');
   assert.equal(revisit.statusVisible,true,'official status remains available');
   assert(revisit.statusText.length>0,'official status text is not erased');
