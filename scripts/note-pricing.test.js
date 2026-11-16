@@ -13,9 +13,11 @@ test('new v6 articles are free; earlier presentation versions keep their claimed
     title: 'free articles', freeText: 'free', paidText: 'paid', price: NOTE_PRICE_YEN, presentationVersion: 'readable-v6' };
   assert.equal(NOTE_PRICE_YEN, 0);
   assert.equal(priceForPresentation('readable-v6'), 0);
+  assert.equal(priceForPresentation('readable-v8'), 0);
   for (const v of ['readable-v1', 'readable-v2', 'readable-v3', 'readable-v4', 'readable-v5']) assert.equal(priceForPresentation(v), 200);
   assert.equal(require('./build-note-iphone-handoff').NOTE_PRICE_YEN, NOTE_PRICE_YEN);
   assert.equal(validateDraftGate(payload, now).ok, true);
+  assert.equal(validateDraftGate({...payload,presentationVersion:'readable-v8',practicalTicketCount:10},now).ok,true);
   for (const price of [100, 200, 300, 500]) {
     assert.deepEqual(validateDraftGate({ ...payload, price }, now), { ok: false, reason: 'price_mismatch' });
   }

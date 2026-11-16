@@ -33,6 +33,21 @@ function aggregateFixture() {
   report.evidenceId = aggregateDigest(report);
   return report;
 }
+test('center result cards preserve up to ten published tickets and reject eleven', () => {
+  for (const ticketCount of [7,8,9,10]) {
+    const row = {...fixture(),ticketCount};
+    assert.equal(publicContent(row,{now:NOW}).ticketCount,ticketCount);
+    assert(altText(publicContent(row,{now:NOW})).includes(`${ticketCount}点`));
+  }
+  assert.throws(()=>publicContent({...fixture(),ticketCount:11},{now:NOW}),/ticket_count_invalid/);
+});
+test('a published normal center section is shown without inventing a pool classification', () => {
+  const report = aggregateFixture();
+  report.matchedSections=[{articleSeries:'normal',label:'🎯 中心の買い目'}];
+  report.evidenceId=aggregateDigest(report);
+  assert.deepEqual(publicContent(report,{now:NOW}).matchedSections,report.matchedSections);
+  assert.throws(()=>publicContent({...report,matchedSections:[{articleSeries:'escape',label:'🎯 中心の買い目'}]},{now:NOW}),/matched_sections_invalid/);
+});
 function aggregateDigest(report) {
   return digest([report.version, report.raceKey, report.sourceSha256, report.combination, report.payoutPer100Yen,
     report.publishedTicketCount, JSON.stringify(report.matchedSections)].join('|'));
@@ -182,7 +197,7 @@ test('malformed source identity, note links, timestamps and counts fail closed',
     { sourceSha256: null }, { sourceSha256: 'x'.repeat(64) }, { publicationKey: '20261006-09-11:manshu' },
     { articleSeries: 'candidate24' }, { place: '個人情報' }, { place: '津<script>' }, { place: '尼崎' },
     { raceNo: '11' }, { raceNo: 12 }, { raceKey: '20261006-25-11' },
-    { ticketCount: 0 }, { ticketCount: 8 }, { ticketCount: 24 }, { ticketCount: '5' },
+    { ticketCount: 0 }, { ticketCount: 11 }, { ticketCount: 24 }, { ticketCount: '5' },
     { url: 'https://note.com/another/n/nabcdef' }, { url: 'https://note.com/great_robin3243/n/nabc?token=secret' },
     { url: 'https://note.com/great_robin3243/n/nabc#private' }, { url: 'file:///private' },
     { publishedAt: '2026-10-06T15:30:00+09:00' }, { publishedAt: '2026-10-06T16:30:00+09:00' },

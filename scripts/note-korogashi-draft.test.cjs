@@ -120,7 +120,10 @@ test('chronology, duplicate races, changed receipt, amount limits and deadline p
 test('no arbitrary reduction of saved picks to fit the budget or seven-ticket limit', () => {
   assert.throws(()=>build(plan([fixture(1,picks,10),fixture(2)])),/insufficient_funds/);
   const eight=['1-2-3','1-2-4','1-2-5','1-2-6','1-3-2','1-3-4','1-3-5','1-3-6'];
-  assert.throws(()=>build(plan([fixture(1,eight)])),/ticket_count/);
+  const published = fixture(1,eight);
+  published.receipt.price=0;
+  published.receipt.publishedDisplayProof={presentationVersion:'readable-v8'};
+  assert.throws(()=>build(plan([published])),/korogashi_ticket_count_invalid/);
 });
 test('review label, full-risk notice and fees accompany amounts; it cannot claim publication or purchases', () => {
   const leg=fixture();delete leg.result;

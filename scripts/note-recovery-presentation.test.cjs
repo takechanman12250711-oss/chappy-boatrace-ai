@@ -76,6 +76,39 @@ async function pinned(f, version, options = {}) {
   return { ...mock, ...gate, payload };
 }
 
+test('historical v7 claims use exact frozen code and seven-point policy while new v8 keeps their public bytes', async () => {
+  const f = original();
+  try {
+    const p = await pinned(f, 'readable-v7');
+    assert.equal(p.recoveryEvidence.presentationVersion, 'readable-v7');
+    assert.equal(p.payload.presentationVersion, 'readable-v7');
+    assert.equal(p.payload.price, 0);
+    assert.deepEqual(requireRecoveryPublicationGate(p.payload, p.recoveryEvidence, f.rootDir), p.payload);
+    const frozen = require('./note-recovery-readable-v7.cjs').readableArticle(f.bundle.article, f.bundle);
+    assert.equal(p.payload.freeText, frozen.freeText);
+    assert.equal(p.payload.paidText, frozen.paidText);
+    const current = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime);
+    assert.equal(current.presentationVersion, 'readable-v8');
+    for (const field of ['freeText', 'paidText', 'body', 'price', 'practicalTicketCount']) {
+      assert.equal(current[field], p.payload[field]);
+    }
+    assert.throws(() => requirePublicationGate(p.payload, f.rootDir, f.identity.sourceTime), /handoff_mismatch/);
+    const registry = require('./note-recovery-presentation.cjs');
+    assert.equal(hash(fs.readFileSync(path.join(__dirname, 'note-recovery-readable-v7.cjs'))), registry.HISTORICAL['readable-v7'].rendererSha256);
+    assert.equal(registry.CURRENT_VERSION, 'readable-v8');
+    assert.equal(registry.PATHS.centerSha256, 'scripts/note-center-presentation.cjs');
+    assert.equal(registry.PATHS.centerCategoriesSha256, 'scripts/note-center-categories.cjs');
+    for (const file of ['scripts/note-center-presentation.cjs', 'scripts/note-center-categories.cjs', 'scripts/note-plain-presentation.cjs']) {
+      const mock = requestFixture(f.identity, { version: 'readable-v8', rootDir: f.rootDir, mutate: async (url, result) => {
+        if (!url.includes('/contents/' + file + '?')) return result;
+        const data = await result.json(), changed = Buffer.concat([Buffer.from(data.content, 'base64'), Buffer.from('\n')]);
+        return response({ ...data, sha: blobSha(changed), content: changed.toString('base64') });
+      } });
+      await assert.rejects(recoveryClaimStatus(f.identity, env, mock.request, f.rootDir), /publication_recovery_dependency_unreviewed/);
+    }
+  } finally { f.cleanup(); }
+});
+
 test('historical v1-v5 recovery pins exact old body and proof; new publication uses free v6', async () => {
   const f = original();
   try {
@@ -104,7 +137,7 @@ test('historical v1-v5 recovery pins exact old body and proof; new publication u
       assert.equal(fs.readFileSync(path.join(f.rootDir, f.sourcePath), 'utf8'), before);
       assert.throws(() => requirePublicationGate(p.payload, f.rootDir, f.identity.sourceTime), /handoff_mismatch/);
       const current = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime);
-      assert.equal(current.presentationVersion, 'readable-v7');
+      assert.equal(current.presentationVersion, 'readable-v8');
       assert.equal(current.price, 0);
       assert.equal(p.payload.price, 200);
       // The free v6 keeps the exact paid-section bytes of v5; only free wording and the paywall change.
@@ -967,7 +1000,7 @@ test('free v6 claims recover with frozen v6 code while new publication uses v7',
     const v6 = require('./note-recovery-readable-v6.cjs').readableArticle(f.bundle.article, f.bundle);
     assert.equal(p.payload.freeText, v6.freeText, 'recovered v6 body is the frozen v6 body');
     const current = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime);
-    assert.equal(current.presentationVersion, 'readable-v7');
+    assert.equal(current.presentationVersion, 'readable-v8');
     assert.equal(current.paidText, require('./note-plain-presentation.cjs').fromModelText(p.payload.paidText), 'v7 keeps the v6 tickets; only the end heading and notice change');
     assert.notEqual(current.freeText, p.payload.freeText);
   } finally { f.cleanup(); }

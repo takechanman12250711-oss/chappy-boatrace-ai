@@ -173,9 +173,10 @@ function validateDraftGate(payload, now = Date.now()) {
   // New publications are always rebuilt as the current (free) version by the
   // source gate; a historical recovery payload keeps its 200-yen claim price.
   if (Number(payload.price) !== priceForPresentation(payload.presentationVersion)) return { ok: false, reason: 'price_mismatch' };
+  const maxTickets = payload.presentationVersion === 'readable-v8' ? 10 : 7;
   if (payload.practicalTicketCount != null &&
-      (!Number.isInteger(payload.practicalTicketCount) || payload.practicalTicketCount < 1 || payload.practicalTicketCount > 7)) {
-    return { ok: false, reason: 'ticket_count_exceeds_7' };
+      (!Number.isInteger(payload.practicalTicketCount) || payload.practicalTicketCount < 1 || payload.practicalTicketCount > maxTickets)) {
+    return { ok: false, reason: `ticket_count_exceeds_${maxTickets}` };
   }
   return { ok: true };
 }
@@ -845,7 +846,7 @@ function recoveryBodyDiagnostic(actualBody, payload) {
   while (firstMismatch < Math.max(actualLines.length, expectedLines.length) &&
     actualLines[firstMismatch] === expectedLines[firstMismatch]) firstMismatch++;
   return { version: 'note-recovery-body-diagnostic-v1',
-    presentationVersion: ['readable-v1', 'readable-v2', 'readable-v3', 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7'].includes(payload.presentationVersion)
+    presentationVersion: ['readable-v1', 'readable-v2', 'readable-v3', 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7', 'readable-v8'].includes(payload.presentationVersion)
       ? payload.presentationVersion : 'unknown',
     actualLength: actual.length, expectedLength: expected.length,
     actualLines: actualLines.length, expectedLines: expectedLines.length,

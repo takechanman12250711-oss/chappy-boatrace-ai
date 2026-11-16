@@ -37,6 +37,18 @@ async function registered(f=fixture(),c=config()) {
   return announced(k.confirm(out.state,out.staged,seal(out.staged,f.now),f.now+1000),f.now+2000);
 }
 const announced=(state,now)=>k.announce(state,{url:'https://note.com/great_robin3243/n/nabcdef',contentHash:'f'.repeat(64)},now);
+test('publishing ten center tickets does not expand the seven-ticket course funding policy',()=>{
+  const f=fixture(), tickets=['1-2-3','1-2-4','1-2-5','1-2-6','1-3-2','1-3-4','1-3-5','1-3-6','1-4-2','1-4-3'];
+  f.b.baselinePracticalTickets=tickets;
+  f.b.record.prediction.practicalTickets=tickets;
+  f.b.monitor.tickets=tickets;
+  f.b.article.practicalTickets=tickets;
+  const bytes=JSON.stringify(f.b), receipt={...f.receipt,price:0,sourceSha256:k.hash(bytes),
+    publishedDisplayProof:{presentationVersion:'readable-v8'}};
+  const row=receiptRow(receipt,bytes,f.now);
+  assert.equal(row.ticketCount,10);
+  assert.throws(()=>k.makeLeg(row,receipt,bytes,{legs:[],balanceYen:null},f.now),/korogashi_ticket_count_invalid/);
+});
 test('a staged course is not public evidence; remote confirmation fixes all goal and funding terms',async()=>{
   const f=fixture(),before=JSON.stringify(f),out=await k.prepare(k.initialState(),config(),options([f]));
   assert.equal(out.staged.length,1);assert.equal(k.project(out.state.plans['test-100k']).status,'not_registered');

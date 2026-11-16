@@ -39,6 +39,86 @@ function deepFreeze(object) {
   return Object.freeze(object);
 }
 
+test('v8 center adapter keeps historical helpers and every saved ticket while accepting eight to ten', () => {
+  const center = require('./note-center-presentation.cjs');
+  const plain = require('./note-plain-presentation.cjs');
+  const tickets = ['1-2-3', '1-2-4', '1-2-5', '1-2-6', '1-3-2', '1-3-4', '1-3-5', '1-3-6',
+    '1-4-2', '1-4-3', '1-4-5'];
+  const withTickets = count => {
+    const b = normalFixture(), rows = tickets.slice(0, count);
+    b.baselinePracticalTickets = clone(rows);
+    b.record.prediction.practicalTickets = clone(rows);
+    b.article.practicalTickets = clone(rows);
+    b.record.prediction.mainSheet.tickets = clone(rows);
+    b.article.paidText = '🔥 実戦厳選\n\n' + rows.map(ticket => '・' + ticket).join('\n') + `\n\n計 ${count}点`;
+    return b;
+  };
+  for (const count of [1, 7, 8, 9, 10]) {
+    const b = deepFreeze(withTickets(count)), before = JSON.stringify(b);
+    const raw = center.paidTextFromSource(b, 'normal');
+    assert.deepEqual(center.sourceSubset(b), tickets.slice(0, count));
+    assert.deepEqual(sorted(center.parsePaidText(raw).modelTickets), sorted(tickets.slice(0, count)));
+    assert.equal(center.modelProof(raw, 'a'.repeat(64)).ticketCount, count);
+    const current = currentReadableArticle(b.article, b);
+    assert.equal(current.presentationVersion, 'readable-v8');
+    assert.equal(current.paidText, plain.fromModelText(raw));
+    if (count <= 7) {
+      assert.equal(raw, model.paidTextFromSource(b, 'normal'));
+      const historical = require('./note-recovery-readable-v7.cjs').readableArticle(b.article, b);
+      for (const key of ['freeText', 'paidText', 'fullText']) assert.equal(current[key], historical[key]);
+    } else {
+      assert.throws(() => model.sourceSubset(b), /ticket_count_invalid/);
+      assert.throws(() => currentReadableArticle(b.article, b, { presentationVersion: 'readable-v7' }), /ticket_count_invalid/);
+    }
+    assert.equal(JSON.stringify(b), before);
+    for (const badCount of ['0', '01', '11']) {
+      assert.throws(() => center.parsePaidText(raw.replace(new RegExp(`${count}点\\n\\n保存済み`), `${badCount}点\n\n保存済み`)), /korogashi_model/);
+    }
+  }
+  assert.throws(() => center.sourceSubset(withTickets(11)), /ticket_count_invalid/);
+  for (const bad of ['1-2-3', '1-1-2']) {
+    const b = withTickets(10); b.baselinePracticalTickets[9] = bad;
+    assert.throws(() => center.sourceSubset(b), /ticket_duplicate|ticket_invalid/);
+  }
+});
+
+test('v8 preserves the saved 20-9 unclassified center without promoting a reference or inventing category membership', () => {
+  // Ticket-only derivative of source cfa2c59b91b7b4e1e44435cc873cb7e41d598406b487796306489500be9433bf.
+  // Metadata and prose are synthetic; this fixture is never publication evidence.
+  const b = normalFixture(), center = require('./note-center-presentation.cjs');
+  const categories = require('./note-center-categories.cjs');
+  const practical = ['3-1-5','3-2-5','3-1-6','1-2-3','1-2-4','3-2-1','3-2-6','4-1-2','3-1-4','1-3-4'];
+  const pools = [
+    ['3-1-5','3-2-5','3-1-6','3-2-6'],
+    ['1-2-3','1-2-4','1-2-5','1-2-6','1-4-3','1-4-5','1-4-6','1-3-4'],
+    ['3-1-2','3-1-4','3-1-5','3-1-6','3-2-1','3-2-4','3-2-5','3-2-6'],
+    ['5-1-4','5-1-2','5-4-1','5-4-2','5-2-1','5-2-4','6-1-4','6-1-2','6-4-1','6-4-2','6-2-1','6-2-4','5-1-6','5-2-6','4-2-3','4-2-5']
+  ];
+  b.baselinePracticalTickets = clone(practical);
+  b.article.practicalTickets = clone(practical);
+  b.record.prediction.practicalTickets = clone(practical);
+  b.record.prediction.mainSheet = { tickets: pools[0], coverTickets: pools[1], flowTickets: pools[2] };
+  b.record.prediction.manshuSheet = { tickets: pools[3] };
+  b.article.paidText = '🔥 実戦厳選\n\n' + practical.map(ticket => '・' + ticket).join('\n') +
+    '\n\n計 10点\n\n本命とは別会計の参考予想\n・4-1-2\n・4-1-5\n・5-1-3\n・5-4-3';
+  const before = JSON.stringify(b), paid = center.paidTextFromSource(b, 'normal'), parsed = center.parsePaidText(paid);
+  assert.deepEqual(parsed.sections.map(section => section.label), [categories.CENTER_LABEL, ...categoryV2.NORMAL_LABELS, categoryV2.REFERENCE]);
+  assert.deepEqual(sorted(parsed.sections[0].tickets), sorted(practical));
+  assert.deepEqual(parsed.sections.slice(1,5).map(section => sorted(section.tickets)), pools.map(sorted));
+  assert.deepEqual(center.sourceSubset(b), practical);
+  assert.deepEqual(sorted(parsed.modelTickets), sorted(practical));
+  assert.equal(parsed.sections.at(-1).tickets.includes('4-1-2'), true, 'same saved reference stays separately visible');
+  assert.equal(categories.totals(parsed.sections).primary, new Set([...pools.flat(), ...practical]).size);
+  assert.equal(JSON.stringify(b), before);
+  assert.throws(() => categoryV2.sourceSections(b, 'normal'), /category_membership_missing/);
+  assert.throws(() => center.parsePaidText(paid.replace('10点\n\n保存済み', '9点\n\n保存済み')), /ticket_count_mismatch/);
+  for (const mutate of [text => text.replace(categories.CENTER_LABEL, '🧪 研究候補'),
+    text => text.replace('4 → 1 → 2\n3 → 1', '4 → 1 → 5\n3 → 1')]) {
+    const changed = mutate(paid);
+    if (changed !== paid) assert.throws(() => center.parsePaidText(changed));
+  }
+});
+
 test('v3 appends the saved practical subset without changing categories, overlaps or source order', () => {
   const b = deepFreeze(normalFixture()), before = JSON.stringify(b);
   const baseline = strings(b.baselinePracticalTickets), subset = model.sourceSubset(b);

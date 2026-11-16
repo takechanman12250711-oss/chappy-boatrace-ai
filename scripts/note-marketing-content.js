@@ -79,7 +79,7 @@ function receiptRow(receipt, bytes, now = Date.now()) {
   const tickets = ticketStrings(bundle.baselinePracticalTickets), saved = ticketStrings(r.prediction?.practicalTickets);
   let ticketCount = null;
   if (tickets || saved) {
-    if (!tickets || !saved || !tickets.length || tickets.length > 7 || new Set(tickets).size !== tickets.length ||
+    if (!tickets || !saved || !tickets.length || tickets.length > 10 || new Set(tickets).size !== tickets.length ||
         tickets.some(t=>typeof t !== 'string' || !/^[1-6]-[1-6]-[1-6]$/.test(t) || new Set(t.split('-')).size !== 3) ||
         JSON.stringify([...tickets].sort()) !== JSON.stringify([...saved].sort())) throw new Error('marketing_ticket_count_invalid');
     ticketCount = tickets.length;

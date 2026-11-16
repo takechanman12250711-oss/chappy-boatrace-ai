@@ -278,6 +278,53 @@ function modelInput(presentationVersion = 'readable-v3', bundle) {
   return args;
 }
 
+test('free v8 publication results preserve eight to ten saved center tickets and reject oversized or changed originals', () => {
+  const tickets = ['1-2-3', '1-2-4', '1-2-5', '1-2-6', '1-3-2', '1-3-4', '1-3-5', '1-3-6',
+    '1-4-2', '1-4-3', '1-4-5'];
+  const bundleWith = rows => {
+    const bundle = normalFixture();
+    bundle.baselinePracticalTickets = clone(rows);
+    bundle.record.prediction.practicalTickets = clone(rows);
+    bundle.article.practicalTickets = clone(rows);
+    bundle.record.prediction.mainSheet.tickets = clone(rows);
+    bundle.article.paidText = '🔥 実戦厳選\n\n' + rows.map(ticket => '・' + ticket).join('\n') +
+      `\n\n計 ${rows.length}点`;
+    return bundle;
+  };
+  for (const count of [7, 8, 9, 10]) {
+    const original = bundleWith(tickets.slice(0, count));
+    const before = JSON.stringify(original);
+    const { row, bytes, now, receipt } = modelInput('readable-v8', original);
+    row.price = 0; receipt.price = 0;
+    const result = publishedTicketSections(row, bytes, now);
+    assert.equal(result.status, 'verified');
+    assert.equal(row.publicationEvidence.publishedDisplayProof.modelSubset.ticketCount, count);
+    assert.ok(tickets.slice(0, count).every(ticket => result.unionTickets.includes(ticket)));
+    assert.equal(classifyPublishedTickets(row, bytes, tickets[count - 1], now).status, 'hit');
+    assert.equal(verifiedModelSubset(row, bytes, receipt, Date.parse(row.deadlineAt) - 60000).ticketCount, count);
+    assert.equal(JSON.stringify(original), before);
+    assert.equal(publishedTicketSections({ ...row, ticketCount: count - 1 }, bytes, now).reason, 'published_tickets_unverified');
+    const changed = clone(row); changed.publicationEvidence.publishedDisplayProof.modelSubset.ticketCount--;
+    assert.equal(publishedTicketSections(changed, bytes, now).reason, 'published_display_proof_mismatch');
+  }
+  const unclassified = bundleWith(tickets.slice(0, 10));
+  unclassified.record.prediction.mainSheet.tickets.pop();
+  const args = modelInput('readable-v8', unclassified);
+  const addedCenter = publishedTicketSections(args.row, args.bytes, args.now);
+  assert.equal(addedCenter.status, 'verified');
+  assert.equal(addedCenter.sections[0].label, '🎯 中心の買い目');
+  assert.deepEqual(classifyPublishedTickets(args.row, args.bytes, tickets[9], args.now).matchedSections, ['🎯 中心の買い目']);
+  assert.equal(addedCenter.sections.slice(1).some(section => section.tickets.includes(tickets[9])), false, 'no inferred category membership');
+  assert.equal(addedCenter.publishedTicketCount, new Set(addedCenter.sections.flatMap(section => section.tickets)).size);
+  const tamperedCenter = clone(args.row);
+  tamperedCenter.publicationEvidence.publishedDisplayProof.sections[0].ticketsSha256 = 'a'.repeat(64);
+  assert.equal(publishedTicketSections(tamperedCenter, args.bytes, args.now).reason, 'published_display_proof_mismatch');
+  for (const rows of [tickets, [...tickets.slice(0, 9), tickets[0]], [...tickets.slice(0, 9), '1-1-2']]) {
+    const { row, bytes, now } = input(bundleWith(rows));
+    assert.equal(publishedTicketSections(row, bytes, now).status, 'review');
+  }
+});
+
 test('v3 appends a source-bound model proof without changing v2 categories, union or matched labels', () => {
   const args = modelInput(), v2 = categoryInput(JSON.parse(args.bytes));
   const result = publishedTicketSections(args.row, args.bytes, args.now);

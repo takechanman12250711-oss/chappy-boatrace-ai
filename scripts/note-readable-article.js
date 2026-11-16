@@ -128,11 +128,10 @@ function readableArticleV1(article, bundle) {
   const fullText = [freeText, article.paywallMarker, paidText, NOTICE, article.tags.join(' ')].filter(Boolean).join('\n\n');
   return { ...article, presentationVersion: 'readable-v1', freeText, paidText, fullText };
 }
-function readableArticleV2(article, bundle, { presentationVersion = 'readable-v2' } = {}) {
+function readableArticleV2(article, bundle, { presentationVersion = 'readable-v2', category = require('./note-category-article') } = {}) {
   // Explicit legacy use exists only for historical regression/reconstruction.
   if (presentationVersion === 'readable-v1') return readableArticleV1(article, bundle);
   if (presentationVersion !== 'readable-v2') throw new Error('published_presentation_version_unsupported');
-  const category = require('./note-category-article');
   const series = require('./note-article-series').seriesOfBundle(bundle);
   const sections = category.sourceSections(bundle, series, article);
   const paidText = category.paidTextFromSections(sections);
@@ -178,16 +177,15 @@ function readableArticleV2(article, bundle, { presentationVersion = 'readable-v2
   const fullText = [freeText, article.paywallMarker, paidText, NOTICE, article.tags.join(' ')].join('\n\n');
   return { ...article, presentationVersion, freeText, paidText, fullText };
 }
-function readableArticleV3(article, bundle, { presentationVersion = 'readable-v3' } = {}) {
+function readableArticleV3(article, bundle, { presentationVersion = 'readable-v3', model = require('./note-korogashi-presentation.cjs'), category = require('./note-category-article') } = {}) {
   // Historical v1/v2 reconstruction keeps its exact existing bytes and grammar.
   if (presentationVersion === 'readable-v1' || presentationVersion === 'readable-v2') {
     return readableArticleV2(article, bundle, { presentationVersion });
   }
   if (presentationVersion !== 'readable-v3') throw new Error('published_presentation_version_unsupported');
-  const model = require('./note-korogashi-presentation.cjs');
   const series = require('./note-article-series').seriesOfBundle(bundle);
   const paidText = model.paidTextFromSource(bundle, series, article);
-  const base = readableArticleV2(article, bundle);
+  const base = readableArticleV2(article, bundle, { category });
   const parsed = model.parsePaidText(paidText);
   if (parsed.basePaidText !== base.paidText) throw new Error('readable_rendered_tickets_mismatch');
   const freeText = base.freeText + '\n\n🔄 コロがし検証対象は、有料部分の末尾に掲載します。\n保存済みの実戦厳選を示す欄で、上の公開予想と重複します。追加購入を勧めるものではありません。';
@@ -197,16 +195,16 @@ function readableArticleV3(article, bundle, { presentationVersion = 'readable-v3
   const fullText = [freeText, article.paywallMarker, paidText, NOTICE, article.tags.join(' ')].join('\n\n');
   return { ...base, presentationVersion, freeText, paidText, fullText };
 }
-function readableArticleV4(article, bundle) {
-  return require('./note-free-explanation.cjs').withVerifiedExplanation(readableArticleV3(article, bundle), article, bundle);
+function readableArticleV4(article, bundle, options) {
+  return require('./note-free-explanation.cjs').withVerifiedExplanation(readableArticleV3(article, bundle, options), article, bundle);
 }
 // 2026-10-25 owner request: readers who have not bought the article also see
 // the notice. v5 adds one paragraph at the end of the free part only; the paid
 // bytes, tickets, price and paywall stay exactly as in v4. v4 is frozen in
 // note-recovery-readable-v4.cjs for proof-gated recovery of earlier claims.
 const FREE_NOTICE = '※予想は参考情報です。舟券の購入は20歳以上の方が、ご自身の判断と責任でお願いします。';
-function readableArticleV5(article, bundle) {
-  const base = readableArticleV4(article, bundle);
+function readableArticleV5(article, bundle, options) {
+  const base = readableArticleV4(article, bundle, options);
   if (base.presentationVersion !== 'readable-v4' || !base.fullText.startsWith(base.freeText)) throw Error('readable_free_prefix_invalid');
   const freeText = `${base.freeText}\n\n${FREE_NOTICE}`;
   if (mentions(freeText).length) throw new Error('readable_free_ticket_leak');
@@ -223,8 +221,8 @@ const FREE_WORDING = Object.freeze([
   ['🎟️ 有料部分の内容', '🎟️ この記事の買い目'],
   ['🔄 コロがし検証対象は、有料部分の末尾に掲載します。', '🔄 コロがし検証対象は、この記事の末尾に掲載します。']
 ]);
-function readableArticleV6(article, bundle) {
-  const base = readableArticleV5(article, bundle);
+function readableArticleV6(article, bundle, options) {
+  const base = readableArticleV5(article, bundle, options);
   const marker = base.paywallMarker;
   const rest = base.fullText.slice(base.freeText.length);
   if (!marker || !base.fullText.startsWith(base.freeText) || !rest.startsWith(`\n\n${marker}\n\n`)) throw Error('readable_free_prefix_invalid');
@@ -246,8 +244,8 @@ const PLAIN_WORDING = Object.freeze([
   ['🔄 コロがし検証対象は、この記事の末尾に掲載します。\n保存済みの実戦厳選を示す欄で、上の公開予想と重複します。追加購入を勧めるものではありません。',
     '⭐ AIがいちばん自信のある「中心の買い目」は、記事の最後に載せています。上の買い目と同じものです。']
 ]);
-function readableArticleV7(article, bundle) {
-  const base = readableArticleV6(article, bundle);
+function readableArticleV7(article, bundle, options) {
+  const base = readableArticleV6(article, bundle, options);
   if (!base.fullText.startsWith(base.freeText)) throw Error('readable_free_prefix_invalid');
   let freeText = base.freeText;
   for (const [before, after] of PLAIN_WORDING) {
@@ -267,11 +265,17 @@ function readableArticleV7(article, bundle) {
   if (/コロがし|実戦厳選|延べ/.test(fullText)) throw Error('readable_plain_wording_left');
   return { ...base, presentationVersion: 'readable-v7', freeText, paidText, fullText };
 }
-function readableArticle(article, bundle, { presentationVersion = 'readable-v7' } = {}) {
+// v8 keeps v7 wording and all saved tickets; only the center limit grows to 10.
+function readableArticleV8(article, bundle) {
+  const base = readableArticleV7(article, bundle, { model: require('./note-center-presentation.cjs'), category: require('./note-center-categories.cjs') });
+  return { ...base, presentationVersion: 'readable-v8' };
+}
+function readableArticle(article, bundle, { presentationVersion = 'readable-v8' } = {}) {
+  if (presentationVersion === 'readable-v8') return readableArticleV8(article, bundle);
+  if (presentationVersion === 'readable-v7') return require('./note-recovery-readable-v7.cjs').readableArticle(article, bundle);
   if (presentationVersion === 'readable-v4') return readableArticleV4(article, bundle);
   if (presentationVersion === 'readable-v5') return readableArticleV5(article, bundle);
   if (presentationVersion === 'readable-v6') return readableArticleV6(article, bundle);
-  if (presentationVersion !== 'readable-v7') return readableArticleV3(article, bundle, { presentationVersion });
-  return readableArticleV7(article, bundle);
+  return readableArticleV3(article, bundle, { presentationVersion });
 }
 module.exports = { readableArticle, ticketsIn, FREE_NOTICE, FREE_WORDING, PLAIN_WORDING };

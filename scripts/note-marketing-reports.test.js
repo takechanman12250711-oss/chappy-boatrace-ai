@@ -50,6 +50,30 @@ test('a result found only in candidate24 or another prediction is a miss', () =>
   const result = {...f.result, trifecta:{combination:'3-1-2',payout:3000},finishers:[{rank:1,boat:3},{rank:2,boat:1},{rank:3,boat:2}]};
   assert.equal(settlePublished(row,bytes,result,now).status,'miss');
 });
+test('eight to ten saved center tickets survive listing, social context and official settlement without truncation', () => {
+  const picks = ['1-2-3','1-2-4','1-2-5','1-2-6','1-3-2','1-3-4','1-3-5','1-3-6','1-4-2','1-4-3','1-4-5'];
+  for (const count of [7,8,9,10,11]) {
+    const f = fixture(), tickets = picks.slice(0,count);
+    f.bundle.baselinePracticalTickets = tickets;
+    f.bundle.record.prediction.practicalTickets = tickets.map(ticket => ({ticket}));
+    f.bundle.record.prediction.raceFlow = {summary:'内側の先行を中心に考えます。'};
+    const bytes = JSON.stringify(f.bundle);
+    const receipt = {...f.receipt, price:0, sourceSha256:hash(bytes), publishedDisplayProof:{presentationVersion:'readable-v8'}};
+    if (count > 10) {
+      assert.throws(() => receiptRow(receipt,bytes,now), /marketing_ticket_count_invalid/);
+      assert.equal(settlePublished({...f.row,sourceSha256:hash(bytes),ticketCount:count},bytes,f.result,now).status,'review');
+      continue;
+    }
+    const row = receiptRow(receipt,bytes,now), last = tickets.at(-1);
+    const result = {...f.result,trifecta:{combination:last,payout:1230},
+      finishers:last.split('-').map((boat,i)=>({rank:i+1,boat:Number(boat)}))};
+    assert.equal(row.ticketCount,count);
+    assert(indexBody([row],config,Date.parse(receipt.verifiedAt)+1000).includes(`中心${count}点｜無料公開`));
+    assert.equal(require('./note-marketing-social').sourceContext(row,bytes).preview,'内側の先行を中心に考えます。');
+    assert.equal(settlePublished(row,bytes,result,now).status,'hit','the last saved ticket must still count');
+    assert.equal(JSON.stringify(f.bundle),bytes,'source bytes must not change');
+  }
+});
 test('unavailable, future, foreign, void, refund and ambiguous results never announce a hit', () => {
   const f = fixture();
   assert.equal(settlePublished(f.row,f.bytes,null,now).status,'pending');

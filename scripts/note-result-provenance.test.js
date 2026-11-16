@@ -37,7 +37,7 @@ function input({ bundle = normalBundle(), combination = '1-4-3', presentationVer
     version: 'note-publication-evidence-v1', receiptCommitSha: 'a'.repeat(40), publisherCommitSha: 'b'.repeat(40),
     sourceSha256: row.sourceSha256, ...LEGACY_READABLE
   };
-  if (['readable-v2', 'readable-v3'].includes(presentationVersion)) {
+  if (['readable-v2', 'readable-v3', 'readable-v8'].includes(presentationVersion)) {
     const { readableArticle } = require('./note-readable-article');
     const article = readableArticle(bundle.article, bundle, { presentationVersion });
     row.publicationEvidence.presentationVersion = presentationVersion;
@@ -57,6 +57,17 @@ function input({ bundle = normalBundle(), combination = '1-4-3', presentationVer
 }
 
 const derive = f => winningProvenance(f.row, f.bytes, f.settlement, f.section, f.now);
+test('the new free presentation keeps source-linked winning provenance', () => {
+  const f = input({presentationVersion:'readable-v8'});
+  assert.equal(f.section.presentationVersion,'readable-v8');
+  assert(derive(f));
+});
+test('a center-only published ticket does not acquire a guessed four-pool origin', () => {
+  const f = input({presentationVersion:'readable-v8',combination:'1-2-4'});
+  assert.equal(f.settlement.status,'hit');
+  assert(f.settlement.matchedSections.includes('🎯 中心の買い目'));
+  assert.equal(derive(f),null);
+});
 const binding = f => ({
   publicationKey: f.row.publicationKey, raceKey: f.row.raceKey, articleSeries: f.row.articleSeries,
   sourceSha256: f.row.sourceSha256, status: f.settlement.status, combination: f.settlement.combination,

@@ -131,12 +131,12 @@ test('v6 is fully free: no paywall, no paid wording, same tickets as v5; frozen 
   }
 });
 
-test('v7 (default) rewords only two free lines of v6; frozen v6 reproduces v6 bytes', () => {
+test('explicit v7 rewords only two free lines of v6; frozen v6 reproduces v6 bytes', () => {
   const { PLAIN_WORDING } = require('./note-readable-article');
   const frozenV6 = require('./note-recovery-readable-v6.cjs');
   for (const make of [fixture, ...['escape', 'manshu'].map(kind => () => { const b = independentFixture(); b.monitor.kind = kind; return b; })]) {
     const b = make(), before = JSON.stringify(b);
-    const v6 = readableArticle(b.article, b, { presentationVersion: 'readable-v6' }), v7 = readableArticle(b.article, b);
+    const v6 = readableArticle(b.article, b, { presentationVersion: 'readable-v6' }), v7 = readableArticle(b.article, b, { presentationVersion: 'readable-v7' });
     assert.deepEqual(v6, frozenV6.readableArticle(b.article, b));
     assert.equal(v7.presentationVersion, 'readable-v7');
     const plain = require('./note-plain-presentation.cjs');

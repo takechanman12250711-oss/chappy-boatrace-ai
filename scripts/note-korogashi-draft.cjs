@@ -51,6 +51,8 @@ function readLeg(input, bytes, now) {
   requireValue(time(bundle.record.selectedAt) <= time(row.publishedAt), 'selection_after_publication');
   require('./note-exhibition').requireExhibition(bundle.record);
   const tickets = bundle.baselinePracticalTickets.map(t => typeof t === 'string' ? t : t.ticket);
+  // Publishing up to ten saved center tickets does not expand course funding.
+  requireValue(tickets.length >= 1 && tickets.length <= 7, 'ticket_count_invalid');
   const settlement = settlePublished(row, bytes, input.result || null, now);
   return { row, tickets, settlement, planned, resultCheckedAt: input.result?.checkedAt || null,
     sourcePath: input.sourcePath, plannedAt: input.plannedAt,
