@@ -15,7 +15,8 @@ function bundle(){
   b.record.prediction.mainSheet={honmei:{boatNo:1},tickets:['1-2-3','1-2-4'],
     coverTickets:['2-1-3'],flowTickets:['1-2-3','1-2-4','1-2-5']};
   b.record.prediction.manshuSheet={tickets:['5-1-2']};
-  b.record.prediction.verificationEvidence={mainScenario:{type:'escape',label:'1号艇逃げ',headBoatNo:1,attackerBoatNo:1}};
+  b.record.prediction.verificationEvidence={mainScenario:{type:'escape',label:'1号艇逃げ',headBoatNo:1,attackerBoatNo:1,attackerCourse:1}};
+  b.record.prediction.preRaceConditions={boats:[{boatNo:1,course:1,courseOfficial:true}]};
   b.article.paidText='🔥 実戦厳選\n\n・1-2-34\n\n計 2点\n\n本命とは別会計の参考予想\n1 → 2 → 3\n4 → 1 → 2';
   return b;
 }
@@ -45,6 +46,7 @@ test('preview shows one main selection and no flow/center appendix or duplicate 
   assert.deepEqual(r.centralTickets,['1-2-3','1-2-4']);
   assert.deepEqual(r.groups.map(g=>[g.label,g.tickets.length]),[['🎯 本命',2],['追加候補',2],['穴候補（配当未確認）',1],['参考予想（別集計）',1]]);
   assert.equal(r.primaryCount,5);assert.equal(r.referenceOriginalCount,2);assert.equal(r.referenceOverlapCount,1);
+  assert.match(r.text,/元の台帳で2点.*上記と重複1点、追加表示1点/);
   const shown=r.groups.flatMap(g=>g.tickets);assert.equal(new Set(shown).size,shown.length);
   assert.doesNotMatch(r.text,/🌊 流し|⭐ 中心の買い目|いちばん自信/);
   assert.equal(JSON.stringify(b),before);assert.equal(r.publishable,false);assert.equal(r.previewOnly,true);

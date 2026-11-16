@@ -51,6 +51,10 @@
     if(!head||!labels[s?.type]||s.label!==labels[s.type])return unknown;
     const boats=Array.isArray(prediction?.preRaceConditions?.boats)?prediction.preRaceConditions.boats:[];
     const matching=boats.filter(b=>Number(b.boatNo)===head),boat=matching.length===1?matching[0]:null;
+    const expectedCourse={escape:1,sashi:2,threeAttack:3,fourAttack:4}[s.type];
+    if(!boat||boat.courseOfficial!==true||Number(boat.course)!==expectedCourse||
+        Number(s.attackerCourse)!==expectedCourse||Number(s.attackerBoatNo)!==head||
+        boats.filter(b=>b.courseOfficial===true&&Number(b.course)===expectedCourse).length!==1)return unknown;
     const numeric=(v,min,max)=>typeof v==="number"&&Number.isFinite(v)&&v>=min&&v<=max;
     const facts=[];
     if(numeric(boat?.avgST,0,1))facts.push("平均STは"+boat.avgST.toFixed(2));
@@ -62,5 +66,11 @@
       ? "\n隣の"+other.boatNo+"号艇の展示STは"+other.exhibitionST.toFixed(2)+"。展示STと平均STは分けて確認します。":"";
     return {verified:true,text:"中心となる展開は"+s.label+"。"+(facts.length?"\n"+head+"号艇の"+facts.join("、")+"。":"")+comparison};
   }
-  return {VERSION,MAIN,ADDITIONAL,HOLE,REFERENCE,valid,tickets,groupTickets,verifiedHead,explanation};
+  function referenceSummary(model){
+    const original=model.referenceOriginalCount,overlap=model.referenceOverlapCount;
+    if(!original)return "";
+    if(!overlap)return "参考予想は"+original+"点で別集計です。上記と同じ券は再掲していません。";
+    return "参考予想は元の台帳で"+original+"点（上記と重複"+overlap+"点、追加表示"+(original-overlap)+"点）。別集計です。";
+  }
+  return {VERSION,MAIN,ADDITIONAL,HOLE,REFERENCE,valid,tickets,groupTickets,verifiedHead,explanation,referenceSummary};
 });

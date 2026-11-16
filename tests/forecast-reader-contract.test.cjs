@@ -4,7 +4,7 @@ const contract=require('../js/forecast-reader-contract');
 const source=fs.readFileSync(require.resolve('../js/forecast-reader-contract'),'utf8');
 const context={window:{}};vm.runInNewContext(source,context);const browser=context.window.ChappyForecastReaderContract;
 const input=()=>({centralTickets:['1-2-3','1-2-4'],additionalTickets:['1-2-3','1-2-5','2-1-3'],holeTickets:['2-1-3','5-1-2'],referenceTickets:['1-2-3','4-1-2']});
-const prediction=()=>({mainSheet:{honmei:{boatNo:1},tickets:['1-2-3','1-2-4']},verificationEvidence:{mainScenario:{headBoatNo:1,attackerBoatNo:1,type:'escape',label:'1号艇逃げ'}},preRaceConditions:{boats:[{boatNo:1,course:1,courseOfficial:true,avgST:.14,exhibitionST:.14,exhibitionTime:6.9},{boatNo:2,course:2,courseOfficial:true,exhibitionST:.06}]}});
+const prediction=()=>({mainSheet:{honmei:{boatNo:1},tickets:['1-2-3','1-2-4']},verificationEvidence:{mainScenario:{headBoatNo:1,attackerBoatNo:1,attackerCourse:1,type:'escape',label:'1号艇逃げ'}},preRaceConditions:{boats:[{boatNo:1,course:1,courseOfficial:true,avgST:.14,exhibitionST:.14,exhibitionTime:6.9},{boatNo:2,course:2,courseOfficial:true,exhibitionST:.06}]}});
 test('browser and note use identical grouping and explanation bytes',()=>{
   assert.equal(JSON.stringify(browser.groupTickets(input())),JSON.stringify(contract.groupTickets(input())));
   assert.equal(browser.explanation(prediction()).text,contract.explanation(prediction()).text);
@@ -33,5 +33,26 @@ test('duplicate identities suppress ambiguous facts and result/odds are never re
   const p=prediction();p.preRaceConditions.boats.push({...p.preRaceConditions.boats[0],avgST:.01});
   Object.defineProperty(p,'result',{get(){throw Error('result leakage');}});
   Object.defineProperty(p,'odds',{get(){throw Error('odds leakage');}});
-  assert.equal(contract.explanation(p).text,'中心となる展開は1号艇逃げ。');
+  assert.equal(contract.explanation(p).verified,false);
+});
+
+test('reference footer distinguishes original ledger count from displayed additions',()=>{
+  const model=contract.groupTickets(input());
+  assert.equal(contract.referenceSummary(model),'参考予想は元の台帳で2点（上記と重複1点、追加表示1点）。別集計です。');
+  const allOverlap=contract.groupTickets({...input(),referenceTickets:['1-2-3']});
+  assert.equal(allOverlap.groups.some(g=>g.label===contract.REFERENCE),false);
+  assert.match(contract.referenceSummary(allOverlap),/追加表示0点/);
+});
+test('scenario course and actual boat mapping agree, including a changed entry order',()=>{
+  const p=prediction();p.mainSheet={honmei:{boatNo:3},tickets:['3-1-2']};
+  p.verificationEvidence.mainScenario={headBoatNo:3,attackerBoatNo:3,attackerCourse:2,type:'sashi',label:'2コース差し'};
+  p.preRaceConditions.boats=[{boatNo:3,course:2,courseOfficial:true},{boatNo:2,course:3,courseOfficial:true}];
+  assert.equal(contract.explanation(p).verified,true);
+  p.preRaceConditions.boats[0].course=3;
+  assert.equal(contract.explanation(p).verified,false);
+});
+test('missing, contradictory or duplicate official courses prevent verified scenario prose',()=>{
+  for(const change of [p=>delete p.verificationEvidence.mainScenario.attackerCourse,p=>p.verificationEvidence.mainScenario.attackerCourse=4,p=>p.preRaceConditions.boats[0].courseOfficial=false,p=>p.preRaceConditions.boats.push({boatNo:6,course:1,courseOfficial:true})]){
+    const p=prediction();change(p);assert.equal(contract.explanation(p).verified,false);
+  }
 });

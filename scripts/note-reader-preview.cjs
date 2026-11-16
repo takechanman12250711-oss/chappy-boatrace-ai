@@ -40,13 +40,13 @@ function build(bundle,{sourceSha256}={}) {
   const text=[heading,'展開予想\n'+e.text,section(groups[0]),
     ...groups.slice(1).map(section),
     `本命${baseline.length}点／追加候補を含む公開予想${primaryCount}点。すべて購入する前提ではありません。`,
-    ...(references.length?[`参考予想は${references.length}点で別集計です。上記と同じ券は再掲していません。`]:[]),
+    ...(model.referenceOriginalCount?[reader.referenceSummary(model)]:[]),
     FREE_NOTICE].join('\n\n');
   const displayed=category.ticketsIn(text);
   if(displayed.length!==model.allCount||new Set(displayed).size!==displayed.length||displayed.some(t=>!model.allTickets.includes(t)))throw Error('reader_preview_display_invalid');
   return {version:'note-reader-preview-v1',previewOnly:true,publishable:false,sourceSha256,
     explanationVerified:e.verified,groups,primaryCount,referenceOriginalCount:references.length,
-    referenceOverlapCount:references.filter(t=>primary.some(g=>g.tickets.includes(t))).length,
+    referenceOverlapCount:model.referenceOverlapCount,
     sourceMembership:source,centralTickets:[...baseline],text};
 }
 if(require.main===module){
