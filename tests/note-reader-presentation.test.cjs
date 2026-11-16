@@ -196,3 +196,66 @@ test('an unknown saved purchase status stops both article and app without recalc
  try{assert.equal(reader.fromPrediction(p).status,'unavailable');assert.throws(()=>moduleReader.sourceModel(b),/reader_app_selection_unavailable/);assert.equal(JSON.stringify(b),before);}
  finally{selector.purchaseDecision=prior;}
 });
+
+test('saved Toda 134 uses the same provenance and full groups in note v10 while v9 stays unchanged',()=>{
+ const b=structuredClone(require('../scripts/fixtures/reader-saved-rescues-derived.json').savedBundle),before=JSON.stringify(b),p=b.record.prediction;
+ const app=reader.fromPrediction(p,{tickets:p.practicalTickets,purchaseDecision:{status:'unchanged'}},
+  {record:b.record,practicalSelectionEvidence:b.record.practicalSelectionEvidence,copies:[b.baselinePracticalTickets,b.article.practicalTickets]});
+ const model=moduleReader.sourceModel(b),paid=moduleReader.paidTextFromSource(b),parsed=moduleReader.parsePaidText(paid);
+ assert.equal(app.status,'selected');assert.deepEqual(model.groups,app.groups);
+ assert.deepEqual(model.centralTickets,b.baselinePracticalTickets.map(r=>r.ticket));
+ assert.ok(model.centralTickets.includes('1-3-4'));assert.ok(model.allTickets.includes('3-1-2'),'replaced saved pool ticket stays an additional candidate');
+ assert.equal(parsed.modelTickets.length,10);assert.ok(parsed.modelTickets.includes('1-3-4'));
+ assert.deepEqual(require('../scripts/note-scenario-presentation.cjs').sourceSubset(b),model.centralTickets,'the unchanged v9 rules still read this in-pool historical 134');
+ assert.equal(JSON.stringify(b),before);
+});
+test('v10 rescue requires every saved copy, record identity and original practical body to agree',()=>{
+ const original=require('../scripts/fixtures/reader-saved-rescues-derived.json').savedBundle;
+ for(const change of [
+  b=>b.baselinePracticalTickets.reverse(),
+  b=>b.article.practicalTickets.reverse(),
+  b=>b.record.prediction.practicalTickets.at(-1).threeCourseEscapeRescueFixed5.version='unknown',
+  b=>b.baselinePracticalTickets.at(-1).comment='changed',
+  b=>delete b.article.practicalTickets.at(-1).threeCourseEscapeRescueFixed5,
+  b=>b.record.practicalSelectionEvidence.raceKey='20261101-02-3',
+  b=>delete b.record.practicalSelectionEvidence,
+  b=>b.article.paidText=b.article.paidText.replace('計 10点','計 9点')
+ ]){
+  const b=structuredClone(original);
+  // Explicit off-pool contract variant, not a replacement for the source original.
+  for(const rows of [b.record.prediction.mainSheet.tickets,b.record.prediction.mainSheet.coverTickets,b.record.prediction.mainSheet.flowTickets,b.record.prediction.manshuSheet.tickets]){
+   const index=rows.indexOf('1-3-4');if(index>=0)rows.splice(index,1);
+  }
+  change(b);const before=JSON.stringify(b);
+  assert.throws(()=>moduleReader.sourceModel(b));assert.equal(JSON.stringify(b),before);
+ }
+});
+
+test('in-pool historical 134 remains readable without later rescue evidence, while off-pool needs it',()=>{
+ const b=structuredClone(require('../scripts/fixtures/reader-saved-rescues-derived.json').savedBundle);
+ const base=moduleReader.sourceModel(b);delete b.record.practicalSelectionEvidence;
+ assert.deepEqual(moduleReader.sourceModel(b),base);
+ for(const rows of [b.record.prediction.mainSheet.tickets,b.record.prediction.mainSheet.coverTickets,b.record.prediction.mainSheet.flowTickets,b.record.prediction.manshuSheet.tickets]){
+  const index=rows.indexOf('1-3-4');if(index>=0)rows.splice(index,1);
+ }
+ assert.throws(()=>moduleReader.sourceModel(b),/reader_app_selection_unavailable/);
+});
+
+test('independent off-pool family must agree across baseline, article and prediction copies',()=>{
+ function independent(){
+  const b=copy(),row={ticket:'6-5-4',category:'独立展開',candidateKind:'independent-scenario',scenarioClassificationReason:'別頭の独立展開'};
+  for(const rows of [b.baselinePracticalTickets,b.article.practicalTickets,b.record.prediction.practicalTickets])rows.push({...row});
+  const reference=b.article.paidText.split('本命とは別会計')[1];
+  b.article.paidText='🔥 実戦厳選\n\n'+b.baselinePracticalTickets.map(r=>r.ticket).join('\n')+'\n\n計 8点\n\n本命とは別会計'+reference;
+  return b;
+ }
+ const valid=independent(),before=JSON.stringify(valid);
+ assert.equal(moduleReader.sourceModel(valid).centralTickets.length,8);assert.equal(JSON.stringify(valid),before);
+ for(const key of ['baseline','article','prediction']){
+  const b=independent(),rows=key==='baseline'?b.baselinePracticalTickets:key==='article'?b.article.practicalTickets:b.record.prediction.practicalTickets;
+  rows.at(-1).scenarioClassificationReason='残し艇を使う押さえ展開';
+  const changed=JSON.stringify(b);
+  assert.throws(()=>moduleReader.sourceModel(b),/reader_center_copy_invalid|reader_app_selection_unavailable/);
+  assert.equal(JSON.stringify(b),changed);
+ }
+});

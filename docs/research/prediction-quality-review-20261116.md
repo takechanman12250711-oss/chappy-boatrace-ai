@@ -236,3 +236,41 @@ e32f9a44のCIでは4jobがテスト前のcheckoutで10/12分の上限に達し�
 
 
 実Gitのsparse check-rulesでHEADの18443 tracked pathsを検査し、formationは全non-data1926＋指定2file、他3workflowは全non-data1926だけになることを確認。省略dataへのFSアクセスを禁止した状態で、4workflowの既存Node構文/検査47コマンドが合格した。追加checkout設定以外のtrigger/run/timeout/failure artifactは元と同じ。コハクも4検査と差分を独立確認し重大指摘なし。専用YAML parserとGitHub上のfresh checkout時間は未確認で、新CIを省略しない。
+
+
+## 補完順位の比較だけでは解消しない制約
+
+現行candidate-only補完は、実キューをpriority降順→券文字列の同点順に並べた後、頭の実コースが2または4〜6なら購入対象外へ除外する（`js/practical-selection.js` のcandidateOnlyPromotionPool処理、理由code SECOND_COURSE_HEAD_CANDIDATE_PROMOTION_PRUNED / OUTER_HEAD_CANDIDATE_PROMOTION_PRUNED）。この補完経路で残れる頭は実1/3コースであり、通常の本線・独立展開まで2/4〜6頭をすべて排除する意味ではない。実コース欠測時の艇番fallbackも現行処理として区別する。
+
+従って、補完の位置別priorityだけを並べ替えても、通常cover123/124・固定救済134・このコース除外は残る。全記事の1頭偏重を解消したとは言えず、現行保護を勝手に消す変更もしない。将来の改善案は、通常押さえ・補完・固定救済の効果を分け、頭の根拠を評価する比較条件を結果を見る前に決める必要がある。
+
+ミナトの契約点検では、最終selected-only保存から非採用券との交換可能性や当時の同点順を確定できなかった。将来の補完直前に、選定原順/used/残枠、実キュー順/sourceCategory/priority/実コース/単一validation参照、採用/除外/満枠の処置、最終券へ至る後段変換を観測する最小snapshotが必要になる。既存役割枝/coverageを参照し、候補を再生成・再検証しない。仕様・期間・同点/未知時処理・比較コードSHAを先に固定し、未知はレース全体でA維持、比較不能も全対象へ数える。順位規則は未決定でA/Bは未開始。selector内の観測保存でも方式指紋が変わるため、旧b36群へ混ぜず、新指紋の将来A/Bとして遠隔封印と結果の事後結合を分ける。旧100枠は増補しない。これは設計条件の確定であり、snapshot実装・順位変更・採用ではない。
+
+
+## 後発の同一取得原因をまとめて解消
+
+e32f9a44ではさらにpair31/pair32/third-place14の3jobも検査前のfetch・展開中に10分で中断した。別の5つのsource/browser jobもcheckoutに10分以上滞留していたため、実際の読取依存を調べて取得範囲を合わせる。UI audit/theory adoptionは保存data不要。theory weightは20260807〜10の4予想JSONと、module初期化で読むracer-skill-patterns.jsonを保持する。WebKit2本は外部の歴史レース入力だけでなく、app起動時の当日/過去7日summariesと条件付き当日resultsも必要なため、summariesとJST当日/翌日の結果を保持する。翌日は日付跨ぎ用で、実在しない結果は元と同じ404のまま扱う。
+
+全履歴を実際に読むcandidate24-report/improvement-proposalの取得対象は狭めない。テストに必要なdataを合成して成功へ置き換えず、workflowの判定や時間上限も維持する。新headでの実取得時間・WebKit全体は別確認とする。
+
+
+固定remote0c2の実原本4日JSON・skill・既存parserを、HEADのGit blob一致で照合してローカルへ復元し、残っていたtheory integrationとcandidate90 regressionも合格した。後者341Rは既存の固定回帰fixtureであり、今回の新方式・未使用期間の改善実証とはしない。原本を生成し直したり、異なる既存内容を上書きしたりしていない。
+
+旧e32のreview WebKitは実API→選定→描画まで進んだが、旧visual helperの区分数4固定が0区分へ一致せず失敗した。CI画像は「買い目を確認中・購入推奨0点・保存買い目の整合性確認中」で、購入見送りと断定しない。新検査は描画イベントの完全な入力から共通modelを凍結し、status/reason/error・全区分/券集合/本命数・0点状態を照合する。modelの整合エラーが出れば、その原因は表示の旧前提と別に追跡する。
+
+
+実API＋実appのEdge再現（../artifacts/review-real-edge-1794848572426、engine置換だけのmetadata付き）では表示検査が完了したが、modelはunavailable / reader_contract_center_membership_missingだった。原因は保存厳選9券の末尾1-2-4が、既存four-kado救済で2-1-5と1対1置換された正規券なのに、新共通表示がpool外の独立展開以外を拒否するため。0点画面の検査成功を、有効な買い目が出た成功としない。元の救済仕様・選定券は変更せず、その既存変換を厳密に照合して表示できる接続を修正対象にする。
+
+対照として戸田2Rの既知原本も、固定SHA0cff0b...一致で ../artifacts/toda2-immutable-source-0cff0b.json へ別保存して確認した。record側の候補検証証拠はinvalid-or-unavailableだが、既存diagnostic wrapperに置換前snapshot・単一変換metadata・置換後の原順がすべて保存されている。これを最終券の全3着資格証拠へ昇格させず、既存の明示1対1変換を表示するprovenanceだけに使う。原本側へ新しいsidecarや欠けたmetaを後付けしない。
+
+
+0c2cb90aではlive race selectionのfetch時間切れとreadonly assignmentの取得＋検査時間切れも実ログで確認した。前者は全non-dataのみ、後者はload-performanceが全予想archiveを照合するため全data/predictions/を保持し、その他dataを除外する。ref/fetch-depth0/既存hotfix条件/時間上限/判定は維持。省略data禁止付き既存23コマンド完了後、Git一覧の出力バッファだけを拡張して選択照合を完了した（実行済み検査は繰り返していない）。tracked18443のうちlive1926・readonly2330＝non-data1926＋予想data404。load-performance全体は新CIで確認する。
+
+
+戸田の134は元4pool内にも存在し、旧v9のsourceSubsetでも従来どおり受理されることを確認した。従って戸田を旧拒否の実例とはしない。新off-pool guardの実例は上記review入力の124で、戸田は保存wrapper/metaと元10券保持を検証する対照例として区別する。
+
+
+救済表示の接続後、実API Edgeで元9券（末尾124）・追加12・穴15が320/390/1024px、開閉/keyboard/Back/6艇色まで復旧した。off-poolだけに追加proofを限定し、旧in-pool134はsidecar欠測でも従来受理を保持する。保存proofはrecord側の方式/事前mode/結果未使用の一致も確認する。独立レビューで、旧off-pool独立展開のコピー間family矛盾が通る退行を再現して修正し、別頭/残しの一致正例と3コピー個別の不一致負例で停止を確認した。元v1〜9・selector・元監査・原本は変更していない。
+
+
+最終コード指紋を含む実API Edge再確認は ../artifacts/review-real-edge-1794850121332。元9券・追加12・穴15でselected、全幅/開閉/Back等が完了、pageErrors0。存在しない当日summaryへの404は従来どおり2件で、Linux/WebKitや本人iPhoneの確認とは分ける。artifact内のreader/note/index/loader/診断helper指紋は最終内容と一致した。関連60契約検査と旧/現復旧37件、憲章と13共有スキル一致も合格。実大村原本は元監査contentReady=true/canPublish=falseのまま7/13/17/4、実戸田原本もcontentReady=true/canPublish=falseで10/6/16、両原本不変・未公開。予想method指紋b36ecb...は不変。新固定headの全CI・本番・実iPhoneは未確認。

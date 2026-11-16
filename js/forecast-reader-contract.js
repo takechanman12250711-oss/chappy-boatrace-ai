@@ -87,8 +87,108 @@
     if(!overlap)return "参考予想は"+original+"点で別集計です。上記と同じ券は再掲していません。";
     return "参考予想は元の台帳で"+original+"点（上記と重複"+overlap+"点、追加表示"+(original-overlap)+"点）。別集計です。";
   }
+  // These two already-adopted post-selector replacements are display provenance,
+  // not a new selection rule or final qualification of the replacement ticket.
+  const RESCUES=[
+    ["threeCourseEscapeRescueFixed5","20260823-three-course-134-v1","3コース攻め","1-3-4"],
+    ["fourKadoEscapeRescueFixed5","20260823-four-kado-124-v1","4カド攻め","1-2-4"]
+  ];
+  const RESCUE_KEYS=["applied","version","targetLabel","ticket","replacedTicket","index"];
+  const EMPTY_RESCUE_FIELDS=["branchIds","requirementIds","validBranchIds","validPurchaseBranchIds",
+    "validIndependentBranchIds","validScenarioIds","validRequirementIds","coverage","coveredEvaluationIds","coveredBoatNos"];
+  const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+  const rescueCheck=(ok,detail)=>{if(!ok)throw Error("reader_saved_rescue_"+detail);};
+  const projectMeta=meta=>RESCUE_KEYS.map(key=>meta?.[key]);
+  const rowClaims=row=>row&&typeof row==="object"&&
+    (RESCUES.some(([key])=>Object.hasOwn(row,key))||row.category==="検証済み救済"||row.selectionTier==="検証済み1点置換");
+  function savedRescueProof({prediction,selection,finalRows,record,evidence,copies=[]}){
+    const summary=selection?.expansionSummary,wrapped=evidence?.candidateValidationEvidence;
+    const claimed=finalRows.some(rowClaims)||RESCUES.some(([key])=>summary&&Object.hasOwn(summary,key))||
+      wrapped?.diagnostic?.transformations?.some(t=>RESCUES.some(([key])=>t?.kind===key));
+    if(!claimed)return null;
+    const final=tickets(finalRows);
+    const validList=(rows,max)=>Array.isArray(rows)&&rows.length>0&&rows.length<=max&&
+      rows.every(valid)&&new Set(rows).size===rows.length;
+    rescueCheck(validList(final,10)&&final.length===finalRows.length,"final_invalid");
+    function pathProof(validation,meta,kind){
+      const spec=RESCUES.find(([key])=>key===kind);
+      rescueCheck(spec,"kind_unknown");
+      const [key,version,label,ticket]=spec;
+      rescueCheck(meta?.applied===true&&meta.version===version&&meta.targetLabel===label&&meta.ticket===ticket,"metadata_invalid");
+      const reason=label+"時の検証済みイン逃げ救済として、点数を増やさず"+meta.replacedTicket+"を"+ticket+"へ1点置換。";
+      rescueCheck(meta.reason===reason,"reason_invalid");
+      rescueCheck(validation?.version==="candidate-validation-evidence-v1","snapshot_version");
+      let generator=validation;
+      if(validation.status==="invalid-or-unavailable"){
+        const d=validation.diagnostic;
+        rescueCheck(d?.version==="candidate-validation-mismatch-diagnostic-v1"&&d.purpose==="diagnostic-only"&&
+          d.resultUsedForGeneration===false&&d.usableForPrediction===false&&d.mismatchReason==="final-ticket-set-mismatch"&&
+          Array.isArray(d.transformations)&&d.transformations.length===1&&d.transformations[0]?.kind===key&&
+          equal(projectMeta(d.transformations[0]),projectMeta(meta))&&d.transformations[0].reason===reason&&
+          equal(d.observedFinalTickets,final),"diagnostic_invalid");
+        generator=d.originalGeneratorSnapshot;
+      }else rescueCheck(validation.status==="captured","snapshot_status");
+      rescueCheck(generator?.version==="candidate-validation-evidence-v1"&&generator.status==="captured"&&
+        generator.resultUsedForGeneration===false&&!Object.hasOwn(generator,"diagnostic")&&
+        validList(generator.finalSelectedTickets,10)&&validList(generator.poolTickets,120)&&
+        Array.isArray(generator.branches)&&Array.isArray(generator.observations)&&
+        generator.finalSelectedTickets.every(t=>generator.poolTickets.includes(t))&&
+        generator.observations.every(o=>o&&generator.poolTickets.includes(o.ticket)&&["selection","pool-audit"].includes(o.stage))&&
+        generator.poolTickets.every(t=>generator.observations.some(o=>o.ticket===t)),"snapshot_invalid");
+      const before=generator.finalSelectedTickets;
+      rescueCheck(before.length===final.length&&Number.isInteger(meta.index)&&meta.index===before.length-1&&
+        valid(meta.replacedTicket)&&before[meta.index]===meta.replacedTicket&&!before.includes(ticket)&&
+        !final.includes(meta.replacedTicket),"replacement_invalid");
+      const after=before.slice();after[meta.index]=ticket;
+      rescueCheck(equal(after,final),"replacement_order");
+      const labels=[prediction?.verificationEvidence?.mainScenario?.label,selection?.verificationEvidence?.mainScenario?.label].filter(v=>v!==undefined);
+      rescueCheck(labels.length>0&&labels.every(v=>v===label),"scenario_mismatch");
+      return {purpose:"saved-replacement-display-provenance",kind:key,
+        meta:Object.fromEntries([...RESCUE_KEYS,"reason"].map(k=>[k,meta[k]])),reason,before:[...before],after:[...after]};
+    }
+    const proofs=[];
+    if(RESCUES.some(([key])=>summary&&Object.hasOwn(summary,key))){
+      const active=RESCUES.filter(([key])=>summary&&Object.hasOwn(summary,key));
+      rescueCheck(active.length===1&&selection.status==="selected","summary_invalid");
+      const key=active[0][0],proof=pathProof(selection.candidateValidationEvidence,summary[key],key);
+      rescueCheck(selection.reason===proof.reason,"selection_reason");proofs.push(proof);
+    }
+    if(evidence!==undefined){
+      const review=record?.reviewEvidence,savedReview=evidence?.reviewEvidence;
+      rescueCheck(review?.version==="race-review-evidence-v1"&&/^[a-f0-9]{64}$/.test(review.method||"")&&
+        review.predictionMode==="server_pre_deadline"&&review.officialResultUsedForPrediction===false&&
+        ["version","method","predictionMode","officialResultUsedForPrediction"].every(key=>savedReview?.[key]===review[key]),"record_method");
+      rescueCheck(record&&record.prediction===prediction&&evidence?.version==="practical-selection-evidence-v1"&&evidence.status==="captured"&&
+        evidence.selectionStatus==="selected"&&evidence.productionChanged===false&&evidence.resultUsedForGeneration===false&&
+        /^\d{8}-(?:0[1-9]|1\d|2[0-4])-(?:[1-9]|1[0-2])$/.test(record.raceKey||"")&&
+        ["raceKey","selectedAt","deadlineAt"].every(key=>typeof record[key]==="string"&&evidence[key]===record[key])&&
+        Number.isFinite(Date.parse(record.selectedAt))&&Date.parse(record.selectedAt)<Date.parse(record.deadlineAt)&&
+        equal(evidence.practicalTickets,final),"record_identity");
+      const transformations=wrapped?.diagnostic?.transformations;
+      rescueCheck(Array.isArray(transformations)&&transformations.length===1,"record_transformations");
+      const meta=transformations[0],proof=pathProof(wrapped,meta,meta.kind);
+      rescueCheck(evidence.selectionReason===proof.reason,"record_reason");proofs.push(proof);
+    }
+    rescueCheck(proofs.length>0,"proof_missing");
+    const proof=proofs[0];
+    rescueCheck(proofs.every(p=>p.kind===proof.kind&&equal(projectMeta(p.meta),projectMeta(proof.meta))&&equal(p.before,proof.before)),"proof_conflict");
+    for(const rows of [finalRows,...(Array.isArray(prediction?.practicalTickets)?[prediction.practicalTickets]:[]),...copies]){
+      rescueCheck(Array.isArray(rows)&&equal(rows.map(row=>typeof row==="string"?row:row?.ticket),final),"copy_order");
+      const row=rows[proof.meta.index];
+      rescueCheck(row&&typeof row==="object"&&row.ticket===proof.meta.ticket&&
+        row.category==="検証済み救済"&&row.displayCategory==="検証済み救済"&&row.selectionTier==="検証済み1点置換"&&
+        row.comment===proof.reason&&row.scenarioSummary===proof.reason&&row.scenarioTitle===proof.meta.targetLabel+"のイン逃げ救済"&&
+        row.evidenceQualified===true&&row.purchaseEligible===true&&row.expansionEligible===false&&row.priorityScore===0&&
+        EMPTY_RESCUE_FIELDS.every(key=>Array.isArray(row[key])&&row[key].length===0)&&
+        equal(projectMeta(row[proof.kind]),projectMeta(proof.meta))&&
+        RESCUES.filter(([key])=>Object.hasOwn(row,key)).length===1&&
+        rows.every((r,i)=>i===proof.meta.index||!rowClaims(r)),"row_metadata");
+    }
+    return proof;
+  }
+
   // Read the complete snapshot before display-only clipping. Never select by odds/results.
-  function fromPrediction(prediction, selection=prediction?.practicalSelection) {
+  function fromPrediction(prediction, selection=prediction?.practicalSelection, options={}) {
     if(!prediction||typeof prediction!=="object")return null;
     const state=(status,reason)=>({version:VERSION,status,reason,groups:[],centralTickets:[],
       primaryTickets:[],allTickets:[],primaryCount:0,allCount:0,
@@ -105,14 +205,23 @@
       const main=tickets(prediction.mainSheet?.tickets),cover=tickets(prediction.mainSheet?.coverTickets),
         flow=tickets(prediction.mainSheet?.flowTickets),hole=tickets(prediction.manshuSheet?.tickets);
       const selected=tickets(central),pool=new Set([...main,...cover,...flow,...hole]);
+      // Pool membership already proves historical in-pool tickets. Require
+      // extra replacement provenance only to bridge a saved off-pool rescue.
+      const offPoolRescue=central.some(row=>{
+        const ticket=typeof row==="string"?row:row?.ticket;
+        return !pool.has(ticket)&&(rowClaims(row)||RESCUES.some(([key])=>selection?.expansionSummary?.[key]?.ticket===ticket)||
+          options.practicalSelectionEvidence?.candidateValidationEvidence?.diagnostic?.transformations?.some(t=>t?.ticket===ticket));
+      });
+      const rescue=offPoolRescue?savedRescueProof({prediction,selection,finalRows:central,record:options.record,
+        evidence:options.practicalSelectionEvidence,copies:options.copies||[]}):null;
       for(const row of central) {
         const ticket=typeof row==="string"?row:row.ticket;
-        if(pool.has(ticket))continue;
+        if(pool.has(ticket)||(rescue&&ticket===rescue.meta.ticket))continue;
         const allowed=r=>r&&r.category==="独立展開"&&r.candidateKind==="independent-scenario"&&
           (r.displayCategory===undefined||r.displayCategory==="独立展開")&&
           ["別頭の独立展開","残し艇を使う押さえ展開"].includes(r.scenarioClassificationReason);
         if(!allowed(row))throw Error("reader_contract_center_membership_missing");
-        if(Array.isArray(prediction.practicalTickets)&&!prediction.practicalTickets.some(r=>r.ticket===ticket&&allowed(r)))
+        if(Array.isArray(prediction.practicalTickets)&&!prediction.practicalTickets.some(r=>r.ticket===ticket&&allowed(r)&&r.scenarioClassificationReason===row.scenarioClassificationReason))
           throw Error("reader_contract_center_copy_mismatch");
       }
       if(Array.isArray(selection?.tickets)&&Array.isArray(prediction.practicalTickets)&&
@@ -128,5 +237,5 @@
       return {...state("unavailable","保存された買い目の整合性を確認中です。"),error:error.message};
     }
   }
-  return {VERSION,MAIN,ADDITIONAL,HOLE,REFERENCE,valid,tickets,groupTickets,verifiedHead,exhibitionStText,explanation,referenceSummary,fromPrediction};
+  return {VERSION,MAIN,ADDITIONAL,HOLE,REFERENCE,valid,tickets,groupTickets,verifiedHead,exhibitionStText,explanation,referenceSummary,savedRescueProof,fromPrediction};
 });

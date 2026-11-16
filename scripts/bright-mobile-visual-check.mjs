@@ -4,6 +4,142 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 export const sourceCommit = execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+// Capture the prepared event input, never ticket text from the rendered DOM.
+// final-mobile-ui dispatches this full boundary snapshot before bright organizes it.
+export async function installReaderPresentationCapture(page) {
+  await page.evaluate(() => {
+    const key='__chappyReaderPresentationDiagnostic';
+    const previous=window[key];
+    if(previous?.listener)window.removeEventListener('chappy:presentation-rendered',previous.listener);
+    const freeze=value=>{
+      if(value&&typeof value==='object'){Object.values(value).forEach(freeze);Object.freeze(value);}
+      return value;
+    };
+    const state={record:null,root:null,events:0,listener:null};
+    state.listener=event=>{
+      state.events++;
+      state.root=document.querySelector('#resultArea>.v3-root');
+      let source=null,expected=null;
+      try{
+        if(!event.detail||typeof event.detail!=='object'||Array.isArray(event.detail))throw Error('prepared prediction input missing');
+        source=freeze(JSON.parse(JSON.stringify(event.detail)));
+        const reader=window.ChappyForecastReaderContract;
+        if(!reader){state.record=freeze({source,legacy:true,expected:null});return;}
+        if(typeof reader.fromPrediction!=='function')throw Error('reader model function missing');
+        expected=reader.fromPrediction(source);
+        if(!expected||!['selected','skipped','empty','unavailable'].includes(expected.status))throw Error('reader model missing');
+        if(source.readerPresentation&&JSON.stringify(source.readerPresentation)!==JSON.stringify(expected))
+          throw Error('prepared reader model differs from full source');
+        state.record=freeze({source,legacy:false,expected:JSON.parse(JSON.stringify(expected)),
+          version:reader.VERSION,referenceLabel:reader.REFERENCE,
+          referenceText:expected.referenceOriginalCount?reader.referenceSummary(expected):''});
+      }catch(error){state.record=freeze({source,expected,error:String(error?.message||error)});}
+    };
+    window[key]=state;
+    window.addEventListener('chappy:presentation-rendered',state.listener);
+  });
+}
+export async function readReaderPresentationCapture(page) {
+  return page.evaluate(()=>{
+    const capture=window.__chappyReaderPresentationDiagnostic;
+    if(!capture?.record)return {error:'prepared prediction snapshot missing'};
+    return {events:capture.events,...capture.record};
+  });
+}
+export async function assertReaderPresentation(page,{requireDefaultDisclosure=true}={}) {
+  const view=await page.evaluate(()=>{
+    const clean=value=>String(value??'').replace(/\s+/g,' ').trim();
+    const area=document.getElementById('resultArea'),capture=window.__chappyReaderPresentationDiagnostic;
+    const cards=[...(area?.querySelectorAll('[data-reader-contract]')||[])],card=cards[0];
+    const result={
+      captured:Boolean(capture?.record&&capture.events>0),
+      currentRoot:Boolean(capture?.root&&capture.root===area?.querySelector(':scope>.v3-root')),
+      record:capture?.record?{...capture.record,source:undefined}:null,
+      cardCount:cards.length,legacyGroupCount:area?.querySelectorAll('.chappy-final-buy-summary>.chappy-final-buy-group').length||0
+    };
+    if(!card)return result;
+    const exact=t=>/^[1-6]-[1-6]-[1-6]$/.test(t)&&new Set(t.split('-')).size===3;
+    const expand=notation=>{
+      const parts=clean(notation).replace(/全/g,'123456').split('-');
+      if(parts.length!==3||parts.some(p=>!/^[1-6]+$/.test(p)))return null;
+      const tickets=[];
+      for(const a of parts[0])for(const b of parts[1])for(const c of parts[2]){
+        const ticket=a+'-'+b+'-'+c;if(exact(ticket))tickets.push(ticket);
+      }
+      return tickets;
+    };
+    const groupNodes=[...card.querySelectorAll('.chappy-final-buy-group')];
+    const groups=groupNodes.map(node=>{
+      const lineNodes=[...node.querySelectorAll('.chappy-final-buy-line')];
+      const lines=lineNodes.map(line=>expand(line.querySelector('.chappy-final-buy-formation')?.textContent));
+      const lineCountsMatch=lineNodes.every((line,i)=>clean(line.querySelector('.chappy-final-buy-count')?.textContent)===lines[i]?.length+'点');
+      const childrenMatch=lineNodes.every((line,i)=>{
+        if(!line.matches('details'))return line.querySelectorAll('.chappy-ticket-child').length===0;
+        const children=[...line.querySelectorAll('.chappy-ticket-child')];
+        const tickets=children.map(n=>n.dataset.ticket);
+        return children.every(n=>n.dataset.ticket===clean(n.querySelector('strong')?.textContent))&&
+          JSON.stringify(tickets.sort())===JSON.stringify([...(lines[i]||[])].sort());
+      });
+      return {label:clean(node.querySelector('.chappy-final-buy-label')?.textContent),
+        tickets:lines.flatMap(t=>t||[]),valid:lines.length>0&&lines.every(t=>t&&t.length)&&lineCountsMatch&&childrenMatch,
+        countText:clean(node.querySelector('.chappy-final-buy-meta')?.textContent),
+        marker:node.getAttribute('data-reader-group'),open:node.open};
+    });
+    return {...result,version:card.dataset.readerContract,status:card.dataset.readerStatus,groups,
+      text:clean(card.textContent),heading:clean(card.querySelector('.chappy-final-buy-head h3')?.textContent),
+      header:clean(card.querySelector('.chappy-final-buy-total')?.textContent),
+      notes:[...card.querySelectorAll('.chappy-category-note')].map(n=>clean(n.textContent)),
+      ticketLines:card.querySelectorAll('.chappy-final-buy-line,.chappy-ticket-child').length,
+      hiddenLegacy:[...(area?.querySelectorAll('.v3-main-newspaper,.v3-manshu-newspaper,.chappy-practical-visible-panel')||[])].every(n=>n.hidden&&n.getAttribute('aria-hidden')==='true'),
+      fallbackCount:area?.querySelectorAll('.is-practical-fallback').length||0,
+      childDisclosuresClosed:[...card.querySelectorAll('details.chappy-ticket-disclosure')].every(n=>!n.open)
+    };
+  });
+  assert.equal(view.captured,true,'prepared prediction snapshot missing');
+  assert.equal(view.currentRoot,true,'prepared prediction snapshot belongs to a different render');
+  assert(!view.record.error,view.record.error||'prepared prediction capture failed');
+  if(view.record.legacy){
+    assert.equal(view.cardCount,0,'legacy snapshot must not certify a shared reader card');
+    assert.equal(view.legacyGroupCount,4,'legacy presentation retains four groups');
+    return {legacy:true,groupCount:4};
+  }
+  const expected=view.record.expected,clean=value=>String(value??'').replace(/\s+/g,' ').trim();
+  assert(expected&&expected.version===view.record.version,'saved reader model/version missing');
+  assert.equal(view.cardCount,1,'exactly one shared reader card required');
+  assert.equal(view.version,expected.version,'reader version');
+  assert.equal(view.status,expected.status,'reader status');
+  assert.equal(view.hiddenLegacy,true,'legacy ticket sections must remain hidden even when evidence opens');
+  assert.equal(view.fallbackCount,0,'shared reader must not add a legacy fallback');
+  const canonical=groups=>groups.map(g=>({label:g.label,tickets:[...g.tickets].sort()}));
+  assert.deepEqual(canonical(view.groups),canonical(expected.groups),'all displayed groups and tickets match the frozen source');
+  assert(view.groups.every((g,i)=>g.marker===String(i)),'foreign or misnumbered reader group');
+  assert(view.groups.every(g=>g.valid&&g.countText===g.tickets.length+'点'),'group ticket counts');
+  const all=view.groups.flatMap(g=>g.tickets),primary=view.groups.filter(g=>g.label!==view.record.referenceLabel).flatMap(g=>g.tickets);
+  assert.equal(new Set(all).size,all.length,'duplicate displayed tickets');
+  assert.equal(all.length,expected.allCount,'all ticket count');
+  assert.equal(primary.length,expected.primaryCount,'published ticket count');
+  if(expected.status==='selected'){
+    assert.equal(view.header,'本命'+expected.centralTickets.length+'点','main header count');
+    assert.equal(view.heading,'買い目','selected heading');
+    assert(view.notes.includes('本命'+expected.centralTickets.length+'点／追加候補を含む公開予想'+expected.primaryCount+'点。すべて購入する前提ではありません。'),'published count footer');
+    assert(view.notes.some(t=>t.replace(/\s/g,'')===String(expected.explanation.text).replace(/\s/g,'')),'saved explanation');
+    assert.deepEqual(view.notes.filter(t=>t.startsWith('参考予想')),view.record.referenceText?[clean(view.record.referenceText)]:[],'reference original/overlap accounting');
+    if(requireDefaultDisclosure){
+      assert.deepEqual(view.groups.map(g=>g.open),view.groups.map((_,i)=>i===0),'default reader disclosures');
+      assert.equal(view.childDisclosuresClosed,true,'ticket children closed by default');
+    }
+  }else{
+    assert.equal(view.groups.length,0,'zero-state has no ticket groups');
+    assert.equal(view.ticketLines,0,'zero-state has no ticket lines');
+    assert.equal(view.header,'','zero-state has no main ticket count');
+    assert.equal(view.heading,expected.status==='skipped'?'購入見送り':'買い目を確認中','zero-state heading');
+    assert(view.text.includes('購入推奨0点・0円'),'zero purchase message');
+    assert(clean(expected.reason)&&view.text.includes(clean(expected.reason)),'saved zero-state reason');
+  }
+  return {legacy:false,status:expected.status,reason:expected.reason||null,modelError:expected.error||null,
+    groupCount:view.groups.length,primaryCount:primary.length,allCount:all.length};
+}
+
 const widths = [320,390,1024];
 async function settle(page) {
   await page.evaluate(async()=>{await document.fonts.ready;await new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)));});
@@ -69,10 +205,11 @@ export async function capturePredictionViews(page,outputDir,step) {
     const result=await assertCanvas(page,'#predictionSection',width);
     const order=await page.locator('#resultArea>.v3-root').evaluate(el=>[...el.children].map(node=>node.className));
     assert.equal(order[0],'chappy-bright-intro');
-    assert.equal(await page.locator('.chappy-final-buy-summary>.chappy-final-buy-group').count(),4);
+    const readerProof=await assertReaderPresentation(page);
+    step('bright-reader-model-verified',{sourceCommit,width,...readerProof});
     await page.screenshot({path:path.join(outputDir,`bright-prediction-${width}.png`),fullPage:true});
     // Open via keyboard and retain focus after repeated close/open.
-    const summaries=page.locator('.chappy-final-buy-summary>.chappy-final-buy-group>summary,.chappy-practical-visible-panel>summary');
+    const summaries=page.locator('.chappy-final-buy-summary>.chappy-final-buy-group>summary:visible,.chappy-practical-visible-panel>summary:visible');
     const disclosureStates=[];
     for(const summary of await summaries.all()){
       const wasOpen=await summary.evaluate(el=>el.parentElement.open);

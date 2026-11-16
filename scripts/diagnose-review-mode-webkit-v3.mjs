@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { webkit } from "playwright";
-import {sourceCommit,captureVenueViews,capturePredictionViews} from "./bright-mobile-visual-check.mjs";
+import {sourceCommit,captureVenueViews,capturePredictionViews,installReaderPresentationCapture,readReaderPresentationCapture} from "./bright-mobile-visual-check.mjs";
 
 const APP_URL = process.env.APP_URL || "http://127.0.0.1:4173/";
 const EXPECTED_RUNTIME = process.env.EXPECTED_RUNTIME || "20260828-ui-audit-display1";
@@ -31,6 +31,7 @@ const report = {
   badResponses: [],
   runtimeVersion: "",
   final: null,
+  readerPresentation: null,
   fatalError: null
 };
 
@@ -250,6 +251,9 @@ try {
     throw new Error(`prediction button disabled: ${buttonState.status}`);
   }
 
+  // Freeze the full prepared source from the real presentation event, before
+  // any later DOM checks. A missing event or source fails the shared verifier.
+  await installReaderPresentationCapture(page);
   await page.evaluate(() => {
     document.getElementById("fetchRaceBtn")?.click();
   });
@@ -290,6 +294,12 @@ try {
   ]);
   step("post-render-responsive-finished", responsiveness);
 
+  report.readerPresentation=await readReaderPresentationCapture(page);
+  step("reader-model-captured",{
+    status:report.readerPresentation.expected?.status||null,
+    reason:report.readerPresentation.expected?.reason||null,
+    modelError:report.readerPresentation.expected?.error||report.readerPresentation.error||null
+  });
   await capturePredictionViews(page,OUTPUT_DIR,step);
 
   report.final = await page.evaluate(() => {
@@ -358,6 +368,10 @@ try {
   };
   console.error("[FATAL]", report.fatalError.message);
 } finally {
+  // Preserve the frozen input/model even when a later layout or keyboard check fails.
+  if(!report.readerPresentation){
+    report.readerPresentation=await readReaderPresentationCapture(page).catch(error=>({error:String(error?.message||error)}));
+  }
   try {
     await page.screenshot({
       path: path.join(OUTPUT_DIR, "review-mode-webkit-v3.png"),

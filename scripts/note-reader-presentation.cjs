@@ -36,16 +36,34 @@ function sourceModel(bundle,article=bundle.article){
   check(p?.practicalSelection?.purchaseDecision?.status!=="skip"&&p?.practicalSelection?.status!=="skipped"&&
     article?.purchaseDecision?.status!=="skip"&&!/^【購入見送り】/m.test(String(article?.freeText||"")+"\n"+String(article?.paidText||"")),
     "reader_purchase_skipped");
-  const central=scenario.sourceSubset(bundle),selection=purchaseSelection(p);
-  const app=reader.fromPrediction({...p,practicalSelection:selection},selection);
+  check(bundle.record?.source===undefined,"center_model_source_unknown");
+  const central=reader.tickets(bundle.baselinePracticalTickets);
+  check(central.length>=1&&central.length<=10&&central.length===bundle.baselinePracticalTickets.length,"center_model_ticket_count_invalid");
+  const copies=[p.practicalTickets,article?.practicalTickets];
+  for(const rows of copies)check(Array.isArray(rows)&&rows.length===central.length&&
+    JSON.stringify(reader.tickets(rows))===JSON.stringify(central),"center_model_source_mismatch");
+  const parts=category.originalParts(article,false);
+  check(Number(parts.practical[2])===central.length&&
+    JSON.stringify([...category.ticketsIn(parts.practical[1])].sort())===JSON.stringify([...central].sort()),
+    "published_original_center_mismatch");
+  const selection=purchaseSelection(p);
+  // An immutable record sidecar may retain a known replacement's original
+  // generator snapshot. It proves that saved 1:1 display transformation only.
+  const context={record:bundle.record,practicalSelectionEvidence:bundle.record.practicalSelectionEvidence,
+    copies:[bundle.baselinePracticalTickets,article.practicalTickets]};
+  const app=reader.fromPrediction(p,selection,context);
   check(app?.status!=="skipped","reader_purchase_skipped");
   check(app?.status==="selected"&&JSON.stringify(app.centralTickets)===JSON.stringify(central),"reader_app_selection_unavailable");
-  const source=scenario.sourceSections(bundle,"normal",article);
+  // Check the classification/metadata on every saved copy, not only identities.
+  for(const rows of [bundle.baselinePracticalTickets,article.practicalTickets]){
+    const copy=reader.fromPrediction(p,{...selection,tickets:rows},context);
+    check(copy?.status==="selected"&&JSON.stringify(copy.groups)===JSON.stringify(app.groups),"reader_center_copy_invalid");
+  }
   const model=reader.groupTickets({
     centralTickets:central,
-    additionalTickets:source.filter(g=>g.label!==category.REFERENCE&&g.label!==category.NORMAL_LABELS[3]).flatMap(g=>g.tickets),
-    holeTickets:source.filter(g=>g.label===category.NORMAL_LABELS[3]).flatMap(g=>g.tickets),
-    referenceTickets:source.find(g=>g.label===category.REFERENCE)?.tickets||[]
+    additionalTickets:[...reader.tickets(p.mainSheet?.tickets),...reader.tickets(p.mainSheet?.coverTickets),...reader.tickets(p.mainSheet?.flowTickets)],
+    holeTickets:reader.tickets(p.manshuSheet?.tickets),
+    referenceTickets:parts.referenceTickets
   });
   // Central order is checked above. Every displayed family and accounting
   // field must also agree; an article-only reference list cannot drift from

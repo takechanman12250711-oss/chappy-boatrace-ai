@@ -65,3 +65,10 @@ description: チャッピーボートレースAIのnote原稿を保存予想と�
 正本は `scripts/note-reader-presentation.cjs`。新規publisher/source/receiptはv10の本文・本命subset証明・元原稿SHAを照合する。v1〜v9のclaimは各凍結版で復元し、v9を新しい本命の意味へ読み替えない。展示後・締切余裕・購入見送り・原子的予約・結果不明時の再投稿停止・匿名全文確認は維持する。
 
 この表示変更自体は予想精度改善の実証ではない。本命や将来の選定ロジックの改善は、展開→コース→ST/スリット→展示/足→残し/拾いの保存根拠を使い、同点数比較と未使用期間の検証を行う。過去原本への結果に合わせた後付けや、1号艇以外へ件数を合わせる変更は行わない。Claude Codeにも同じPR・固定head・共通contractを共有し、別実装を作らない。
+
+
+## v10の既存救済券を表示するとき
+
+- 元4pool外の保存済み3コース134/4カド124救済は、共通 `forecast-reader-contract.savedRescueProof` で既存version・row/meta・置換前snapshot・末尾1対1の原順を照合する。欠測・矛盾・未知versionは確認中へ止め、検査に合わせてpoolや原本へ券を追記しない。元pool内で従来受理された券へ、新しい証拠の後付けは要求しない。
+- noteでは不変recordに保存された証拠を同じvalidatorへ明示入力し、race/時刻/方式/結果未使用を照合する。diagnostic wrapperの旧snapshotは既存変換の表示provenanceだけに使い、最終券の全3位置資格や新順位の根拠にしない。元本文・コピー原順・参考元台帳・旧版復旧の検査を維持する。
+- 元pool外の独立展開は、baseline・prediction・article各コピーの保存分類理由も一致させる。別頭と残しのfamilyが食い違う原稿を、表示後の券集合一致だけで受理しない。

@@ -129,3 +129,29 @@ test("independent v10 kinds retain v9 category/reference bytes and the excluded 
   assert.equal(classifyPublishedTickets(f.row,f.bytes,"6-1-2",f.now).status,"miss");
  }
 });
+
+test('saved rescue source reconstructs a receipt/model proof without counting its diagnostic as final qualification',()=>{
+ const bundle=clone(require('../scripts/fixtures/reader-saved-rescues-derived.json').savedBundle),f=input(bundle),before=JSON.stringify(bundle);
+ const sections=publishedTicketSections(f.row,f.bytes,f.now);
+ assert.equal(sections.status,'verified');assert.ok(sections.unionTickets.includes('1-3-4'));
+ const subset=verifiedModelSubset(f.row,f.bytes,f.receipt,f.now);
+ assert.equal(subset.ticketCount,10);assert.equal(subset.ticketsSha256,hash(JSON.stringify(bundle.baselinePracticalTickets.map(r=>r.ticket).sort())));
+ assert.equal(bundle.record.practicalSelectionEvidence.candidateValidationEvidence.status,'invalid-or-unavailable');
+ assert.equal(JSON.stringify(bundle),before);
+ assert.equal(publishedTicketSections(f.row,f.bytes,f.deadline-1).status,'pending');
+ const changed=clone(bundle);changed.record.practicalSelectionEvidence.candidateValidationEvidence.diagnostic.transformations[0].version='unknown';
+ assert.equal(publishedTicketSections(f.row,JSON.stringify(changed),f.now).status,'review');
+});
+
+test('off-pool saved-wrapper contract variant reconstructs receipt proof and rejects unverified replacements',()=>{
+ // Contract variant of the derived historical input, not an altered original.
+ const b=clone(require('../scripts/fixtures/reader-saved-rescues-derived.json').savedBundle);
+ for(const rows of [b.record.prediction.mainSheet.tickets,b.record.prediction.mainSheet.coverTickets,b.record.prediction.mainSheet.flowTickets,b.record.prediction.manshuSheet.tickets]){
+  const index=rows.indexOf('1-3-4');if(index>=0)rows.splice(index,1);
+ }
+ const f=input(b),sections=publishedTicketSections(f.row,f.bytes,f.now);
+ assert.equal(sections.status,'verified');assert.ok(sections.unionTickets.includes('1-3-4'));
+ assert.equal(verifiedModelSubset(f.row,f.bytes,f.receipt,f.now).ticketCount,10);
+ const broken=clone(b);broken.record.practicalSelectionEvidence.candidateValidationEvidence.diagnostic.transformations[0].version='unknown';
+ assert.throws(()=>input(broken),/reader_app_selection_unavailable/);
+});
