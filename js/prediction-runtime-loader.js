@@ -47,8 +47,8 @@
     "js/manshu-display-reliability.js"
   ];
   const SCRIPT_VERSIONS = Object.freeze({
-    "js/forecast-reader-contract.js": "20261117-2",
-    "js/main-cover-display-boundary.js": "20261116-reader1",
+    "js/forecast-reader-contract.js": "20261117-3",
+    "js/main-cover-display-boundary.js": "20261117-reader2",
     "js/formation-odds-display.js": "20261021-exact-formation1",
     "js/note-generator.js": "20260923-wall-purchase1",
     "js/practical-selection.js": "20261003-escape-partner-v13",

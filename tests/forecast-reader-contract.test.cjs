@@ -242,3 +242,151 @@ test('off-pool independent-scenario copies retain the same saved family in both 
   assert.equal(JSON.stringify(a),JSON.stringify(b));assert.equal(JSON.stringify(p),changed);
  }
 });
+
+const explanationFixture=require('../scripts/fixtures/reader-explanation-derived.json');
+const captureConditions=require('../js/prediction-conditions').capture;
+const rawExplanation=()=>structuredClone(explanationFixture.prediction);
+test('raw official explanation view matches compact capture in Node and browser without timing claims',()=>{
+ const {createHash}=require('node:crypto'),p=rawExplanation(),before=JSON.stringify(p),globalRef=globalThis.ChappyPredictionConditions;
+ assert.equal(createHash('sha256').update(JSON.stringify(p)).digest('hex'),explanationFixture.projectionSha256);
+ const view=contract.explanationView(p,captureConditions),browserView=browser.explanationView(p,captureConditions),e=contract.explanation(view);
+ assert.equal(e.verified,true);assert.match(e.text,/平均STは0.12、展示STはF0.02、展示タイムは6.76秒/);assert.match(e.text,/隣の5号艇の展示STは0.01/);
+ assert.equal(JSON.stringify(e),JSON.stringify(browser.explanation(browserView)));
+ assert.deepEqual(Object.keys(view.preRaceConditions),['boats']);
+ for(const key of ['sourceTiming','officialResultUsed','sourceFetchedAt','schemaVersion','escapeEvaluationEvidence'])assert.equal(Object.hasOwn(view.preRaceConditions,key),false);
+ const compact=structuredClone(p);delete compact.race;
+ compact.preRaceConditions=captureConditions(p.race.raw,p);
+ compact.verificationEvidence.mainScenario.attackerCourse=p.aiCore.raceScenarios.mainScenario.attackerCourse;
+ assert.equal(contract.explanation(compact).text,e.text);
+ assert.equal(contract.explanationView(compact,captureConditions),compact);
+ assert.equal(contract.explanationView(view,captureConditions),view);
+ assert.equal(Object.hasOwn(p.verificationEvidence.mainScenario,'attackerCourse'),false);
+ view.preRaceConditions.boats[3].avgST=.99;view.verificationEvidence.mainScenario.attackerCourse=1;
+ assert.equal(JSON.stringify(p),before);assert.equal(globalThis.ChappyPredictionConditions,globalRef);
+});
+test('raw/normalized identity, official mapping, averages, exhibition and scenario contradictions stay neutral',()=>{
+ const changes=[
+  p=>p.race.raw.raceNo=11,
+  p=>p.race.raw.date='20260825',
+  p=>p.race.raw.stadiumCode='01',
+  p=>p.race.raw.entries.pop(),
+  p=>p.race.entries[0].boatNo=2,
+  p=>p.race.raw.startExhibition[3].boat=5,
+  p=>p.race.raw.startExhibition[3].course=5,
+  p=>p.race.startExhibition[3].isOfficialCourse=false,
+  p=>delete p.race.raw.startExhibition[3].isOfficialCourse,
+  p=>p.race.raw.entries[3].avgSt=.13,
+  p=>p.race.entries[3].avgST='.13',
+  p=>p.race.raw.entries[3].exhibitionTime=7.3,
+  p=>p.race.entries[3].exhibitionST='.05',
+  p=>p.race.startExhibition[3].st='.12',
+  p=>p.race.startExhibition[3].marker='',
+  p=>{delete p.race.startExhibition[3].marker;delete p.race.raw.startExhibition[3].marker;},
+  p=>{p.race.startExhibition[3].marker='X';p.race.raw.startExhibition[3].marker='X';},
+  p=>{p.race.startExhibition[3].st=null;p.race.raw.startExhibition[3].st=null;},
+  p=>p.race.raw.entries[3].boatNo=true,
+  p=>delete p.aiCore.raceScenarios.mainScenario.attackerCourse,
+  p=>{delete p.aiCore.raceScenarios.mainScenario.attackerCourse;p.aiCore.raceScenarios.mainScenario.attacker=4;},
+  p=>p.aiCore.raceScenarios.mainScenario.type='threeAttack',
+  p=>p.aiCore.raceScenarios.mainScenario.label='3コース攻め',
+  p=>p.aiCore.raceScenarios.mainScenario.headBoatNo=3,
+  p=>p.aiCore.raceScenarios.mainScenario.attackerCourse=3
+ ];
+ for(const change of changes){
+  const p=rawExplanation();change(p);const before=JSON.stringify(p),a=contract.explanationView(p,captureConditions),b=browser.explanationView(p,captureConditions);
+  assert.equal(contract.explanation(a).verified,false,change.toString());
+  assert.equal(browser.explanation(b).text,contract.explanation(a).text);
+  assert.equal(JSON.stringify(p),before);
+ }
+ for(const projector of [undefined,()=>{throw Error('capture unavailable');},()=>({boats:[]})]){
+  const p=rawExplanation();assert.equal(contract.explanation(contract.explanationView(p,projector)).verified,false);
+ }
+});
+test('existing snapshot/scenario null, undefined and contradictory facts are never overwritten',()=>{
+ for(const value of [null,undefined,{}, {boats:[]}]){
+  const p=rawExplanation();p.preRaceConditions=value;
+  const view=contract.explanationView(p,captureConditions);
+  assert.equal(Object.hasOwn(view,'preRaceConditions'),true);assert.equal(view.preRaceConditions,value);
+  assert.equal(contract.explanation(view).verified,false);
+ }
+ for(const value of [null,undefined,3]){
+  const p=rawExplanation();p.verificationEvidence.mainScenario.attackerCourse=value;
+  const view=contract.explanationView(p,captureConditions);
+  assert.equal(view.verificationEvidence.mainScenario.attackerCourse,value);
+  assert.equal(Object.hasOwn(view.verificationEvidence.mainScenario,'attackerCourse'),true);
+  assert.equal(contract.explanation(view).verified,false);
+ }
+ for(const change of [b=>b.course=3,b=>b.courseOfficial=false,b=>b.exhibitionST=.12,b=>b.avgST=.2,b=>b.startExhibition.marker='L']){
+  const p=rawExplanation();p.preRaceConditions=captureConditions(p.race.raw,p);change(p.preRaceConditions.boats[3]);
+  const existing=p.preRaceConditions,before=JSON.stringify(p),view=contract.explanationView(p,captureConditions);
+  assert.equal(view.preRaceConditions,existing);assert.equal(contract.explanation(view).verified,false);
+  assert.equal(JSON.stringify(p),before);
+ }
+});
+test('display projection separates average ST from F/L and never reads result or odds',()=>{
+ const p=rawExplanation();p.race.raw.startExhibition[4].marker='L';p.race.raw.startExhibition[4].st=.99;
+ p.race.startExhibition[4].marker='L';p.race.startExhibition[4].st='.99';
+ Object.defineProperty(p,'result',{get(){throw Error('result access');}});
+ Object.defineProperty(p,'odds',{get(){throw Error('odds access');}});
+ const e=contract.explanation(contract.explanationView(p,captureConditions));
+ assert.equal(e.verified,true);assert.match(e.text,/平均STは0.12、展示STはF0.02/);assert.match(e.text,/隣の5号艇の展示STはL0.99/);
+ assert.doesNotMatch(e.text,/平均STは0.02|展示STは0.02/);
+});
+
+test('numeric scalar guards reject whitespace, booleans and non-finite facts before capture in both input schemas',()=>{
+ const invalid=[' ','\t\n',false,true,'bad','Infinity',Infinity,NaN,{},[]];
+ for(const flat of [false,true])for(const value of invalid){
+  for(const field of ['average','exhibition','start']){
+   const p=rawExplanation();if(flat)p.race=structuredClone(p.race.raw);
+   const raw=p.race.raw||p.race;
+   if(field==='average'){raw.entries[3].avgSt=value;if(!flat)p.race.entries[3].avgST=value;}
+   if(field==='exhibition'){raw.entries[3].exhibitionTime=value;if(!flat)p.race.entries[3].exhibitionTime=value;}
+   if(field==='start'){raw.startExhibition[3].st=value;if(!flat)p.race.startExhibition[3].st=value;}
+   const before=JSON.stringify(p);let calls=0;
+   const projector=(...args)=>{calls++;return captureConditions(...args);};
+   const a=contract.explanationView(p,projector),b=browser.explanationView(p,projector);
+   assert.equal(contract.explanation(a).verified,false,field+' / '+flat+' / '+String(value));
+   assert.equal(browser.explanation(b).verified,false);assert.equal(calls,0,'invalid scalar never reaches capture');
+   assert.equal(JSON.stringify(p),before);assert.doesNotMatch(contract.explanation(a).text,/0\.00/);
+  }
+ }
+ for(const value of [' ',false,Infinity]){
+  const p=rawExplanation();p.race.raw.beforeInfo[3].exhibitionTime=value;
+  assert.equal(contract.explanation(contract.explanationView(p,captureConditions)).verified,false);
+ }
+});
+test('explicit zero and ordinary numeric strings remain saved facts rather than missing-value defaults',()=>{
+ for(const flat of [false,true])for(const value of [0,'0','0.12','.12','+0.12',' 0.12 ']){
+  const p=rawExplanation();if(flat)p.race=structuredClone(p.race.raw);
+  const raw=p.race.raw||p.race;raw.entries[3].avgSt=value;
+  if(!flat)p.race.entries[3].avgST=value;
+  const before=JSON.stringify(p),view=contract.explanationView(p,captureConditions),expected=Number(value).toFixed(2);
+  assert.equal(contract.explanation(view).verified,true);
+  assert.match(contract.explanation(view).text,new RegExp('平均STは'+expected.replace('.','\\.')));
+  assert.equal(browser.explanation(browser.explanationView(p,captureConditions)).text,contract.explanation(view).text);
+  assert.equal(JSON.stringify(p),before);
+ }
+});
+
+test('each normalized start must pass the same typed validation before comparing it with valid raw data',()=>{
+ for(const value of [false,' ','\t',null,undefined,true,'bad',Infinity]){
+  const p=rawExplanation();p.race.raw.startExhibition[3].st=0;p.race.startExhibition[3].st=value;
+  const before=JSON.stringify(p);let calls=0;
+  const projector=(...args)=>{calls++;return captureConditions(...args);};
+  assert.equal(contract.explanation(contract.explanationView(p,projector)).verified,false);
+  assert.equal(browser.explanation(browser.explanationView(p,projector)).verified,false);
+  assert.equal(calls,0,'one invalid normalized scalar never reaches capture');assert.equal(JSON.stringify(p),before);
+ }
+ // The raw mapping remains a valid permutation. Only the normalized course
+ // is a boolean that Number() would otherwise equate to raw course 1.
+ const p=rawExplanation();p.race.raw.startExhibition[3].course=1;p.race.raw.startExhibition[0].course=4;
+ p.race.startExhibition[3].course=true;p.race.startExhibition[0].course=4;
+ const before=JSON.stringify(p);let calls=0;
+ const projector=(...args)=>{calls++;return captureConditions(...args);};
+ assert.equal(contract.explanation(contract.explanationView(p,projector)).verified,false);
+ assert.equal(browser.explanation(browser.explanationView(p,projector)).verified,false);
+ assert.equal(calls,0);assert.equal(JSON.stringify(p),before);
+ const valid=rawExplanation();valid.race.raw.startExhibition[3].st=0;valid.race.startExhibition[3].st='0';
+ assert.equal(contract.explanation(contract.explanationView(valid,captureConditions)).verified,true);
+ assert.match(contract.explanation(contract.explanationView(valid,captureConditions)).text,/展示STはF0.00/);
+});

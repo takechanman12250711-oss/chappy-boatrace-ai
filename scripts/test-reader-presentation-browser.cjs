@@ -5,6 +5,7 @@ const fs=require("node:fs"),path=require("node:path"),http=require("node:http"),
 const {chromium,webkit}=require("playwright");
 const fixture=require("./fixtures/reader-presentation.json");
 const reader=require("../js/forecast-reader-contract");
+const captureFacts=require("../js/prediction-conditions").capture;
 const base=path.resolve(__dirname,"..");
 async function main(){
   const {installReaderPresentationCapture,assertReaderPresentation,readReaderPresentationCapture}=await import("./bright-mobile-visual-check.mjs");
@@ -16,7 +17,7 @@ async function main(){
       const brightCss=index.match(/<link rel="stylesheet" href="(css\/bright-mobile-layout\.css\?[^"]+)"/)[1];
       res.setHeader("Content-Type","text/html; charset=utf-8");
       res.end('<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="'+brightCss+'"></head><body><div id="resultArea"></div>'+
-        '<script src="'+src("forecast-reader-contract")+'"></script><script src="'+src("result-void-compat")+'"></script><script src="'+src("bright-mobile-layout")+'"></script></body></html>');
+        '<script src="'+src("prediction-conditions")+'"></script><script src="'+src("forecast-reader-contract")+'"></script><script src="'+src("result-void-compat")+'"></script><script src="'+src("bright-mobile-layout")+'"></script></body></html>');
       return;
     }
     const target=path.resolve(base,"."+pathname);
@@ -34,7 +35,7 @@ async function main(){
         '<div class="v3-root"><section class="v3-boat-evaluation"></section><section class="v3-main-newspaper"><h3>旧本命</h3></section><section class="v3-manshu-newspaper"><div class="v3-section-body"></div></section><section class="v3-practical-section"></section></div>';};};
       if(early)await page.addInitScript(install);
       await page.goto("http://127.0.0.1:"+server.address().port);
-      await page.waitForFunction(()=>window.ChappyPracticalVisiblePanel&&window.ChappyFinalDisplayUserContract&&window.ChappyFinalDisplayOwner&&window.ChappyBrightMobileLayout);
+      await page.waitForFunction(()=>window.ChappyPracticalVisiblePanel&&window.ChappyFinalDisplayUserContract&&window.ChappyFinalDisplayOwner&&window.ChappyBrightMobileLayout&&window.ChappyPredictionConditions);
       if(!early)await page.evaluate(install);
       await page.addScriptTag({url:"/js/practical-selection.js"});
       await page.addScriptTag({url:"/js/main-cover-display-boundary.js"});
@@ -43,7 +44,7 @@ async function main(){
       p.raceFlow={summary:"本命は5号艇という古い説明。現在の保存根拠とは別です。"};
       const original=JSON.stringify(p),expected=reader.fromPrediction(p);
       const shortExplanation=value=>String(value).trim().split(/(?<=。)/).slice(0,2).join("").slice(0,180);
-      async function render(input){await installReaderPresentationCapture(page);await page.evaluate(value=>renderAll(value),input);await page.waitForTimeout(650);await assertReaderPresentation(page);}
+      async function render(input){await installReaderPresentationCapture(page);await page.evaluate(value=>{window.__readerRawInput=value;window.__readerRawBefore=JSON.stringify(value);renderAll(value);},input);await page.waitForTimeout(650);await assertReaderPresentation(page);assert.equal(await page.evaluate(()=>JSON.stringify(__readerRawInput)===__readerRawBefore),true,"raw forecast input remains unchanged");}
       async function snapshot(){return page.evaluate(()=>{
         const area=document.getElementById("resultArea"),card=area.querySelector("[data-reader-contract]");
         const groups=[...card.querySelectorAll("[data-reader-group]")].map(g=>({
@@ -170,16 +171,34 @@ async function main(){
       // Real review-event projection: the saved 124 replaces only the final
       // ticket; its complete original pool and the prior generator snapshot stay.
       const rescue=structuredClone(require("./fixtures/reader-saved-rescues-derived.json").livePrediction);
-      const rescueBefore=JSON.stringify(rescue),rescueExpected=reader.fromPrediction(rescue);
+      const facts=require("./fixtures/reader-explanation-derived.json").prediction;
+      rescue.race=structuredClone(facts.race);rescue.aiCore=structuredClone(facts.aiCore);
+      const rescueBefore=JSON.stringify(rescue),rescueExpected=reader.fromPrediction(reader.explanationView(rescue,captureFacts));
       assert.equal(rescueExpected.status,"selected");assert.equal(rescueExpected.centralTickets.length,9);
       await render(rescue);const rescued=await snapshot();
       assert.equal(rescued.header,"本命9点");
       assert.deepEqual(rescued.groups.map(g=>({label:g.label,tickets:[...g.tickets].sort()})),
         rescueExpected.groups.map(g=>({label:g.label,tickets:[...g.tickets].sort()})));
       const rescuedCapture=await readReaderPresentationCapture(page);
+      assert.deepEqual(rescuedCapture.expected.explanation,rescueExpected.explanation);
+      assert.equal(rescuedCapture.expected.explanation.verified,true);
+      assert.match(rescued.text,/平均STは0.12、展示STはF0.02、展示タイムは6.76秒/);
+      assert.match(rescued.text,/隣の5号艇の展示STは0.01/);
+      assert.equal(rescued.intro,shortExplanation(rescueExpected.explanation.text));
+      assert.deepEqual(Object.keys(rescuedCapture.source.preRaceConditions),["boats"]);
+      assert.equal(Object.hasOwn(rescuedCapture.source.preRaceConditions,"sourceTiming"),false);
       assert.deepEqual(rescuedCapture.source.practicalSelection.tickets.map(r=>r.ticket),rescueExpected.centralTickets);
       assert.equal(rescuedCapture.source.practicalSelection.candidateValidationEvidence.finalSelectedTickets.at(-1),"2-1-5");
       assert.equal(JSON.stringify(rescue),rescueBefore);
+      for(const change of [r=>r.race.entries[3].avgST=".99",r=>r.preRaceConditions=null,r=>delete r.race.raw.startExhibition[3].isOfficialCourse,
+        r=>{r.race.entries[3].avgST=" ";r.race.raw.entries[3].avgSt=" ";},
+        r=>{r.race=structuredClone(r.race.raw);r.race.entries[3].avgSt=false;}]){
+        const uncertain=structuredClone(rescue);change(uncertain);await render(uncertain);
+        const state=await snapshot();assert.equal(state.intro,"展開の根拠は確認中です。");assert.equal(state.header,"本命9点");
+        assert.deepEqual(state.groups,rescued.groups);
+      }
+      const late=structuredClone(rescue);late.race.raw.startExhibition[4].marker="L";late.race.raw.startExhibition[4].st=.99;late.race.startExhibition[4].marker="L";late.race.startExhibition[4].st=".99";
+      await render(late);assert.match((await snapshot()).text,/隣の5号艇の展示STはL0.99/);
       const unproven=structuredClone(rescue);delete unproven.practicalSelection.candidateValidationEvidence;
       await render(unproven);const rejected=await readReaderPresentationCapture(page);
       assert.equal(rejected.expected.status,"unavailable");assert.match(rejected.expected.error,/reader_saved_rescue/);

@@ -8,7 +8,7 @@
 (function (root, factory) {
   "use strict";
 
-  const api = factory();
+  const api = factory(root);
 
   if (typeof module === "object" && module.exports) {
     module.exports = api;
@@ -18,7 +18,7 @@
     root.ChappyMainCoverDisplayBoundary = Object.freeze(api);
     api.install(root);
   }
-})(typeof window !== "undefined" ? window : globalThis, function () {
+})(typeof window !== "undefined" ? window : globalThis, function (host) {
   "use strict";
 
   const DISPLAY_LIMITS = Object.freeze({
@@ -472,7 +472,7 @@
     };
   }
 
-  function prepare(prediction, selector, reader) {
+  function prepare(prediction, selector, reader, captureConditions = host?.ChappyPredictionConditions?.capture) {
     if (!prediction || typeof prediction !== "object") return prediction;
 
     if (reader?.fromPrediction) {
@@ -489,8 +489,11 @@
         selection = {...(selection || {}), tickets:selection?.tickets ?? prediction.practicalTickets, purchaseDecision:decision};
       }
       const source = selection && selection !== prediction.practicalSelection ? {...prediction, practicalSelection: selection} : prediction;
-      const readerPresentation = reader.fromPrediction(source, selection);
-      if (readerPresentation) return {...source, readerPresentation};
+      // Complete selection and purchase policy against the raw input first.
+      // Only the presentation copy receives the projected explanation facts.
+      const view=typeof reader.explanationView==='function'?reader.explanationView(source,captureConditions):source;
+      const readerPresentation = reader.fromPrediction(view, selection);
+      if (readerPresentation) return {...view, readerPresentation};
     }
     const displayRows = resolveNormalDisplayRows(prediction, selector);
     if (!displayRows.available) return prediction;

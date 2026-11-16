@@ -43,8 +43,9 @@ jobs:
       - name: Checkout target
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || 'main' }}
-          fetch-depth: 0
+          # Check this event's exact revision; the tests use HEAD files only.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
           # Keep all prediction archives used by the load/index regression.
           sparse-checkout-cone-mode: false
           sparse-checkout: |

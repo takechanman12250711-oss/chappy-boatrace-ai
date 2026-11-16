@@ -247,11 +247,27 @@ export async function capturePredictionViews(page,outputDir,step) {
   await page.locator('.chappy-back-races').click();
   assert.equal(await page.locator('#raceSection').isVisible(),true);
   assert.equal(await page.locator('#predictionSection').isVisible(),false);
+  // Back starts an async schedule/race selection. Returning earlier cancels
+  // that intent before its existing onchange reset can finish.
+  await page.waitForFunction(()=>{
+    const area=document.getElementById('resultArea'),race=document.getElementById('raceSection');
+    const select=document.getElementById('raceSelect'),button=document.getElementById('fetchRaceBtn');
+    return race&&!race.hidden&&area&&area.dataset.raceLoading!=='true'&&
+      area.querySelectorAll('.chappy-bright-race-intro,.chappy-final-buy-summary').length===0&&
+      Boolean(select?.value)&&button?.disabled===false;
+  },null,{timeout:60_000});
+  step('bright-race-reset-settled',{sourceCommit});
   await page.locator('.bottom-nav-item[data-view="prediction"]').click();
   assert.equal(await page.locator('#predictionSection').isVisible(),true);
   // Returning to the race picker intentionally resets the selection in the existing controller.
   // Preserve the existing baseline: prediction is reset; its official status stays visible.
   // Do not impose a new prompt or erase results/errors as part of a layout change.
+  await page.waitForFunction(()=>{
+    const area=document.getElementById('resultArea'),status=area?.querySelector('#raceResultStatus'),r=status?.getBoundingClientRect();
+    return area&&area.dataset.raceLoading!=='true'&&
+      area.querySelectorAll('.chappy-bright-race-intro,.chappy-final-buy-summary').length===0&&
+      Boolean(r&&r.width>0&&r.height>0)&&Boolean(status.textContent.trim());
+  },null,{timeout:10_000});
   await settle(page);
   const revisit=await page.evaluate(()=>{
     const area=document.getElementById('resultArea');

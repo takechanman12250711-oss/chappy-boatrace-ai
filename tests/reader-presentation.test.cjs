@@ -79,3 +79,67 @@ test("a skipped forecast selection remains skipped rather than empty or selected
  const p=clone(); const out=reader.fromPrediction(p,{status:"skipped",reason:"展開未成立",tickets:[]});
  assert.equal(out.status,"skipped");assert.equal(out.reason,"展開未成立");assert.deepEqual(out.groups,[]);
 });
+
+test('app boundary injects the existing projector into a display copy without selecting or mutating the raw forecast',()=>{
+ const p=structuredClone(require('../scripts/fixtures/reader-saved-rescues-derived.json').livePrediction),facts=require('../scripts/fixtures/reader-explanation-derived.json').prediction;
+ p.race=structuredClone(facts.race);p.aiCore=structuredClone(facts.aiCore);p.predictionMode='retrospective_reference';
+ const before=JSON.stringify(p),selection=p.practicalSelection,capture=require('../js/prediction-conditions').capture;
+ const selector={select(){throw Error('must not select');},purchaseDecision(){throw Error('must not replace the existing decision');}};
+ const out=boundary.prepare(p,selector,reader,capture);
+ assert.notEqual(out,p);assert.equal(out.practicalSelection,selection);assert.equal(out.mainSheet,p.mainSheet);
+ assert.equal(out.readerPresentation.status,'selected');assert.equal(out.readerPresentation.centralTickets.length,9);
+ assert.equal(out.readerPresentation.explanation.verified,true);assert.match(out.readerPresentation.explanation.text,/平均STは0.12、展示STはF0.02/);
+ assert.equal(out.predictionMode,'retrospective_reference');assert.deepEqual(Object.keys(out.preRaceConditions),['boats']);
+ assert.equal(JSON.stringify(p),before);
+ const again=boundary.prepare(out,selector,reader,capture);assert.deepEqual(again.readerPresentation,out.readerPresentation);assert.equal(JSON.stringify(p),before);
+ p.race.entries[3].avgST='.99';
+ const uncertain=boundary.prepare(p,selector,reader,capture);
+ assert.equal(uncertain.readerPresentation.status,'selected');assert.equal(uncertain.readerPresentation.explanation.verified,false);
+ assert.deepEqual(uncertain.readerPresentation.centralTickets,out.readerPresentation.centralTickets);
+});
+
+test('selection and purchase decision see the exact raw input before any display projection',()=>{
+ const p=structuredClone(require('../scripts/fixtures/reader-saved-rescues-derived.json').livePrediction),facts=require('../scripts/fixtures/reader-explanation-derived.json').prediction;
+ p.race=structuredClone(facts.race);p.aiCore=structuredClone(facts.aiCore);
+ const selected=p.practicalSelection;delete p.practicalSelection;delete p.practicalTickets;delete selected.purchaseDecision;
+ const before=JSON.stringify(p),order=[],capture=require('../js/prediction-conditions').capture;
+ function rawOnly(value){
+  assert.equal(value,p);assert.equal(Object.hasOwn(value,'preRaceConditions'),false);
+  assert.equal(Object.hasOwn(value.verificationEvidence.mainScenario,'attackerCourse'),false);
+  assert.equal(Object.hasOwn(value,'readerExplanationUnavailable'),false);
+ }
+ const selector={
+  select(value){rawOnly(value);order.push('select');return selected;},
+  purchaseDecision(value){rawOnly(value);order.push('purchase');return {status:'unchanged'};}
+ };
+ const out=boundary.prepare(p,selector,reader,(race,input)=>{
+  assert.deepEqual(order,['select','purchase']);order.push('capture');return capture(race,input);
+ });
+ assert.deepEqual(order,['select','purchase','capture']);
+ assert.equal(out.readerPresentation.status,'selected');assert.equal(out.readerPresentation.explanation.verified,true);
+ assert.equal(JSON.stringify(p),before);assert.equal(Object.hasOwn(selected,'purchaseDecision'),false);
+});
+test('shared reader fallback does not feed display facts back into the legacy boundary',()=>{
+ const p=structuredClone(require('../scripts/fixtures/reader-saved-rescues-derived.json').livePrediction),facts=require('../scripts/fixtures/reader-explanation-derived.json').prediction;
+ p.race=structuredClone(facts.race);p.aiCore=structuredClone(facts.aiCore);
+ const before=JSON.stringify(p),out=boundary.prepare(p,{select(){throw Error('stored selection must be reused');}},
+  {...reader,fromPrediction(){return null;}},require('../js/prediction-conditions').capture);
+ assert.equal(Object.hasOwn(out,'preRaceConditions'),false);
+ assert.equal(Object.hasOwn(out.verificationEvidence.mainScenario,'attackerCourse'),false);
+ assert.equal(JSON.stringify(p),before);
+});
+
+test('invalid raw scalar suppresses explanation while keeping all nine tickets and the original purchase decision',()=>{
+ for(const flat of [false,true]){
+  const p=structuredClone(require('../scripts/fixtures/reader-saved-rescues-derived.json').livePrediction),facts=require('../scripts/fixtures/reader-explanation-derived.json').prediction;
+  p.race=structuredClone(flat?facts.race.raw:facts.race);p.aiCore=structuredClone(facts.aiCore);
+  if(flat)p.race.entries[3].avgSt=false;
+  else{p.race.entries[3].avgST=' ';p.race.raw.entries[3].avgSt=' ';}
+  const before=JSON.stringify(p),decision=p.practicalSelection.purchaseDecision;
+  const out=boundary.prepare(p,{select(){throw Error('no reselect');},purchaseDecision(){throw Error('existing decision retained');}},reader,require('../js/prediction-conditions').capture);
+  assert.equal(out.readerPresentation.status,'selected');assert.equal(out.readerPresentation.explanation.verified,false);
+  assert.equal(out.practicalSelection.purchaseDecision,decision);
+  assert.deepEqual(out.readerPresentation.centralTickets,p.practicalSelection.tickets.map(row=>row.ticket));assert.equal(out.readerPresentation.centralTickets.length,9);
+  assert.equal(JSON.stringify(p),before);
+ }
+});

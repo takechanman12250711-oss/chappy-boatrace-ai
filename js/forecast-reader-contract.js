@@ -57,7 +57,111 @@
     if(!magnitude.length)return flag?flag+"（数値未取得）":null;
     return flag+magnitude[0].toFixed(2);
   }
+  // A display-only view of facts already present in the current input.
+  // The caller supplies the existing capture projector; no import, selection,
+  // timing claim, official flag, course or scenario is invented here.
+  function explanationView(prediction,captureConditions){
+    if(!prediction||typeof prediction!=="object"||prediction.readerExplanationUnavailable===true)return prediction;
+    const own=(value,key)=>value&&Object.hasOwn(value,key);
+    const boat=v=>(typeof v==="number"&&Number.isInteger(v)||typeof v==="string"&&/^[1-6]$/.test(v))&&Number(v)>=1&&Number(v)<=6;
+    const identity=row=>row?.boatNo??row?.boat;
+    const validIdentity=row=>boat(identity(row))&&!(boat(row?.boatNo)&&boat(row?.boat)&&Number(row.boatNo)!==Number(row.boat));
+    const numericScalar=value=>typeof value==="number"?Number.isFinite(value):
+      typeof value==="string"&&/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(value.trim())&&Number.isFinite(Number(value));
+    const validStart=s=>validIdentity(s)&&boat(s.course)&&s.isOfficialCourse===true&&
+      typeof s.marker==="string"&&["","F","L"].includes(s.marker.trim().toUpperCase())&&numericScalar(s.st)&&
+      Number(s.st)>=(s.marker.trim().toUpperCase()==="F"?-1:0)&&Number(s.st)<=1;
+    const numericKeys=["avgST","avgSt","averageST","averageSt","st","exhibitionST","exhibitionSt","exhibitionTime","displayST","displayTime"];
+    const validFacts=row=>!row||numericKeys.every(k=>!own(row,k)||row[k]===undefined||row[k]===null||row[k]===""||numericScalar(row[k]));
+    const fact=(row,keys)=>{const v=keys.map(k=>row?.[k]).find(v=>v!==undefined&&v!==null&&v!=="");return v===undefined?null:numericScalar(v)?Number(v):NaN;};
+    const fixed=["boatNo","course","courseOfficial","courseMappingSource","avgST","exhibitionST","exhibitionStartMarker","exhibitionTime"];
+    const pick=(value,keys)=>Object.fromEntries(keys.filter(k=>own(value,k)).map(k=>[k,value[k]]));
+    let view=prediction;
+    const neutral=()=>({...view,readerExplanationUnavailable:true});
+    const race=prediction.race;
+    // normalizeRaceData retains the original API object. Use that same input
+    // schema as Node capture (normalized boat statistics use another shape).
+    const raw=own(race,"raw")?race.raw:race;
+    const hasRaw=Array.isArray(race?.entries)||Array.isArray(raw?.entries)||Array.isArray(raw?.startExhibition);
+    if(hasRaw){
+      // capture's compatibility fallback may use the frame number. It must
+      // never become an official entry fact without the original full mapping.
+      const starts=raw?.startExhibition;
+      if(!Array.isArray(raw?.entries)||raw.entries.length!==6||!raw.entries.every(validIdentity)||
+        new Set(raw.entries.map(e=>Number(identity(e)))).size!==6)return neutral();
+      // Validate original scalar facts even when this is already a raw-schema
+      // input. Legacy capture turns whitespace and booleans into zero.
+      if(!raw.entries.every(e=>validFacts(e)&&validFacts(e.exhibition))||
+        Array.isArray(raw.beforeInfo)&&!raw.beforeInfo.every(e=>validFacts(e)&&validFacts(e.exhibition)))return neutral();
+      if(raw!==race){
+        if(!race||["date","stadiumCode","raceNo"].some(k=>!own(race,k)||!own(raw,k)||String(race[k])!==String(raw[k])))return neutral();
+        if(!Array.isArray(race.entries)||race.entries.length!==6||new Set(race.entries.map(e=>Number(identity(e)))).size!==6)return neutral();
+        for(const e of race.entries){
+          const original=raw.entries.find(o=>Number(identity(o))===Number(identity(e)));
+          if(!validIdentity(e)||!original||!validFacts(e)||!validFacts(e.exhibition))return neutral();
+          for(const keys of [["avgST","avgSt","averageST","st"],["exhibitionTime","displayTime"],["exhibitionST","exhibitionSt"]]){
+            const a=fact(e,keys),b=fact(original,keys);
+            if(a!==null&&!Number.isFinite(a)||b!==null&&!Number.isFinite(b)||a!==null&&b!==null&&a!==b)return neutral();
+          }
+        }
+        const normalized=race.startExhibition;
+        if(!Array.isArray(normalized)||normalized.length!==6||new Set(normalized.map(s=>Number(identity(s)))).size!==6||
+          !normalized.every(s=>{
+            const original=Array.isArray(starts)?starts.find(t=>Number(identity(t))===Number(identity(s))):null;
+            return validStart(s)&&validStart(original)&&Number(original.course)===Number(s.course)&&original.isOfficialCourse===s.isOfficialCourse&&
+              original.marker===s.marker&&Number(original.st)===Number(s.st);
+          }))return neutral();
+      }
+      if(!Array.isArray(starts)||starts.length!==6||
+        !starts.every(validStart)||
+        new Set(starts.map(s=>Number(identity(s)))).size!==6||new Set(starts.map(s=>Number(s.course))).size!==6)return neutral();
+      if(typeof captureConditions!=="function")return neutral();
+      let captured;
+      try{captured=captureConditions(raw,prediction);}catch(_){return neutral();}
+      if(!Array.isArray(captured?.boats)||captured.boats.length!==6)return neutral();
+      const boats=captured.boats.map(value=>({
+        ...pick(value,fixed),
+        ...(value.startExhibition?{startExhibition:pick(value.startExhibition,["st","marker"])}:{})
+      }));
+      if(new Set(boats.map(b=>b.boatNo)).size!==6||!boats.every(b=>{
+        const start=starts.find(s=>Number(identity(s))===Number(b.boatNo));
+        return boat(b.boatNo)&&start&&Number(start.course)===Number(b.course)&&b.courseOfficial===true;
+      }))return neutral();
+      if(!own(prediction,"preRaceConditions")){
+        // Copy only explanation facts. In particular, capture's pre_deadline
+        // label and result/timing evidence do not describe historical review.
+        view={...view,preRaceConditions:{boats}};
+      }else{
+        const existing=prediction.preRaceConditions?.boats;
+        if(!Array.isArray(existing))return neutral();
+        for(const old of existing){
+          const matches=boats.filter(b=>Number(b.boatNo)===Number(old?.boatNo));
+          if(matches.length!==1)return neutral();
+          const fresh=matches[0];
+          // Existing values (including null/unknown) are never repaired.
+          if(fixed.filter(k=>k!=="courseMappingSource").some(k=>own(old,k)&&old[k]!==fresh[k]))return neutral();
+          if(old.startExhibition&&["st","marker"].some(k=>own(old.startExhibition,k)&&old.startExhibition[k]!==fresh.startExhibition?.[k]))return neutral();
+        }
+      }
+    }
+    const scenario=view.verificationEvidence?.mainScenario,core=view.aiCore?.raceScenarios?.mainScenario;
+    if(scenario&&core){
+      const keys=["type","label","headBoatNo","attackerBoatNo"];
+      const same=(key,a,b)=>["headBoatNo","attackerBoatNo"].includes(key)?boat(a)&&boat(b)&&Number(a)===Number(b):a===b;
+      if(keys.some(k=>own(scenario,k)&&own(core,k)&&!same(k,scenario[k],core[k])))return neutral();
+      if(own(scenario,"attackerCourse")){
+        if(own(core,"attackerCourse")&&scenario.attackerCourse!==core.attackerCourse)return neutral();
+      }else if(keys.every(k=>own(scenario,k)&&own(core,k)&&same(k,scenario[k],core[k]))&&
+        typeof core.attackerCourse==="number"&&boat(core.attackerCourse)){
+        view={...view,verificationEvidence:{...view.verificationEvidence,
+          mainScenario:{...scenario,attackerCourse:core.attackerCourse}}};
+      }
+    }
+    return view;
+  }
+
   function explanation(prediction){
+    if(prediction?.readerExplanationUnavailable===true)return {verified:false,text:"展開の根拠は確認中です。"};
     const head=verifiedHead(prediction),s=prediction?.verificationEvidence?.mainScenario;
     const labels={escape:head+"号艇逃げ",sashi:"2コース差し",threeAttack:"3コース攻め",fourAttack:"4カド攻め"};
     const unknown={verified:false,text:"展開の根拠は確認中です。"};
@@ -237,5 +341,5 @@
       return {...state("unavailable","保存された買い目の整合性を確認中です。"),error:error.message};
     }
   }
-  return {VERSION,MAIN,ADDITIONAL,HOLE,REFERENCE,valid,tickets,groupTickets,verifiedHead,exhibitionStText,explanation,referenceSummary,savedRescueProof,fromPrediction};
+  return {VERSION,MAIN,ADDITIONAL,HOLE,REFERENCE,valid,tickets,groupTickets,verifiedHead,exhibitionStText,explanationView,explanation,referenceSummary,savedRescueProof,fromPrediction};
 });
