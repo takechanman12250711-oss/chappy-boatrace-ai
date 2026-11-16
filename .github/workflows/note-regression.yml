@@ -22,6 +22,7 @@ on:
       - "scripts/test-note-draft-bundle.js"
       - "scripts/check-note-skills.js"
       - "scripts/note-github-ui-transport.js"
+      - "scripts/note-saved-state-auth*"
       - "scripts/note-pricing*"
       - "scripts/note-readable-article*"
       - "scripts/note-korogashi-presentation*"
@@ -87,6 +88,7 @@ on:
       - "scripts/test-note-draft-bundle.js"
       - "scripts/check-note-skills.js"
       - "scripts/note-github-ui-transport.js"
+      - "scripts/note-saved-state-auth*"
       - "scripts/note-pricing*"
       - "scripts/note-readable-article*"
       - "scripts/note-korogashi-presentation*"
@@ -184,6 +186,7 @@ jobs:
           node scripts/test-prediction-summaries.js
           node scripts/check-note-skills.js
           node scripts/note-github-ui-transport.test.js
+          node --test scripts/note-saved-state-auth.test.js
           node --test scripts/note-pricing.test.js scripts/note-readable-article.test.js scripts/note-korogashi-presentation.test.cjs
           node --test scripts/note-published-ticket-sections.test.js scripts/note-result-provenance.test.js scripts/note-korogashi-lifecycle.test.cjs
           node scripts/note-cover.test.js

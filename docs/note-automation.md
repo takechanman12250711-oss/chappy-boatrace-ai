@@ -482,3 +482,15 @@ PR #1474 のmain反映後、手動実行 run 43788103199（`mode=auth`・`browse
 - 確認処理は通常のウィンドウで開く（`LAUNCH_OPTIONS = { headless: false }`）。workflowは `browser=github-state` のときだけ `xvfb-run -a` で仮想の画面を与える。ブラウザの名乗りや指紋の変更、機械よけの解決手段は使わない。
 - 未確認：GitHubのランナーで画面ありにすれば欄が出るか。main反映後の手動実行1回で判断する。通らなければ、パソコンに投稿させる案（Issue #1460 のB）を検討する。
 - 公開処理はBrowser Use経由のまま変更していない。
+
+## 2026-11-16 公開処理を「保存したログイン状態」の経路へ切り替えられるようにする
+
+PR #1476 のmain反映後、手動実行 run 43792690334（`mode=auth`・`browser=github-state`）は成功した（`NOTE_UI_STATE_LOADED=true`・`NOTE_UI_EDITOR_READY=true`、入力・公開なし）。GitHubのランナーの通常ウィンドウのブラウザが、本人の保存したログイン状態でnote編集画面のタイトル欄・本文欄まで届いた。これを受け、auth／draft／publish／recover と無料一覧の更新（Update note marketing）が、ログイン済みブラウザの出どころを選べるようにした。
+
+- 切り替えはリポジトリ変数 `NOTE_UI_ROUTE`。`saved-state` のとき、ランナー自身のブラウザ（通常ウィンドウ・`xvfb-run`）へSecret `NOTE_STATE_JSON_BASE64` の状態を読み込む。未設定のときは従来どおりBrowser Use。mainへの反映だけでは経路は変わらない。変数を消せば元へ戻る。
+- `scripts/note-github-ui-transport.js` の `prepareNoteBrowser` が経路を1か所で決める。どちらの経路も「最初のcontextがログイン済み」のブラウザを返すため、予約・本文入力・表紙・公開設定・公開クリック1回・ログインなしの公開確認・receiptの処理は同じコードのまま。公開の条件（保存原本のSHA一致、展示後、中心1〜7点、締切120秒超、readable-v7・0円、原子的予約、結果不明なら再投稿しない）は変更していない。
+- 順序も同じ：資格情報の確認 → 表紙生成 → ブラウザを開く → 原子的予約 → 編集画面。`saved-state` で状態が無い・壊れている・空の場合と、ブラウザを開けない場合（`note_state_browser_start_failed`）は予約を作らずに止まる。ブラウザの例外文は状態を含み得るため固定コードへ置き換える。
+- Browser Useの経路はそのまま残す。`saved-state` ではBrowser UseのAPIを呼ばないので、402は発生しない。
+- 未確認：`saved-state` での本文入力・表紙のアップロード・公開設定・公開クリック・公開確認（authで確かめたのは編集画面の欄まで）。Browser Useは日本のプロキシ経由だったが、ランナーは海外にあり、noteの表示や受け付けが同じかは実記事で確かめる。ログイン状態の有効期間と、利用のたびにCookieが更新される場合に保存した状態が古くなるかも未確認。切れた場合は `note_editor_session_not_ready_<host>` で予約後に止まり得るため、本人のパソコンでログインし直してSecretを更新する。
+- 開始の証拠は、変数を設定した後の最初の公開receiptとログインなし画面での確認であり、main反映や変数の設定だけでは再開済みとしない。
+- 検証: `node --test scripts/note-saved-state-auth.test.js`、`node scripts/note-github-ui-transport.test.js`、`node --test scripts/note-queue-expiry.test.cjs`、`node --test scripts/note-marketing.test.js scripts/note-marketing-reports.test.js`。

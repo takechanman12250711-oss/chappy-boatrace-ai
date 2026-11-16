@@ -64,6 +64,10 @@ jobs:
       NOTE_UI_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'publish' }}
       NOTE_IPHONE_HANDOFF: data/note-publish/iphone.json
       NOTE_UI_BROWSER: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'auth' && inputs.browser || 'browser-use' }}
+      # Where the signed-in browser comes from for auth/draft/publish/recover.
+      # Repository variable NOTE_UI_ROUTE=saved-state uses the runner's own
+      # browser with the saved sign-in state; unset keeps Browser Use.
+      NOTE_UI_ROUTE: ${{ vars.NOTE_UI_ROUTE || 'browser-use' }}
       NOTE_RECOVERY_SOURCE_PATH: ${{ github.event_name == 'workflow_dispatch' && inputs.recovery_source_path || '' }}
       NOTE_RECOVERY_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.recovery_url || '' }}
     steps:
@@ -119,7 +123,7 @@ jobs:
           })().catch(error => { console.error(error.message); process.exitCode = 1; });
           NODE
       - name: Require Browser Use connection
-        if: steps.preflight.outputs.ready == 'true' && env.NOTE_UI_BROWSER == 'browser-use'
+        if: steps.preflight.outputs.ready == 'true' && env.NOTE_UI_BROWSER == 'browser-use' && env.NOTE_UI_ROUTE != 'saved-state'
         env:
           BROWSER_USE_API_KEY: ${{ secrets.BROWSER_USE_API_KEY }}
           BROWSER_USE_PROFILE_ID: ${{ secrets.BROWSER_USE_PROFILE_ID }}
@@ -154,18 +158,23 @@ jobs:
           # Used only by the manual auth check with browser=github.
           NOTE_LOGIN_ID: ${{ env.NOTE_UI_BROWSER == 'github' && secrets.NOTE_LOGIN_ID || '' }}
           NOTE_LOGIN_PASSWORD: ${{ env.NOTE_UI_BROWSER == 'github' && secrets.NOTE_LOGIN_PASSWORD || '' }}
-          # Used only by the manual auth check with browser=github-state.
-          NOTE_STATE_JSON_BASE64: ${{ env.NOTE_UI_BROWSER == 'github-state' && secrets.NOTE_STATE_JSON_BASE64 || '' }}
+          # Used by the manual auth check with browser=github-state and by
+          # every mode when NOTE_UI_ROUTE is saved-state.
+          NOTE_STATE_JSON_BASE64: ${{ (env.NOTE_UI_BROWSER == 'github-state' || env.NOTE_UI_ROUTE == 'saved-state') && secrets.NOTE_STATE_JSON_BASE64 || '' }}
           NOTE_CLAIM_TOKEN: ${{ github.token }}
           # Token-started runs do not trigger workflow_run; ask for marketing explicitly.
           NOTE_MARKETING_DISPATCH: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'github-actions[bot]' }}
         run: |
+          # The saved sign-in state needs a normal browser window, so give it
+          # a virtual display. Browser Use runs exactly as before.
+          display=""
+          if [ "$NOTE_UI_BROWSER" = "github-state" ] || [ "$NOTE_UI_ROUTE" = "saved-state" ]; then
+            display="xvfb-run -a"
+          fi
           if [ "$NOTE_UI_MODE" = "publish" ]; then
-            node scripts/publish-note-queue.js
-          elif [ "$NOTE_UI_BROWSER" = "github-state" ]; then
-            xvfb-run -a node scripts/note-github-ui-transport.js
+            $display node scripts/publish-note-queue.js
           else
-            node scripts/note-github-ui-transport.js
+            $display node scripts/note-github-ui-transport.js
           fi
 
 
