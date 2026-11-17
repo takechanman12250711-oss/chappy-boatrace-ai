@@ -93,3 +93,12 @@ node scripts/note-korogashi-draft.cjs --input /path/to/session.json
 - 2段目以降は締切まで5分超（`NEXT_LEG_MIN_MARGIN_MS`）のレースから選ぶ。同日・同種類・公開済み・締切順の最初の1件、券とオッズで選び直さないこと、全券保持、配分方法は変えない。初回は従来どおり120秒超。登録と掲載確認の、それぞれの締切120秒超の条件も変えない。
 - 既存の要求の `selectionPolicy` 名は変えない（過去の記録の検証を維持するため）。過去のイベントは書き換えない。
 - 未実証：main反映後に、2段目の掲載確認が締切前に完了すること。間に合うことは保証しない。
+
+## 2026-11-17 Codexへの引き継ぎ：初回登録確認の失敗
+
+Claude Codeの[共有記録](https://github.com/takechanman12250711-oss/chappy-boatrace-ai/issues/1460#issuecomment-6936759660)を受領し、main `cccdc70ace4b4d1c97d4d19765504291a3ad99ff` と専用状態を照合した。PR #1485の変更を作り直さず、Claude側が予定している21:30 JSTの実レース確認と区別して、登録確認の診断を進める。
+
+- [実行43980164792](https://github.com/takechanman12250711-oss/chappy-boatrace-ai/actions/runs/43980164792)のupdateジョブログでは、08:37:40 JSTに唐津1Rを初回候補として準備し、08:37:42にartifact ID `14281828505` の送信が完了した。その直後の確認は `korogashi_artifact_lookup_failed` で失敗した。artifact送信成功をregisteredや掲載成功と扱わない。
+- 専用状態の `daily-20261117-normal-100000` は08:39:42 JSTに `registration_expired` で停止している。確認APIのHTTPステータスは旧ログに記録されておらず、権限・取得可能になるまでの遅延・その他の失敗のどれかは未確定。
+- 診断変更は、確認APIが失敗した場合のエラーに検査済みHTTPステータスだけを付加する。レスポンス本文・ヘッダー・認証情報は記録せず、再送・再開始・過去状態の復旧は追加しない。成功時のartifact ID/digest/run/head/時刻の照合は従来どおり。
+- 次の担当はmain反映後に自然実行で同じ失敗が起きた場合のHTTPステータスを確認する。ステータスがない過去の失敗から原因を断定せず、予想・点数上限・配分・締切条件を変更しない。2段目の掲載成功は引き続き別の実証項目。

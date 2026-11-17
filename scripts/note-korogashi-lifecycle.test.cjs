@@ -143,6 +143,24 @@ test('sealing checks external artifact identity, digest, workflow and server tim
   for(const change of [{id:45},{expired:true},{digest:'bad'},{name:'another'},{workflow_run:{id:124,head_sha:ctx.headSha}}])
     await assert.rejects(artifact(env,fetcher({...data,...change})),/artifact_identity/);
 });
+test('failed artifact lookup reports only a bounded HTTP status and never retries or reads a body',async()=>{
+  const {artifact}=require('./note-korogashi-run.cjs');
+  const env={GITHUB_REPOSITORY:'takechanman12250711-oss/chappy-boatrace-ai',GITHUB_REF:'refs/heads/main',GITHUB_RUN_ID:ctx.runId,
+    GITHUB_RUN_ATTEMPT:ctx.runAttempt,GITHUB_SHA:ctx.headSha,KOROGASHI_ARTIFACT_ID:'44',NOTE_CLAIM_TOKEN:'must-not-appear'};
+  for(const status of [401,403,404,429,500,503,undefined,'private response',0,600]) {
+    let calls=0;
+    const expected=Number.isInteger(status)&&status>=100&&status<=599?status:'unknown';
+    await assert.rejects(artifact(env,async()=>{
+      calls++;
+      return {ok:false,status,json:()=>{throw Error('body must not be read');},headers:{get:()=>{throw Error('headers must not be read');}}};
+    }),error=>{
+      assert.equal(error.message,`korogashi_artifact_lookup_failed_http_${expected}`);
+      assert(!error.message.includes(env.NOTE_CLAIM_TOKEN));
+      return true;
+    });
+    assert.equal(calls,1);
+  }
+});
 test('state writes are append-only compare-and-swap, never main or force push',async()=>{
   const {repository,BRANCH}=require('./note-korogashi-store.cjs'),calls=[];
   const store={revision:'a'.repeat(40),api:async(route,method,body)=>{

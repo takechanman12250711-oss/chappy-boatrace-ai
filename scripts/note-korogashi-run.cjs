@@ -31,7 +31,12 @@ async function artifact(env,fetcher=fetch) {
   if(!/^\d+$/.test(env.KOROGASHI_ARTIFACT_ID||''))throw Error('korogashi_artifact_id_invalid');
   const response=await fetcher(`https://api.github.com/repos/${REPO}/actions/artifacts/${env.KOROGASHI_ARTIFACT_ID}`,{
     redirect:'error',signal:AbortSignal.timeout(10000),headers:{Authorization:`Bearer ${env.NOTE_CLAIM_TOKEN}`,Accept:'application/vnd.github+json'}});
-  if(!response.ok)throw Error('korogashi_artifact_lookup_failed');
+  // Record only the HTTP status, never the response body, headers or token.
+  // A failed lookup must still stop confirmation; do not retry registration.
+  if(!response.ok) {
+    const status=Number.isInteger(response.status)&&response.status>=100&&response.status<=599?response.status:'unknown';
+    throw Error(`korogashi_artifact_lookup_failed_http_${status}`);
+  }
   const data=await response.json(), confirmed=Date.parse(response.headers.get('date'))+1000;
   const digest='sha256:'+String(env.KOROGASHI_ARTIFACT_DIGEST||'').replace(/^sha256:/,'');
   if(!Number.isFinite(confirmed)||data.expired||data.id!==Number(env.KOROGASHI_ARTIFACT_ID)||data.digest!==digest||
