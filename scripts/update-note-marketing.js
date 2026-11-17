@@ -7,6 +7,8 @@ const { readEditorContent } = require('./note-editor-content');
 const { fillDraft, waitForVisibleAcrossFrames } = require('./note-browserbase-draft-save');
 const { prepareNoteBrowser } = require('./note-github-ui-transport');
 const korogashi = require('./note-korogashi-lifecycle.cjs');
+const courseInsights = require('./note-korogashi-observability.cjs');
+const courseComparison = require('./note-korogashi-comparison.cjs');
 const BODY = '.note-common-styles__textnote-body';
 async function readPublic(page, article) {
   const response = await page.goto(article.url, { waitUntil: 'domcontentloaded', timeout: 45000 });
@@ -106,6 +108,17 @@ function createUpdateJournal(store, loaded, config, clock = Date.now) {
     get head() { return head; }
   };
 }
+// Generate one stored snapshot; the publisher must verify these exact bytes.
+// Never add candidate lookups between registration and anonymous confirmation.
+async function courseIndexText(courseState, rows, source, now, clock = Date.now) {
+  const parts = [korogashi.publicText(courseState, now), courseInsights.renderSummary(courseInsights.summarize(courseState)),
+    courseComparison.renderOverview(courseComparison.overview(courseState))];
+  if (!korogashi.needsPublication(courseState)) {
+    try { parts.push(courseInsights.renderPreview(await courseInsights.preview(courseState, {rows, source, now, clock}))); }
+    catch { parts.push('次段候補：確認できませんでした。登録済みの段の記録を優先します。'); }
+  }
+  return parts.filter(Boolean).join('\n\n');
+}
 async function run({ env = process.env, now = Date.now(), clock = Date.now, store = client(env), update = updateArticle } = {}) {
   const config = loadConfig();
   if (!config) throw new Error('marketing_config_missing');
@@ -114,7 +127,7 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
     { refresh: env.NOTE_OFFICIAL_REFRESH_STARTED !== 'true', clock });
   const courseRepo = require('./note-korogashi-store.cjs').repository(store);
   const courses = await courseRepo.load();
-  const courseText = korogashi.publicText(courses.state, now);
+  const courseText = await courseIndexText(courses.state, state.rows, courseRepo.source, clock(), clock);
   state.korogashiIndex = {version:'note-korogashi-index-v1',text:courseText};
   const desired = { guide: config.guide.initialBody, index: publishedIndexBody(state, config, now) };
   const changed = ['guide','index'].filter(k=>state.articles[k]?.hash !== hash(desired[k]));
@@ -156,7 +169,7 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
         const expired = Object.entries(next.plans).some(([id,p])=>korogashi.project(p).status==='stopped_publication_late' &&
           korogashi.project(courses.state.plans[id]).status==='waiting_publication');
         if (expired) {
-          const text = korogashi.publicText(next, clock());
+          const text = await courseIndexText(next, state.rows, courseRepo.source, clock(), clock);
           state.korogashiIndex = {version:'note-korogashi-index-v1',text};
           desired.index = publishedIndexBody(state, config, now);
           if (await update(page, publicPage, config.index, desired.index, state.articles.index.hash, null, journal.options('index', desired.index))) updates.push('index');
@@ -184,4 +197,4 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
   }
 }
 if (require.main === module) run().catch(error=>{console.error(`NOTE_MARKETING_FAILED=${error.message}`);process.exitCode=1;});
-module.exports = { publicMatches, BODY, readPublic, verifyPublic, updateArticle, requireArticleEditable, previousArticleText, createUpdateJournal, run };
+module.exports = { publicMatches, BODY, readPublic, verifyPublic, updateArticle, requireArticleEditable, previousArticleText, createUpdateJournal, courseIndexText, run };

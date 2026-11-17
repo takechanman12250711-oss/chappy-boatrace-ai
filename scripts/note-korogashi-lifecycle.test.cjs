@@ -153,6 +153,15 @@ test('sealing checks external artifact identity, digest, workflow and server tim
   await assert.rejects(artifact(env,async()=>{calls++;return fetcher({...data,digest:'bad'})();},{sleep}),/artifact_identity/);
   assert.equal(calls,1,'a mismatched artifact is never retried into acceptance');
 });
+test('registration margin uses the later of server confirmation and the local clock',async()=>{
+  const f=fixture(),out=await k.prepare(k.initialState(),config(),options([f])),deadline=Date.parse(f.row.deadlineAt);
+  const art={...seal(out.staged,f.now),createdAt:new Date(deadline-200000).toISOString(),confirmedAt:new Date(deadline-121000).toISOString()};
+  const late=k.confirm(out.state,out.staged,art,deadline-120000);
+  assert.equal(late.plans['test-100k'].events.at(-1).type,'stopped','server says 121s but the real clock says 120s: not registered');
+  assert.equal(late.plans['test-100k'].events.at(-1).data.reason,'registration_expired');
+  const ok=k.confirm(out.state,out.staged,art,deadline-121000);
+  assert.equal(ok.plans['test-100k'].events.at(-1).type,'registered');
+});
 test('state writes are append-only compare-and-swap, never main or force push',async()=>{
   const {repository,BRANCH}=require('./note-korogashi-store.cjs'),calls=[];
   const store={revision:'a'.repeat(40),api:async(route,method,body)=>{
@@ -235,7 +244,8 @@ test('Buffer waits for successful index verification and fails closed on depende
   for(const testFile of ['note-result-card.test.cjs','note-marketing-image.test.js'])assert(buffer.includes(`scripts/${testFile}`));
   assert.doesNotMatch(buffer,/continue-on-error|always\(\)|\|\| true/);
   assert.equal((buffer.match(/        if:/g)||[]).length,1);
-  assert(buffer.includes("if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'"));
+  assert(buffer.includes("if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.actor != 'github-actions[bot]')"),
+    'publication-triggered bot dispatches must not spend the shared Buffer budget on a connection check');
 });
 test('registration alone cannot settle or continue; missing or late public verification never earns a payout',async()=>{
   const f=fixture(),out=await k.prepare(k.initialState(),config(),options([f]));

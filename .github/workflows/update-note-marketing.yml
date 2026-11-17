@@ -196,7 +196,9 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends fonts-noto-cjk
       - name: Verify Buffer connection without posting
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        # Publication-triggered bot dispatches skip this check: each spends one
+        # request of the shared 80/24h Buffer budget without posting anything.
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.actor != 'github-actions[bot]')
         env:
           NOTE_CLAIM_TOKEN: ${{ github.token }}
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
