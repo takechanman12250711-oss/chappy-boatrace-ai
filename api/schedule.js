@@ -5,6 +5,23 @@ const { parseRaceHref } = require("./_schedule-parser");
 
 const OFFICIAL_BASE = "https://www.boatrace.jp";
 
+// Report only known native transport codes; never copy arbitrary cause text.
+const FETCH_FAILURE_CAUSE_CODES = new Set([
+  "UND_ERR_CONNECT_TIMEOUT", "UND_ERR_HEADERS_TIMEOUT", "UND_ERR_BODY_TIMEOUT", "UND_ERR_SOCKET",
+  "ECONNRESET", "ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN", "ETIMEDOUT",
+  "ERR_TLS_CERT_ALTNAME_INVALID", "CERT_HAS_EXPIRED", "UNABLE_TO_VERIFY_LEAF_SIGNATURE"
+]);
+
+function scheduleErrorMessage(error) {
+  const message = error?.message || String(error);
+  if (error?.name !== "TypeError" || message !== "fetch failed") return message;
+  let code;
+  try { code = error.cause?.code; } catch { return message; }
+  return typeof code === "string" && FETCH_FAILURE_CAUSE_CODES.has(code)
+    ? `${message} [${code}]`
+    : message;
+}
+
 const PLACE_NAMES = {
   "01": "桐生", "02": "戸田", "03": "江戸川", "04": "平和島", "05": "多摩川", "06": "浜名湖",
   "07": "蒲郡", "08": "常滑", "09": "津", "10": "三国", "11": "びわこ", "12": "住之江",
@@ -301,7 +318,7 @@ async function handler(req, res) {
   } catch (error) {
     return res.status(500).json({
       ok: false,
-      error: error?.message || String(error),
+      error: scheduleErrorMessage(error),
       name: error?.name || "Error"
     });
   }
