@@ -93,3 +93,12 @@ node scripts/note-korogashi-draft.cjs --input /path/to/session.json
 - 2段目以降は締切まで5分超（`NEXT_LEG_MIN_MARGIN_MS`）のレースから選ぶ。同日・同種類・公開済み・締切順の最初の1件、券とオッズで選び直さないこと、全券保持、配分方法は変えない。初回は従来どおり120秒超。登録と掲載確認の、それぞれの締切120秒超の条件も変えない。
 - 既存の要求の `selectionPolicy` 名は変えない（過去の記録の検証を維持するため）。過去のイベントは書き換えない。
 - 未実証：main反映後に、2段目の掲載確認が締切前に完了すること。間に合うことは保証しない。
+
+
+## 2026-11-17 公開直後の自動更新がBufferの枠を使い切っていた問題
+
+PR #1449 で、記事公開のたびにbotが Update note marketing を `workflow_dispatch` で起動するようにした。一方、Bufferジョブの「Buffer接続確認（投稿なし）」は `push` と `workflow_dispatch` のたびに1回APIを呼ぶ。そのため公開のたびに確認だけで共有の80回/直近24時間の枠を消費し、11/17は `buffer_free_budget_reached` でBufferジョブが失敗し、X告知・的中報告が止まった。
+
+- 接続確認は、`push` と本人が起動した `workflow_dispatch` のときだけ実行する。actor が `github-actions[bot]` の起動では行わない。告知・的中報告の送信処理、80回/24時間の上限、送信前の確認は変えていない。
+- 同じ日の `marketing_public_content_mismatch`（無料一覧の更新失敗）は別の作業の PR #1487 で修正済み。
+- 未確認：反映後、枠が戻ったときに告知が再開すること。
