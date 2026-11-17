@@ -1249,12 +1249,15 @@
       },
       "settlement": {
         "status": "pending",
-        "reason": "official_result_pending"
+        "reason": "official_result_stale"
       },
       "publishedSettlement": {
         "status": "pending",
-        "reason": "official_result_pending",
-        "method": "published-main-sections-v1"
+        "reason": "official_result_stale",
+        "method": "published-main-sections-v1",
+        "publishedTicketCount": 30,
+        "sectionsSha256": "ab55b22dd24169db83460120f70b58523da79c97266bf9ebb26f94db19be60cc",
+        "referenceTicketCount": 0
       },
       "winningProvenance": null,
       "socialContext": {
@@ -2697,7 +2700,7 @@
         "normal"
       ],
       "publishedArticles": 1,
-      "publishedTicketCount": null,
+      "publishedTicketCount": 30,
       "status": "pending",
       "matchedSections": [],
       "sources": [
@@ -2705,12 +2708,12 @@
           "publicationKey": "20261117-13-1:normal",
           "sourceSha256": "3a4a3fd535e04ab7fdb8ab6cf38e01b60cbc24811c26743f425ab82efe2298a6",
           "publishedAt": "2026-11-17T10:40:34.000+09:00",
-          "sectionsSha256": null,
+          "sectionsSha256": "ab55b22dd24169db83460120f70b58523da79c97266bf9ebb26f94db19be60cc",
           "status": "pending",
           "evidenceId": null
         }
       ],
-      "sourceSha256": "72ae89dd667db0e52a8280062289fdfe2fc1009a105e2d398a79506716a3d114",
+      "sourceSha256": "1bd0f1bb2a765d20c8e4d79d7deee98f25a678a1d6aa9b452c4e267a33d70d7a",
       "combination": null,
       "payoutPer100Yen": null,
       "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261117&jcd=13&rno=1",
