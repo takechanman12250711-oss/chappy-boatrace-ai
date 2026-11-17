@@ -240,6 +240,29 @@ test('course refresh consumes the only 12-request budget; index cache-only pass 
   assert.equal(calls,13,'next workflow may fetch the remaining eligible race');
 });
 
+test('a race awaited by a korogashi course retries after five minutes and outside the 12-request budget; others keep 20 minutes',async()=>{
+  const originals=new Map(),rows=[];
+  for(let n=1;n<=13;n++) {
+    const f=fixture(),jcd=String(n).padStart(2,'0');
+    f.bundle.record.raceKey=`20260929-${jcd}-4`;
+    const bytes=JSON.stringify(f.bundle),receipt={...f.receipt,raceKey:f.bundle.record.raceKey,sourceSha256:hash(bytes)};
+    const row=receiptRow(receipt,bytes,now);rows.push(row);originals.set(row.raceKey,bytes);
+  }
+  const store=client({GITHUB_REPOSITORY:REPO,NOTE_CLAIM_TOKEN:'test-only',NOTE_CLAIM_SHA:'f'.repeat(40)},async url=>{
+    if(!url.includes('/contents/data/note-drafts/'))return {ok:false,status:404};
+    const key=[...originals.keys()].find(k=>url.includes(k+'-'));
+    return {ok:true,status:200,json:async()=>({encoding:'base64',content:Buffer.from(originals.get(key)).toString('base64')})};
+  });
+  const course=rows.at(-1).raceKey;let fetched=[];
+  const options={refresh:true,clock:()=>now,priorityRaceKeys:[course],fetchResult:async key=>{fetched.push(key);throw Error('unavailable');}};
+  const first=await store.settle({...initialState(config),date:'20260929',rows},config,now,options);
+  assert.equal(fetched.length,13);assert(fetched.includes(course),'the awaited race is not crowded out by the 12-request budget');
+  fetched=[];await store.settle(first,config,now+5*60000-1,options);assert.deepEqual(fetched,[]);
+  fetched=[];const second=await store.settle(first,config,now+5*60000,options);assert.deepEqual(fetched,[course]);
+  fetched=[];await store.settle(second,config,now+20*60000,{...options,priorityRaceKeys:[]});
+  assert.equal(fetched.length,12);assert(!fetched.includes(course),'without a waiting course the ordinary cap and spacing return');
+});
+
 test('index refresh is cache-only after prepare claimed budget, and remains enabled for standalone or early-failed prepare',async()=>{
   const {run}=require('./update-note-marketing');
   for(const value of ['true','false','',undefined]) {
