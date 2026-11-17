@@ -288608,6 +288608,1681 @@
         "automaticApplication": false,
         "productionPredictionChanged": false,
         "productionTicketSelectionChanged": false
+      },
+      "result": {
+        "schemaVersion": 5,
+        "settled": true,
+        "resultTicket": "1-3-2",
+        "winningMethod": "逃げ",
+        "scenarioTitle": "1号艇逃げ",
+        "expectedMethod": "逃げ",
+        "scenarioMatched": true,
+        "marks": [
+          {
+            "key": "honmei",
+            "symbol": "◎",
+            "label": "本命",
+            "boatNo": 1,
+            "finish": 1,
+            "finishLabel": "1着"
+          },
+          {
+            "key": "taikou",
+            "symbol": "○",
+            "label": "対抗",
+            "boatNo": 2,
+            "finish": 3,
+            "finishLabel": "3着"
+          },
+          {
+            "key": "ana",
+            "symbol": "▲",
+            "label": "穴",
+            "boatNo": 3,
+            "finish": 2,
+            "finishLabel": "2着"
+          },
+          {
+            "key": "osae",
+            "symbol": "△",
+            "label": "押さえ",
+            "boatNo": 4,
+            "finish": 4,
+            "finishLabel": "4着以下"
+          }
+        ],
+        "practicalRows": [
+          {
+            "ticket": "1-2-3",
+            "category": "本線",
+            "categories": [
+              "本線"
+            ],
+            "selectionTier": "",
+            "roleClaims": [
+              {
+                "role": "attack",
+                "boatNo": 1,
+                "expectedPositions": [
+                  1
+                ]
+              },
+              {
+                "role": "hold",
+                "boatNo": 2,
+                "expectedPositions": [
+                  2
+                ]
+              },
+              {
+                "role": "continuation",
+                "boatNo": 2,
+                "expectedPositions": [
+                  2
+                ]
+              },
+              {
+                "role": "pickup",
+                "boatNo": 3,
+                "expectedPositions": [
+                  3
+                ]
+              }
+            ],
+            "theoryClaims": [
+              {
+                "theoryKey": "flow",
+                "label": "展開",
+                "version": "evaluated-scenarios-v1",
+                "formal": true,
+                "source": "structured-purchase-branch"
+              },
+              {
+                "theoryKey": "holdPickup",
+                "label": "残し・拾い",
+                "version": "structured-role-evidence-v1",
+                "formal": true,
+                "source": "structured-role-claim"
+              }
+            ]
+          },
+          {
+            "ticket": "1-4-3",
+            "category": "本線",
+            "categories": [
+              "本線"
+            ],
+            "selectionTier": "",
+            "roleClaims": [
+              {
+                "role": "attack",
+                "boatNo": 1,
+                "expectedPositions": [
+                  1
+                ]
+              },
+              {
+                "role": "hold",
+                "boatNo": 4,
+                "expectedPositions": [
+                  2
+                ]
+              },
+              {
+                "role": "pickup",
+                "boatNo": 3,
+                "expectedPositions": [
+                  3
+                ]
+              }
+            ],
+            "theoryClaims": [
+              {
+                "theoryKey": "flow",
+                "label": "展開",
+                "version": "evaluated-scenarios-v1",
+                "formal": true,
+                "source": "structured-purchase-branch"
+              },
+              {
+                "theoryKey": "holdPickup",
+                "label": "残し・拾い",
+                "version": "structured-role-evidence-v1",
+                "formal": true,
+                "source": "structured-role-claim"
+              }
+            ]
+          },
+          {
+            "ticket": "1-3-4",
+            "category": "本線",
+            "categories": [
+              "本線"
+            ],
+            "selectionTier": "",
+            "roleClaims": [
+              {
+                "role": "attack",
+                "boatNo": 1,
+                "expectedPositions": [
+                  1
+                ]
+              },
+              {
+                "role": "hold",
+                "boatNo": 3,
+                "expectedPositions": [
+                  2
+                ]
+              },
+              {
+                "role": "pickup",
+                "boatNo": 4,
+                "expectedPositions": [
+                  3
+                ]
+              }
+            ],
+            "theoryClaims": [
+              {
+                "theoryKey": "flow",
+                "label": "展開",
+                "version": "evaluated-scenarios-v1",
+                "formal": true,
+                "source": "structured-purchase-branch"
+              },
+              {
+                "theoryKey": "holdPickup",
+                "label": "残し・拾い",
+                "version": "structured-role-evidence-v1",
+                "formal": true,
+                "source": "structured-role-claim"
+              }
+            ]
+          },
+          {
+            "ticket": "1-2-4",
+            "category": "流し",
+            "categories": [
+              "流し"
+            ],
+            "selectionTier": "",
+            "roleClaims": [
+              {
+                "role": "attack",
+                "boatNo": 1,
+                "expectedPositions": [
+                  1
+                ]
+              },
+              {
+                "role": "hold",
+                "boatNo": 2,
+                "expectedPositions": [
+                  2
+                ]
+              },
+              {
+                "role": "continuation",
+                "boatNo": 2,
+                "expectedPositions": [
+                  2
+                ]
+              },
+              {
+                "role": "pickup",
+                "boatNo": 4,
+                "expectedPositions": [
+                  3
+                ]
+              }
+            ],
+            "theoryClaims": [
+              {
+                "theoryKey": "flow",
+                "label": "展開",
+                "version": "evaluated-scenarios-v1",
+                "formal": true,
+                "source": "structured-purchase-branch"
+              },
+              {
+                "theoryKey": "holdPickup",
+                "label": "残し・拾い",
+                "version": "structured-role-evidence-v1",
+                "formal": true,
+                "source": "structured-role-claim"
+              }
+            ]
+          },
+          {
+            "ticket": "1-2-5",
+            "category": "流し",
+            "categories": [
+              "流し"
+            ],
+            "selectionTier": "",
+            "roleClaims": [
+              {
+                "role": "attack",
+                "boatNo": 1,
+                "expectedPositions": [
+                  1
+                ]
+              },
+              {
+                "role": "hold",
+                "boatNo": 2,
+                "expectedPositions": [
+                  2
+                ]
+              },
+              {
+                "role": "continuation",
+                "boatNo": 2,
+                "expectedPositions": [
+                  2
+                ]
+              },
+              {
+                "role": "pickup",
+                "boatNo": 5,
+                "expectedPositions": [
+                  3
+                ]
+              }
+            ],
+            "theoryClaims": [
+              {
+                "theoryKey": "flow",
+                "label": "展開",
+                "version": "evaluated-scenarios-v1",
+                "formal": true,
+                "source": "structured-purchase-branch"
+              },
+              {
+                "theoryKey": "holdPickup",
+                "label": "残し・拾い",
+                "version": "structured-role-evidence-v1",
+                "formal": true,
+                "source": "structured-role-claim"
+              }
+            ]
+          },
+          {
+            "ticket": "1-3-2",
+            "category": "独立展開",
+            "categories": [
+              "独立展開"
+            ],
+            "selectionTier": "1逃げ相手補正",
+            "roleClaims": [
+              {
+                "role": "attack",
+                "boatNo": 1,
+                "expectedPositions": [
+                  1
+                ]
+              },
+              {
+                "role": "hold",
+                "boatNo": 3,
+                "expectedPositions": [
+                  2
+                ]
+              },
+              {
+                "role": "pickup",
+                "boatNo": 2,
+                "expectedPositions": [
+                  3
+                ]
+              }
+            ],
+            "theoryClaims": [
+              {
+                "theoryKey": "flow",
+                "label": "展開",
+                "version": "evaluated-scenarios-v1",
+                "formal": true,
+                "source": "structured-purchase-branch"
+              },
+              {
+                "theoryKey": "holdPickup",
+                "label": "残し・拾い",
+                "version": "structured-role-evidence-v1",
+                "formal": true,
+                "source": "structured-role-claim"
+              }
+            ]
+          }
+        ],
+        "practicalTickets": [
+          "1-2-3",
+          "1-4-3",
+          "1-3-4",
+          "1-2-4",
+          "1-2-5",
+          "1-3-2"
+        ],
+        "practicalPointCount": 6,
+        "practicalHit": true,
+        "hitCategory": "独立展開",
+        "hitCategories": [
+          "独立展開"
+        ],
+        "missType": "的中",
+        "payoutPer100": 840,
+        "popularity": 4,
+        "simulatedStake": 600,
+        "simulatedReturn": 840,
+        "simulatedProfit": 240,
+        "simulatedRecoveryRate": 140,
+        "scenarioVerification": {
+          "status": "matched",
+          "structured": true,
+          "label": "1号艇逃げ",
+          "expectedWinner": 1,
+          "actualWinner": 1,
+          "expectedMethods": [
+            "逃げ"
+          ],
+          "winningMethod": "逃げ",
+          "positionMatched": true,
+          "methodMatched": true
+        },
+        "roleResults": [
+          {
+            "role": "attack",
+            "boatNo": 1,
+            "expectedPositions": [
+              1
+            ],
+            "label": "攻め・頭",
+            "actualFinish": 1,
+            "status": "matched",
+            "matched": true,
+            "top3": true
+          },
+          {
+            "role": "hold",
+            "boatNo": 2,
+            "expectedPositions": [
+              2
+            ],
+            "label": "残し",
+            "actualFinish": 3,
+            "status": "missed",
+            "matched": false,
+            "top3": true
+          },
+          {
+            "role": "continuation",
+            "boatNo": 2,
+            "expectedPositions": [
+              2
+            ],
+            "label": "追走・続行",
+            "actualFinish": 3,
+            "status": "missed",
+            "matched": false,
+            "top3": true
+          },
+          {
+            "role": "pickup",
+            "boatNo": 3,
+            "expectedPositions": [
+              3
+            ],
+            "label": "拾い",
+            "actualFinish": 2,
+            "status": "missed",
+            "matched": false,
+            "top3": true
+          },
+          {
+            "role": "hold",
+            "boatNo": 4,
+            "expectedPositions": [
+              2
+            ],
+            "label": "残し",
+            "actualFinish": 4,
+            "status": "missed",
+            "matched": false,
+            "top3": false
+          },
+          {
+            "role": "hold",
+            "boatNo": 3,
+            "expectedPositions": [
+              2
+            ],
+            "label": "残し",
+            "actualFinish": 2,
+            "status": "matched",
+            "matched": true,
+            "top3": true
+          },
+          {
+            "role": "pickup",
+            "boatNo": 4,
+            "expectedPositions": [
+              3
+            ],
+            "label": "拾い",
+            "actualFinish": 4,
+            "status": "missed",
+            "matched": false,
+            "top3": false
+          },
+          {
+            "role": "pickup",
+            "boatNo": 5,
+            "expectedPositions": [
+              3
+            ],
+            "label": "拾い",
+            "actualFinish": 4,
+            "status": "missed",
+            "matched": false,
+            "top3": false
+          },
+          {
+            "role": "pickup",
+            "boatNo": 2,
+            "expectedPositions": [
+              3
+            ],
+            "label": "拾い",
+            "actualFinish": 3,
+            "status": "matched",
+            "matched": true,
+            "top3": true
+          }
+        ],
+        "ticketCategoryResults": [
+          {
+            "label": "本線",
+            "attempted": true,
+            "matched": false,
+            "status": "missed",
+            "ticketCount": 3
+          },
+          {
+            "label": "流し",
+            "attempted": true,
+            "matched": false,
+            "status": "missed",
+            "ticketCount": 2
+          },
+          {
+            "label": "独立展開",
+            "attempted": true,
+            "matched": true,
+            "status": "matched",
+            "ticketCount": 1
+          }
+        ],
+        "supportIdentity": {
+          "roleSchemaVersion": 1,
+          "theorySchemaVersion": 1,
+          "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup",
+          "generation": {
+            "logicFingerprint": "evaluated-scenarios-v1",
+            "confidenceDefinitionVersion": "internal-score-v1",
+            "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+          },
+          "evaluator": "shadow-selection-v2",
+          "evaluatorVersion": "shadow-selection-v2.0.1-boat-identity",
+          "selectorCohortKey": "d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank",
+          "logicFingerprint": "d691a612f3874582b925",
+          "theoryInputVersion": "theory-input-v1.0.2-st-history-fallback"
+        },
+        "calibrationKey": {
+          "logicFingerprint": "evaluated-scenarios-v1",
+          "confidenceDefinitionVersion": "internal-score-v1",
+          "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+        },
+        "internalEvaluation": {
+          "mode": "main",
+          "label": "本線信頼度",
+          "score": 88,
+          "probability": false
+        },
+        "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+        "priorityReview": {
+          "primaryStage": "的中",
+          "primaryEvidence": "中心の買い目が公式結果と一致しました。",
+          "stages": [
+            {
+              "stage": "展開",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "コース",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "ST・スリット",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "展示・足",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "残し・拾い",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "当地・水面",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "技量",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "モーター",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            }
+          ]
+        },
+        "verificationInputFingerprint": "0d880cff7ca02adc2f3594991ae4c816",
+        "settledAt": "2026-11-17T00:33:06.808Z",
+        "payout": 840,
+        "finishers": [
+          {
+            "rank": 1,
+            "boat": 1,
+            "registerNo": "5155",
+            "racerName": "内山七海",
+            "raceTime": "1'48\"9"
+          },
+          {
+            "rank": 2,
+            "boat": 3,
+            "registerNo": "5334",
+            "racerName": "樫葉新心",
+            "raceTime": "1'49\"9"
+          },
+          {
+            "rank": 3,
+            "boat": 2,
+            "registerNo": "5184",
+            "racerName": "飯塚響",
+            "raceTime": "1'52\"3"
+          },
+          {
+            "rank": 4,
+            "boat": 4,
+            "registerNo": "3357",
+            "racerName": "福島陽子",
+            "raceTime": "1'54\"2"
+          },
+          {
+            "rank": 5,
+            "boat": 6,
+            "registerNo": "5412",
+            "racerName": "久保田凪紗",
+            "raceTime": "1'57\"4"
+          },
+          {
+            "rank": 6,
+            "boat": 5,
+            "registerNo": "5108",
+            "racerName": "柴田愛梨",
+            "raceTime": "1'58\"6"
+          }
+        ],
+        "starts": [
+          {
+            "course": 1,
+            "boat": 1,
+            "st": 0.13,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".13 逃げ"
+          },
+          {
+            "course": 2,
+            "boat": 2,
+            "st": 0.12,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".12"
+          },
+          {
+            "course": 3,
+            "boat": 3,
+            "st": 0.22,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".22"
+          },
+          {
+            "course": 4,
+            "boat": 4,
+            "st": 0.24,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".24"
+          },
+          {
+            "course": 5,
+            "boat": 5,
+            "st": 0.17,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".17"
+          },
+          {
+            "course": 6,
+            "boat": 6,
+            "st": 0.11,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".11"
+          }
+        ],
+        "honmeiBoat": "1",
+        "honmeiFirst": true,
+        "scenarioLikelihoodV5Verification": {
+          "comparable": true,
+          "actualScenario": {
+            "key": "inEscape",
+            "label": "1逃げ"
+          },
+          "predictedLeader": {
+            "key": "inEscape",
+            "label": "1号艇逃げ",
+            "relativeLikelihood": 71.5
+          },
+          "predictedRunnerUp": {
+            "key": "course3Attack",
+            "label": "3コース攻め",
+            "relativeLikelihood": 20
+          },
+          "actualRelativeLikelihood": 71.5,
+          "leaderHit": true,
+          "top2Hit": true,
+          "likelihoodGap": 51.5,
+          "ambiguity": "clear",
+          "status": "shadow-verification"
+        },
+        "scenarioLikelihoodV5AbVerification": {
+          "comparable": true,
+          "status": "shadow-only",
+          "actualScenario": "1逃げ",
+          "actualScenarioKey": "inEscape",
+          "changed": true,
+          "winner": "b",
+          "a": {
+            "leaderScenario": "1号艇逃げ",
+            "runnerUpScenario": "3コース攻め",
+            "leaderHit": true,
+            "topTwoHit": true,
+            "actualLikelihood": 71.5,
+            "ambiguity": "clear"
+          },
+          "b": {
+            "leaderScenario": "1号艇逃げ",
+            "runnerUpScenario": "3コース攻め",
+            "leaderHit": true,
+            "topTwoHit": true,
+            "actualLikelihood": 78.7,
+            "ambiguity": "clear"
+          },
+          "usableForPrediction": false,
+          "automaticApplication": false
+        },
+        "verification": {
+          "schemaVersion": 5,
+          "settled": true,
+          "resultTicket": "1-3-2",
+          "winningMethod": "逃げ",
+          "scenarioTitle": "1号艇逃げ",
+          "expectedMethod": "逃げ",
+          "scenarioMatched": true,
+          "marks": [
+            {
+              "key": "honmei",
+              "symbol": "◎",
+              "label": "本命",
+              "boatNo": 1,
+              "finish": 1,
+              "finishLabel": "1着"
+            },
+            {
+              "key": "taikou",
+              "symbol": "○",
+              "label": "対抗",
+              "boatNo": 2,
+              "finish": 3,
+              "finishLabel": "3着"
+            },
+            {
+              "key": "ana",
+              "symbol": "▲",
+              "label": "穴",
+              "boatNo": 3,
+              "finish": 2,
+              "finishLabel": "2着"
+            },
+            {
+              "key": "osae",
+              "symbol": "△",
+              "label": "押さえ",
+              "boatNo": 4,
+              "finish": 4,
+              "finishLabel": "4着以下"
+            }
+          ],
+          "practicalRows": [
+            {
+              "ticket": "1-2-3",
+              "category": "本線",
+              "categories": [
+                "本線"
+              ],
+              "selectionTier": "",
+              "roleClaims": [
+                {
+                  "role": "attack",
+                  "boatNo": 1,
+                  "expectedPositions": [
+                    1
+                  ]
+                },
+                {
+                  "role": "hold",
+                  "boatNo": 2,
+                  "expectedPositions": [
+                    2
+                  ]
+                },
+                {
+                  "role": "continuation",
+                  "boatNo": 2,
+                  "expectedPositions": [
+                    2
+                  ]
+                },
+                {
+                  "role": "pickup",
+                  "boatNo": 3,
+                  "expectedPositions": [
+                    3
+                  ]
+                }
+              ],
+              "theoryClaims": [
+                {
+                  "theoryKey": "flow",
+                  "label": "展開",
+                  "version": "evaluated-scenarios-v1",
+                  "formal": true,
+                  "source": "structured-purchase-branch"
+                },
+                {
+                  "theoryKey": "holdPickup",
+                  "label": "残し・拾い",
+                  "version": "structured-role-evidence-v1",
+                  "formal": true,
+                  "source": "structured-role-claim"
+                }
+              ]
+            },
+            {
+              "ticket": "1-4-3",
+              "category": "本線",
+              "categories": [
+                "本線"
+              ],
+              "selectionTier": "",
+              "roleClaims": [
+                {
+                  "role": "attack",
+                  "boatNo": 1,
+                  "expectedPositions": [
+                    1
+                  ]
+                },
+                {
+                  "role": "hold",
+                  "boatNo": 4,
+                  "expectedPositions": [
+                    2
+                  ]
+                },
+                {
+                  "role": "pickup",
+                  "boatNo": 3,
+                  "expectedPositions": [
+                    3
+                  ]
+                }
+              ],
+              "theoryClaims": [
+                {
+                  "theoryKey": "flow",
+                  "label": "展開",
+                  "version": "evaluated-scenarios-v1",
+                  "formal": true,
+                  "source": "structured-purchase-branch"
+                },
+                {
+                  "theoryKey": "holdPickup",
+                  "label": "残し・拾い",
+                  "version": "structured-role-evidence-v1",
+                  "formal": true,
+                  "source": "structured-role-claim"
+                }
+              ]
+            },
+            {
+              "ticket": "1-3-4",
+              "category": "本線",
+              "categories": [
+                "本線"
+              ],
+              "selectionTier": "",
+              "roleClaims": [
+                {
+                  "role": "attack",
+                  "boatNo": 1,
+                  "expectedPositions": [
+                    1
+                  ]
+                },
+                {
+                  "role": "hold",
+                  "boatNo": 3,
+                  "expectedPositions": [
+                    2
+                  ]
+                },
+                {
+                  "role": "pickup",
+                  "boatNo": 4,
+                  "expectedPositions": [
+                    3
+                  ]
+                }
+              ],
+              "theoryClaims": [
+                {
+                  "theoryKey": "flow",
+                  "label": "展開",
+                  "version": "evaluated-scenarios-v1",
+                  "formal": true,
+                  "source": "structured-purchase-branch"
+                },
+                {
+                  "theoryKey": "holdPickup",
+                  "label": "残し・拾い",
+                  "version": "structured-role-evidence-v1",
+                  "formal": true,
+                  "source": "structured-role-claim"
+                }
+              ]
+            },
+            {
+              "ticket": "1-2-4",
+              "category": "流し",
+              "categories": [
+                "流し"
+              ],
+              "selectionTier": "",
+              "roleClaims": [
+                {
+                  "role": "attack",
+                  "boatNo": 1,
+                  "expectedPositions": [
+                    1
+                  ]
+                },
+                {
+                  "role": "hold",
+                  "boatNo": 2,
+                  "expectedPositions": [
+                    2
+                  ]
+                },
+                {
+                  "role": "continuation",
+                  "boatNo": 2,
+                  "expectedPositions": [
+                    2
+                  ]
+                },
+                {
+                  "role": "pickup",
+                  "boatNo": 4,
+                  "expectedPositions": [
+                    3
+                  ]
+                }
+              ],
+              "theoryClaims": [
+                {
+                  "theoryKey": "flow",
+                  "label": "展開",
+                  "version": "evaluated-scenarios-v1",
+                  "formal": true,
+                  "source": "structured-purchase-branch"
+                },
+                {
+                  "theoryKey": "holdPickup",
+                  "label": "残し・拾い",
+                  "version": "structured-role-evidence-v1",
+                  "formal": true,
+                  "source": "structured-role-claim"
+                }
+              ]
+            },
+            {
+              "ticket": "1-2-5",
+              "category": "流し",
+              "categories": [
+                "流し"
+              ],
+              "selectionTier": "",
+              "roleClaims": [
+                {
+                  "role": "attack",
+                  "boatNo": 1,
+                  "expectedPositions": [
+                    1
+                  ]
+                },
+                {
+                  "role": "hold",
+                  "boatNo": 2,
+                  "expectedPositions": [
+                    2
+                  ]
+                },
+                {
+                  "role": "continuation",
+                  "boatNo": 2,
+                  "expectedPositions": [
+                    2
+                  ]
+                },
+                {
+                  "role": "pickup",
+                  "boatNo": 5,
+                  "expectedPositions": [
+                    3
+                  ]
+                }
+              ],
+              "theoryClaims": [
+                {
+                  "theoryKey": "flow",
+                  "label": "展開",
+                  "version": "evaluated-scenarios-v1",
+                  "formal": true,
+                  "source": "structured-purchase-branch"
+                },
+                {
+                  "theoryKey": "holdPickup",
+                  "label": "残し・拾い",
+                  "version": "structured-role-evidence-v1",
+                  "formal": true,
+                  "source": "structured-role-claim"
+                }
+              ]
+            },
+            {
+              "ticket": "1-3-2",
+              "category": "独立展開",
+              "categories": [
+                "独立展開"
+              ],
+              "selectionTier": "1逃げ相手補正",
+              "roleClaims": [
+                {
+                  "role": "attack",
+                  "boatNo": 1,
+                  "expectedPositions": [
+                    1
+                  ]
+                },
+                {
+                  "role": "hold",
+                  "boatNo": 3,
+                  "expectedPositions": [
+                    2
+                  ]
+                },
+                {
+                  "role": "pickup",
+                  "boatNo": 2,
+                  "expectedPositions": [
+                    3
+                  ]
+                }
+              ],
+              "theoryClaims": [
+                {
+                  "theoryKey": "flow",
+                  "label": "展開",
+                  "version": "evaluated-scenarios-v1",
+                  "formal": true,
+                  "source": "structured-purchase-branch"
+                },
+                {
+                  "theoryKey": "holdPickup",
+                  "label": "残し・拾い",
+                  "version": "structured-role-evidence-v1",
+                  "formal": true,
+                  "source": "structured-role-claim"
+                }
+              ]
+            }
+          ],
+          "practicalTickets": [
+            "1-2-3",
+            "1-4-3",
+            "1-3-4",
+            "1-2-4",
+            "1-2-5",
+            "1-3-2"
+          ],
+          "practicalPointCount": 6,
+          "practicalHit": true,
+          "hitCategory": "独立展開",
+          "hitCategories": [
+            "独立展開"
+          ],
+          "missType": "的中",
+          "payoutPer100": 840,
+          "popularity": 0,
+          "simulatedStake": 600,
+          "simulatedReturn": 840,
+          "simulatedProfit": 240,
+          "simulatedRecoveryRate": 140,
+          "scenarioVerification": {
+            "status": "matched",
+            "structured": true,
+            "label": "1号艇逃げ",
+            "expectedWinner": 1,
+            "actualWinner": 1,
+            "expectedMethods": [
+              "逃げ"
+            ],
+            "winningMethod": "逃げ",
+            "positionMatched": true,
+            "methodMatched": true
+          },
+          "roleResults": [
+            {
+              "role": "attack",
+              "boatNo": 1,
+              "expectedPositions": [
+                1
+              ],
+              "label": "攻め・頭",
+              "actualFinish": 1,
+              "status": "matched",
+              "matched": true,
+              "top3": true
+            },
+            {
+              "role": "hold",
+              "boatNo": 2,
+              "expectedPositions": [
+                2
+              ],
+              "label": "残し",
+              "actualFinish": 3,
+              "status": "missed",
+              "matched": false,
+              "top3": true
+            },
+            {
+              "role": "continuation",
+              "boatNo": 2,
+              "expectedPositions": [
+                2
+              ],
+              "label": "追走・続行",
+              "actualFinish": 3,
+              "status": "missed",
+              "matched": false,
+              "top3": true
+            },
+            {
+              "role": "pickup",
+              "boatNo": 3,
+              "expectedPositions": [
+                3
+              ],
+              "label": "拾い",
+              "actualFinish": 2,
+              "status": "missed",
+              "matched": false,
+              "top3": true
+            },
+            {
+              "role": "hold",
+              "boatNo": 4,
+              "expectedPositions": [
+                2
+              ],
+              "label": "残し",
+              "actualFinish": 4,
+              "status": "missed",
+              "matched": false,
+              "top3": false
+            },
+            {
+              "role": "hold",
+              "boatNo": 3,
+              "expectedPositions": [
+                2
+              ],
+              "label": "残し",
+              "actualFinish": 2,
+              "status": "matched",
+              "matched": true,
+              "top3": true
+            },
+            {
+              "role": "pickup",
+              "boatNo": 4,
+              "expectedPositions": [
+                3
+              ],
+              "label": "拾い",
+              "actualFinish": 4,
+              "status": "missed",
+              "matched": false,
+              "top3": false
+            },
+            {
+              "role": "pickup",
+              "boatNo": 5,
+              "expectedPositions": [
+                3
+              ],
+              "label": "拾い",
+              "actualFinish": 4,
+              "status": "missed",
+              "matched": false,
+              "top3": false
+            },
+            {
+              "role": "pickup",
+              "boatNo": 2,
+              "expectedPositions": [
+                3
+              ],
+              "label": "拾い",
+              "actualFinish": 3,
+              "status": "matched",
+              "matched": true,
+              "top3": true
+            }
+          ],
+          "ticketCategoryResults": [
+            {
+              "label": "本線",
+              "attempted": true,
+              "matched": false,
+              "status": "missed",
+              "ticketCount": 3
+            },
+            {
+              "label": "流し",
+              "attempted": true,
+              "matched": false,
+              "status": "missed",
+              "ticketCount": 2
+            },
+            {
+              "label": "独立展開",
+              "attempted": true,
+              "matched": true,
+              "status": "matched",
+              "ticketCount": 1
+            }
+          ],
+          "supportIdentity": {
+            "roleSchemaVersion": 1,
+            "theorySchemaVersion": 1,
+            "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup",
+            "generation": {
+              "logicFingerprint": "evaluated-scenarios-v1",
+              "confidenceDefinitionVersion": "internal-score-v1",
+              "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+            },
+            "evaluator": "shadow-selection-v2",
+            "evaluatorVersion": "shadow-selection-v2.0.1-boat-identity",
+            "selectorCohortKey": "d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank",
+            "logicFingerprint": "d691a612f3874582b925",
+            "theoryInputVersion": "theory-input-v1.0.2-st-history-fallback"
+          },
+          "calibrationKey": {
+            "logicFingerprint": "evaluated-scenarios-v1",
+            "confidenceDefinitionVersion": "internal-score-v1",
+            "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+          },
+          "internalEvaluation": {
+            "mode": "main",
+            "label": "本線信頼度",
+            "score": 88,
+            "probability": false
+          },
+          "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+          "priorityReview": {
+            "primaryStage": "的中",
+            "primaryEvidence": "中心の買い目が公式結果と一致しました。",
+            "stages": [
+              {
+                "stage": "展開",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "コース",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "ST・スリット",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "展示・足",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "残し・拾い",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "当地・水面",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "技量",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "モーター",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              }
+            ]
+          },
+          "verificationInputFingerprint": "0d880cff7ca02adc2f3594991ae4c816"
+        },
+        "review": {
+          "schemaVersion": 1,
+          "generatedAt": "2026-11-17T00:35:04.471Z",
+          "resultTicket": "1-3-2",
+          "practicalHit": true,
+          "missType": "的中",
+          "scenarioMatch": true,
+          "strengths": [
+            "実戦厳選買い目が公式結果を捉えた",
+            "◎本命艇が1着",
+            "中心展開の読みが結果と一致",
+            "相手印から2・3号艇を拾えていた"
+          ],
+          "weaknesses": [],
+          "causeCodes": [
+            "ticket.hit",
+            "mark.honmei.first",
+            "scenario.hit",
+            "mark.opponent.supported"
+          ],
+          "summary": "的中。実戦厳選買い目が公式結果を捉えた。◎本命艇が1着。中心展開の読みが結果と一致。相手印から2・3号艇を拾えていた。"
+        },
+        "missCauseAnalysis": {
+          "schemaVersion": 1,
+          "engineVersion": "miss-cause-analysis-phase2-20260823-flow-match-guard",
+          "status": "hit-no-miss-analysis",
+          "practicalHit": true,
+          "practicalTicketCount": 6,
+          "candidates": [],
+          "causeCount": 0,
+          "causalClaim": false,
+          "usableForPrediction": false,
+          "automaticApplication": false,
+          "uiVisible": false
+        }
+      },
+      "theoryEvaluationSnapshot": {
+        "schemaVersion": 1,
+        "engineVersion": "theory-evaluation-phase1-20260806",
+        "status": "evaluated",
+        "catalogSize": 12,
+        "evaluatedCount": 5,
+        "matchedCount": 4,
+        "evaluations": [
+          {
+            "theoryKey": "race-flow",
+            "label": "展開理論",
+            "status": "evaluated",
+            "used": true,
+            "matched": true,
+            "sourceTheoryKeys": [
+              "flow"
+            ],
+            "tickets": [
+              "1-2-3",
+              "1-4-3",
+              "1-3-4",
+              "1-2-4",
+              "1-2-5",
+              "1-3-2"
+            ],
+            "actualTicket": "1-3-2",
+            "evidenceCount": 1
+          },
+          {
+            "theoryKey": "course",
+            "label": "コース理論",
+            "status": "evaluated",
+            "used": true,
+            "matched": false,
+            "sourceTheoryKeys": [
+              "course"
+            ],
+            "tickets": [
+              "1-2-3",
+              "1-2-4",
+              "1-2-5"
+            ],
+            "actualTicket": "1-3-2",
+            "evidenceCount": 1
+          },
+          {
+            "theoryKey": "start",
+            "label": "ST・スリット理論",
+            "status": "not-used",
+            "used": false,
+            "matched": null,
+            "sourceTheoryKeys": [],
+            "tickets": [],
+            "actualTicket": "1-3-2",
+            "evidenceCount": 0
+          },
+          {
+            "theoryKey": "exhibition",
+            "label": "展示・足理論",
+            "status": "not-used",
+            "used": false,
+            "matched": null,
+            "sourceTheoryKeys": [],
+            "tickets": [],
+            "actualTicket": "1-3-2",
+            "evidenceCount": 0
+          },
+          {
+            "theoryKey": "remain-pickup",
+            "label": "残し・拾い理論",
+            "status": "evaluated",
+            "used": true,
+            "matched": true,
+            "sourceTheoryKeys": [
+              "holdPickup"
+            ],
+            "tickets": [
+              "1-2-3",
+              "1-4-3",
+              "1-3-4",
+              "1-2-4",
+              "1-2-5",
+              "1-3-2"
+            ],
+            "actualTicket": "1-3-2",
+            "evidenceCount": 1
+          },
+          {
+            "theoryKey": "local-water",
+            "label": "当地・水面理論",
+            "status": "not-used",
+            "used": false,
+            "matched": null,
+            "sourceTheoryKeys": [],
+            "tickets": [],
+            "actualTicket": "1-3-2",
+            "evidenceCount": 0
+          },
+          {
+            "theoryKey": "skill",
+            "label": "技量理論",
+            "status": "evaluated",
+            "used": true,
+            "matched": true,
+            "sourceTheoryKeys": [
+              "skill"
+            ],
+            "tickets": [
+              "1-2-3",
+              "1-4-3",
+              "1-3-4",
+              "1-2-4",
+              "1-2-5",
+              "1-3-2"
+            ],
+            "actualTicket": "1-3-2",
+            "evidenceCount": 1
+          },
+          {
+            "theoryKey": "motor",
+            "label": "モーター理論",
+            "status": "not-used",
+            "used": false,
+            "matched": null,
+            "sourceTheoryKeys": [],
+            "tickets": [],
+            "actualTicket": "1-3-2",
+            "evidenceCount": 0
+          },
+          {
+            "theoryKey": "wall-boat",
+            "label": "壁艇理論",
+            "status": "not-used",
+            "used": false,
+            "matched": null,
+            "sourceTheoryKeys": [],
+            "tickets": [],
+            "actualTicket": "1-3-2",
+            "evidenceCount": 0
+          },
+          {
+            "theoryKey": "frame-rise-fall",
+            "label": "枠別浮沈率",
+            "status": "evaluated",
+            "used": true,
+            "matched": true,
+            "sourceTheoryKeys": [
+              "frameRiseSink"
+            ],
+            "tickets": [
+              "1-2-3",
+              "1-4-3",
+              "1-3-4",
+              "1-2-4",
+              "1-2-5",
+              "1-3-2"
+            ],
+            "actualTicket": "1-3-2",
+            "evidenceCount": 1
+          },
+          {
+            "theoryKey": "double-time",
+            "label": "ダブルタイム",
+            "status": "not-used",
+            "used": false,
+            "matched": null,
+            "sourceTheoryKeys": [],
+            "tickets": [],
+            "actualTicket": "1-3-2",
+            "evidenceCount": 0
+          },
+          {
+            "theoryKey": "new-engine",
+            "label": "新エンジン理論",
+            "status": "not-used",
+            "used": false,
+            "matched": null,
+            "sourceTheoryKeys": [],
+            "tickets": [],
+            "actualTicket": "1-3-2",
+            "evidenceCount": 0
+          }
+        ],
+        "usableForPrediction": false,
+        "automaticApplication": false,
+        "uiVisible": false
+      },
+      "scenarioAiV6Verification": {
+        "version": "6.1.0-verification",
+        "logicFingerprint": "scenario-ai-v6-multi-candidate-v2-actual-course",
+        "snapshotVersion": "6.1.1-shadow",
+        "inputSourceKind": "live-verification-evidence",
+        "status": "verified",
+        "scenarioCount": 4,
+        "exactCount": 0,
+        "firstHitCount": 1,
+        "topCandidateExact": false,
+        "topCandidateFirstHit": true,
+        "exactWithinCandidates": false,
+        "firstHitWithinCandidates": true,
+        "matchedRank": 1,
+        "actualOrder": [
+          1,
+          3,
+          2
+        ],
+        "winningMethod": "逃げ",
+        "scenarios": [
+          {
+            "rank": 1,
+            "scenarioType": "escape",
+            "likelihood": 36.3,
+            "predictedOrder": [
+              1,
+              2,
+              4
+            ],
+            "actualOrder": [
+              1,
+              3,
+              2
+            ],
+            "status": "first-hit",
+            "exact": false,
+            "firstHit": true,
+            "top2Hit": false,
+            "winningMethod": "逃げ",
+            "winningMethodMatch": true,
+            "breakReasons": [
+              "相手または着順が想定と異なった"
+            ]
+          },
+          {
+            "rank": 2,
+            "scenarioType": "threeAttack",
+            "likelihood": 28.6,
+            "predictedOrder": [
+              3,
+              1,
+              4
+            ],
+            "actualOrder": [
+              1,
+              3,
+              2
+            ],
+            "status": "top2-boats",
+            "exact": false,
+            "firstHit": false,
+            "top2Hit": true,
+            "winningMethod": "逃げ",
+            "winningMethodMatch": null,
+            "breakReasons": [
+              "想定頭3号艇が1着ではなかった"
+            ]
+          },
+          {
+            "rank": 3,
+            "scenarioType": "sashi",
+            "likelihood": 23.4,
+            "predictedOrder": [
+              2,
+              1,
+              4
+            ],
+            "actualOrder": [
+              1,
+              3,
+              2
+            ],
+            "status": "miss",
+            "exact": false,
+            "firstHit": false,
+            "top2Hit": false,
+            "winningMethod": "逃げ",
+            "winningMethodMatch": false,
+            "breakReasons": [
+              "想定頭2号艇が1着ではなかった",
+              "決まり手が想定展開と不一致（実際：逃げ）"
+            ]
+          },
+          {
+            "rank": 4,
+            "scenarioType": "fourAttack",
+            "likelihood": 11.700000000000003,
+            "predictedOrder": [
+              4,
+              1,
+              2
+            ],
+            "actualOrder": [
+              1,
+              3,
+              2
+            ],
+            "status": "miss",
+            "exact": false,
+            "firstHit": false,
+            "top2Hit": false,
+            "winningMethod": "逃げ",
+            "winningMethodMatch": null,
+            "breakReasons": [
+              "想定頭4号艇が1着ではなかった"
+            ]
+          }
+        ],
+        "usableForPrediction": false,
+        "automaticApplication": false
       }
     },
     {
@@ -381341,6 +383016,1881 @@
         "automaticApplication": false,
         "productionPredictionChanged": false,
         "productionTicketSelectionChanged": false
+      },
+      "result": {
+        "schemaVersion": 5,
+        "settled": true,
+        "resultTicket": "1-3-5",
+        "winningMethod": "逃げ",
+        "scenarioTitle": "4カド攻め",
+        "expectedMethod": "まくり／まくり差し",
+        "scenarioMatched": false,
+        "marks": [
+          {
+            "key": "honmei",
+            "symbol": "◎",
+            "label": "本命",
+            "boatNo": 4,
+            "finish": 4,
+            "finishLabel": "4着以下"
+          },
+          {
+            "key": "taikou",
+            "symbol": "○",
+            "label": "対抗",
+            "boatNo": 1,
+            "finish": 1,
+            "finishLabel": "1着"
+          },
+          {
+            "key": "ana",
+            "symbol": "▲",
+            "label": "穴",
+            "boatNo": 5,
+            "finish": 3,
+            "finishLabel": "3着"
+          },
+          {
+            "key": "osae",
+            "symbol": "△",
+            "label": "押さえ",
+            "boatNo": 3,
+            "finish": 2,
+            "finishLabel": "2着"
+          }
+        ],
+        "practicalRows": [
+          {
+            "ticket": "4-1-5",
+            "category": "本線",
+            "categories": [
+              "本線"
+            ],
+            "selectionTier": "",
+            "roleClaims": [
+              {
+                "role": "attack",
+                "boatNo": 4,
+                "expectedPositions": [
+                  1
+                ]
+              },
+              {
+                "role": "hold",
+                "boatNo": 1,
+                "expectedPositions": [
+                  2
+                ]
+              },
+              {
+                "role": "continuation",
+                "boatNo": 1,
+                "expectedPositions": [
+                  2
+                ]
+              },
+              {
+                "role": "pickup",
+                "boatNo": 5,
+                "expectedPositions": [
+                  3
+                ]
+              }
+            ],
+            "theoryClaims": [
+              {
+                "theoryKey": "flow",
+                "label": "展開",
+                "version": "evaluated-scenarios-v1",
+                "formal": true,
+                "source": "structured-purchase-branch"
+              },
+              {
+                "theoryKey": "holdPickup",
+                "label": "残し・拾い",
+                "version": "structured-role-evidence-v1",
+                "formal": true,
+                "source": "structured-role-claim"
+              }
+            ]
+          },
+          {
+            "ticket": "4-5-6",
+            "category": "本線",
+            "categories": [
+              "本線"
+            ],
+            "selectionTier": "",
+            "roleClaims": [
+              {
+                "role": "attack",
+                "boatNo": 4,
+                "expectedPositions": [
+                  1
+                ]
+              },
+              {
+                "role": "hold",
+                "boatNo": 5,
+                "expectedPositions": [
+                  2
+                ]
+              },
+              {
+                "role": "pickup",
+                "boatNo": 6,
+                "expectedPositions": [
+                  3
+                ]
+              }
+            ],
+            "theoryClaims": [
+              {
+                "theoryKey": "flow",
+                "label": "展開",
+                "version": "evaluated-scenarios-v1",
+                "formal": true,
+                "source": "structured-purchase-branch"
+              },
+              {
+                "theoryKey": "holdPickup",
+                "label": "残し・拾い",
+                "version": "structured-role-evidence-v1",
+                "formal": true,
+                "source": "structured-role-claim"
+              }
+            ]
+          },
+          {
+            "ticket": "4-3-5",
+            "category": "本線",
+            "categories": [
+              "本線"
+            ],
+            "selectionTier": "",
+            "roleClaims": [
+              {
+                "role": "attack",
+                "boatNo": 4,
+                "expectedPositions": [
+                  1
+                ]
+              },
+              {
+                "role": "hold",
+                "boatNo": 3,
+                "expectedPositions": [
+                  2
+                ]
+              },
+              {
+                "role": "pickup",
+                "boatNo": 5,
+                "expectedPositions": [
+                  3
+                ]
+              }
+            ],
+            "theoryClaims": [
+              {
+                "theoryKey": "flow",
+                "label": "展開",
+                "version": "evaluated-scenarios-v1",
+                "formal": true,
+                "source": "structured-purchase-branch"
+              },
+              {
+                "theoryKey": "holdPickup",
+                "label": "残し・拾い",
+                "version": "structured-role-evidence-v1",
+                "formal": true,
+                "source": "structured-role-claim"
+              }
+            ]
+          },
+          {
+            "ticket": "1-2-5",
+            "category": "押さえ",
+            "categories": [
+              "押さえ"
+            ],
+            "selectionTier": "",
+            "roleClaims": [
+              {
+                "role": "attack",
+                "boatNo": 1,
+                "expectedPositions": [
+                  1
+                ]
+              },
+              {
+                "role": "hold",
+                "boatNo": 2,
+                "expectedPositions": [
+                  2
+                ]
+              },
+              {
+                "role": "pickup",
+                "boatNo": 5,
+                "expectedPositions": [
+                  3
+                ]
+              }
+            ],
+            "theoryClaims": [
+              {
+                "theoryKey": "flow",
+                "label": "展開",
+                "version": "evaluated-scenarios-v1",
+                "formal": true,
+                "source": "structured-purchase-branch"
+              },
+              {
+                "theoryKey": "holdPickup",
+                "label": "残し・拾い",
+                "version": "structured-role-evidence-v1",
+                "formal": true,
+                "source": "structured-role-claim"
+              }
+            ]
+          },
+          {
+            "ticket": "1-2-6",
+            "category": "押さえ",
+            "categories": [
+              "押さえ"
+            ],
+            "selectionTier": "",
+            "roleClaims": [
+              {
+                "role": "attack",
+                "boatNo": 1,
+                "expectedPositions": [
+                  1
+                ]
+              },
+              {
+                "role": "hold",
+                "boatNo": 2,
+                "expectedPositions": [
+                  2
+                ]
+              },
+              {
+                "role": "pickup",
+                "boatNo": 6,
+                "expectedPositions": [
+                  3
+                ]
+              }
+            ],
+            "theoryClaims": [
+              {
+                "theoryKey": "flow",
+                "label": "展開",
+                "version": "evaluated-scenarios-v1",
+                "formal": true,
+                "source": "structured-purchase-branch"
+              },
+              {
+                "theoryKey": "holdPickup",
+                "label": "残し・拾い",
+                "version": "structured-role-evidence-v1",
+                "formal": true,
+                "source": "structured-role-claim"
+              }
+            ]
+          },
+          {
+            "ticket": "4-1-6",
+            "category": "流し",
+            "categories": [
+              "流し"
+            ],
+            "selectionTier": "",
+            "roleClaims": [
+              {
+                "role": "attack",
+                "boatNo": 4,
+                "expectedPositions": [
+                  1
+                ]
+              },
+              {
+                "role": "hold",
+                "boatNo": 1,
+                "expectedPositions": [
+                  2
+                ]
+              },
+              {
+                "role": "continuation",
+                "boatNo": 1,
+                "expectedPositions": [
+                  2
+                ]
+              },
+              {
+                "role": "pickup",
+                "boatNo": 6,
+                "expectedPositions": [
+                  3
+                ]
+              }
+            ],
+            "theoryClaims": [
+              {
+                "theoryKey": "flow",
+                "label": "展開",
+                "version": "evaluated-scenarios-v1",
+                "formal": true,
+                "source": "structured-purchase-branch"
+              },
+              {
+                "theoryKey": "holdPickup",
+                "label": "残し・拾い",
+                "version": "structured-role-evidence-v1",
+                "formal": true,
+                "source": "structured-role-claim"
+              }
+            ]
+          },
+          {
+            "ticket": "4-1-2",
+            "category": "流し",
+            "categories": [
+              "流し"
+            ],
+            "selectionTier": "",
+            "roleClaims": [
+              {
+                "role": "attack",
+                "boatNo": 4,
+                "expectedPositions": [
+                  1
+                ]
+              },
+              {
+                "role": "hold",
+                "boatNo": 1,
+                "expectedPositions": [
+                  2
+                ]
+              },
+              {
+                "role": "continuation",
+                "boatNo": 1,
+                "expectedPositions": [
+                  2
+                ]
+              },
+              {
+                "role": "pickup",
+                "boatNo": 2,
+                "expectedPositions": [
+                  3
+                ]
+              }
+            ],
+            "theoryClaims": [
+              {
+                "theoryKey": "flow",
+                "label": "展開",
+                "version": "evaluated-scenarios-v1",
+                "formal": true,
+                "source": "structured-purchase-branch"
+              },
+              {
+                "theoryKey": "holdPickup",
+                "label": "残し・拾い",
+                "version": "structured-role-evidence-v1",
+                "formal": true,
+                "source": "structured-role-claim"
+              }
+            ]
+          },
+          {
+            "ticket": "1-2-4",
+            "category": "その他",
+            "categories": [
+              "その他"
+            ],
+            "selectionTier": "検証済み1点置換",
+            "roleClaims": [],
+            "theoryClaims": []
+          }
+        ],
+        "practicalTickets": [
+          "4-1-5",
+          "4-5-6",
+          "4-3-5",
+          "1-2-5",
+          "1-2-6",
+          "4-1-6",
+          "4-1-2",
+          "1-2-4"
+        ],
+        "practicalPointCount": 8,
+        "practicalHit": false,
+        "hitCategory": "",
+        "hitCategories": [],
+        "missType": "相手抜け",
+        "payoutPer100": 8800,
+        "popularity": 29,
+        "simulatedStake": 800,
+        "simulatedReturn": 0,
+        "simulatedProfit": -800,
+        "simulatedRecoveryRate": 0,
+        "scenarioVerification": {
+          "status": "missed",
+          "structured": true,
+          "label": "4カド攻め",
+          "expectedWinner": 4,
+          "actualWinner": 1,
+          "expectedMethods": [
+            "まくり",
+            "まくり差し"
+          ],
+          "winningMethod": "逃げ",
+          "positionMatched": false,
+          "methodMatched": false
+        },
+        "roleResults": [
+          {
+            "role": "attack",
+            "boatNo": 4,
+            "expectedPositions": [
+              1
+            ],
+            "label": "攻め・頭",
+            "actualFinish": 4,
+            "status": "missed",
+            "matched": false,
+            "top3": false
+          },
+          {
+            "role": "hold",
+            "boatNo": 1,
+            "expectedPositions": [
+              2
+            ],
+            "label": "残し",
+            "actualFinish": 1,
+            "status": "missed",
+            "matched": false,
+            "top3": true
+          },
+          {
+            "role": "continuation",
+            "boatNo": 1,
+            "expectedPositions": [
+              2
+            ],
+            "label": "追走・続行",
+            "actualFinish": 1,
+            "status": "missed",
+            "matched": false,
+            "top3": true
+          },
+          {
+            "role": "pickup",
+            "boatNo": 5,
+            "expectedPositions": [
+              3
+            ],
+            "label": "拾い",
+            "actualFinish": 3,
+            "status": "matched",
+            "matched": true,
+            "top3": true
+          },
+          {
+            "role": "hold",
+            "boatNo": 5,
+            "expectedPositions": [
+              2
+            ],
+            "label": "残し",
+            "actualFinish": 3,
+            "status": "missed",
+            "matched": false,
+            "top3": true
+          },
+          {
+            "role": "pickup",
+            "boatNo": 6,
+            "expectedPositions": [
+              3
+            ],
+            "label": "拾い",
+            "actualFinish": 4,
+            "status": "missed",
+            "matched": false,
+            "top3": false
+          },
+          {
+            "role": "hold",
+            "boatNo": 3,
+            "expectedPositions": [
+              2,
+              3
+            ],
+            "label": "残し",
+            "actualFinish": 2,
+            "status": "matched",
+            "matched": true,
+            "top3": true
+          },
+          {
+            "role": "attack",
+            "boatNo": 1,
+            "expectedPositions": [
+              1
+            ],
+            "label": "攻め・頭",
+            "actualFinish": 1,
+            "status": "matched",
+            "matched": true,
+            "top3": true
+          },
+          {
+            "role": "hold",
+            "boatNo": 2,
+            "expectedPositions": [
+              2
+            ],
+            "label": "残し",
+            "actualFinish": 4,
+            "status": "missed",
+            "matched": false,
+            "top3": false
+          },
+          {
+            "role": "pickup",
+            "boatNo": 2,
+            "expectedPositions": [
+              3
+            ],
+            "label": "拾い",
+            "actualFinish": 4,
+            "status": "missed",
+            "matched": false,
+            "top3": false
+          }
+        ],
+        "ticketCategoryResults": [
+          {
+            "label": "本線",
+            "attempted": true,
+            "matched": false,
+            "status": "missed",
+            "ticketCount": 3
+          },
+          {
+            "label": "押さえ",
+            "attempted": true,
+            "matched": false,
+            "status": "missed",
+            "ticketCount": 2
+          },
+          {
+            "label": "流し",
+            "attempted": true,
+            "matched": false,
+            "status": "missed",
+            "ticketCount": 2
+          },
+          {
+            "label": "その他",
+            "attempted": true,
+            "matched": false,
+            "status": "missed",
+            "ticketCount": 1
+          }
+        ],
+        "supportIdentity": {
+          "roleSchemaVersion": 1,
+          "theorySchemaVersion": 1,
+          "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup",
+          "generation": {
+            "logicFingerprint": "evaluated-scenarios-v1",
+            "confidenceDefinitionVersion": "internal-score-v1",
+            "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+          },
+          "evaluator": "shadow-selection-v2",
+          "evaluatorVersion": "shadow-selection-v2.0.1-boat-identity",
+          "selectorCohortKey": "d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank",
+          "logicFingerprint": "d691a612f3874582b925",
+          "theoryInputVersion": "theory-input-v1.0.2-st-history-fallback"
+        },
+        "calibrationKey": {
+          "logicFingerprint": "evaluated-scenarios-v1",
+          "confidenceDefinitionVersion": "internal-score-v1",
+          "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+        },
+        "internalEvaluation": {
+          "mode": "main",
+          "label": "本線信頼度",
+          "score": 84,
+          "probability": false
+        },
+        "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+        "priorityReview": {
+          "primaryStage": "展開",
+          "primaryEvidence": "予想展開「4カド攻め」と決まり手「逃げ」が不一致",
+          "stages": [
+            {
+              "stage": "展開",
+              "status": "要確認",
+              "evidence": "予想展開「4カド攻め」と決まり手「逃げ」が不一致"
+            },
+            {
+              "stage": "コース",
+              "status": "要確認",
+              "evidence": "◎4号艇に対し、1着は1号艇"
+            },
+            {
+              "stage": "ST・スリット",
+              "status": "要確認",
+              "evidence": "実戦STは1着艇0.11、◎0.16"
+            },
+            {
+              "stage": "展示・足",
+              "status": "判定保留",
+              "evidence": "予想時点の展示比較データが不足"
+            },
+            {
+              "stage": "残し・拾い",
+              "status": "要確認",
+              "evidence": "外れ方は「相手抜け」"
+            },
+            {
+              "stage": "当地・水面",
+              "status": "確認済み",
+              "evidence": "風-m・波-cm・潮影響45"
+            },
+            {
+              "stage": "技量",
+              "status": "要確認",
+              "evidence": "1着艇A2・全国5.62、◎B1・全国5.27"
+            },
+            {
+              "stage": "モーター",
+              "status": "要確認",
+              "evidence": "1着艇36.96%、◎24%"
+            }
+          ]
+        },
+        "verificationInputFingerprint": "01cb41f0c6ae18c5dab13d3b310b1d79",
+        "settledAt": "2026-11-17T00:33:06.824Z",
+        "payout": 8800,
+        "finishers": [
+          {
+            "rank": 1,
+            "boat": 1,
+            "registerNo": "3686",
+            "racerName": "鳥居塚孝博",
+            "raceTime": "1'49\"3"
+          },
+          {
+            "rank": 2,
+            "boat": 3,
+            "registerNo": "3361",
+            "racerName": "岡部浩",
+            "raceTime": "1'51\"2"
+          },
+          {
+            "rank": 3,
+            "boat": 5,
+            "registerNo": "4408",
+            "racerName": "仁科さやか",
+            "raceTime": "1'52\"4"
+          },
+          {
+            "rank": 4,
+            "boat": 4,
+            "registerNo": "4336",
+            "racerName": "松田竜馬",
+            "raceTime": "1'53\"4"
+          },
+          {
+            "rank": 5,
+            "boat": 2,
+            "registerNo": "5176",
+            "racerName": "石倉拓美",
+            "raceTime": ""
+          },
+          {
+            "rank": 6,
+            "boat": 6,
+            "registerNo": "4957",
+            "racerName": "竹之内極",
+            "raceTime": ""
+          }
+        ],
+        "starts": [
+          {
+            "course": 1,
+            "boat": 1,
+            "st": 0.11,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".11 逃げ"
+          },
+          {
+            "course": 2,
+            "boat": 2,
+            "st": 0.12,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".12"
+          },
+          {
+            "course": 3,
+            "boat": 3,
+            "st": 0.16,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".16"
+          },
+          {
+            "course": 4,
+            "boat": 4,
+            "st": 0.16,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".16"
+          },
+          {
+            "course": 5,
+            "boat": 5,
+            "st": 0.18,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".18"
+          },
+          {
+            "course": 6,
+            "boat": 6,
+            "st": 0.16,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".16"
+          }
+        ],
+        "honmeiBoat": "4",
+        "honmeiFirst": false,
+        "scenarioLikelihoodV5Verification": {
+          "comparable": true,
+          "actualScenario": {
+            "key": "inEscape",
+            "label": "1逃げ"
+          },
+          "predictedLeader": {
+            "key": "course4Kado",
+            "label": "4カド攻め",
+            "relativeLikelihood": 51.2
+          },
+          "predictedRunnerUp": {
+            "key": "inEscape",
+            "label": "1号艇逃げ",
+            "relativeLikelihood": 44.1
+          },
+          "actualRelativeLikelihood": 44.1,
+          "leaderHit": false,
+          "top2Hit": true,
+          "likelihoodGap": 7.1,
+          "ambiguity": "mixed",
+          "status": "shadow-verification"
+        },
+        "scenarioLikelihoodV5AbVerification": {
+          "comparable": true,
+          "status": "shadow-only",
+          "actualScenario": "1逃げ",
+          "actualScenarioKey": "inEscape",
+          "changed": true,
+          "winner": "b",
+          "a": {
+            "leaderScenario": "4カド攻め",
+            "runnerUpScenario": "1号艇逃げ",
+            "leaderHit": false,
+            "topTwoHit": true,
+            "actualLikelihood": 44.1,
+            "ambiguity": "mixed"
+          },
+          "b": {
+            "leaderScenario": "4カド攻め",
+            "runnerUpScenario": "1号艇逃げ",
+            "leaderHit": false,
+            "topTwoHit": true,
+            "actualLikelihood": 45.7,
+            "ambiguity": "mixed"
+          },
+          "usableForPrediction": false,
+          "automaticApplication": false
+        },
+        "verification": {
+          "schemaVersion": 5,
+          "settled": true,
+          "resultTicket": "1-3-5",
+          "winningMethod": "逃げ",
+          "scenarioTitle": "4カド攻め",
+          "expectedMethod": "まくり／まくり差し",
+          "scenarioMatched": false,
+          "marks": [
+            {
+              "key": "honmei",
+              "symbol": "◎",
+              "label": "本命",
+              "boatNo": 4,
+              "finish": 4,
+              "finishLabel": "4着以下"
+            },
+            {
+              "key": "taikou",
+              "symbol": "○",
+              "label": "対抗",
+              "boatNo": 1,
+              "finish": 1,
+              "finishLabel": "1着"
+            },
+            {
+              "key": "ana",
+              "symbol": "▲",
+              "label": "穴",
+              "boatNo": 5,
+              "finish": 3,
+              "finishLabel": "3着"
+            },
+            {
+              "key": "osae",
+              "symbol": "△",
+              "label": "押さえ",
+              "boatNo": 3,
+              "finish": 2,
+              "finishLabel": "2着"
+            }
+          ],
+          "practicalRows": [
+            {
+              "ticket": "4-1-5",
+              "category": "本線",
+              "categories": [
+                "本線"
+              ],
+              "selectionTier": "",
+              "roleClaims": [
+                {
+                  "role": "attack",
+                  "boatNo": 4,
+                  "expectedPositions": [
+                    1
+                  ]
+                },
+                {
+                  "role": "hold",
+                  "boatNo": 1,
+                  "expectedPositions": [
+                    2
+                  ]
+                },
+                {
+                  "role": "continuation",
+                  "boatNo": 1,
+                  "expectedPositions": [
+                    2
+                  ]
+                },
+                {
+                  "role": "pickup",
+                  "boatNo": 5,
+                  "expectedPositions": [
+                    3
+                  ]
+                }
+              ],
+              "theoryClaims": [
+                {
+                  "theoryKey": "flow",
+                  "label": "展開",
+                  "version": "evaluated-scenarios-v1",
+                  "formal": true,
+                  "source": "structured-purchase-branch"
+                },
+                {
+                  "theoryKey": "holdPickup",
+                  "label": "残し・拾い",
+                  "version": "structured-role-evidence-v1",
+                  "formal": true,
+                  "source": "structured-role-claim"
+                }
+              ]
+            },
+            {
+              "ticket": "4-5-6",
+              "category": "本線",
+              "categories": [
+                "本線"
+              ],
+              "selectionTier": "",
+              "roleClaims": [
+                {
+                  "role": "attack",
+                  "boatNo": 4,
+                  "expectedPositions": [
+                    1
+                  ]
+                },
+                {
+                  "role": "hold",
+                  "boatNo": 5,
+                  "expectedPositions": [
+                    2
+                  ]
+                },
+                {
+                  "role": "pickup",
+                  "boatNo": 6,
+                  "expectedPositions": [
+                    3
+                  ]
+                }
+              ],
+              "theoryClaims": [
+                {
+                  "theoryKey": "flow",
+                  "label": "展開",
+                  "version": "evaluated-scenarios-v1",
+                  "formal": true,
+                  "source": "structured-purchase-branch"
+                },
+                {
+                  "theoryKey": "holdPickup",
+                  "label": "残し・拾い",
+                  "version": "structured-role-evidence-v1",
+                  "formal": true,
+                  "source": "structured-role-claim"
+                }
+              ]
+            },
+            {
+              "ticket": "4-3-5",
+              "category": "本線",
+              "categories": [
+                "本線"
+              ],
+              "selectionTier": "",
+              "roleClaims": [
+                {
+                  "role": "attack",
+                  "boatNo": 4,
+                  "expectedPositions": [
+                    1
+                  ]
+                },
+                {
+                  "role": "hold",
+                  "boatNo": 3,
+                  "expectedPositions": [
+                    2
+                  ]
+                },
+                {
+                  "role": "pickup",
+                  "boatNo": 5,
+                  "expectedPositions": [
+                    3
+                  ]
+                }
+              ],
+              "theoryClaims": [
+                {
+                  "theoryKey": "flow",
+                  "label": "展開",
+                  "version": "evaluated-scenarios-v1",
+                  "formal": true,
+                  "source": "structured-purchase-branch"
+                },
+                {
+                  "theoryKey": "holdPickup",
+                  "label": "残し・拾い",
+                  "version": "structured-role-evidence-v1",
+                  "formal": true,
+                  "source": "structured-role-claim"
+                }
+              ]
+            },
+            {
+              "ticket": "1-2-5",
+              "category": "押さえ",
+              "categories": [
+                "押さえ"
+              ],
+              "selectionTier": "",
+              "roleClaims": [
+                {
+                  "role": "attack",
+                  "boatNo": 1,
+                  "expectedPositions": [
+                    1
+                  ]
+                },
+                {
+                  "role": "hold",
+                  "boatNo": 2,
+                  "expectedPositions": [
+                    2
+                  ]
+                },
+                {
+                  "role": "pickup",
+                  "boatNo": 5,
+                  "expectedPositions": [
+                    3
+                  ]
+                }
+              ],
+              "theoryClaims": [
+                {
+                  "theoryKey": "flow",
+                  "label": "展開",
+                  "version": "evaluated-scenarios-v1",
+                  "formal": true,
+                  "source": "structured-purchase-branch"
+                },
+                {
+                  "theoryKey": "holdPickup",
+                  "label": "残し・拾い",
+                  "version": "structured-role-evidence-v1",
+                  "formal": true,
+                  "source": "structured-role-claim"
+                }
+              ]
+            },
+            {
+              "ticket": "1-2-6",
+              "category": "押さえ",
+              "categories": [
+                "押さえ"
+              ],
+              "selectionTier": "",
+              "roleClaims": [
+                {
+                  "role": "attack",
+                  "boatNo": 1,
+                  "expectedPositions": [
+                    1
+                  ]
+                },
+                {
+                  "role": "hold",
+                  "boatNo": 2,
+                  "expectedPositions": [
+                    2
+                  ]
+                },
+                {
+                  "role": "pickup",
+                  "boatNo": 6,
+                  "expectedPositions": [
+                    3
+                  ]
+                }
+              ],
+              "theoryClaims": [
+                {
+                  "theoryKey": "flow",
+                  "label": "展開",
+                  "version": "evaluated-scenarios-v1",
+                  "formal": true,
+                  "source": "structured-purchase-branch"
+                },
+                {
+                  "theoryKey": "holdPickup",
+                  "label": "残し・拾い",
+                  "version": "structured-role-evidence-v1",
+                  "formal": true,
+                  "source": "structured-role-claim"
+                }
+              ]
+            },
+            {
+              "ticket": "4-1-6",
+              "category": "流し",
+              "categories": [
+                "流し"
+              ],
+              "selectionTier": "",
+              "roleClaims": [
+                {
+                  "role": "attack",
+                  "boatNo": 4,
+                  "expectedPositions": [
+                    1
+                  ]
+                },
+                {
+                  "role": "hold",
+                  "boatNo": 1,
+                  "expectedPositions": [
+                    2
+                  ]
+                },
+                {
+                  "role": "continuation",
+                  "boatNo": 1,
+                  "expectedPositions": [
+                    2
+                  ]
+                },
+                {
+                  "role": "pickup",
+                  "boatNo": 6,
+                  "expectedPositions": [
+                    3
+                  ]
+                }
+              ],
+              "theoryClaims": [
+                {
+                  "theoryKey": "flow",
+                  "label": "展開",
+                  "version": "evaluated-scenarios-v1",
+                  "formal": true,
+                  "source": "structured-purchase-branch"
+                },
+                {
+                  "theoryKey": "holdPickup",
+                  "label": "残し・拾い",
+                  "version": "structured-role-evidence-v1",
+                  "formal": true,
+                  "source": "structured-role-claim"
+                }
+              ]
+            },
+            {
+              "ticket": "4-1-2",
+              "category": "流し",
+              "categories": [
+                "流し"
+              ],
+              "selectionTier": "",
+              "roleClaims": [
+                {
+                  "role": "attack",
+                  "boatNo": 4,
+                  "expectedPositions": [
+                    1
+                  ]
+                },
+                {
+                  "role": "hold",
+                  "boatNo": 1,
+                  "expectedPositions": [
+                    2
+                  ]
+                },
+                {
+                  "role": "continuation",
+                  "boatNo": 1,
+                  "expectedPositions": [
+                    2
+                  ]
+                },
+                {
+                  "role": "pickup",
+                  "boatNo": 2,
+                  "expectedPositions": [
+                    3
+                  ]
+                }
+              ],
+              "theoryClaims": [
+                {
+                  "theoryKey": "flow",
+                  "label": "展開",
+                  "version": "evaluated-scenarios-v1",
+                  "formal": true,
+                  "source": "structured-purchase-branch"
+                },
+                {
+                  "theoryKey": "holdPickup",
+                  "label": "残し・拾い",
+                  "version": "structured-role-evidence-v1",
+                  "formal": true,
+                  "source": "structured-role-claim"
+                }
+              ]
+            },
+            {
+              "ticket": "1-2-4",
+              "category": "その他",
+              "categories": [
+                "その他"
+              ],
+              "selectionTier": "検証済み1点置換",
+              "roleClaims": [],
+              "theoryClaims": []
+            }
+          ],
+          "practicalTickets": [
+            "4-1-5",
+            "4-5-6",
+            "4-3-5",
+            "1-2-5",
+            "1-2-6",
+            "4-1-6",
+            "4-1-2",
+            "1-2-4"
+          ],
+          "practicalPointCount": 8,
+          "practicalHit": false,
+          "hitCategory": "",
+          "hitCategories": [],
+          "missType": "相手抜け",
+          "payoutPer100": 8800,
+          "popularity": 0,
+          "simulatedStake": 800,
+          "simulatedReturn": 0,
+          "simulatedProfit": -800,
+          "simulatedRecoveryRate": 0,
+          "scenarioVerification": {
+            "status": "missed",
+            "structured": true,
+            "label": "4カド攻め",
+            "expectedWinner": 4,
+            "actualWinner": 1,
+            "expectedMethods": [
+              "まくり",
+              "まくり差し"
+            ],
+            "winningMethod": "逃げ",
+            "positionMatched": false,
+            "methodMatched": false
+          },
+          "roleResults": [
+            {
+              "role": "attack",
+              "boatNo": 4,
+              "expectedPositions": [
+                1
+              ],
+              "label": "攻め・頭",
+              "actualFinish": 4,
+              "status": "missed",
+              "matched": false,
+              "top3": false
+            },
+            {
+              "role": "hold",
+              "boatNo": 1,
+              "expectedPositions": [
+                2
+              ],
+              "label": "残し",
+              "actualFinish": 1,
+              "status": "missed",
+              "matched": false,
+              "top3": true
+            },
+            {
+              "role": "continuation",
+              "boatNo": 1,
+              "expectedPositions": [
+                2
+              ],
+              "label": "追走・続行",
+              "actualFinish": 1,
+              "status": "missed",
+              "matched": false,
+              "top3": true
+            },
+            {
+              "role": "pickup",
+              "boatNo": 5,
+              "expectedPositions": [
+                3
+              ],
+              "label": "拾い",
+              "actualFinish": 3,
+              "status": "matched",
+              "matched": true,
+              "top3": true
+            },
+            {
+              "role": "hold",
+              "boatNo": 5,
+              "expectedPositions": [
+                2
+              ],
+              "label": "残し",
+              "actualFinish": 3,
+              "status": "missed",
+              "matched": false,
+              "top3": true
+            },
+            {
+              "role": "pickup",
+              "boatNo": 6,
+              "expectedPositions": [
+                3
+              ],
+              "label": "拾い",
+              "actualFinish": 4,
+              "status": "missed",
+              "matched": false,
+              "top3": false
+            },
+            {
+              "role": "hold",
+              "boatNo": 3,
+              "expectedPositions": [
+                2,
+                3
+              ],
+              "label": "残し",
+              "actualFinish": 2,
+              "status": "matched",
+              "matched": true,
+              "top3": true
+            },
+            {
+              "role": "attack",
+              "boatNo": 1,
+              "expectedPositions": [
+                1
+              ],
+              "label": "攻め・頭",
+              "actualFinish": 1,
+              "status": "matched",
+              "matched": true,
+              "top3": true
+            },
+            {
+              "role": "hold",
+              "boatNo": 2,
+              "expectedPositions": [
+                2
+              ],
+              "label": "残し",
+              "actualFinish": 4,
+              "status": "missed",
+              "matched": false,
+              "top3": false
+            },
+            {
+              "role": "pickup",
+              "boatNo": 2,
+              "expectedPositions": [
+                3
+              ],
+              "label": "拾い",
+              "actualFinish": 4,
+              "status": "missed",
+              "matched": false,
+              "top3": false
+            }
+          ],
+          "ticketCategoryResults": [
+            {
+              "label": "本線",
+              "attempted": true,
+              "matched": false,
+              "status": "missed",
+              "ticketCount": 3
+            },
+            {
+              "label": "押さえ",
+              "attempted": true,
+              "matched": false,
+              "status": "missed",
+              "ticketCount": 2
+            },
+            {
+              "label": "流し",
+              "attempted": true,
+              "matched": false,
+              "status": "missed",
+              "ticketCount": 2
+            },
+            {
+              "label": "その他",
+              "attempted": true,
+              "matched": false,
+              "status": "missed",
+              "ticketCount": 1
+            }
+          ],
+          "supportIdentity": {
+            "roleSchemaVersion": 1,
+            "theorySchemaVersion": 1,
+            "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup",
+            "generation": {
+              "logicFingerprint": "evaluated-scenarios-v1",
+              "confidenceDefinitionVersion": "internal-score-v1",
+              "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+            },
+            "evaluator": "shadow-selection-v2",
+            "evaluatorVersion": "shadow-selection-v2.0.1-boat-identity",
+            "selectorCohortKey": "d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank",
+            "logicFingerprint": "d691a612f3874582b925",
+            "theoryInputVersion": "theory-input-v1.0.2-st-history-fallback"
+          },
+          "calibrationKey": {
+            "logicFingerprint": "evaluated-scenarios-v1",
+            "confidenceDefinitionVersion": "internal-score-v1",
+            "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+          },
+          "internalEvaluation": {
+            "mode": "main",
+            "label": "本線信頼度",
+            "score": 84,
+            "probability": false
+          },
+          "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+          "priorityReview": {
+            "primaryStage": "展開",
+            "primaryEvidence": "予想展開「4カド攻め」と決まり手「逃げ」が不一致",
+            "stages": [
+              {
+                "stage": "展開",
+                "status": "要確認",
+                "evidence": "予想展開「4カド攻め」と決まり手「逃げ」が不一致"
+              },
+              {
+                "stage": "コース",
+                "status": "要確認",
+                "evidence": "◎4号艇に対し、1着は1号艇"
+              },
+              {
+                "stage": "ST・スリット",
+                "status": "要確認",
+                "evidence": "実戦STは1着艇0.11、◎0.16"
+              },
+              {
+                "stage": "展示・足",
+                "status": "判定保留",
+                "evidence": "予想時点の展示比較データが不足"
+              },
+              {
+                "stage": "残し・拾い",
+                "status": "要確認",
+                "evidence": "外れ方は「相手抜け」"
+              },
+              {
+                "stage": "当地・水面",
+                "status": "確認済み",
+                "evidence": "風-m・波-cm・潮影響45"
+              },
+              {
+                "stage": "技量",
+                "status": "要確認",
+                "evidence": "1着艇A2・全国5.62、◎B1・全国5.27"
+              },
+              {
+                "stage": "モーター",
+                "status": "要確認",
+                "evidence": "1着艇36.96%、◎24%"
+              }
+            ]
+          },
+          "verificationInputFingerprint": "01cb41f0c6ae18c5dab13d3b310b1d79"
+        },
+        "review": {
+          "schemaVersion": 1,
+          "generatedAt": "2026-11-17T00:35:04.471Z",
+          "resultTicket": "1-3-5",
+          "practicalHit": false,
+          "missType": "相手抜け",
+          "scenarioMatch": false,
+          "strengths": [
+            "相手印から5・3号艇を拾えていた"
+          ],
+          "weaknesses": [
+            "実戦厳選は相手抜け",
+            "◎4号艇が1着を外した",
+            "中心展開と実際の決まり手・着順が不一致"
+          ],
+          "causeCodes": [
+            "ticket.相手抜け",
+            "mark.honmei.miss",
+            "scenario.miss",
+            "mark.opponent.supported"
+          ],
+          "summary": "不的中（相手抜け）。実戦厳選は相手抜け。◎4号艇が1着を外した。中心展開と実際の決まり手・着順が不一致。"
+        },
+        "missCauseAnalysis": {
+          "schemaVersion": 1,
+          "engineVersion": "miss-cause-analysis-phase2-20260823-flow-match-guard",
+          "status": "candidates-recorded",
+          "practicalHit": false,
+          "practicalTicketCount": 8,
+          "candidates": [
+            {
+              "code": "ticket-coverage-insufficient",
+              "label": "買い目不足",
+              "confidence": "medium",
+              "evidence": [
+                "実戦厳選は相手抜け"
+              ]
+            },
+            {
+              "code": "ticket-spread-too-wide",
+              "label": "買い目広げ過ぎ",
+              "confidence": "low",
+              "evidence": [
+                "実戦厳選8点で不的中"
+              ]
+            },
+            {
+              "code": "flow-reading-miss",
+              "label": "展開読み違い",
+              "confidence": "medium",
+              "evidence": [
+                "展開理論が使用されたが公式結果を含まなかった",
+                "対象買い目: 4-1-5 / 4-5-6 / 4-3-5 / 1-2-5 / 1-2-6 / 4-1-6 / 4-1-2"
+              ]
+            },
+            {
+              "code": "wall-boat-evaluation-insufficient",
+              "label": "壁艇理論不足",
+              "confidence": "medium",
+              "evidence": [
+                "壁艇理論が使用されたが公式結果を含まなかった",
+                "対象買い目: 4-1-5 / 4-5-6 / 4-3-5 / 4-1-6 / 4-1-2 / 1-2-4"
+              ]
+            }
+          ],
+          "causeCount": 4,
+          "causalClaim": false,
+          "usableForPrediction": false,
+          "automaticApplication": false,
+          "uiVisible": false
+        }
+      },
+      "theoryEvaluationSnapshot": {
+        "schemaVersion": 1,
+        "engineVersion": "theory-evaluation-phase1-20260806",
+        "status": "evaluated",
+        "catalogSize": 12,
+        "evaluatedCount": 6,
+        "matchedCount": 0,
+        "evaluations": [
+          {
+            "theoryKey": "race-flow",
+            "label": "展開理論",
+            "status": "evaluated",
+            "used": true,
+            "matched": false,
+            "sourceTheoryKeys": [
+              "flow"
+            ],
+            "tickets": [
+              "4-1-5",
+              "4-5-6",
+              "4-3-5",
+              "1-2-5",
+              "1-2-6",
+              "4-1-6",
+              "4-1-2"
+            ],
+            "actualTicket": "1-3-5",
+            "evidenceCount": 1
+          },
+          {
+            "theoryKey": "course",
+            "label": "コース理論",
+            "status": "evaluated",
+            "used": true,
+            "matched": false,
+            "sourceTheoryKeys": [
+              "course"
+            ],
+            "tickets": [
+              "4-1-5",
+              "4-1-6",
+              "4-1-2"
+            ],
+            "actualTicket": "1-3-5",
+            "evidenceCount": 1
+          },
+          {
+            "theoryKey": "start",
+            "label": "ST・スリット理論",
+            "status": "not-used",
+            "used": false,
+            "matched": null,
+            "sourceTheoryKeys": [],
+            "tickets": [],
+            "actualTicket": "1-3-5",
+            "evidenceCount": 0
+          },
+          {
+            "theoryKey": "exhibition",
+            "label": "展示・足理論",
+            "status": "not-used",
+            "used": false,
+            "matched": null,
+            "sourceTheoryKeys": [],
+            "tickets": [],
+            "actualTicket": "1-3-5",
+            "evidenceCount": 0
+          },
+          {
+            "theoryKey": "remain-pickup",
+            "label": "残し・拾い理論",
+            "status": "evaluated",
+            "used": true,
+            "matched": false,
+            "sourceTheoryKeys": [
+              "holdPickup"
+            ],
+            "tickets": [
+              "4-1-5",
+              "4-5-6",
+              "4-3-5",
+              "1-2-5",
+              "1-2-6",
+              "4-1-6",
+              "4-1-2"
+            ],
+            "actualTicket": "1-3-5",
+            "evidenceCount": 1
+          },
+          {
+            "theoryKey": "local-water",
+            "label": "当地・水面理論",
+            "status": "not-used",
+            "used": false,
+            "matched": null,
+            "sourceTheoryKeys": [],
+            "tickets": [],
+            "actualTicket": "1-3-5",
+            "evidenceCount": 0
+          },
+          {
+            "theoryKey": "skill",
+            "label": "技量理論",
+            "status": "not-used",
+            "used": false,
+            "matched": null,
+            "sourceTheoryKeys": [],
+            "tickets": [],
+            "actualTicket": "1-3-5",
+            "evidenceCount": 0
+          },
+          {
+            "theoryKey": "motor",
+            "label": "モーター理論",
+            "status": "evaluated",
+            "used": true,
+            "matched": false,
+            "sourceTheoryKeys": [
+              "motor"
+            ],
+            "tickets": [
+              "4-1-5",
+              "4-5-6",
+              "4-3-5",
+              "4-1-6",
+              "4-1-2",
+              "1-2-4"
+            ],
+            "actualTicket": "1-3-5",
+            "evidenceCount": 1
+          },
+          {
+            "theoryKey": "wall-boat",
+            "label": "壁艇理論",
+            "status": "evaluated",
+            "used": true,
+            "matched": false,
+            "sourceTheoryKeys": [
+              "wallBoat"
+            ],
+            "tickets": [
+              "4-1-5",
+              "4-5-6",
+              "4-3-5",
+              "4-1-6",
+              "4-1-2",
+              "1-2-4"
+            ],
+            "actualTicket": "1-3-5",
+            "evidenceCount": 1
+          },
+          {
+            "theoryKey": "frame-rise-fall",
+            "label": "枠別浮沈率",
+            "status": "evaluated",
+            "used": true,
+            "matched": false,
+            "sourceTheoryKeys": [
+              "frameRiseSink"
+            ],
+            "tickets": [
+              "4-1-5",
+              "4-5-6",
+              "4-3-5",
+              "4-1-6",
+              "4-1-2"
+            ],
+            "actualTicket": "1-3-5",
+            "evidenceCount": 1
+          },
+          {
+            "theoryKey": "double-time",
+            "label": "ダブルタイム",
+            "status": "not-used",
+            "used": false,
+            "matched": null,
+            "sourceTheoryKeys": [],
+            "tickets": [],
+            "actualTicket": "1-3-5",
+            "evidenceCount": 0
+          },
+          {
+            "theoryKey": "new-engine",
+            "label": "新エンジン理論",
+            "status": "not-used",
+            "used": false,
+            "matched": null,
+            "sourceTheoryKeys": [],
+            "tickets": [],
+            "actualTicket": "1-3-5",
+            "evidenceCount": 0
+          }
+        ],
+        "usableForPrediction": false,
+        "automaticApplication": false,
+        "uiVisible": false
+      },
+      "scenarioAiV6Verification": {
+        "version": "6.1.0-verification",
+        "logicFingerprint": "scenario-ai-v6-multi-candidate-v2-actual-course",
+        "snapshotVersion": "6.1.1-shadow",
+        "inputSourceKind": "live-verification-evidence",
+        "status": "verified",
+        "scenarioCount": 4,
+        "exactCount": 0,
+        "firstHitCount": 1,
+        "topCandidateExact": false,
+        "topCandidateFirstHit": false,
+        "exactWithinCandidates": false,
+        "firstHitWithinCandidates": true,
+        "matchedRank": 2,
+        "actualOrder": [
+          1,
+          3,
+          5
+        ],
+        "winningMethod": "逃げ",
+        "scenarios": [
+          {
+            "rank": 1,
+            "scenarioType": "fourAttack",
+            "likelihood": 34.1,
+            "predictedOrder": [
+              4,
+              1
+            ],
+            "actualOrder": [
+              1,
+              3,
+              5
+            ],
+            "status": "miss",
+            "exact": false,
+            "firstHit": false,
+            "top2Hit": false,
+            "winningMethod": "逃げ",
+            "winningMethodMatch": null,
+            "breakReasons": [
+              "想定頭4号艇が1着ではなかった"
+            ]
+          },
+          {
+            "rank": 2,
+            "scenarioType": "escape",
+            "likelihood": 33.4,
+            "predictedOrder": [
+              1,
+              4
+            ],
+            "actualOrder": [
+              1,
+              3,
+              5
+            ],
+            "status": "first-hit",
+            "exact": false,
+            "firstHit": true,
+            "top2Hit": false,
+            "winningMethod": "逃げ",
+            "winningMethodMatch": true,
+            "breakReasons": [
+              "相手または着順が想定と異なった"
+            ]
+          },
+          {
+            "rank": 3,
+            "scenarioType": "sashi",
+            "likelihood": 21.5,
+            "predictedOrder": [
+              2,
+              1,
+              4
+            ],
+            "actualOrder": [
+              1,
+              3,
+              5
+            ],
+            "status": "miss",
+            "exact": false,
+            "firstHit": false,
+            "top2Hit": false,
+            "winningMethod": "逃げ",
+            "winningMethodMatch": false,
+            "breakReasons": [
+              "想定頭2号艇が1着ではなかった",
+              "決まり手が想定展開と不一致（実際：逃げ）"
+            ]
+          },
+          {
+            "rank": 4,
+            "scenarioType": "threeAttack",
+            "likelihood": 11,
+            "predictedOrder": [
+              3,
+              1,
+              4
+            ],
+            "actualOrder": [
+              1,
+              3,
+              5
+            ],
+            "status": "top2-boats",
+            "exact": false,
+            "firstHit": false,
+            "top2Hit": true,
+            "winningMethod": "逃げ",
+            "winningMethodMatch": null,
+            "breakReasons": [
+              "想定頭3号艇が1着ではなかった"
+            ]
+          }
+        ],
+        "usableForPrediction": false,
+        "automaticApplication": false
       }
     },
     {
@@ -1075378,6 +1078928,3113 @@
     "fixedComparableRaces": 100,
     "status": "prospective-shadow-collection",
     "applicationMode": "shadow-only",
+    "usableForPrediction": false,
+    "automaticApplication": false
+  },
+  "resultSummary": {
+    "schemaVersion": 3,
+    "predictionCount": 0,
+    "sourcePredictionCount": 0,
+    "quarantinedCount": 0,
+    "settledCount": 0,
+    "practicalHits": 0,
+    "practicalHitRate": 0,
+    "honmeiFirstCount": 0,
+    "honmeiFirstRate": 0,
+    "scenarioComparableCount": 0,
+    "scenarioHits": 0,
+    "scenarioMatchRate": 0,
+    "structuredScenarioComparableCount": 0,
+    "structuredScenarioHits": 0,
+    "structuredScenarioMatchRate": 0,
+    "simulatedStake": 0,
+    "simulatedReturn": 0,
+    "simulatedProfit": 0,
+    "simulatedRecoveryRate": 0,
+    "categorySummary": [
+      {
+        "label": "本線",
+        "count": 0,
+        "percentage": 0
+      },
+      {
+        "label": "押さえ",
+        "count": 0,
+        "percentage": 0
+      },
+      {
+        "label": "流し",
+        "count": 0,
+        "percentage": 0
+      },
+      {
+        "label": "独立展開",
+        "count": 0,
+        "percentage": 0
+      },
+      {
+        "label": "万舟・穴",
+        "count": 0,
+        "percentage": 0
+      },
+      {
+        "label": "その他",
+        "count": 0,
+        "percentage": 0
+      }
+    ],
+    "ticketCategorySummary": [
+      {
+        "label": "本線",
+        "attempts": 0,
+        "matched": 0,
+        "hitRate": 0
+      },
+      {
+        "label": "押さえ",
+        "attempts": 0,
+        "matched": 0,
+        "hitRate": 0
+      },
+      {
+        "label": "流し",
+        "attempts": 0,
+        "matched": 0,
+        "hitRate": 0
+      },
+      {
+        "label": "独立展開",
+        "attempts": 0,
+        "matched": 0,
+        "hitRate": 0
+      },
+      {
+        "label": "万舟・穴",
+        "attempts": 0,
+        "matched": 0,
+        "hitRate": 0
+      },
+      {
+        "label": "その他",
+        "attempts": 0,
+        "matched": 0,
+        "hitRate": 0
+      }
+    ],
+    "roleSummary": [
+      {
+        "key": "attack",
+        "label": "攻め・頭",
+        "attempts": 0,
+        "matched": 0,
+        "matchRate": 0,
+        "top3": 0,
+        "top3Rate": 0
+      },
+      {
+        "key": "continuation",
+        "label": "追走・続行",
+        "attempts": 0,
+        "matched": 0,
+        "matchRate": 0,
+        "top3": 0,
+        "top3Rate": 0
+      },
+      {
+        "key": "hold",
+        "label": "残し",
+        "attempts": 0,
+        "matched": 0,
+        "matchRate": 0,
+        "top3": 0,
+        "top3Rate": 0
+      },
+      {
+        "key": "pickup",
+        "label": "拾い",
+        "attempts": 0,
+        "matched": 0,
+        "matchRate": 0,
+        "top3": 0,
+        "top3Rate": 0
+      }
+    ],
+    "rolePerformanceSummary": [],
+    "theoryPerformanceSummary": {
+      "status": "collecting_pre_race_attribution",
+      "rows": [],
+      "omittedCount": 0,
+      "description": "予想時点の理論帰属が保存されたレースから集計します。旧履歴を結果後に推測して補完しません。",
+      "supportCohort": true,
+      "overlappingCohort": true,
+      "notAdditive": true
+    },
+    "markSummary": [
+      {
+        "key": "honmei",
+        "symbol": "◎",
+        "label": "本命",
+        "count": 0,
+        "first": 0,
+        "firstRate": 0,
+        "top3": 0,
+        "top3Rate": 0
+      },
+      {
+        "key": "taikou",
+        "symbol": "○",
+        "label": "対抗",
+        "count": 0,
+        "first": 0,
+        "firstRate": 0,
+        "top3": 0,
+        "top3Rate": 0
+      },
+      {
+        "key": "ana",
+        "symbol": "▲",
+        "label": "穴",
+        "count": 0,
+        "first": 0,
+        "firstRate": 0,
+        "top3": 0,
+        "top3Rate": 0
+      },
+      {
+        "key": "osae",
+        "symbol": "△",
+        "label": "押さえ",
+        "count": 0,
+        "first": 0,
+        "firstRate": 0,
+        "top3": 0,
+        "top3Rate": 0
+      }
+    ],
+    "priorityStageSummary": [
+      {
+        "label": "展開",
+        "count": 0
+      },
+      {
+        "label": "コース",
+        "count": 0
+      },
+      {
+        "label": "ST・スリット",
+        "count": 0
+      },
+      {
+        "label": "展示・足",
+        "count": 0
+      },
+      {
+        "label": "残し・拾い",
+        "count": 0
+      },
+      {
+        "label": "当地・水面",
+        "count": 0
+      },
+      {
+        "label": "技量",
+        "count": 0
+      },
+      {
+        "label": "モーター",
+        "count": 0
+      }
+    ],
+    "scenarioLikelihoodV5Summary": {
+      "comparableCount": 0,
+      "leaderHits": 0,
+      "leaderHitRate": 0,
+      "top2Hits": 0,
+      "top2HitRate": 0,
+      "byAmbiguity": {}
+    },
+    "scenarioLikelihoodV5AbSummary": {
+      "version": "1.0.0",
+      "status": "shadow-only",
+      "overall": {
+        "samples": 0,
+        "changedSamples": 0,
+        "aWins": 0,
+        "bWins": 0,
+        "ties": 0,
+        "aLeaderHitRate": 0,
+        "bLeaderHitRate": 0,
+        "leaderHitImprovement": 0,
+        "aTopTwoHitRate": 0,
+        "bTopTwoHitRate": 0,
+        "degradationRate": 0,
+        "status": "collecting-data",
+        "productionCandidate": false,
+        "usableForPrediction": false,
+        "automaticApplication": false
+      },
+      "byVenue": [],
+      "byActualScenario": [],
+      "safeguards": {
+        "minimumSamples": 100,
+        "minimumChangedSamples": 30,
+        "minimumLeaderHitImprovement": 3,
+        "maximumDegradationRate": 1,
+        "requireTopTwoNonDegradation": true
+      },
+      "usableForPrediction": false,
+      "automaticApplication": false
+    }
+  },
+  "verificationResultSummary": {
+    "all": {
+      "schemaVersion": 3,
+      "predictionCount": 11,
+      "sourcePredictionCount": 11,
+      "quarantinedCount": 0,
+      "settledCount": 2,
+      "practicalHits": 1,
+      "practicalHitRate": 50,
+      "honmeiFirstCount": 1,
+      "honmeiFirstRate": 50,
+      "scenarioComparableCount": 2,
+      "scenarioHits": 1,
+      "scenarioMatchRate": 50,
+      "structuredScenarioComparableCount": 2,
+      "structuredScenarioHits": 1,
+      "structuredScenarioMatchRate": 50,
+      "simulatedStake": 1400,
+      "simulatedReturn": 840,
+      "simulatedProfit": -560,
+      "simulatedRecoveryRate": 60,
+      "categorySummary": [
+        {
+          "label": "本線",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "押さえ",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "流し",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "独立展開",
+          "count": 1,
+          "percentage": 100
+        },
+        {
+          "label": "万舟・穴",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "その他",
+          "count": 0,
+          "percentage": 0
+        }
+      ],
+      "ticketCategorySummary": [
+        {
+          "label": "本線",
+          "attempts": 2,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "押さえ",
+          "attempts": 1,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "流し",
+          "attempts": 2,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "独立展開",
+          "attempts": 1,
+          "matched": 1,
+          "hitRate": 100
+        },
+        {
+          "label": "万舟・穴",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "その他",
+          "attempts": 1,
+          "matched": 0,
+          "hitRate": 0
+        }
+      ],
+      "roleSummary": [
+        {
+          "key": "attack",
+          "label": "攻め・頭",
+          "attempts": 3,
+          "matched": 2,
+          "matchRate": 66.7,
+          "top3": 2,
+          "top3Rate": 66.7
+        },
+        {
+          "key": "continuation",
+          "label": "追走・続行",
+          "attempts": 2,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 2,
+          "top3Rate": 100
+        },
+        {
+          "key": "hold",
+          "label": "残し",
+          "attempts": 7,
+          "matched": 2,
+          "matchRate": 28.6,
+          "top3": 5,
+          "top3Rate": 71.4
+        },
+        {
+          "key": "pickup",
+          "label": "拾い",
+          "attempts": 7,
+          "matched": 2,
+          "matchRate": 28.6,
+          "top3": 3,
+          "top3Rate": 42.9
+        }
+      ],
+      "rolePerformanceSummary": [
+        {
+          "key": "attack",
+          "label": "攻め・頭",
+          "raceCount": 2,
+          "ticketCount": 13,
+          "hitTickets": 1,
+          "stake": 1300,
+          "return": 840,
+          "profit": -460,
+          "recoveryRate": 64.6,
+          "supportCohort": true,
+          "overlappingCohort": true,
+          "notAdditive": true,
+          "supportIdentity": {
+            "roleSchemaVersion": 1,
+            "theorySchemaVersion": 1,
+            "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup",
+            "generation": {
+              "logicFingerprint": "evaluated-scenarios-v1",
+              "confidenceDefinitionVersion": "internal-score-v1",
+              "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+            },
+            "evaluator": "shadow-selection-v2",
+            "evaluatorVersion": "shadow-selection-v2.0.1-boat-identity",
+            "selectorCohortKey": "d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank",
+            "logicFingerprint": "d691a612f3874582b925",
+            "theoryInputVersion": "theory-input-v1.0.2-st-history-fallback"
+          },
+          "supportIdentityKey": "[1,1,\"structured-ticket-support-v1:flow+holdPickup\",\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\",\"shadow-selection-v2\",\"shadow-selection-v2.0.1-boat-identity\",\"d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank\",\"d691a612f3874582b925\",\"theory-input-v1.0.2-st-history-fallback\"]",
+          "roleSchemaVersion": 1
+        },
+        {
+          "key": "hold",
+          "label": "残し",
+          "raceCount": 2,
+          "ticketCount": 13,
+          "hitTickets": 1,
+          "stake": 1300,
+          "return": 840,
+          "profit": -460,
+          "recoveryRate": 64.6,
+          "supportCohort": true,
+          "overlappingCohort": true,
+          "notAdditive": true,
+          "supportIdentity": {
+            "roleSchemaVersion": 1,
+            "theorySchemaVersion": 1,
+            "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup",
+            "generation": {
+              "logicFingerprint": "evaluated-scenarios-v1",
+              "confidenceDefinitionVersion": "internal-score-v1",
+              "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+            },
+            "evaluator": "shadow-selection-v2",
+            "evaluatorVersion": "shadow-selection-v2.0.1-boat-identity",
+            "selectorCohortKey": "d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank",
+            "logicFingerprint": "d691a612f3874582b925",
+            "theoryInputVersion": "theory-input-v1.0.2-st-history-fallback"
+          },
+          "supportIdentityKey": "[1,1,\"structured-ticket-support-v1:flow+holdPickup\",\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\",\"shadow-selection-v2\",\"shadow-selection-v2.0.1-boat-identity\",\"d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank\",\"d691a612f3874582b925\",\"theory-input-v1.0.2-st-history-fallback\"]",
+          "roleSchemaVersion": 1
+        },
+        {
+          "key": "continuation",
+          "label": "追走・続行",
+          "raceCount": 2,
+          "ticketCount": 6,
+          "hitTickets": 0,
+          "stake": 600,
+          "return": 0,
+          "profit": -600,
+          "recoveryRate": 0,
+          "supportCohort": true,
+          "overlappingCohort": true,
+          "notAdditive": true,
+          "supportIdentity": {
+            "roleSchemaVersion": 1,
+            "theorySchemaVersion": 1,
+            "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup",
+            "generation": {
+              "logicFingerprint": "evaluated-scenarios-v1",
+              "confidenceDefinitionVersion": "internal-score-v1",
+              "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+            },
+            "evaluator": "shadow-selection-v2",
+            "evaluatorVersion": "shadow-selection-v2.0.1-boat-identity",
+            "selectorCohortKey": "d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank",
+            "logicFingerprint": "d691a612f3874582b925",
+            "theoryInputVersion": "theory-input-v1.0.2-st-history-fallback"
+          },
+          "supportIdentityKey": "[1,1,\"structured-ticket-support-v1:flow+holdPickup\",\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\",\"shadow-selection-v2\",\"shadow-selection-v2.0.1-boat-identity\",\"d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank\",\"d691a612f3874582b925\",\"theory-input-v1.0.2-st-history-fallback\"]",
+          "roleSchemaVersion": 1
+        },
+        {
+          "key": "pickup",
+          "label": "拾い",
+          "raceCount": 2,
+          "ticketCount": 13,
+          "hitTickets": 1,
+          "stake": 1300,
+          "return": 840,
+          "profit": -460,
+          "recoveryRate": 64.6,
+          "supportCohort": true,
+          "overlappingCohort": true,
+          "notAdditive": true,
+          "supportIdentity": {
+            "roleSchemaVersion": 1,
+            "theorySchemaVersion": 1,
+            "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup",
+            "generation": {
+              "logicFingerprint": "evaluated-scenarios-v1",
+              "confidenceDefinitionVersion": "internal-score-v1",
+              "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+            },
+            "evaluator": "shadow-selection-v2",
+            "evaluatorVersion": "shadow-selection-v2.0.1-boat-identity",
+            "selectorCohortKey": "d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank",
+            "logicFingerprint": "d691a612f3874582b925",
+            "theoryInputVersion": "theory-input-v1.0.2-st-history-fallback"
+          },
+          "supportIdentityKey": "[1,1,\"structured-ticket-support-v1:flow+holdPickup\",\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\",\"shadow-selection-v2\",\"shadow-selection-v2.0.1-boat-identity\",\"d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank\",\"d691a612f3874582b925\",\"theory-input-v1.0.2-st-history-fallback\"]",
+          "roleSchemaVersion": 1
+        }
+      ],
+      "theoryPerformanceSummary": {
+        "status": "available",
+        "rows": [
+          {
+            "key": "flow",
+            "label": "展開（evaluated-scenarios-v1）",
+            "raceCount": 2,
+            "ticketCount": 13,
+            "hitTickets": 1,
+            "stake": 1300,
+            "return": 840,
+            "profit": -460,
+            "recoveryRate": 64.6,
+            "supportCohort": true,
+            "overlappingCohort": true,
+            "notAdditive": true,
+            "theoryKey": "flow",
+            "version": "evaluated-scenarios-v1",
+            "theoryVersion": "evaluated-scenarios-v1",
+            "source": "structured-purchase-branch",
+            "formal": true,
+            "supportIdentity": {
+              "roleSchemaVersion": 1,
+              "theorySchemaVersion": 1,
+              "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup",
+              "generation": {
+                "logicFingerprint": "evaluated-scenarios-v1",
+                "confidenceDefinitionVersion": "internal-score-v1",
+                "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+              },
+              "evaluator": "shadow-selection-v2",
+              "evaluatorVersion": "shadow-selection-v2.0.1-boat-identity",
+              "selectorCohortKey": "d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank",
+              "logicFingerprint": "d691a612f3874582b925",
+              "theoryInputVersion": "theory-input-v1.0.2-st-history-fallback"
+            },
+            "supportIdentityKey": "[1,1,\"structured-ticket-support-v1:flow+holdPickup\",\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\",\"shadow-selection-v2\",\"shadow-selection-v2.0.1-boat-identity\",\"d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank\",\"d691a612f3874582b925\",\"theory-input-v1.0.2-st-history-fallback\"]",
+            "theorySchemaVersion": 1,
+            "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup"
+          },
+          {
+            "key": "holdPickup",
+            "label": "残し・拾い（structured-role-evidence-v1）",
+            "raceCount": 2,
+            "ticketCount": 13,
+            "hitTickets": 1,
+            "stake": 1300,
+            "return": 840,
+            "profit": -460,
+            "recoveryRate": 64.6,
+            "supportCohort": true,
+            "overlappingCohort": true,
+            "notAdditive": true,
+            "theoryKey": "holdPickup",
+            "version": "structured-role-evidence-v1",
+            "theoryVersion": "structured-role-evidence-v1",
+            "source": "structured-role-claim",
+            "formal": true,
+            "supportIdentity": {
+              "roleSchemaVersion": 1,
+              "theorySchemaVersion": 1,
+              "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup",
+              "generation": {
+                "logicFingerprint": "evaluated-scenarios-v1",
+                "confidenceDefinitionVersion": "internal-score-v1",
+                "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+              },
+              "evaluator": "shadow-selection-v2",
+              "evaluatorVersion": "shadow-selection-v2.0.1-boat-identity",
+              "selectorCohortKey": "d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank",
+              "logicFingerprint": "d691a612f3874582b925",
+              "theoryInputVersion": "theory-input-v1.0.2-st-history-fallback"
+            },
+            "supportIdentityKey": "[1,1,\"structured-ticket-support-v1:flow+holdPickup\",\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\",\"shadow-selection-v2\",\"shadow-selection-v2.0.1-boat-identity\",\"d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank\",\"d691a612f3874582b925\",\"theory-input-v1.0.2-st-history-fallback\"]",
+            "theorySchemaVersion": 1,
+            "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup"
+          }
+        ],
+        "omittedCount": 0,
+        "description": "各理論が予想時点で支持した買い目群の実績。行同士は重複し、全体収支へ合算しません。",
+        "supportCohort": true,
+        "overlappingCohort": true,
+        "notAdditive": true
+      },
+      "markSummary": [
+        {
+          "key": "honmei",
+          "symbol": "◎",
+          "label": "本命",
+          "count": 2,
+          "first": 1,
+          "firstRate": 50,
+          "top3": 1,
+          "top3Rate": 50
+        },
+        {
+          "key": "taikou",
+          "symbol": "○",
+          "label": "対抗",
+          "count": 2,
+          "first": 1,
+          "firstRate": 50,
+          "top3": 2,
+          "top3Rate": 100
+        },
+        {
+          "key": "ana",
+          "symbol": "▲",
+          "label": "穴",
+          "count": 2,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 2,
+          "top3Rate": 100
+        },
+        {
+          "key": "osae",
+          "symbol": "△",
+          "label": "押さえ",
+          "count": 2,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 1,
+          "top3Rate": 50
+        }
+      ],
+      "priorityStageSummary": [
+        {
+          "label": "展開",
+          "count": 1
+        },
+        {
+          "label": "コース",
+          "count": 0
+        },
+        {
+          "label": "ST・スリット",
+          "count": 0
+        },
+        {
+          "label": "展示・足",
+          "count": 0
+        },
+        {
+          "label": "残し・拾い",
+          "count": 0
+        },
+        {
+          "label": "当地・水面",
+          "count": 0
+        },
+        {
+          "label": "技量",
+          "count": 0
+        },
+        {
+          "label": "モーター",
+          "count": 0
+        }
+      ],
+      "scenarioLikelihoodV5Summary": {
+        "comparableCount": 2,
+        "leaderHits": 1,
+        "leaderHitRate": 50,
+        "top2Hits": 2,
+        "top2HitRate": 100,
+        "byAmbiguity": {
+          "clear": {
+            "count": 1,
+            "leaderHits": 1,
+            "top2Hits": 1,
+            "leaderHitRate": 100,
+            "top2HitRate": 100
+          },
+          "mixed": {
+            "count": 1,
+            "leaderHits": 0,
+            "top2Hits": 1,
+            "leaderHitRate": 0,
+            "top2HitRate": 100
+          }
+        }
+      },
+      "scenarioLikelihoodV5AbSummary": {
+        "version": "1.0.0",
+        "status": "shadow-only",
+        "overall": {
+          "samples": 2,
+          "changedSamples": 2,
+          "aWins": 0,
+          "bWins": 2,
+          "ties": 0,
+          "aLeaderHitRate": 50,
+          "bLeaderHitRate": 50,
+          "leaderHitImprovement": 0,
+          "aTopTwoHitRate": 100,
+          "bTopTwoHitRate": 100,
+          "degradationRate": 0,
+          "status": "collecting-data",
+          "productionCandidate": false,
+          "usableForPrediction": false,
+          "automaticApplication": false
+        },
+        "byVenue": [
+          {
+            "key": "18",
+            "samples": 1,
+            "changedSamples": 1,
+            "aWins": 0,
+            "bWins": 1,
+            "ties": 0,
+            "aLeaderHitRate": 0,
+            "bLeaderHitRate": 0,
+            "leaderHitImprovement": 0,
+            "aTopTwoHitRate": 100,
+            "bTopTwoHitRate": 100,
+            "degradationRate": 0,
+            "status": "collecting-data",
+            "productionCandidate": false,
+            "usableForPrediction": false,
+            "automaticApplication": false
+          },
+          {
+            "key": "23",
+            "samples": 1,
+            "changedSamples": 1,
+            "aWins": 0,
+            "bWins": 1,
+            "ties": 0,
+            "aLeaderHitRate": 100,
+            "bLeaderHitRate": 100,
+            "leaderHitImprovement": 0,
+            "aTopTwoHitRate": 100,
+            "bTopTwoHitRate": 100,
+            "degradationRate": 0,
+            "status": "collecting-data",
+            "productionCandidate": false,
+            "usableForPrediction": false,
+            "automaticApplication": false
+          }
+        ],
+        "byActualScenario": [
+          {
+            "key": "1逃げ",
+            "samples": 2,
+            "changedSamples": 2,
+            "aWins": 0,
+            "bWins": 2,
+            "ties": 0,
+            "aLeaderHitRate": 50,
+            "bLeaderHitRate": 50,
+            "leaderHitImprovement": 0,
+            "aTopTwoHitRate": 100,
+            "bTopTwoHitRate": 100,
+            "degradationRate": 0,
+            "status": "collecting-data",
+            "productionCandidate": false,
+            "usableForPrediction": false,
+            "automaticApplication": false
+          }
+        ],
+        "safeguards": {
+          "minimumSamples": 100,
+          "minimumChangedSamples": 30,
+          "minimumLeaderHitImprovement": 3,
+          "maximumDegradationRate": 1,
+          "requireTopTwoNonDegradation": true
+        },
+        "usableForPrediction": false,
+        "automaticApplication": false
+      }
+    },
+    "activeGenerationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\",\"1\",\"1\",\"structured-ticket-support-v1:flow+holdPickup\",\"shadow-selection-v2\",\"shadow-selection-v2.0.1-boat-identity\",\"d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank\",\"d691a612f3874582b925\",\"theory-input-v1.0.2-st-history-fallback\",\"60\"]",
+    "score70Plus": {
+      "schemaVersion": 3,
+      "predictionCount": 0,
+      "sourcePredictionCount": 0,
+      "quarantinedCount": 0,
+      "settledCount": 0,
+      "practicalHits": 0,
+      "practicalHitRate": 0,
+      "honmeiFirstCount": 0,
+      "honmeiFirstRate": 0,
+      "scenarioComparableCount": 0,
+      "scenarioHits": 0,
+      "scenarioMatchRate": 0,
+      "structuredScenarioComparableCount": 0,
+      "structuredScenarioHits": 0,
+      "structuredScenarioMatchRate": 0,
+      "simulatedStake": 0,
+      "simulatedReturn": 0,
+      "simulatedProfit": 0,
+      "simulatedRecoveryRate": 0,
+      "categorySummary": [
+        {
+          "label": "本線",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "押さえ",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "流し",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "独立展開",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "万舟・穴",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "その他",
+          "count": 0,
+          "percentage": 0
+        }
+      ],
+      "ticketCategorySummary": [
+        {
+          "label": "本線",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "押さえ",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "流し",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "独立展開",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "万舟・穴",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "その他",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        }
+      ],
+      "roleSummary": [
+        {
+          "key": "attack",
+          "label": "攻め・頭",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "continuation",
+          "label": "追走・続行",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "hold",
+          "label": "残し",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "pickup",
+          "label": "拾い",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        }
+      ],
+      "rolePerformanceSummary": [],
+      "theoryPerformanceSummary": {
+        "status": "collecting_pre_race_attribution",
+        "rows": [],
+        "omittedCount": 0,
+        "description": "予想時点の理論帰属が保存されたレースから集計します。旧履歴を結果後に推測して補完しません。",
+        "supportCohort": true,
+        "overlappingCohort": true,
+        "notAdditive": true
+      },
+      "markSummary": [
+        {
+          "key": "honmei",
+          "symbol": "◎",
+          "label": "本命",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "taikou",
+          "symbol": "○",
+          "label": "対抗",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "ana",
+          "symbol": "▲",
+          "label": "穴",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "osae",
+          "symbol": "△",
+          "label": "押さえ",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        }
+      ],
+      "priorityStageSummary": [
+        {
+          "label": "展開",
+          "count": 0
+        },
+        {
+          "label": "コース",
+          "count": 0
+        },
+        {
+          "label": "ST・スリット",
+          "count": 0
+        },
+        {
+          "label": "展示・足",
+          "count": 0
+        },
+        {
+          "label": "残し・拾い",
+          "count": 0
+        },
+        {
+          "label": "当地・水面",
+          "count": 0
+        },
+        {
+          "label": "技量",
+          "count": 0
+        },
+        {
+          "label": "モーター",
+          "count": 0
+        }
+      ],
+      "scenarioLikelihoodV5Summary": {
+        "comparableCount": 0,
+        "leaderHits": 0,
+        "leaderHitRate": 0,
+        "top2Hits": 0,
+        "top2HitRate": 0,
+        "byAmbiguity": {}
+      },
+      "scenarioLikelihoodV5AbSummary": {
+        "version": "1.0.0",
+        "status": "shadow-only",
+        "overall": {
+          "samples": 0,
+          "changedSamples": 0,
+          "aWins": 0,
+          "bWins": 0,
+          "ties": 0,
+          "aLeaderHitRate": 0,
+          "bLeaderHitRate": 0,
+          "leaderHitImprovement": 0,
+          "aTopTwoHitRate": 0,
+          "bTopTwoHitRate": 0,
+          "degradationRate": 0,
+          "status": "collecting-data",
+          "productionCandidate": false,
+          "usableForPrediction": false,
+          "automaticApplication": false
+        },
+        "byVenue": [],
+        "byActualScenario": [],
+        "safeguards": {
+          "minimumSamples": 100,
+          "minimumChangedSamples": 30,
+          "minimumLeaderHitImprovement": 3,
+          "maximumDegradationRate": 1,
+          "requireTopTwoNonDegradation": true
+        },
+        "usableForPrediction": false,
+        "automaticApplication": false
+      }
+    },
+    "score60To69": {
+      "schemaVersion": 3,
+      "predictionCount": 0,
+      "sourcePredictionCount": 0,
+      "quarantinedCount": 0,
+      "settledCount": 0,
+      "practicalHits": 0,
+      "practicalHitRate": 0,
+      "honmeiFirstCount": 0,
+      "honmeiFirstRate": 0,
+      "scenarioComparableCount": 0,
+      "scenarioHits": 0,
+      "scenarioMatchRate": 0,
+      "structuredScenarioComparableCount": 0,
+      "structuredScenarioHits": 0,
+      "structuredScenarioMatchRate": 0,
+      "simulatedStake": 0,
+      "simulatedReturn": 0,
+      "simulatedProfit": 0,
+      "simulatedRecoveryRate": 0,
+      "categorySummary": [
+        {
+          "label": "本線",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "押さえ",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "流し",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "独立展開",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "万舟・穴",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "その他",
+          "count": 0,
+          "percentage": 0
+        }
+      ],
+      "ticketCategorySummary": [
+        {
+          "label": "本線",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "押さえ",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "流し",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "独立展開",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "万舟・穴",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "その他",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        }
+      ],
+      "roleSummary": [
+        {
+          "key": "attack",
+          "label": "攻め・頭",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "continuation",
+          "label": "追走・続行",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "hold",
+          "label": "残し",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "pickup",
+          "label": "拾い",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        }
+      ],
+      "rolePerformanceSummary": [],
+      "theoryPerformanceSummary": {
+        "status": "collecting_pre_race_attribution",
+        "rows": [],
+        "omittedCount": 0,
+        "description": "予想時点の理論帰属が保存されたレースから集計します。旧履歴を結果後に推測して補完しません。",
+        "supportCohort": true,
+        "overlappingCohort": true,
+        "notAdditive": true
+      },
+      "markSummary": [
+        {
+          "key": "honmei",
+          "symbol": "◎",
+          "label": "本命",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "taikou",
+          "symbol": "○",
+          "label": "対抗",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "ana",
+          "symbol": "▲",
+          "label": "穴",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "osae",
+          "symbol": "△",
+          "label": "押さえ",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        }
+      ],
+      "priorityStageSummary": [
+        {
+          "label": "展開",
+          "count": 0
+        },
+        {
+          "label": "コース",
+          "count": 0
+        },
+        {
+          "label": "ST・スリット",
+          "count": 0
+        },
+        {
+          "label": "展示・足",
+          "count": 0
+        },
+        {
+          "label": "残し・拾い",
+          "count": 0
+        },
+        {
+          "label": "当地・水面",
+          "count": 0
+        },
+        {
+          "label": "技量",
+          "count": 0
+        },
+        {
+          "label": "モーター",
+          "count": 0
+        }
+      ],
+      "scenarioLikelihoodV5Summary": {
+        "comparableCount": 0,
+        "leaderHits": 0,
+        "leaderHitRate": 0,
+        "top2Hits": 0,
+        "top2HitRate": 0,
+        "byAmbiguity": {}
+      },
+      "scenarioLikelihoodV5AbSummary": {
+        "version": "1.0.0",
+        "status": "shadow-only",
+        "overall": {
+          "samples": 0,
+          "changedSamples": 0,
+          "aWins": 0,
+          "bWins": 0,
+          "ties": 0,
+          "aLeaderHitRate": 0,
+          "bLeaderHitRate": 0,
+          "leaderHitImprovement": 0,
+          "aTopTwoHitRate": 0,
+          "bTopTwoHitRate": 0,
+          "degradationRate": 0,
+          "status": "collecting-data",
+          "productionCandidate": false,
+          "usableForPrediction": false,
+          "automaticApplication": false
+        },
+        "byVenue": [],
+        "byActualScenario": [],
+        "safeguards": {
+          "minimumSamples": 100,
+          "minimumChangedSamples": 30,
+          "minimumLeaderHitImprovement": 3,
+          "maximumDegradationRate": 1,
+          "requireTopTwoNonDegradation": true
+        },
+        "usableForPrediction": false,
+        "automaticApplication": false
+      }
+    },
+    "readyBelow60": {
+      "schemaVersion": 3,
+      "predictionCount": 0,
+      "sourcePredictionCount": 0,
+      "quarantinedCount": 0,
+      "settledCount": 0,
+      "practicalHits": 0,
+      "practicalHitRate": 0,
+      "honmeiFirstCount": 0,
+      "honmeiFirstRate": 0,
+      "scenarioComparableCount": 0,
+      "scenarioHits": 0,
+      "scenarioMatchRate": 0,
+      "structuredScenarioComparableCount": 0,
+      "structuredScenarioHits": 0,
+      "structuredScenarioMatchRate": 0,
+      "simulatedStake": 0,
+      "simulatedReturn": 0,
+      "simulatedProfit": 0,
+      "simulatedRecoveryRate": 0,
+      "categorySummary": [
+        {
+          "label": "本線",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "押さえ",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "流し",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "独立展開",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "万舟・穴",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "その他",
+          "count": 0,
+          "percentage": 0
+        }
+      ],
+      "ticketCategorySummary": [
+        {
+          "label": "本線",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "押さえ",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "流し",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "独立展開",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "万舟・穴",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "その他",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        }
+      ],
+      "roleSummary": [
+        {
+          "key": "attack",
+          "label": "攻め・頭",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "continuation",
+          "label": "追走・続行",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "hold",
+          "label": "残し",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "pickup",
+          "label": "拾い",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        }
+      ],
+      "rolePerformanceSummary": [],
+      "theoryPerformanceSummary": {
+        "status": "collecting_pre_race_attribution",
+        "rows": [],
+        "omittedCount": 0,
+        "description": "予想時点の理論帰属が保存されたレースから集計します。旧履歴を結果後に推測して補完しません。",
+        "supportCohort": true,
+        "overlappingCohort": true,
+        "notAdditive": true
+      },
+      "markSummary": [
+        {
+          "key": "honmei",
+          "symbol": "◎",
+          "label": "本命",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "taikou",
+          "symbol": "○",
+          "label": "対抗",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "ana",
+          "symbol": "▲",
+          "label": "穴",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "osae",
+          "symbol": "△",
+          "label": "押さえ",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        }
+      ],
+      "priorityStageSummary": [
+        {
+          "label": "展開",
+          "count": 0
+        },
+        {
+          "label": "コース",
+          "count": 0
+        },
+        {
+          "label": "ST・スリット",
+          "count": 0
+        },
+        {
+          "label": "展示・足",
+          "count": 0
+        },
+        {
+          "label": "残し・拾い",
+          "count": 0
+        },
+        {
+          "label": "当地・水面",
+          "count": 0
+        },
+        {
+          "label": "技量",
+          "count": 0
+        },
+        {
+          "label": "モーター",
+          "count": 0
+        }
+      ],
+      "scenarioLikelihoodV5Summary": {
+        "comparableCount": 0,
+        "leaderHits": 0,
+        "leaderHitRate": 0,
+        "top2Hits": 0,
+        "top2HitRate": 0,
+        "byAmbiguity": {}
+      },
+      "scenarioLikelihoodV5AbSummary": {
+        "version": "1.0.0",
+        "status": "shadow-only",
+        "overall": {
+          "samples": 0,
+          "changedSamples": 0,
+          "aWins": 0,
+          "bWins": 0,
+          "ties": 0,
+          "aLeaderHitRate": 0,
+          "bLeaderHitRate": 0,
+          "leaderHitImprovement": 0,
+          "aTopTwoHitRate": 0,
+          "bTopTwoHitRate": 0,
+          "degradationRate": 0,
+          "status": "collecting-data",
+          "productionCandidate": false,
+          "usableForPrediction": false,
+          "automaticApplication": false
+        },
+        "byVenue": [],
+        "byActualScenario": [],
+        "safeguards": {
+          "minimumSamples": 100,
+          "minimumChangedSamples": 30,
+          "minimumLeaderHitImprovement": 3,
+          "maximumDegradationRate": 1,
+          "requireTopTwoNonDegradation": true
+        },
+        "usableForPrediction": false,
+        "automaticApplication": false
+      }
+    },
+    "notReady": {
+      "schemaVersion": 3,
+      "predictionCount": 11,
+      "sourcePredictionCount": 11,
+      "quarantinedCount": 0,
+      "settledCount": 2,
+      "practicalHits": 1,
+      "practicalHitRate": 50,
+      "honmeiFirstCount": 1,
+      "honmeiFirstRate": 50,
+      "scenarioComparableCount": 2,
+      "scenarioHits": 1,
+      "scenarioMatchRate": 50,
+      "structuredScenarioComparableCount": 2,
+      "structuredScenarioHits": 1,
+      "structuredScenarioMatchRate": 50,
+      "simulatedStake": 1400,
+      "simulatedReturn": 840,
+      "simulatedProfit": -560,
+      "simulatedRecoveryRate": 60,
+      "categorySummary": [
+        {
+          "label": "本線",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "押さえ",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "流し",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "独立展開",
+          "count": 1,
+          "percentage": 100
+        },
+        {
+          "label": "万舟・穴",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "その他",
+          "count": 0,
+          "percentage": 0
+        }
+      ],
+      "ticketCategorySummary": [
+        {
+          "label": "本線",
+          "attempts": 2,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "押さえ",
+          "attempts": 1,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "流し",
+          "attempts": 2,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "独立展開",
+          "attempts": 1,
+          "matched": 1,
+          "hitRate": 100
+        },
+        {
+          "label": "万舟・穴",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "その他",
+          "attempts": 1,
+          "matched": 0,
+          "hitRate": 0
+        }
+      ],
+      "roleSummary": [
+        {
+          "key": "attack",
+          "label": "攻め・頭",
+          "attempts": 3,
+          "matched": 2,
+          "matchRate": 66.7,
+          "top3": 2,
+          "top3Rate": 66.7
+        },
+        {
+          "key": "continuation",
+          "label": "追走・続行",
+          "attempts": 2,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 2,
+          "top3Rate": 100
+        },
+        {
+          "key": "hold",
+          "label": "残し",
+          "attempts": 7,
+          "matched": 2,
+          "matchRate": 28.6,
+          "top3": 5,
+          "top3Rate": 71.4
+        },
+        {
+          "key": "pickup",
+          "label": "拾い",
+          "attempts": 7,
+          "matched": 2,
+          "matchRate": 28.6,
+          "top3": 3,
+          "top3Rate": 42.9
+        }
+      ],
+      "rolePerformanceSummary": [
+        {
+          "key": "attack",
+          "label": "攻め・頭",
+          "raceCount": 2,
+          "ticketCount": 13,
+          "hitTickets": 1,
+          "stake": 1300,
+          "return": 840,
+          "profit": -460,
+          "recoveryRate": 64.6,
+          "supportCohort": true,
+          "overlappingCohort": true,
+          "notAdditive": true,
+          "supportIdentity": {
+            "roleSchemaVersion": 1,
+            "theorySchemaVersion": 1,
+            "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup",
+            "generation": {
+              "logicFingerprint": "evaluated-scenarios-v1",
+              "confidenceDefinitionVersion": "internal-score-v1",
+              "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+            },
+            "evaluator": "shadow-selection-v2",
+            "evaluatorVersion": "shadow-selection-v2.0.1-boat-identity",
+            "selectorCohortKey": "d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank",
+            "logicFingerprint": "d691a612f3874582b925",
+            "theoryInputVersion": "theory-input-v1.0.2-st-history-fallback"
+          },
+          "supportIdentityKey": "[1,1,\"structured-ticket-support-v1:flow+holdPickup\",\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\",\"shadow-selection-v2\",\"shadow-selection-v2.0.1-boat-identity\",\"d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank\",\"d691a612f3874582b925\",\"theory-input-v1.0.2-st-history-fallback\"]",
+          "roleSchemaVersion": 1
+        },
+        {
+          "key": "hold",
+          "label": "残し",
+          "raceCount": 2,
+          "ticketCount": 13,
+          "hitTickets": 1,
+          "stake": 1300,
+          "return": 840,
+          "profit": -460,
+          "recoveryRate": 64.6,
+          "supportCohort": true,
+          "overlappingCohort": true,
+          "notAdditive": true,
+          "supportIdentity": {
+            "roleSchemaVersion": 1,
+            "theorySchemaVersion": 1,
+            "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup",
+            "generation": {
+              "logicFingerprint": "evaluated-scenarios-v1",
+              "confidenceDefinitionVersion": "internal-score-v1",
+              "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+            },
+            "evaluator": "shadow-selection-v2",
+            "evaluatorVersion": "shadow-selection-v2.0.1-boat-identity",
+            "selectorCohortKey": "d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank",
+            "logicFingerprint": "d691a612f3874582b925",
+            "theoryInputVersion": "theory-input-v1.0.2-st-history-fallback"
+          },
+          "supportIdentityKey": "[1,1,\"structured-ticket-support-v1:flow+holdPickup\",\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\",\"shadow-selection-v2\",\"shadow-selection-v2.0.1-boat-identity\",\"d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank\",\"d691a612f3874582b925\",\"theory-input-v1.0.2-st-history-fallback\"]",
+          "roleSchemaVersion": 1
+        },
+        {
+          "key": "continuation",
+          "label": "追走・続行",
+          "raceCount": 2,
+          "ticketCount": 6,
+          "hitTickets": 0,
+          "stake": 600,
+          "return": 0,
+          "profit": -600,
+          "recoveryRate": 0,
+          "supportCohort": true,
+          "overlappingCohort": true,
+          "notAdditive": true,
+          "supportIdentity": {
+            "roleSchemaVersion": 1,
+            "theorySchemaVersion": 1,
+            "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup",
+            "generation": {
+              "logicFingerprint": "evaluated-scenarios-v1",
+              "confidenceDefinitionVersion": "internal-score-v1",
+              "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+            },
+            "evaluator": "shadow-selection-v2",
+            "evaluatorVersion": "shadow-selection-v2.0.1-boat-identity",
+            "selectorCohortKey": "d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank",
+            "logicFingerprint": "d691a612f3874582b925",
+            "theoryInputVersion": "theory-input-v1.0.2-st-history-fallback"
+          },
+          "supportIdentityKey": "[1,1,\"structured-ticket-support-v1:flow+holdPickup\",\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\",\"shadow-selection-v2\",\"shadow-selection-v2.0.1-boat-identity\",\"d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank\",\"d691a612f3874582b925\",\"theory-input-v1.0.2-st-history-fallback\"]",
+          "roleSchemaVersion": 1
+        },
+        {
+          "key": "pickup",
+          "label": "拾い",
+          "raceCount": 2,
+          "ticketCount": 13,
+          "hitTickets": 1,
+          "stake": 1300,
+          "return": 840,
+          "profit": -460,
+          "recoveryRate": 64.6,
+          "supportCohort": true,
+          "overlappingCohort": true,
+          "notAdditive": true,
+          "supportIdentity": {
+            "roleSchemaVersion": 1,
+            "theorySchemaVersion": 1,
+            "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup",
+            "generation": {
+              "logicFingerprint": "evaluated-scenarios-v1",
+              "confidenceDefinitionVersion": "internal-score-v1",
+              "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+            },
+            "evaluator": "shadow-selection-v2",
+            "evaluatorVersion": "shadow-selection-v2.0.1-boat-identity",
+            "selectorCohortKey": "d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank",
+            "logicFingerprint": "d691a612f3874582b925",
+            "theoryInputVersion": "theory-input-v1.0.2-st-history-fallback"
+          },
+          "supportIdentityKey": "[1,1,\"structured-ticket-support-v1:flow+holdPickup\",\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\",\"shadow-selection-v2\",\"shadow-selection-v2.0.1-boat-identity\",\"d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank\",\"d691a612f3874582b925\",\"theory-input-v1.0.2-st-history-fallback\"]",
+          "roleSchemaVersion": 1
+        }
+      ],
+      "theoryPerformanceSummary": {
+        "status": "available",
+        "rows": [
+          {
+            "key": "flow",
+            "label": "展開（evaluated-scenarios-v1）",
+            "raceCount": 2,
+            "ticketCount": 13,
+            "hitTickets": 1,
+            "stake": 1300,
+            "return": 840,
+            "profit": -460,
+            "recoveryRate": 64.6,
+            "supportCohort": true,
+            "overlappingCohort": true,
+            "notAdditive": true,
+            "theoryKey": "flow",
+            "version": "evaluated-scenarios-v1",
+            "theoryVersion": "evaluated-scenarios-v1",
+            "source": "structured-purchase-branch",
+            "formal": true,
+            "supportIdentity": {
+              "roleSchemaVersion": 1,
+              "theorySchemaVersion": 1,
+              "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup",
+              "generation": {
+                "logicFingerprint": "evaluated-scenarios-v1",
+                "confidenceDefinitionVersion": "internal-score-v1",
+                "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+              },
+              "evaluator": "shadow-selection-v2",
+              "evaluatorVersion": "shadow-selection-v2.0.1-boat-identity",
+              "selectorCohortKey": "d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank",
+              "logicFingerprint": "d691a612f3874582b925",
+              "theoryInputVersion": "theory-input-v1.0.2-st-history-fallback"
+            },
+            "supportIdentityKey": "[1,1,\"structured-ticket-support-v1:flow+holdPickup\",\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\",\"shadow-selection-v2\",\"shadow-selection-v2.0.1-boat-identity\",\"d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank\",\"d691a612f3874582b925\",\"theory-input-v1.0.2-st-history-fallback\"]",
+            "theorySchemaVersion": 1,
+            "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup"
+          },
+          {
+            "key": "holdPickup",
+            "label": "残し・拾い（structured-role-evidence-v1）",
+            "raceCount": 2,
+            "ticketCount": 13,
+            "hitTickets": 1,
+            "stake": 1300,
+            "return": 840,
+            "profit": -460,
+            "recoveryRate": 64.6,
+            "supportCohort": true,
+            "overlappingCohort": true,
+            "notAdditive": true,
+            "theoryKey": "holdPickup",
+            "version": "structured-role-evidence-v1",
+            "theoryVersion": "structured-role-evidence-v1",
+            "source": "structured-role-claim",
+            "formal": true,
+            "supportIdentity": {
+              "roleSchemaVersion": 1,
+              "theorySchemaVersion": 1,
+              "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup",
+              "generation": {
+                "logicFingerprint": "evaluated-scenarios-v1",
+                "confidenceDefinitionVersion": "internal-score-v1",
+                "ticketPolicyVersion": "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3"
+              },
+              "evaluator": "shadow-selection-v2",
+              "evaluatorVersion": "shadow-selection-v2.0.1-boat-identity",
+              "selectorCohortKey": "d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank",
+              "logicFingerprint": "d691a612f3874582b925",
+              "theoryInputVersion": "theory-input-v1.0.2-st-history-fallback"
+            },
+            "supportIdentityKey": "[1,1,\"structured-ticket-support-v1:flow+holdPickup\",\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1|escape-role-partner-v1.3\",\"shadow-selection-v2\",\"shadow-selection-v2.0.1-boat-identity\",\"d691a612f3874582b925:108b3f77d07bb16d434c:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.8-adjacent-start-rank\",\"d691a612f3874582b925\",\"theory-input-v1.0.2-st-history-fallback\"]",
+            "theorySchemaVersion": 1,
+            "theorySetFingerprint": "structured-ticket-support-v1:flow+holdPickup"
+          }
+        ],
+        "omittedCount": 0,
+        "description": "各理論が予想時点で支持した買い目群の実績。行同士は重複し、全体収支へ合算しません。",
+        "supportCohort": true,
+        "overlappingCohort": true,
+        "notAdditive": true
+      },
+      "markSummary": [
+        {
+          "key": "honmei",
+          "symbol": "◎",
+          "label": "本命",
+          "count": 2,
+          "first": 1,
+          "firstRate": 50,
+          "top3": 1,
+          "top3Rate": 50
+        },
+        {
+          "key": "taikou",
+          "symbol": "○",
+          "label": "対抗",
+          "count": 2,
+          "first": 1,
+          "firstRate": 50,
+          "top3": 2,
+          "top3Rate": 100
+        },
+        {
+          "key": "ana",
+          "symbol": "▲",
+          "label": "穴",
+          "count": 2,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 2,
+          "top3Rate": 100
+        },
+        {
+          "key": "osae",
+          "symbol": "△",
+          "label": "押さえ",
+          "count": 2,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 1,
+          "top3Rate": 50
+        }
+      ],
+      "priorityStageSummary": [
+        {
+          "label": "展開",
+          "count": 1
+        },
+        {
+          "label": "コース",
+          "count": 0
+        },
+        {
+          "label": "ST・スリット",
+          "count": 0
+        },
+        {
+          "label": "展示・足",
+          "count": 0
+        },
+        {
+          "label": "残し・拾い",
+          "count": 0
+        },
+        {
+          "label": "当地・水面",
+          "count": 0
+        },
+        {
+          "label": "技量",
+          "count": 0
+        },
+        {
+          "label": "モーター",
+          "count": 0
+        }
+      ],
+      "scenarioLikelihoodV5Summary": {
+        "comparableCount": 2,
+        "leaderHits": 1,
+        "leaderHitRate": 50,
+        "top2Hits": 2,
+        "top2HitRate": 100,
+        "byAmbiguity": {
+          "clear": {
+            "count": 1,
+            "leaderHits": 1,
+            "top2Hits": 1,
+            "leaderHitRate": 100,
+            "top2HitRate": 100
+          },
+          "mixed": {
+            "count": 1,
+            "leaderHits": 0,
+            "top2Hits": 1,
+            "leaderHitRate": 0,
+            "top2HitRate": 100
+          }
+        }
+      },
+      "scenarioLikelihoodV5AbSummary": {
+        "version": "1.0.0",
+        "status": "shadow-only",
+        "overall": {
+          "samples": 2,
+          "changedSamples": 2,
+          "aWins": 0,
+          "bWins": 2,
+          "ties": 0,
+          "aLeaderHitRate": 50,
+          "bLeaderHitRate": 50,
+          "leaderHitImprovement": 0,
+          "aTopTwoHitRate": 100,
+          "bTopTwoHitRate": 100,
+          "degradationRate": 0,
+          "status": "collecting-data",
+          "productionCandidate": false,
+          "usableForPrediction": false,
+          "automaticApplication": false
+        },
+        "byVenue": [
+          {
+            "key": "18",
+            "samples": 1,
+            "changedSamples": 1,
+            "aWins": 0,
+            "bWins": 1,
+            "ties": 0,
+            "aLeaderHitRate": 0,
+            "bLeaderHitRate": 0,
+            "leaderHitImprovement": 0,
+            "aTopTwoHitRate": 100,
+            "bTopTwoHitRate": 100,
+            "degradationRate": 0,
+            "status": "collecting-data",
+            "productionCandidate": false,
+            "usableForPrediction": false,
+            "automaticApplication": false
+          },
+          {
+            "key": "23",
+            "samples": 1,
+            "changedSamples": 1,
+            "aWins": 0,
+            "bWins": 1,
+            "ties": 0,
+            "aLeaderHitRate": 100,
+            "bLeaderHitRate": 100,
+            "leaderHitImprovement": 0,
+            "aTopTwoHitRate": 100,
+            "bTopTwoHitRate": 100,
+            "degradationRate": 0,
+            "status": "collecting-data",
+            "productionCandidate": false,
+            "usableForPrediction": false,
+            "automaticApplication": false
+          }
+        ],
+        "byActualScenario": [
+          {
+            "key": "1逃げ",
+            "samples": 2,
+            "changedSamples": 2,
+            "aWins": 0,
+            "bWins": 2,
+            "ties": 0,
+            "aLeaderHitRate": 50,
+            "bLeaderHitRate": 50,
+            "leaderHitImprovement": 0,
+            "aTopTwoHitRate": 100,
+            "bTopTwoHitRate": 100,
+            "degradationRate": 0,
+            "status": "collecting-data",
+            "productionCandidate": false,
+            "usableForPrediction": false,
+            "automaticApplication": false
+          }
+        ],
+        "safeguards": {
+          "minimumSamples": 100,
+          "minimumChangedSamples": 30,
+          "minimumLeaderHitImprovement": 3,
+          "maximumDegradationRate": 1,
+          "requireTopTwoNonDegradation": true
+        },
+        "usableForPrediction": false,
+        "automaticApplication": false
+      }
+    },
+    "legacy": {
+      "schemaVersion": 3,
+      "predictionCount": 0,
+      "sourcePredictionCount": 0,
+      "quarantinedCount": 0,
+      "settledCount": 0,
+      "practicalHits": 0,
+      "practicalHitRate": 0,
+      "honmeiFirstCount": 0,
+      "honmeiFirstRate": 0,
+      "scenarioComparableCount": 0,
+      "scenarioHits": 0,
+      "scenarioMatchRate": 0,
+      "structuredScenarioComparableCount": 0,
+      "structuredScenarioHits": 0,
+      "structuredScenarioMatchRate": 0,
+      "simulatedStake": 0,
+      "simulatedReturn": 0,
+      "simulatedProfit": 0,
+      "simulatedRecoveryRate": 0,
+      "categorySummary": [
+        {
+          "label": "本線",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "押さえ",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "流し",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "独立展開",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "万舟・穴",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "その他",
+          "count": 0,
+          "percentage": 0
+        }
+      ],
+      "ticketCategorySummary": [
+        {
+          "label": "本線",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "押さえ",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "流し",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "独立展開",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "万舟・穴",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "その他",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        }
+      ],
+      "roleSummary": [
+        {
+          "key": "attack",
+          "label": "攻め・頭",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "continuation",
+          "label": "追走・続行",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "hold",
+          "label": "残し",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "pickup",
+          "label": "拾い",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        }
+      ],
+      "rolePerformanceSummary": [],
+      "theoryPerformanceSummary": {
+        "status": "collecting_pre_race_attribution",
+        "rows": [],
+        "omittedCount": 0,
+        "description": "予想時点の理論帰属が保存されたレースから集計します。旧履歴を結果後に推測して補完しません。",
+        "supportCohort": true,
+        "overlappingCohort": true,
+        "notAdditive": true
+      },
+      "markSummary": [
+        {
+          "key": "honmei",
+          "symbol": "◎",
+          "label": "本命",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "taikou",
+          "symbol": "○",
+          "label": "対抗",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "ana",
+          "symbol": "▲",
+          "label": "穴",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "osae",
+          "symbol": "△",
+          "label": "押さえ",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        }
+      ],
+      "priorityStageSummary": [
+        {
+          "label": "展開",
+          "count": 0
+        },
+        {
+          "label": "コース",
+          "count": 0
+        },
+        {
+          "label": "ST・スリット",
+          "count": 0
+        },
+        {
+          "label": "展示・足",
+          "count": 0
+        },
+        {
+          "label": "残し・拾い",
+          "count": 0
+        },
+        {
+          "label": "当地・水面",
+          "count": 0
+        },
+        {
+          "label": "技量",
+          "count": 0
+        },
+        {
+          "label": "モーター",
+          "count": 0
+        }
+      ],
+      "scenarioLikelihoodV5Summary": {
+        "comparableCount": 0,
+        "leaderHits": 0,
+        "leaderHitRate": 0,
+        "top2Hits": 0,
+        "top2HitRate": 0,
+        "byAmbiguity": {}
+      },
+      "scenarioLikelihoodV5AbSummary": {
+        "version": "1.0.0",
+        "status": "shadow-only",
+        "overall": {
+          "samples": 0,
+          "changedSamples": 0,
+          "aWins": 0,
+          "bWins": 0,
+          "ties": 0,
+          "aLeaderHitRate": 0,
+          "bLeaderHitRate": 0,
+          "leaderHitImprovement": 0,
+          "aTopTwoHitRate": 0,
+          "bTopTwoHitRate": 0,
+          "degradationRate": 0,
+          "status": "collecting-data",
+          "productionCandidate": false,
+          "usableForPrediction": false,
+          "automaticApplication": false
+        },
+        "byVenue": [],
+        "byActualScenario": [],
+        "safeguards": {
+          "minimumSamples": 100,
+          "minimumChangedSamples": 30,
+          "minimumLeaderHitImprovement": 3,
+          "maximumDegradationRate": 1,
+          "requireTopTwoNonDegradation": true
+        },
+        "usableForPrediction": false,
+        "automaticApplication": false
+      }
+    },
+    "missingGeneration": {
+      "schemaVersion": 3,
+      "predictionCount": 0,
+      "sourcePredictionCount": 0,
+      "quarantinedCount": 0,
+      "settledCount": 0,
+      "practicalHits": 0,
+      "practicalHitRate": 0,
+      "honmeiFirstCount": 0,
+      "honmeiFirstRate": 0,
+      "scenarioComparableCount": 0,
+      "scenarioHits": 0,
+      "scenarioMatchRate": 0,
+      "structuredScenarioComparableCount": 0,
+      "structuredScenarioHits": 0,
+      "structuredScenarioMatchRate": 0,
+      "simulatedStake": 0,
+      "simulatedReturn": 0,
+      "simulatedProfit": 0,
+      "simulatedRecoveryRate": 0,
+      "categorySummary": [
+        {
+          "label": "本線",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "押さえ",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "流し",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "独立展開",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "万舟・穴",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "その他",
+          "count": 0,
+          "percentage": 0
+        }
+      ],
+      "ticketCategorySummary": [
+        {
+          "label": "本線",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "押さえ",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "流し",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "独立展開",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "万舟・穴",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "その他",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        }
+      ],
+      "roleSummary": [
+        {
+          "key": "attack",
+          "label": "攻め・頭",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "continuation",
+          "label": "追走・続行",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "hold",
+          "label": "残し",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "pickup",
+          "label": "拾い",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        }
+      ],
+      "rolePerformanceSummary": [],
+      "theoryPerformanceSummary": {
+        "status": "collecting_pre_race_attribution",
+        "rows": [],
+        "omittedCount": 0,
+        "description": "予想時点の理論帰属が保存されたレースから集計します。旧履歴を結果後に推測して補完しません。",
+        "supportCohort": true,
+        "overlappingCohort": true,
+        "notAdditive": true
+      },
+      "markSummary": [
+        {
+          "key": "honmei",
+          "symbol": "◎",
+          "label": "本命",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "taikou",
+          "symbol": "○",
+          "label": "対抗",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "ana",
+          "symbol": "▲",
+          "label": "穴",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "osae",
+          "symbol": "△",
+          "label": "押さえ",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        }
+      ],
+      "priorityStageSummary": [
+        {
+          "label": "展開",
+          "count": 0
+        },
+        {
+          "label": "コース",
+          "count": 0
+        },
+        {
+          "label": "ST・スリット",
+          "count": 0
+        },
+        {
+          "label": "展示・足",
+          "count": 0
+        },
+        {
+          "label": "残し・拾い",
+          "count": 0
+        },
+        {
+          "label": "当地・水面",
+          "count": 0
+        },
+        {
+          "label": "技量",
+          "count": 0
+        },
+        {
+          "label": "モーター",
+          "count": 0
+        }
+      ],
+      "scenarioLikelihoodV5Summary": {
+        "comparableCount": 0,
+        "leaderHits": 0,
+        "leaderHitRate": 0,
+        "top2Hits": 0,
+        "top2HitRate": 0,
+        "byAmbiguity": {}
+      },
+      "scenarioLikelihoodV5AbSummary": {
+        "version": "1.0.0",
+        "status": "shadow-only",
+        "overall": {
+          "samples": 0,
+          "changedSamples": 0,
+          "aWins": 0,
+          "bWins": 0,
+          "ties": 0,
+          "aLeaderHitRate": 0,
+          "bLeaderHitRate": 0,
+          "leaderHitImprovement": 0,
+          "aTopTwoHitRate": 0,
+          "bTopTwoHitRate": 0,
+          "degradationRate": 0,
+          "status": "collecting-data",
+          "productionCandidate": false,
+          "usableForPrediction": false,
+          "automaticApplication": false
+        },
+        "byVenue": [],
+        "byActualScenario": [],
+        "safeguards": {
+          "minimumSamples": 100,
+          "minimumChangedSamples": 30,
+          "minimumLeaderHitImprovement": 3,
+          "maximumDegradationRate": 1,
+          "requireTopTwoNonDegradation": true
+        },
+        "usableForPrediction": false,
+        "automaticApplication": false
+      }
+    },
+    "otherGeneration": {
+      "schemaVersion": 3,
+      "predictionCount": 0,
+      "sourcePredictionCount": 0,
+      "quarantinedCount": 0,
+      "settledCount": 0,
+      "practicalHits": 0,
+      "practicalHitRate": 0,
+      "honmeiFirstCount": 0,
+      "honmeiFirstRate": 0,
+      "scenarioComparableCount": 0,
+      "scenarioHits": 0,
+      "scenarioMatchRate": 0,
+      "structuredScenarioComparableCount": 0,
+      "structuredScenarioHits": 0,
+      "structuredScenarioMatchRate": 0,
+      "simulatedStake": 0,
+      "simulatedReturn": 0,
+      "simulatedProfit": 0,
+      "simulatedRecoveryRate": 0,
+      "categorySummary": [
+        {
+          "label": "本線",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "押さえ",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "流し",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "独立展開",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "万舟・穴",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "その他",
+          "count": 0,
+          "percentage": 0
+        }
+      ],
+      "ticketCategorySummary": [
+        {
+          "label": "本線",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "押さえ",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "流し",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "独立展開",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "万舟・穴",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "その他",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        }
+      ],
+      "roleSummary": [
+        {
+          "key": "attack",
+          "label": "攻め・頭",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "continuation",
+          "label": "追走・続行",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "hold",
+          "label": "残し",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "pickup",
+          "label": "拾い",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        }
+      ],
+      "rolePerformanceSummary": [],
+      "theoryPerformanceSummary": {
+        "status": "collecting_pre_race_attribution",
+        "rows": [],
+        "omittedCount": 0,
+        "description": "予想時点の理論帰属が保存されたレースから集計します。旧履歴を結果後に推測して補完しません。",
+        "supportCohort": true,
+        "overlappingCohort": true,
+        "notAdditive": true
+      },
+      "markSummary": [
+        {
+          "key": "honmei",
+          "symbol": "◎",
+          "label": "本命",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "taikou",
+          "symbol": "○",
+          "label": "対抗",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "ana",
+          "symbol": "▲",
+          "label": "穴",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "osae",
+          "symbol": "△",
+          "label": "押さえ",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        }
+      ],
+      "priorityStageSummary": [
+        {
+          "label": "展開",
+          "count": 0
+        },
+        {
+          "label": "コース",
+          "count": 0
+        },
+        {
+          "label": "ST・スリット",
+          "count": 0
+        },
+        {
+          "label": "展示・足",
+          "count": 0
+        },
+        {
+          "label": "残し・拾い",
+          "count": 0
+        },
+        {
+          "label": "当地・水面",
+          "count": 0
+        },
+        {
+          "label": "技量",
+          "count": 0
+        },
+        {
+          "label": "モーター",
+          "count": 0
+        }
+      ],
+      "scenarioLikelihoodV5Summary": {
+        "comparableCount": 0,
+        "leaderHits": 0,
+        "leaderHitRate": 0,
+        "top2Hits": 0,
+        "top2HitRate": 0,
+        "byAmbiguity": {}
+      },
+      "scenarioLikelihoodV5AbSummary": {
+        "version": "1.0.0",
+        "status": "shadow-only",
+        "overall": {
+          "samples": 0,
+          "changedSamples": 0,
+          "aWins": 0,
+          "bWins": 0,
+          "ties": 0,
+          "aLeaderHitRate": 0,
+          "bLeaderHitRate": 0,
+          "leaderHitImprovement": 0,
+          "aTopTwoHitRate": 0,
+          "bTopTwoHitRate": 0,
+          "degradationRate": 0,
+          "status": "collecting-data",
+          "productionCandidate": false,
+          "usableForPrediction": false,
+          "automaticApplication": false
+        },
+        "byVenue": [],
+        "byActualScenario": [],
+        "safeguards": {
+          "minimumSamples": 100,
+          "minimumChangedSamples": 30,
+          "minimumLeaderHitImprovement": 3,
+          "maximumDegradationRate": 1,
+          "requireTopTwoNonDegradation": true
+        },
+        "usableForPrediction": false,
+        "automaticApplication": false
+      }
+    },
+    "under70": {
+      "schemaVersion": 3,
+      "predictionCount": 0,
+      "sourcePredictionCount": 0,
+      "quarantinedCount": 0,
+      "settledCount": 0,
+      "practicalHits": 0,
+      "practicalHitRate": 0,
+      "honmeiFirstCount": 0,
+      "honmeiFirstRate": 0,
+      "scenarioComparableCount": 0,
+      "scenarioHits": 0,
+      "scenarioMatchRate": 0,
+      "structuredScenarioComparableCount": 0,
+      "structuredScenarioHits": 0,
+      "structuredScenarioMatchRate": 0,
+      "simulatedStake": 0,
+      "simulatedReturn": 0,
+      "simulatedProfit": 0,
+      "simulatedRecoveryRate": 0,
+      "categorySummary": [
+        {
+          "label": "本線",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "押さえ",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "流し",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "独立展開",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "万舟・穴",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "その他",
+          "count": 0,
+          "percentage": 0
+        }
+      ],
+      "ticketCategorySummary": [
+        {
+          "label": "本線",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "押さえ",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "流し",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "独立展開",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "万舟・穴",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        },
+        {
+          "label": "その他",
+          "attempts": 0,
+          "matched": 0,
+          "hitRate": 0
+        }
+      ],
+      "roleSummary": [
+        {
+          "key": "attack",
+          "label": "攻め・頭",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "continuation",
+          "label": "追走・続行",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "hold",
+          "label": "残し",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "pickup",
+          "label": "拾い",
+          "attempts": 0,
+          "matched": 0,
+          "matchRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        }
+      ],
+      "rolePerformanceSummary": [],
+      "theoryPerformanceSummary": {
+        "status": "collecting_pre_race_attribution",
+        "rows": [],
+        "omittedCount": 0,
+        "description": "予想時点の理論帰属が保存されたレースから集計します。旧履歴を結果後に推測して補完しません。",
+        "supportCohort": true,
+        "overlappingCohort": true,
+        "notAdditive": true
+      },
+      "markSummary": [
+        {
+          "key": "honmei",
+          "symbol": "◎",
+          "label": "本命",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "taikou",
+          "symbol": "○",
+          "label": "対抗",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "ana",
+          "symbol": "▲",
+          "label": "穴",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        },
+        {
+          "key": "osae",
+          "symbol": "△",
+          "label": "押さえ",
+          "count": 0,
+          "first": 0,
+          "firstRate": 0,
+          "top3": 0,
+          "top3Rate": 0
+        }
+      ],
+      "priorityStageSummary": [
+        {
+          "label": "展開",
+          "count": 0
+        },
+        {
+          "label": "コース",
+          "count": 0
+        },
+        {
+          "label": "ST・スリット",
+          "count": 0
+        },
+        {
+          "label": "展示・足",
+          "count": 0
+        },
+        {
+          "label": "残し・拾い",
+          "count": 0
+        },
+        {
+          "label": "当地・水面",
+          "count": 0
+        },
+        {
+          "label": "技量",
+          "count": 0
+        },
+        {
+          "label": "モーター",
+          "count": 0
+        }
+      ],
+      "scenarioLikelihoodV5Summary": {
+        "comparableCount": 0,
+        "leaderHits": 0,
+        "leaderHitRate": 0,
+        "top2Hits": 0,
+        "top2HitRate": 0,
+        "byAmbiguity": {}
+      },
+      "scenarioLikelihoodV5AbSummary": {
+        "version": "1.0.0",
+        "status": "shadow-only",
+        "overall": {
+          "samples": 0,
+          "changedSamples": 0,
+          "aWins": 0,
+          "bWins": 0,
+          "ties": 0,
+          "aLeaderHitRate": 0,
+          "bLeaderHitRate": 0,
+          "leaderHitImprovement": 0,
+          "aTopTwoHitRate": 0,
+          "bTopTwoHitRate": 0,
+          "degradationRate": 0,
+          "status": "collecting-data",
+          "productionCandidate": false,
+          "usableForPrediction": false,
+          "automaticApplication": false
+        },
+        "byVenue": [],
+        "byActualScenario": [],
+        "safeguards": {
+          "minimumSamples": 100,
+          "minimumChangedSamples": 30,
+          "minimumLeaderHitImprovement": 3,
+          "maximumDegradationRate": 1,
+          "requireTopTwoNonDegradation": true
+        },
+        "usableForPrediction": false,
+        "automaticApplication": false
+      }
+    }
+  },
+  "resultsMatchedAt": "2026-11-17T00:33:06.834Z",
+  "scenarioAiV6VerificationSummary": {
+    "verifiedCount": 2,
+    "exactWithinCandidatesCount": 0,
+    "exactWithinCandidatesRate": 0,
+    "topCandidateExactCount": 0,
+    "topCandidateExactRate": 0,
+    "firstHitWithinCandidatesCount": 2,
+    "firstHitWithinCandidatesRate": 100,
     "usableForPrediction": false,
     "automaticApplication": false
   }
