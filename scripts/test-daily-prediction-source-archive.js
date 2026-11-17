@@ -878,6 +878,171 @@ try {
   fs.rmSync(artifactRoot, { recursive: true, force: true });
 }
 
+// The load-performance gate uses the same index projection and compaction as
+// the former restore-all -> raw reader path, with tiny synthetic inputs only.
+const indexBuilder = require("./build-prediction-index");
+const { compactIndex } = require("./compact-prediction-index");
+const indexRoot = fs.mkdtempSync(path.join(os.tmpdir(), "chappy-read-only-source-index-"));
+try {
+  const directory = archiveApi.predictionDirectory(indexRoot);
+  fs.mkdirSync(directory, { recursive: true });
+  const dates = ["20260812", "20260815", "20260816", "20260817"];
+  const encode = value => JSON.stringify(value) + "\n";
+  const stamp = (date, number = 0) => new Date(Date.UTC(
+    Number(date.slice(0, 4)), Number(date.slice(4, 6)) - 1,
+    Number(date.slice(6)), 1, 0, number
+  )).toISOString();
+  const quarantineBoats = ["濱本優一", "末永祐輝", "島田一生", "竹内来", "梶原正", "加藤政彦"]
+    .map((racerName, index) => ({ boatNo: index + 1, racerName }));
+  const payload = (date, overflow = false) => {
+    const count = limit => overflow ? limit + 2 : 1;
+    const data = {
+      date,
+      runs: Array.from({ length: count(indexBuilder.RUN_LIMIT) }, (_, i) => ({
+        runKey: `fixture-run-${date}-${i}`, checkedAt: stamp(date, i), selected: false
+      })),
+      predictions: Array.from({ length: count(indexBuilder.PREDICTION_LIMIT) }, (_, i) => ({
+        raceKey: `fixture-selected-${date}-${i}`, selectedAt: stamp(date, i)
+      })),
+      verificationPredictions: Array.from({ length: count(indexBuilder.VERIFICATION_LIMIT) }, (_, i) => ({
+        raceKey: `fixture-verification-${date}-${i}`, selectedAt: stamp(date, i)
+      })),
+      shadowV2Predictions: Array.from({ length: count(indexBuilder.SHADOW_V2_LIMIT) }, (_, i) => ({
+        recordKey: `fixture-shadow-${date}-${i}`, raceKey: `fixture-shadow-${date}-${i}`,
+        capturedAt: stamp(date, i)
+      }))
+    };
+    if (overflow) {
+      const raceKey = `${date}-23-2`;
+      const invalid = {
+        raceKey, selectedAt: stamp(date, 2000),
+        prediction: {
+          preRaceConditions: { boats: quarantineBoats },
+          mainSheet: { taikou: { boatNo: 1, name: "梶原正" } }
+        }
+      };
+      data.predictions.push(invalid);
+      data.verificationPredictions.push(invalid);
+      data.shadowV2Predictions.push({
+        raceKey, capturedAt: stamp(date, 2000), snapshot: { boats: quarantineBoats },
+        predictionReference: { marks: { taikou: { boatNo: 1, name: "梶原正" } } }
+      });
+      data.runs.push({ checkedAt: stamp(date, 2000), best: { raceKey } });
+    }
+    return data;
+  };
+  const sources = new Map();
+  for (const date of dates) {
+    sources.set(date, encode(payload(date, date === dates[1])));
+    fs.writeFileSync(archiveApi.sourcePathFor(indexRoot, date), sources.get(date));
+    if (date !== dates[3]) archiveApi.archivePredictionSource({
+      rootDirectory: indexRoot, date, rawSaveLimitBytes: 1,
+      generatedAt: "2026-08-18T00:00:00.000Z"
+    });
+  }
+  restorePredictionSources({ rootDirectory: indexRoot, all: true });
+  const normalize = index => ({ ...index, generatedAt: "" });
+  const expected = normalize(indexBuilder.buildPredictionIndex(directory));
+  const expectedCompact = normalize(compactIndex(JSON.parse(JSON.stringify(expected))));
+  assert.equal(expected.sourceFileCount, 4);
+  assert.deepEqual(expected.quarantinedRecordCounts, {
+    predictions: 1, verificationPredictions: 1, shadowV2Predictions: 1
+  });
+  for (const [key, limit] of Object.entries(expected.retentionLimits)) {
+    assert.equal(expected.sourceRecordCounts[key], limit + 5, "counts precede retention: " + key);
+    assert.equal(expected[key].length, limit, "retained nonempty collection limit: " + key);
+  }
+  const staleRaw = encode(payload(dates[1]));
+  fs.writeFileSync(archiveApi.sourcePathFor(indexRoot, dates[1]), staleRaw);
+  fs.unlinkSync(archiveApi.sourcePathFor(indexRoot, dates[2]));
+  const snapshot = rootDirectory => {
+    const entries = {};
+    const visit = current => {
+      for (const name of fs.readdirSync(current).sort()) {
+        const file = path.join(current, name);
+        if (fs.statSync(file).isDirectory()) {
+          entries[path.relative(rootDirectory, file) + "/"] = "directory";
+          visit(file);
+        } else entries[path.relative(rootDirectory, file)] = fs.readFileSync(file).toString("base64");
+      }
+    };
+    visit(rootDirectory);
+    return entries;
+  };
+  const readOnly = (operation, rootDirectory = indexRoot) => {
+    const before = snapshot(rootDirectory);
+    const methods = ["writeFileSync", "renameSync", "mkdirSync", "mkdtempSync", "linkSync", "copyFileSync", "rmSync", "unlinkSync"];
+    const original = Object.fromEntries(methods.map(name => [name, fs[name]]));
+    let writes = 0;
+    for (const name of methods) fs[name] = () => {
+      writes += 1;
+      throw new Error("read-only index must not write input files");
+    };
+    try { return operation(); }
+    finally {
+      for (const name of methods) fs[name] = original[name];
+      assert.equal(writes, 0, "no source/temp/directory mutations");
+      assert.deepEqual(snapshot(rootDirectory), before, "all source/archive/meta bytes remain unchanged");
+    }
+  };
+  const reads = [], parsed = new Map(), parse = JSON.parse;
+  JSON.parse = function(value, ...args) {
+    const text = String(value);
+    if ([...sources.values()].includes(text)) parsed.set(text, (parsed.get(text) || 0) + 1);
+    return parse.call(this, value, ...args);
+  };
+  let rebuilt;
+  try {
+    rebuilt = readOnly(() => indexBuilder.buildArchiveBackedPredictionIndex({
+      rootDirectory: indexRoot,
+      readArchive(options) { reads.push(options.date); return archiveApi.readPredictionSourceArchive(options); }
+    }));
+  } finally { JSON.parse = parse; }
+  assert.deepEqual(normalize(rebuilt), expected, "entire pre-compaction index matches former restored raw inputs");
+  assert.deepEqual(normalize(compactIndex(rebuilt)), expectedCompact, "entire compact index matches the existing load-performance gate");
+  assert.deepEqual(reads, dates.slice(0, 3), "all archives are validated exactly once, oldest included");
+  for (const date of dates) assert.equal(parsed.get(sources.get(date)), 1, "canonical JSON parsed once: " + date);
+  assert.equal(fs.readFileSync(archiveApi.sourcePathFor(indexRoot, dates[1]), "utf8"), staleRaw);
+  assert.equal(fs.existsSync(archiveApi.sourcePathFor(indexRoot, dates[2])), false);
+
+  const badDate = dates[1], archivePath = archiveApi.archivePathFor(indexRoot, badDate);
+  const metadataPath = archiveApi.metadataPathFor(indexRoot, badDate);
+  const goodArchive = fs.readFileSync(archivePath), goodMetadata = fs.readFileSync(metadataPath);
+  const fail = expression => assert.throws(() => readOnly(
+    () => indexBuilder.buildArchiveBackedPredictionIndex({ rootDirectory: indexRoot })
+  ), expression);
+  const corrupted = Buffer.from(goodArchive); corrupted[corrupted.length - 1] ^= 0xff;
+  fs.writeFileSync(archivePath, corrupted); fail(/fingerprint/);
+  fs.writeFileSync(archivePath, goodArchive);
+  const metadata = JSON.parse(goodMetadata.toString("utf8"));
+  fs.writeFileSync(metadataPath, encode({ ...metadata, schemaVersion: 2 })); fail(/metadata/);
+  fs.writeFileSync(metadataPath, encode({ ...metadata, sourceSha256: "0".repeat(64) })); fail(/fingerprint/);
+  fs.writeFileSync(metadataPath, goodMetadata);
+  const oldPath = archiveApi.archivePathFor(indexRoot, dates[0]), oldArchive = fs.readFileSync(oldPath);
+  fs.writeFileSync(oldPath, "broken earliest archive"); fail(/fingerprint/);
+  fs.writeFileSync(oldPath, oldArchive);
+  fs.unlinkSync(archivePath); fail(/構成ファイル/); fs.writeFileSync(archivePath, goodArchive);
+  const invalid = Buffer.from("invalid canonical JSON\n"), invalidArchive = zlib.gzipSync(invalid);
+  fs.writeFileSync(archivePath, invalidArchive);
+  fs.writeFileSync(metadataPath, encode(archiveApi.metadataFor({
+    date: badDate, raw: invalid, archive: invalidArchive, parsed: {}, generatedAt: "2026-08-18T00:00:00.000Z"
+  })));
+  fail(/JSONが不正/);
+  fs.writeFileSync(archivePath, goodArchive); fs.writeFileSync(metadataPath, goodMetadata);
+  const rawPath = archiveApi.sourcePathFor(indexRoot, dates[3]);
+  fs.writeFileSync(rawPath, "invalid raw-only JSON"); fail(/JSON|Unexpected token/);
+  fs.writeFileSync(rawPath, sources.get(dates[3]));
+  const noArchiveRoot = fs.mkdtempSync(path.join(os.tmpdir(), "chappy-index-no-archive-"));
+  try {
+    fs.mkdirSync(archiveApi.predictionDirectory(noArchiveRoot), { recursive: true });
+    fs.writeFileSync(archiveApi.sourcePathFor(noArchiveRoot, dates[3]), sources.get(dates[3]));
+    assert.throws(() => readOnly(() => indexBuilder.buildArchiveBackedPredictionIndex({
+      rootDirectory: noArchiveRoot
+    }), noArchiveRoot), /archive原本が必要/);
+  } finally { fs.rmSync(noArchiveRoot, { recursive: true, force: true }); }
+  console.log("read-only load-performance index fixtures: passed (4 dates, 4 retained arrays, 8 negative gates)");
+} finally { fs.rmSync(indexRoot, { recursive: true, force: true }); }
+
 console.log(
   "日次予想原本archive・Git保存テスト: 合格"
 );
