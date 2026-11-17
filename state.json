@@ -1340,11 +1340,11 @@
       },
       "settlement": {
         "status": "pending",
-        "reason": "official_result_stale"
+        "reason": "official_result_pending"
       },
       "publishedSettlement": {
         "status": "pending",
-        "reason": "official_result_stale",
+        "reason": "official_result_pending",
         "method": "published-main-sections-v1",
         "publishedTicketCount": 30,
         "sectionsSha256": "ef8daf9a6f0109f5e0addab0eb387689d7f0b6e81ff9113df0e7a5da445c2c61",
@@ -2497,6 +2497,32 @@
       "starts": [],
       "winningMethod": "",
       "trifecta": null
+    },
+    "20261117-18-6": {
+      "ok": true,
+      "source": "boatrace-official",
+      "date": "20261117",
+      "jcd": "18",
+      "raceNo": 6,
+      "checkedAt": "2026-11-17T01:55:49.559Z",
+      "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261117&jcd=18&rno=6",
+      "resultAvailable": false,
+      "status": "not_finished",
+      "void": false,
+      "finishers": [],
+      "starts": [],
+      "winningMethod": "",
+      "trifecta": {
+        "combination": "5-2-3",
+        "boats": [
+          5,
+          2,
+          3
+        ],
+        "payout": 3160,
+        "payoutText": "¥3,160",
+        "popularity": 15
+      }
     }
   },
   "resultAttempts": {
@@ -2534,6 +2560,10 @@
     },
     "20261117-08-2": {
       "checkedAt": "2026-11-17T01:53:47.806Z",
+      "status": "pending"
+    },
+    "20261117-18-6": {
+      "checkedAt": "2026-11-17T01:55:43.160Z",
       "status": "pending"
     }
   },
