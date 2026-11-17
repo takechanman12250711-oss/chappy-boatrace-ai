@@ -225,7 +225,8 @@ test('Buffer waits for successful index verification and fails closed on depende
   for(const testFile of ['note-result-card.test.cjs','note-marketing-image.test.js'])assert(buffer.includes(`scripts/${testFile}`));
   assert.doesNotMatch(buffer,/continue-on-error|always\(\)|\|\| true/);
   assert.equal((buffer.match(/        if:/g)||[]).length,1);
-  assert(buffer.includes("if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'"));
+  assert(buffer.includes("if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.actor != 'github-actions[bot]')"),
+    'publication-triggered bot dispatches must not spend the shared Buffer budget on a connection check');
 });
 test('registration alone cannot settle or continue; missing or late public verification never earns a payout',async()=>{
   const f=fixture(),out=await k.prepare(k.initialState(),config(),options([f]));
