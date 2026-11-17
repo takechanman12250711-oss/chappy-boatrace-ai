@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "reportId": "escape-partner-structured-forward-v1",
-  "generatedAt": "2026-11-17T01:49:23.139Z",
-  "sourceCommit": "d9dfa18acf6fbff1259ce447f522b5b2ba6988a2",
+  "generatedAt": "2026-11-17T04:21:27.526Z",
+  "sourceCommit": "69c14b5a8ee508d8975c96aa146d9ae0cc6592ad",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
@@ -26,7 +26,7 @@
     "configSha256": "5651e35144a33327d7341445bf13c5e1b2f4e80f34b57d1ce1625a9cc64c51ab",
     "scriptSha256": "ddfc18ad176aad1948a6d925f7f5188fe44aa9989e46d46d23853e1a912bcd3f",
     "inputFileCount": 64,
-    "inputSha256": "1b0879b670d5e77334a75816e4f4de0664464339e7d303379e785b9008a092b9"
+    "inputSha256": "cd9a553936177f5cd46438742e22dac6031f32c948cd93b93d6e6b7be06959d1"
   },
   "groups": {
     "discovery": {
@@ -136,15 +136,15 @@
     },
     "forward": {
       "total": {
-        "records": 1557,
+        "records": 1563,
         "settled": 1542,
-        "pending": 15,
-        "changed": 117,
+        "pending": 21,
+        "changed": 119,
         "reasons": {
-          "EVIDENCE_NOT_CAPTURED": 551,
-          "NO_STRICTLY_BETTER_DIVERSIFIER": 443,
-          "MAIN_HEAD_NOT_ELIGIBLE": 446,
-          "REPLACE_DUPLICATE_SECOND": 117
+          "EVIDENCE_NOT_CAPTURED": 555,
+          "NO_STRICTLY_BETTER_DIVERSIFIER": 442,
+          "MAIN_HEAD_NOT_ELIGIBLE": 447,
+          "REPLACE_DUPLICATE_SECOND": 119
         },
         "baseline": {
           "races": 1542,
@@ -180,12 +180,12 @@
         ]
       },
       "primary": {
-        "records": 125,
+        "records": 126,
         "settled": 125,
-        "pending": 0,
+        "pending": 1,
         "changed": 6,
         "reasons": {
-          "EVIDENCE_NOT_CAPTURED": 37,
+          "EVIDENCE_NOT_CAPTURED": 38,
           "NO_STRICTLY_BETTER_DIVERSIFIER": 32,
           "MAIN_HEAD_NOT_ELIGIBLE": 50,
           "REPLACE_DUPLICATE_SECOND": 6
@@ -217,15 +217,15 @@
         ]
       },
       "verificationOnly": {
-        "records": 1432,
+        "records": 1437,
         "settled": 1417,
-        "pending": 15,
-        "changed": 111,
+        "pending": 20,
+        "changed": 113,
         "reasons": {
-          "EVIDENCE_NOT_CAPTURED": 514,
-          "NO_STRICTLY_BETTER_DIVERSIFIER": 411,
-          "MAIN_HEAD_NOT_ELIGIBLE": 396,
-          "REPLACE_DUPLICATE_SECOND": 111
+          "EVIDENCE_NOT_CAPTURED": 517,
+          "NO_STRICTLY_BETTER_DIVERSIFIER": 410,
+          "MAIN_HEAD_NOT_ELIGIBLE": 397,
+          "REPLACE_DUPLICATE_SECOND": 113
         },
         "baseline": {
           "races": 1417,
@@ -80890,7 +80890,7 @@
       "date": "20261117",
       "period": "forward",
       "source": "verificationPredictions",
-      "selectedAt": "2026-11-16T22:19:33.267Z",
+      "selectedAt": "2026-11-17T01:47:28.579Z",
       "deadlineAt": "2026-11-17T15:18:00+09:00",
       "baselineTickets": [
         "1-2-3",
@@ -80933,8 +80933,8 @@
       "date": "20261117",
       "period": "forward",
       "source": "verificationPredictions",
-      "selectedAt": "2026-11-16T22:19:33.316Z",
-      "deadlineAt": "2026-11-17T10:59:00+09:00",
+      "selectedAt": "2026-11-17T01:47:28.603Z",
+      "deadlineAt": "2026-11-17T11:14:00+09:00",
       "baselineTickets": [
         "3-1-5",
         "3-2-5",
@@ -80943,8 +80943,8 @@
         "1-2-4",
         "3-2-1",
         "3-2-6",
-        "1-2-5",
-        "1-2-6",
+        "3-6-1",
+        "3-6-2",
         "1-3-4"
       ],
       "candidateTickets": [
@@ -80955,8 +80955,8 @@
         "1-2-4",
         "3-2-1",
         "3-2-6",
-        "1-2-5",
-        "1-2-6",
+        "3-6-1",
+        "3-6-2",
         "1-3-4"
       ],
       "selection": {
@@ -80970,8 +80970,8 @@
           "1-2-4",
           "3-2-1",
           "3-2-6",
-          "1-2-5",
-          "1-2-6",
+          "3-6-1",
+          "3-6-2",
           "1-3-4"
         ]
       },
@@ -80982,37 +80982,46 @@
       "date": "20261117",
       "period": "forward",
       "source": "verificationPredictions",
-      "selectedAt": "2026-11-16T22:19:33.238Z",
+      "selectedAt": "2026-11-17T01:47:28.828Z",
       "deadlineAt": "2026-11-17T10:52:00+09:00",
       "baselineTickets": [
-        "4-1-5",
-        "4-5-6",
-        "4-3-5",
-        "1-2-3",
-        "1-2-4",
+        "4-1-3",
+        "4-2-3",
         "4-1-6",
-        "4-1-3"
+        "1-2-4",
+        "1-2-5",
+        "4-2-1",
+        "4-2-6",
+        "4-1-5",
+        "4-5-1",
+        "1-3-4"
       ],
       "candidateTickets": [
-        "4-1-5",
-        "4-5-6",
-        "4-3-5",
-        "1-2-3",
-        "1-2-4",
+        "4-1-3",
+        "4-2-3",
         "4-1-6",
-        "4-1-3"
+        "1-2-4",
+        "1-2-5",
+        "4-2-1",
+        "4-2-6",
+        "4-1-5",
+        "4-5-1",
+        "1-3-4"
       ],
       "selection": {
         "changed": false,
-        "reason": "NO_STRICTLY_BETTER_DIVERSIFIER",
+        "reason": "EVIDENCE_NOT_CAPTURED",
         "tickets": [
-          "4-1-5",
-          "4-5-6",
-          "4-3-5",
-          "1-2-3",
-          "1-2-4",
+          "4-1-3",
+          "4-2-3",
           "4-1-6",
-          "4-1-3"
+          "1-2-4",
+          "1-2-5",
+          "4-2-1",
+          "4-2-6",
+          "4-1-5",
+          "4-5-1",
+          "1-3-4"
         ]
       },
       "outcome": null
@@ -81051,6 +81060,60 @@
           "1-2-5",
           "1-3-5"
         ]
+      },
+      "outcome": null
+    },
+    {
+      "raceKey": "20261117-08-2",
+      "date": "20261117",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-11-17T01:47:29.268Z",
+      "deadlineAt": "2026-11-17T10:48:00+09:00",
+      "baselineTickets": [
+        "4-1-6",
+        "4-6-5",
+        "4-3-6",
+        "1-2-3",
+        "1-2-4",
+        "4-1-5",
+        "4-1-2",
+        "4-2-1",
+        "4-2-3",
+        "4-2-5"
+      ],
+      "candidateTickets": [
+        "4-1-6",
+        "4-6-5",
+        "4-3-6",
+        "1-3-4",
+        "1-2-4",
+        "4-1-5",
+        "4-1-2",
+        "4-2-1",
+        "4-2-3",
+        "4-2-5"
+      ],
+      "selection": {
+        "changed": true,
+        "reason": "REPLACE_DUPLICATE_SECOND",
+        "tickets": [
+          "4-1-6",
+          "4-6-5",
+          "4-3-6",
+          "1-3-4",
+          "1-2-4",
+          "4-1-5",
+          "4-1-2",
+          "4-2-1",
+          "4-2-3",
+          "4-2-5"
+        ],
+        "added": "1-3-4",
+        "removed": "1-2-3",
+        "candidatePriority": 83,
+        "donorPriority": 81,
+        "scenarioId": "canonical:4"
       },
       "outcome": null
     },
@@ -81101,6 +81164,55 @@
       "outcome": null
     },
     {
+      "raceKey": "20261117-11-2",
+      "date": "20261117",
+      "period": "forward",
+      "source": "predictions",
+      "selectedAt": "2026-11-17T01:47:29.721Z",
+      "deadlineAt": "2026-11-17T10:59:00+09:00",
+      "baselineTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "3-1-2",
+        "1-2-6",
+        "1-3-4"
+      ],
+      "candidateTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "3-1-2",
+        "1-2-6",
+        "1-3-4"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "EVIDENCE_NOT_CAPTURED",
+        "tickets": [
+          "3-1-5",
+          "3-2-5",
+          "3-1-6",
+          "1-2-3",
+          "1-2-4",
+          "3-2-1",
+          "3-2-6",
+          "3-1-2",
+          "1-2-6",
+          "1-3-4"
+        ]
+      },
+      "outcome": null
+    },
+    {
       "raceKey": "20261117-13-1",
       "date": "20261117",
       "period": "forward",
@@ -81141,11 +81253,60 @@
       "outcome": null
     },
     {
+      "raceKey": "20261117-13-2",
+      "date": "20261117",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-11-17T01:47:29.360Z",
+      "deadlineAt": "2026-11-17T11:13:00+09:00",
+      "baselineTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-5",
+        "5-2-3",
+        "6-2-3",
+        "1-2-6"
+      ],
+      "candidateTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4",
+        "1-2-4",
+        "1-2-5",
+        "5-2-3",
+        "6-2-3",
+        "1-2-6"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "MAIN_HEAD_NOT_ELIGIBLE",
+        "tickets": [
+          "1-2-3",
+          "1-4-3",
+          "1-3-4",
+          "2-1-3",
+          "2-1-4",
+          "1-2-4",
+          "1-2-5",
+          "5-2-3",
+          "6-2-3",
+          "1-2-6"
+        ]
+      },
+      "outcome": null
+    },
+    {
       "raceKey": "20261117-15-1",
       "date": "20261117",
       "period": "forward",
       "source": "verificationPredictions",
-      "selectedAt": "2026-11-16T22:19:34.125Z",
+      "selectedAt": "2026-11-17T01:47:29.777Z",
       "deadlineAt": "2026-11-17T15:20:00+09:00",
       "baselineTickets": [
         "4-1-5",
@@ -81233,6 +81394,55 @@
       "outcome": null
     },
     {
+      "raceKey": "20261117-17-3",
+      "date": "20261117",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-11-17T01:47:29.828Z",
+      "deadlineAt": "2026-11-17T11:08:00+09:00",
+      "baselineTickets": [
+        "4-1-5",
+        "4-5-6",
+        "4-3-5",
+        "1-2-5",
+        "1-2-6",
+        "4-1-6",
+        "4-1-3",
+        "4-6-1",
+        "4-6-2",
+        "1-2-4"
+      ],
+      "candidateTickets": [
+        "4-1-5",
+        "4-5-6",
+        "4-3-5",
+        "1-2-5",
+        "1-2-6",
+        "4-1-6",
+        "4-1-3",
+        "4-6-1",
+        "4-6-2",
+        "1-2-4"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "EVIDENCE_NOT_CAPTURED",
+        "tickets": [
+          "4-1-5",
+          "4-5-6",
+          "4-3-5",
+          "1-2-5",
+          "1-2-6",
+          "4-1-6",
+          "4-1-3",
+          "4-6-1",
+          "4-6-2",
+          "1-2-4"
+        ]
+      },
+      "outcome": null
+    },
+    {
       "raceKey": "20261117-18-1",
       "date": "20261117",
       "period": "forward",
@@ -81280,11 +81490,60 @@
       }
     },
     {
+      "raceKey": "20261117-18-6",
+      "date": "20261117",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-11-17T01:47:30.376Z",
+      "deadlineAt": "2026-11-17T10:49:00+09:00",
+      "baselineTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "3-1-2",
+        "1-2-5",
+        "1-3-4"
+      ],
+      "candidateTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4",
+        "3-2-1",
+        "3-2-6",
+        "3-1-2",
+        "1-2-5",
+        "1-3-4"
+      ],
+      "selection": {
+        "changed": false,
+        "reason": "EVIDENCE_NOT_CAPTURED",
+        "tickets": [
+          "3-1-5",
+          "3-2-5",
+          "3-1-6",
+          "1-2-3",
+          "1-2-4",
+          "3-2-1",
+          "3-2-6",
+          "3-1-2",
+          "1-2-5",
+          "1-3-4"
+        ]
+      },
+      "outcome": null
+    },
+    {
       "raceKey": "20261117-20-1",
       "date": "20261117",
       "period": "forward",
       "source": "verificationPredictions",
-      "selectedAt": "2026-11-16T22:19:34.557Z",
+      "selectedAt": "2026-11-17T01:47:30.240Z",
       "deadlineAt": "2026-11-17T15:19:00+09:00",
       "baselineTickets": [
         "1-2-3",
@@ -81362,6 +81621,57 @@
         "payout": 840,
         "source": "boatrace-official"
       }
+    },
+    {
+      "raceKey": "20261117-23-6",
+      "date": "20261117",
+      "period": "forward",
+      "source": "verificationPredictions",
+      "selectedAt": "2026-11-17T01:47:30.520Z",
+      "deadlineAt": "2026-11-17T11:06:00+09:00",
+      "baselineTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-6",
+        "2-1-4",
+        "2-1-5",
+        "6-1-3",
+        "1-4-3"
+      ],
+      "candidateTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-3-4",
+        "2-1-4",
+        "2-1-5",
+        "6-1-3",
+        "1-4-3"
+      ],
+      "selection": {
+        "changed": true,
+        "reason": "REPLACE_DUPLICATE_SECOND",
+        "tickets": [
+          "2-1-3",
+          "2-4-3",
+          "2-3-4",
+          "1-2-3",
+          "1-3-4",
+          "2-1-4",
+          "2-1-5",
+          "6-1-3",
+          "1-4-3"
+        ],
+        "added": "1-3-4",
+        "removed": "1-2-6",
+        "candidatePriority": 83,
+        "donorPriority": 81,
+        "scenarioId": "canonical:2"
+      },
+      "outcome": null
     }
   ]
 }
