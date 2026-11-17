@@ -61,19 +61,22 @@ runtimeVersion(
   appRuntimeSource,
   "app runtime"
 );
-assert.match(
-  indexSource,
-  new RegExp(
-    `js/prediction-runtime-loader\\.js\\?v=${predictionRuntimeVersion.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}`
-  ),
-  "HTMLから現在のprediction runtime世代へ到達する"
+function scriptURL(file) {
+  const urls = [...indexSource.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/g)]
+    .map(match => new URL(match[1], 'http://localhost/'))
+    .filter(url => url.origin === 'http://localhost' && url.pathname === '/' + file);
+  assert.equal(urls.length, 1, file + ': HTMLから一度だけ到達する');
+  return urls[0];
+}
+assert.equal(
+  scriptURL('js/prediction-runtime-loader.js').searchParams.get('v'),
+  predictionRuntimeVersion,
+  'HTMLから現在のprediction runtime世代へ到達する'
 );
-assert.match(
-  indexSource,
-  /js\/app-runtime-loader\.js\?v=[^"']+/,
-  "HTMLからapp runtimeへversion付きで到達する"
+assert.ok(
+  scriptURL('js/app-runtime-loader.js').searchParams.get('v'),
+  'HTMLからapp runtimeへversion付きで到達する'
 );
-
 const frozenDay = JSON.parse(
   source(
     `data/predictions/${FROZEN_DATE}.json`

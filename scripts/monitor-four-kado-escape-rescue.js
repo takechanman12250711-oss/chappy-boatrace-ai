@@ -18,6 +18,20 @@ const OUT = path.join(
 );
 const DIR = path.join(process.cwd(), "data/predictions");
 
+const {readMonitorSources}=require("./strong-escape-monitor-sources.cjs");
+// Default callers consume the latest raw, including central result repairs.
+// Dedicated read-only monitoring opts into restore-equivalent archive precedence.
+function* monitorSources(canonicalSources) {
+  if (!fs.existsSync(DIR)) return;
+  if (canonicalSources) { yield* readMonitorSources({rootDirectory:process.cwd(),startDate:START_DATE}); return; }
+  const files=fs.readdirSync(DIR).filter(name=>/^\d{8}\.json$/.test(name)).sort();
+  for (const name of files) {
+    const date=name.slice(0,8);
+    if (date<START_DATE) continue;
+    yield {date,data:JSON.parse(fs.readFileSync(path.join(DIR,name),"utf8"))};
+  }
+}
+
 function ticket(value) {
   const boats = String(value?.ticket || value || "").match(/[1-6]/g) || [];
   return boats.length >= 3 ? boats.slice(0, 3).join("-") : "";
@@ -143,24 +157,16 @@ function done(summary) {
   };
 }
 
-function build() {
+function build({canonicalSources=false}={}) {
   const total = blank();
   const byDate = {};
   const samples = [];
   const seen = new Set();
   let latestDate = null;
 
-  const files = fs.existsSync(DIR)
-    ? fs.readdirSync(DIR).filter(name => /^\d{8}\.json$/.test(name)).sort()
-    : [];
-
-  for (const name of files) {
-    const date = name.slice(0, 8);
-    if (date < START_DATE) continue;
-
+  for (const {date,data} of monitorSources(canonicalSources)) {
     latestDate = date;
     byDate[date] ||= blank();
-    const data = JSON.parse(fs.readFileSync(path.join(DIR, name), "utf8"));
 
     for (const row of [
       ...(data.predictions || []),
@@ -297,6 +303,6 @@ function build() {
   return report;
 }
 
-if (require.main === module) console.log(JSON.stringify(build(), null, 2));
+if (require.main === module) console.log(JSON.stringify(build({canonicalSources:process.argv.includes("--canonical-sources")}), null, 2));
 
 module.exports = { START_DATE, blank, done, build };

@@ -117,6 +117,10 @@ function buildArchiveBackedCurrentIndex() {
 }
 
 const html = read("index.html");
+function scriptVersion(file) {
+  const src=[...html.matchAll(/<script\s+[^>]*src="([^"]+)"/g)].map(m=>m[1]).find(src=>src.split("?")[0]===file);
+  return src?new URL(src,"https://fixture.invalid/").searchParams.get("v"):null;
+}
 const script = read("js/script.js");
 const appRuntime = read("js/app-runtime-loader.js");
 const stats = read("js/stats.js");
@@ -413,9 +417,7 @@ assert.equal(
   html.includes(
     "js/app-runtime-loader.js?v=20260816-static-race1"
   ) &&
-    html.includes(
-      "js/prediction-runtime-loader.js?v=20260828-ui-audit-display1"
-    ) &&
+    scriptVersion("js/prediction-runtime-loader.js") === "20260828-ui-audit-display1" &&
     html.includes(
       "js/hiyori-runtime-loader.js?v=20261006-adjacent-start-rank1"
     ) &&

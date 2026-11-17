@@ -13,6 +13,12 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          # These source/synthetic-fixture checks do not read saved race data.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/data/
       - uses: actions/setup-node@v4
         with:
           node-version: 20

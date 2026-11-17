@@ -18,6 +18,7 @@ const triggerBlock = (workflow, startMarker, endMarker) => {
 const central = readWorkflow("collect-results.yml");
 const restore = "node scripts/restore-daily-prediction-source.js --all";
 const repair = "node scripts/repair-recent-results.js";
+const canonicalVerification = "node scripts/test-escape-rescue-canonical-sources.cjs";
 const threeCourseBuilder = "node scripts/monitor-three-course-escape-rescue.js";
 const fourKadoBuilder = "node scripts/monitor-four-kado-escape-rescue.js";
 const dedicatedWorkflows = [
@@ -137,6 +138,11 @@ for (const {
     builder.slice("node ".length),
     contract.slice("node ".length),
     "scripts/restore-daily-prediction-source.js",
+    "scripts/strong-escape-monitor-sources.cjs",
+    "scripts/daily-prediction-source-archive.js",
+    "scripts/test-escape-rescue-canonical-sources.cjs",
+    "scripts/fixtures/three-course-escape-rescue-before-source-streaming.js",
+    "scripts/fixtures/four-kado-escape-rescue-before-source-streaming.js",
     `.github/workflows/${workflowName}`,
     ".github/workflows/collect-results.yml",
   ];
@@ -151,13 +157,15 @@ for (const {
       );
     }
   }
-  assert.ok(workflow.includes(restore));
+  const canonicalBuilder = builder + " --canonical-sources";
+  assert.ok(workflow.includes(canonicalVerification));
+  assert.ok(!workflow.includes(restore), "専用CIは検証済み巨大rawを書き出さない");
   assert.ok(workflow.includes(contract));
-  assert.ok(
-    workflow.includes(builder) &&
-      workflow.indexOf(restore) < workflow.indexOf(builder),
-    "専用workflowは実データのread-only診断を維持する",
-  );
+  assert.ok(workflow.split("\n").map(line => line.trim()).includes(canonicalBuilder) && workflow.indexOf(canonicalVerification) < workflow.indexOf(canonicalBuilder),
+    "専用workflowは全canonical原本の同値検証後にread-only診断を行う");
+  assert.ok(central.split("\n").map(line => line.trim()).includes(builder) && !central.includes(canonicalBuilder), "中央writerの既存raw読取モードを変更しない");
+  assert.match(workflow, /^\s+git diff --check\s*$/m, "コードと派生reportの差分検査を除外なしで維持する");
+  assert.ok(workflow.includes("/data/stats/" + workflowName.slice(6, -4) + ".json"), "派生reportをsparse内へ保持して差分検査を有効にする");
   for (const forbidden of [
     "contents: write",
     "git add",

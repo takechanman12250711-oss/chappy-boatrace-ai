@@ -49,7 +49,16 @@ function frozenStatBytes(file,bytes) {
   if(hash(original)!==frozenSource.sha256) throw Error('Frozen stat source snapshot changed: '+file);
   return original;
 }
+// Test-only original selector bytes from ec7dea6bf7342fdf19d73bc9c987d6653c2f73bb,
+// Git blob a9fc452ddc68317c92036e642575b25939885afa. Production observation
+// metadata belongs to a new method cohort and must not redefine this v1 trial.
+const FROZEN_SELECTOR_SHA256='25090fb7546020fd5e5a40477755363d12cefb69334e8587212d0045346dd0ab';
+function frozenSelectorBytes(bytes=fs.readFileSync(path.join(__dirname,'fixtures/independent-head-coverage-v1-practical-selection.js'))) {
+  if(hash(bytes)!==FROZEN_SELECTOR_SHA256) throw Error('Frozen v1 selector snapshot changed');
+  return bytes;
+}
 function frozenSourceBytes(file) {
+  if(file==='js/practical-selection.js') return frozenSelectorBytes();
   const bytes=fs.readFileSync(path.join(ROOT,file));
   if(Object.hasOwn(FROZEN_WRAPPERS,file)) return frozenWrapperBytes(file,bytes);
   return Object.hasOwn(FROZEN_STAT_SOURCES,file)?frozenStatBytes(file,bytes):bytes;
@@ -91,12 +100,12 @@ function describe(selection) {
       ticket:branch.ticket,kind:branch.kind,source:branch.source,attackerBoatNo:branch.attackerBoatNo,phaseKind:branch.phaseEvidence?.kind})),
     courseMapping:{formal:true,byBoat:{1:1,2:2,3:3,4:4,5:5,6:6}}};
 }
-function runFixture({wrappers=false,...config}={}) {
-  const setup=fixtureSetup(config),plainCurrent=describe(select(source,setup,{}, {wrappers}));
+function runFixture({wrappers=false,...config}={},inputSource=source) {
+  const setup=fixtureSetup(config),plainCurrent=describe(select(inputSource,setup,{}, {wrappers}));
   const options={researchBaselineHeads:candidate.heads(plainCurrent.tickets)};
-  const plainCandidate=describe(select(candidate.transformSelection(source),setup,options,{wrappers}));
-  const observedCurrent=describe(select(trace.transformObservedSelection(source,{mode:'current'}),setup,options,{wrappers}));
-  const observedCandidate=describe(select(trace.transformObservedSelection(source,{mode:'candidate'}),setup,options,{wrappers}));
+  const plainCandidate=describe(select(candidate.transformSelection(inputSource),setup,options,{wrappers}));
+  const observedCurrent=describe(select(trace.transformObservedSelection(inputSource,{mode:'current'}),setup,options,{wrappers}));
+  const observedCandidate=describe(select(trace.transformObservedSelection(inputSource,{mode:'candidate'}),setup,options,{wrappers}));
   return {plainCurrent,plainCandidate,observedCurrent,observedCandidate};
 }
 const traceOf=value=>value.expansionSummary[trace.TRACE_FIELD];
@@ -212,7 +221,7 @@ function sourceManifest() {
     replaySourceSha256:comparisonSources[0].sha256,inputContractSha256:comparisonSources[1].sha256,fingerprint:trace.REFERENCE_FINGERPRINT}};
 }
 function makeEnvironment(config={rankReplacement:true}) {
-  const root=fs.mkdtempSync(path.join(os.tmpdir(),'chappy-trace-')),results=runFixture(config);
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'chappy-trace-')),results=runFixture(config,frozenSelectorBytes().toString('utf8'));
   const sources=sourceManifest();
   for(const item of [...sources.predictionSources,...sources.comparisonSources,{path:'scripts/compare-independent-head-coverage.cjs'}]) {
     const target=path.join(root,item.path);fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,frozenSourceBytes(item.path));
@@ -244,6 +253,9 @@ test('fixed source manifests and original candidate fingerprint fail closed on c
   const fixture=makeEnvironment();
   try {
     assert.equal(trace.verifyReferenceSources(fixture.root,fixture.reference).fingerprint,trace.REFERENCE_FINGERPRINT);
+    assert.equal(hash(frozenSourceBytes('js/practical-selection.js')),FROZEN_SELECTOR_SHA256);
+    assert.notEqual(hash(Buffer.from(source)),FROZEN_SELECTOR_SHA256,'current-source instrumentation still tests the production selector');
+    assert.throws(()=>frozenSelectorBytes(Buffer.concat([frozenSelectorBytes(),Buffer.from('\n// changed')])),/Frozen v1 selector snapshot changed/);
     const changed=clone(fixture.reference);changed.candidate.fingerprint='a'.repeat(64);
     assert.throws(()=>trace.verifyReferenceSources(fixture.root,changed),/reference report contract/);
     const reordered=clone(fixture.reference);reordered.predictionSources.reverse();

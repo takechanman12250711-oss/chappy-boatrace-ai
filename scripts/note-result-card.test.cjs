@@ -315,3 +315,19 @@ test('readable-v9 scenario sections are literal normal-series headings and fit b
   single.evidenceId = aggregateDigest(single);
   assert.notEqual((await renderCard(single, { now: NOW })).sha256, card.sha256);
 });
+
+test('v10 result cards accept the exact normal primary labels and reject reference or cross-family attribution',()=>{
+ const reader=require('../js/forecast-reader-contract');
+ const report=aggregateFixture();report.articleSeries=['normal'];
+ report.matchedSections=[reader.MAIN,reader.ADDITIONAL,reader.HOLE].map(label=>({articleSeries:'normal',label}));
+ report.evidenceId=aggregateDigest(report);const before=JSON.stringify(report);
+ const content=publicContent(report,{now:NOW});
+ assert.deepEqual(content.matchedSections,report.matchedSections);
+ for(const label of [reader.MAIN,reader.ADDITIONAL,reader.HOLE])assert(altText(content).includes('AI展開予想・'+label));
+ assert.equal(JSON.stringify(report),before);
+ for(const [articleSeries,label] of [['normal',reader.REFERENCE],...['escape','manshu'].flatMap(series=>[reader.ADDITIONAL,reader.HOLE].map(label=>[series,label]))]){
+  const changed={...report,articleSeries:[articleSeries],matchedSections:[{articleSeries,label}]};
+  changed.evidenceId=aggregateDigest(changed);
+  assert.throws(()=>publicContent(changed,{now:NOW}),/matched_sections_invalid/);
+ }
+});

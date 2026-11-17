@@ -195,6 +195,15 @@ try {
   assert.equal(git(root, ['--git-dir', bare, 'show', `main:${pairedAttempt}`]), 'immutable failed paired attempt');
   assert.equal(git(root, ['--git-dir', bare, 'show', `main:${pairedReceipt}`]), 'immutable paired remote receipt');
   assert.equal(git(root, ['--git-dir', bare, 'show', 'main:data/stats/result.json']), 'new official result');
+  const promotionRace = 'data/promotion-head-priority-forward/20300914/20300914-24-6-' + '1'.repeat(64) + '.json';
+  const promotionRegistration = 'data/promotion-head-priority-forward/registrations/' + '2'.repeat(64) + '-' + '3'.repeat(64) + '.json';
+  for (const file of [promotionRace, promotionRegistration]) { fs.mkdirSync(path.dirname(path.join(worker, file)), { recursive: true }); fs.writeFileSync(path.join(worker, file), 'immutable promotion evidence'); }
+  assert.equal(save(saveArgs).saved, 2, 'registration and race seals share immutable-only persistence');
+  for (const file of [promotionRace, promotionRegistration]) assert.equal(git(root, ['--git-dir', bare, 'show', `main:${file}`]), 'immutable promotion evidence');
+  const invalidRegistration = path.join(worker, 'data/promotion-head-priority-forward/registrations/report.json');
+  fs.writeFileSync(invalidRegistration, 'must not widen registration paths');
+  assert.throws(() => save(saveArgs), /unrelated_changes/);
+  fs.unlinkSync(invalidRegistration);
   const invalidPaired = path.join(worker, 'data/independent-head-forward-v2/20300914/report.json');
   fs.writeFileSync(invalidPaired, 'must not widen the new directory allowance');
   assert.throws(() => save(saveArgs), /unrelated_changes/);

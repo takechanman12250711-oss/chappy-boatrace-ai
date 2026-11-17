@@ -334,3 +334,35 @@ test('settlement rejects a receipt whose subset proof changed after the saved re
   await assert.rejects(k.prepare(state,config(),options([first],time(17))),/published_display_proof_mismatch/);
   assert.equal(k.project(state.plans['test-100k']).status,'waiting_result');
 });
+
+test('v10 normal main and independent center proofs keep series-specific labels and unchanged allocations',async()=>{
+ for(const series of ['normal','escape']){
+  const f=fixture();
+  if(series==='normal'){
+   f.b.version='note-draft-bundle-v1';delete f.b.monitor;delete f.b.record.source;
+   Object.assign(f.b.record.prediction,{date:f.b.record.date,confidence:84,
+    race:{date:f.b.record.date,stadiumName:f.b.record.place,raceNo:f.b.record.raceNo,raceInfo:{deadline:'16:10'}},
+    mainSheet:{honmei:{boatNo:1,name:'テスト選手',score:84},evaluations:[1,2,3,4,5,6].map(boatNo=>({boatNo,name:'テスト選手',score:84})),
+     tickets:f.b.baselinePracticalTickets,coverTickets:[{ticket:'1-3-2'}],flowTickets:[{ticket:'2-1-3'}]},
+    manshuSheet:{tickets:[{ticket:'3-4-5'}]},raceFlow:{title:'イン逃げ本線',summary:'1号艇の逃げを中心に考える。'}});
+   f.b.article=require('../js/note-generator').generateArticle(f.b.record.prediction,{practicalTickets:f.b.baselinePracticalTickets});
+  }
+  f.bytes=JSON.stringify(f.b);f.receipt.sourceSha256=k.hash(f.bytes);f.receipt.articleSeries=series;f.receipt.presentationVersion='readable-v10';f.receipt.price=0;
+  const adapter=require('./note-reader-presentation.cjs');
+  f.receipt.publishedDisplayProof=require('./note-published-ticket-sections').sectionProof(adapter.paidTextFromSource(f.b,series),'readable-v10',{sourceSha256:f.receipt.sourceSha256});
+  f.row=receiptRow(f.receipt,f.bytes,f.now);
+  const before=f.bytes,c=config({firstPublicationKey:f.row.raceKey+':'+series});
+  const out=await k.prepare(k.initialState(),c,options([f]));
+  assert.equal(out.staged.length,1,JSON.stringify(out.skipped));
+  const state=k.confirm(out.state,out.staged,seal(out.staged,f.now),f.now+1000),view=k.project(state.plans['test-100k']);
+  assert.deepEqual(view.legs[0].allocations.map(a=>a.ticket).sort(),f.b.baselinePracticalTickets.map(a=>typeof a==='string'?a:a.ticket).sort());
+  assert.equal(view.legs[0].modelSelectionEvidence.label,series==='normal'?'🎯 本命':'⭐ 中心の買い目');
+  assert.equal(view.legs[0].modelSelectionEvidence.presentationVersion,'readable-v10');
+  assert.equal(JSON.stringify(f.b),before);
+  const changed=clone(state),plan=changed.plans['test-100k'],event=plan.events[0];
+  event.data.leg.modelSelectionEvidence.label=series==='normal'?'⭐ 中心の買い目':'🎯 本命';
+  event.data.seal.snapshotHash=k.hash({request:plan.request,previous:event.previous,leg:event.data.leg});
+  const {hash,...body}=event;event.hash=k.hash(body);
+  assert.throws(()=>k.validateState(changed),/registered_selection_unverified/);
+ }
+});

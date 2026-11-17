@@ -104,7 +104,7 @@ test('historical v1-v5 recovery pins exact old body and proof; new publication u
       assert.equal(fs.readFileSync(path.join(f.rootDir, f.sourcePath), 'utf8'), before);
       assert.throws(() => requirePublicationGate(p.payload, f.rootDir, f.identity.sourceTime), /handoff_mismatch/);
       const current = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime);
-      assert.equal(current.presentationVersion, 'readable-v9');
+      assert.equal(current.presentationVersion, 'readable-v10');
       assert.equal(current.price, 0);
       assert.equal(p.payload.price, 200);
       // The free v6 keeps the exact paid-section bytes of v5; only free wording and the paywall change.
@@ -967,7 +967,7 @@ test('free v6 claims recover with frozen v6 code while new publication uses v7',
     const v6 = require('./note-recovery-readable-v6.cjs').readableArticle(f.bundle.article, f.bundle);
     assert.equal(p.payload.freeText, v6.freeText, 'recovered v6 body is the frozen v6 body');
     const current = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime);
-    assert.equal(current.presentationVersion, 'readable-v9');
+    assert.equal(current.presentationVersion, 'readable-v10');
     assert.equal(current.paidText, require('./note-plain-presentation.cjs').fromModelText(p.payload.paidText), 'v7/v8 keep the v6 tickets; only the end heading and notice change');
     assert.notEqual(current.freeText, p.payload.freeText);
   } finally { f.cleanup(); }
@@ -986,12 +986,13 @@ test('v7 claims recover with frozen v7 code while new publication uses v8', asyn
       assert.equal(v7.presentationVersion, 'readable-v7');
       if (!normal) assert.equal(p.payload.freeText, v7.freeText.trim(), 'recovered v7 body is the frozen v7 body');
       const current = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime);
-      assert.equal(current.presentationVersion, 'readable-v9');
-      for (const field of ['title', 'freeText', 'paidText', 'body', 'price']) assert.equal(current[field], p.payload[field], `v8 keeps the v7 ${field}`);
+      assert.equal(current.presentationVersion, 'readable-v10');
+      const legacy = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime, {presentationVersion:'readable-v9'});
+      for (const field of ['title', 'freeText', 'paidText', 'body', 'price']) assert.equal(legacy[field], p.payload[field], `frozen v9 keeps the v7 ${field}`);
       // A v7 payload is no longer the current publication, and a current claim is not recovered as v7.
       assert.throws(() => requirePublicationGate(p.payload, f.rootDir, f.identity.sourceTime), /handoff_mismatch/);
-      const now = await pinned(f, 'readable-v9');
-      assert.equal(now.recoveryEvidence.presentationVersion, 'readable-v9');
+      const now = await pinned(f, 'current-v10-code');
+      assert.equal(now.recoveryEvidence.presentationVersion, 'readable-v10');
     } finally { f.cleanup(); }
   }
 });
@@ -1007,9 +1008,66 @@ test('v8 claims recover with frozen v8 code while new publication uses v9', asyn
       assert.deepEqual(requireRecoveryPublicationGate(p.payload, p.recoveryEvidence, f.rootDir), p.payload);
       assert.equal(require('./note-recovery-readable-v8.cjs').readableArticle(f.bundle.article, f.bundle).presentationVersion, 'readable-v8');
       const current = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime);
-      assert.equal(current.presentationVersion, 'readable-v9');
-      for (const field of ['title', 'freeText', 'paidText', 'body', 'price']) assert.equal(current[field], p.payload[field], `v9 keeps the v8 ${field}`);
+      assert.equal(current.presentationVersion, 'readable-v10');
+      const legacy = publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime, {presentationVersion:'readable-v9'});
+      for (const field of ['title', 'freeText', 'paidText', 'body', 'price']) assert.equal(legacy[field], p.payload[field], `frozen v9 keeps the v8 ${field}`);
       assert.throws(() => requirePublicationGate(p.payload, f.rootDir, f.identity.sourceTime), /handoff_mismatch/);
     } finally { f.cleanup(); }
   }
+});
+
+test('frozen v9 claims recover while current v10 pins its shared app and article dependencies', async()=>{
+ for(const normal of [false,true]){
+  const f=original(normal);
+  try{
+   const old=await pinned(f,'readable-v9'),compatible=await pinned(f,'compatible-v9-code'),current=await pinned(f,'current-v10-code');
+   assert.equal(compatible.recoveryEvidence.presentationVersion,'readable-v9');
+   for(const field of ['title','freeText','paidText','body','price','publishedDisplayProofJson'])assert.equal(compatible.payload[field],old.payload[field]);
+   assert.deepEqual(requireRecoveryPublicationGate(compatible.payload,compatible.recoveryEvidence,f.rootDir),compatible.payload);
+   assert.equal(old.recoveryEvidence.presentationVersion,'readable-v9');
+   assert.equal(current.recoveryEvidence.presentationVersion,'readable-v10');
+   const frozen=publicationPayload(f.sourcePath,f.rootDir,f.identity.sourceTime,{presentationVersion:'readable-v9'});
+   for(const field of ['title','freeText','paidText','body','price','publishedDisplayProofJson'])
+    assert.equal(frozen[field],old.payload[field]);
+   assert.deepEqual(requireRecoveryPublicationGate(old.payload,old.recoveryEvidence,f.rootDir),old.payload);
+   assert.deepEqual(requireRecoveryPublicationGate(current.payload,current.recoveryEvidence,f.rootDir),current.payload);
+   assert.equal(publicationPayload(f.sourcePath,f.rootDir,f.identity.sourceTime).presentationVersion,'readable-v10');
+   assert.equal(require('./note-recovery-presentation.cjs').CURRENT_VERSION,'readable-v10');
+   for(const file of ['scripts/note-reader-presentation.cjs','js/forecast-reader-contract.js','scripts/note-recovery-readable-v9.cjs','js/practical-selection.js'])
+    assert.ok(current.calls.some(url=>url.includes('/contents/'+file+'?')));
+   assert.equal(hash(fs.readFileSync(path.join(__dirname,'note-recovery-readable-v9.cjs'))),
+     require('./note-recovery-presentation.cjs').HISTORICAL['readable-v9'].rendererSha256);
+   if(normal){
+    const before=parsePublishedDisplayProof(old.payload),after=parsePublishedDisplayProof(current.payload);
+    assert.equal(before.publishedTicketCount,after.publishedTicketCount);
+    assert.equal(before.publishedTicketsSha256,after.publishedTicketsSha256);
+    assert.equal(after.modelSubset.includedInPublishedResult,true);
+    assert.notEqual(current.payload.paidText,old.payload.paidText);
+   }else for(const field of ['title','freeText','paidText','body','price'])assert.equal(current.payload[field],old.payload[field]);
+  }finally{f.cleanup();}
+ }
+});
+test('a changed v10 common display dependency fails recovery without executing downloaded code',async()=>{
+ const f=original(true);
+ try{
+  for(const file of ['scripts/note-reader-presentation.cjs','js/forecast-reader-contract.js','scripts/note-recovery-readable-v9.cjs','js/practical-selection.js']){
+   const mock=requestFixture(f.identity,{version:'current-v10-code',rootDir:f.rootDir,mutate:async(url,result)=>{
+    if(!url.includes('/contents/'+file+'?'))return result;
+    const old=await result.json(),bytes=Buffer.from('throw Error("must-never-execute");');
+    return response({...old,sha:blobSha(bytes),content:bytes.toString('base64')});
+   }});
+   await assert.rejects(()=>recoveryClaimStatus(f.identity,env,mock.request,f.rootDir),/dependency_unreviewed/);
+  }
+ }finally{f.cleanup();}
+});
+test('a hybrid of old and new v9 dependencies cannot be accepted by renderer identity alone',async()=>{
+ const f=original();
+ try{
+  const mock=requestFixture(f.identity,{version:'readable-v9',rootDir:f.rootDir,mutate:async(url,result)=>{
+   if(!url.includes('/contents/scripts/note-pricing.js'))return result;
+   const old=await result.json(),bytes=fs.readFileSync(path.join(__dirname,'note-pricing.js'));
+   return response({...old,sha:blobSha(bytes),content:bytes.toString('base64')});
+  }});
+  await assert.rejects(()=>recoveryClaimStatus(f.identity,env,mock.request,f.rootDir),/dependency_unreviewed/);
+ }finally{f.cleanup();}
 });

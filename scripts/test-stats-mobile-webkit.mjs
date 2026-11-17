@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 import process from "node:process";
@@ -18,6 +18,7 @@ const verification = require("../js/prediction-verification.js");
 const marks = [];
 const diagnostics = [];
 let browser;
+let savedClockAt;
 let failed = false;
 
 const readJson = async relative => JSON.parse(await readFile(path.join(ROOT, relative), "utf8"));
@@ -36,8 +37,26 @@ function deferred() {
   return { promise, resolve };
 }
 
+const SCHEDULE_FIXTURE_ORIGINS = new Set([
+  "https://chappy-boatrace-api.vercel.app",
+  "https://chappy-boatrace-read-api.takechanman12250711.workers.dev"
+]);
+function isScheduleFixtureUrl(value) {
+  try {
+    const url = new URL(value);
+    return SCHEDULE_FIXTURE_ORIGINS.has(url.origin) && url.pathname === "/api/schedule";
+  } catch (_) { return false; }
+}
+
 async function expectedEvidence() {
   const manifest = await readJson("data/predictions/index-manifest.json");
+  const savedResultFiles = new Set(await readdir(path.join(ROOT, "data/results")));
+  const savedSummaryDates = (await readdir(path.join(ROOT, "data/predictions/summaries")))
+    .filter(file => /^\d{8}\.json$/.test(file) && savedResultFiles.has(file))
+    .map(file => file.slice(0, 8)).sort();
+  const summaryDate = savedSummaryDates.at(-1);
+  assert.ok(summaryDate, "a real saved summary and result are required for the browser fixture date");
+  const clockAt = `${summaryDate.slice(0,4)}-${summaryDate.slice(4,6)}-${summaryDate.slice(6,8)}T23:59:59.999+09:00`;
   const index = { ...manifest };
   for (const [collection, info] of Object.entries(manifest.collections)) {
     index[collection] = (await Promise.all(info.shards.map(shard =>
@@ -61,6 +80,7 @@ async function expectedEvidence() {
     return checked.settled && checked.internalEvaluation && checked.scenarioVerification?.structured;
   });
   return {
+    clockAt, summaryDate,
     manifestTime: timeLabel(manifest.generatedAt),
     selectedCount: selected.length, detailedCount: detailed.length,
     activeGenerationKey: normalized.activeGenerationKey,
@@ -182,22 +202,29 @@ async function runScenario(name, run) {
       "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1"
   });
   const page = await context.newPage();
+  // The checkout is a saved fixture. Do not request an unwritten new day after
+  // midnight JST; fixed Date values leave the real timers/watchdogs running.
+  await page.clock.setFixedTime(savedClockAt);
   page.setDefaultTimeout(15_000);
-  const info = { name, pageErrors: [], consoleErrors: [], failedRequests: [], scheduleReadsStubbed: 0 };
+  const info = { name, pageErrors: [], consoleErrors: [], consoleErrorDetails: [], badResponses: [], failedRequests: [], scheduleReadsStubbed: 0, scheduleReadsByOrigin: {} };
   diagnostics.push(info);
   page.on("pageerror", error => info.pageErrors.push(String(error.stack || error)));
-  page.on("console", message => { if (message.type() === "error") info.consoleErrors.push(message.text()); });
+  page.on("console", message => { if (message.type() === "error") { info.consoleErrors.push(message.text()); info.consoleErrorDetails.push({ text: message.text(), ...message.location() }); } });
+  page.on("response", response => { if (response.status() >= 400) { const detail = { url: response.url(), status: response.status() }; info.badResponses.push(detail); mark("http-error", detail); } });
   page.on("requestfailed", request => info.failedRequests.push({ url: request.url(), error: request.failure()?.errorText }));
-  await page.route("https://chappy-boatrace-api.vercel.app/api/schedule?*", async route => {
+  // Match only this unrelated read on both origins used by the real fallback.
+  await page.route(isScheduleFixtureUrl, async route => {
+    const url = new URL(route.request().url());
     info.scheduleReadsStubbed += 1;
-    const date = new URL(route.request().url()).searchParams.get("date");
+    info.scheduleReadsByOrigin[url.origin] = (info.scheduleReadsByOrigin[url.origin] || 0) + 1;
+    const date = url.searchParams.get("date");
     await route.fulfill({ json: { ok: true, date, venues: [] }, headers: { "access-control-allow-origin": "*" } });
   });
   try {
     await run(page);
     assert.deepEqual(info.pageErrors, [], `${name}: uncaught page errors`);
     assert.deepEqual(info.consoleErrors, [], `${name}: unexpected browser console errors`);
-    mark("scenario-passed", { name });
+    mark("scenario-passed", { name, scheduleReadsStubbed: info.scheduleReadsStubbed, scheduleReadsByOrigin: info.scheduleReadsByOrigin });
   } catch (error) {
     info.failure = String(error.stack || error);
     await screenshot(page, `${name}-failure`).catch(() => {});
@@ -220,6 +247,9 @@ async function openApp(page) {
 await mkdir(ARTIFACT_DIR, { recursive: true });
 try {
   const expected = await expectedEvidence();
+  savedClockAt = new Date(expected.clockAt);
+  assert.ok(Number.isFinite(savedClockAt.getTime()), "saved summary date must be a valid clock");
+  mark("saved-browser-clock", {summaryDate:expected.summaryDate, clockAt:expected.clockAt});
   mark("saved-fixture", { selectedCount: expected.selectedCount, detailedCount: expected.detailedCount,
     activeGenerationKey: expected.activeGenerationKey });
   browser = await webkit.launch({ headless: true });
@@ -283,9 +313,10 @@ try {
 } finally {
   await browser?.close();
   await writeFile(path.join(ARTIFACT_DIR, "report.json"), JSON.stringify({
-    ok: !failed, appUrl: APP_URL, viewport: { width: 390, height: 844 }, browser: "WebKit",
+    ok: !failed, appUrl: APP_URL, fixtureClockAt:savedClockAt?.toISOString() || null, viewport: { width: 390, height: 844 }, browser: "WebKit",
     limitations: ["Live schedule API is stubbed with an empty successful read; stats JSON and app assets are served unchanged from checkout.",
-      "This is mobile WebKit emulation, not a physical iPhone or deployed-site availability check."],
+      "This is mobile WebKit emulation, not a physical iPhone or deployed-site availability check.",
+      "Browser Date is pinned to a real saved summary/result fixture date; timers keep running."],
     marks, diagnostics
   }, null, 2) + "\n");
 }

@@ -90,15 +90,15 @@
   function buildOddsMap(prediction) {
     const map = new Map();
     const seen = new WeakSet();
-    const record = (ticket, value) => {
+    const record = (ticket, value, explicitMissing = false) => {
       const key = normalizeExactTicket(ticket);
       const odds = numericOdds(value);
-      if (key && odds && !map.has(key)) map.set(key, odds);
+      if (key && (odds || explicitMissing) && !map.has(key)) map.set(key, odds);
     };
-    const walk = (value, depth = 0) => {
+    const walk = (value, depth = 0, explicitMap = false) => {
       if (depth > 6 || value === null || value === undefined) return;
       if (Array.isArray(value)) {
-        value.forEach(item => walk(item, depth + 1));
+        value.forEach(item => walk(item, depth + 1, explicitMap));
         return;
       }
       if (typeof value !== "object") return;
@@ -111,15 +111,18 @@
       Object.entries(value).forEach(([key, child]) => {
         if (/^[1-6]-[1-6]-[1-6]$/.test(key)) {
           if (typeof child === "object" && child) {
-            record(key, child.odds ?? child.currentOdds ?? child.finalOdds ?? child.value ?? child.oddsText);
+            record(key, child.odds ?? child.currentOdds ?? child.finalOdds ?? child.value ?? child.oddsText, explicitMap);
           } else {
-            record(key, child);
+            record(key, child, explicitMap);
           }
         }
-        walk(child, depth + 1);
+        walk(child, depth + 1, explicitMap);
       });
     };
 
+    // Only an explicit current-map key may reserve a missing value.
+    // A ticket row with no odds field must allow later saved-row fallback.
+    [prediction?.oddsByTicket,prediction?.trifectaOdds,prediction?.odds].forEach(source=>walk(source,0,true));
     [
       prediction?.mainSheet,
       prediction?.manshuSheet,
@@ -257,7 +260,32 @@
     return `is-${({"本命":"main","押さえ":"cover","フォーメーション":"flow"})[category] || "other"}`;
   }
 
+  const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"})[c]);
+  function readerModel(prediction) {
+    const reader=root.ChappyForecastReaderContract;
+    return reader?.fromPrediction ? reader.fromPrediction(prediction) : null;
+  }
+  function buildReaderSummary(prediction,model) {
+    const reader=root.ChappyForecastReaderContract,oddsMap=buildOddsMap(prediction);
+    const marker='data-reader-contract="'+reader.VERSION+'" data-reader-status="'+model.status+'"';
+    if(model.status!=="selected")return '<section class="chappy-final-buy-summary" data-compact-tickets="1" '+marker+
+      '><div class="chappy-final-buy-head"><h3>'+(model.status==="skipped"?"購入見送り":"買い目を確認中")+
+      '</h3><span>購入推奨0点・0円</span></div><p>'+escapeHtml(model.reason)+'</p></section>';
+    const section=(g,index)=>'<details class="chappy-final-buy-group '+(index===0?"is-main":"is-other")+'"'+
+      (index===0?" open":"")+' data-reader-group="'+index+'"><summary><span class="chappy-final-buy-label">'+escapeHtml(g.label)+
+      '</span><span class="chappy-final-buy-meta">'+g.tickets.length+'点</span></summary><div class="chappy-final-buy-lines">'+
+      compactTickets(g.tickets).map(row=>compactLine(row,oddsMap)).join("")+'</div></details>';
+    return '<section class="chappy-final-buy-summary" data-compact-tickets="1" '+marker+'>'+
+      '<div class="chappy-final-buy-head"><h3>買い目</h3><span class="chappy-final-buy-total">本命'+
+      model.centralTickets.length+'点</span></div><p class="chappy-category-note">'+
+      escapeHtml(model.explanation.text).replace(/\n/g,"<br>")+'</p>'+model.groups.map(section).join("")+
+      '<p class="chappy-category-note">本命'+model.centralTickets.length+'点／追加候補を含む公開予想'+model.primaryCount+
+      '点。すべて購入する前提ではありません。</p>'+
+      (model.referenceOriginalCount?'<p class="chappy-category-note">'+escapeHtml(reader.referenceSummary(model))+'</p>':"")+'</section>';
+  }
   function buildBuySummary(prediction) {
+    const model=readerModel(prediction);
+    if(model)return buildReaderSummary(prediction,model);
     const rows = buildPhotoStyleLines(prediction);
     if (!rows.length) return "";
     const grouped = new Map();
@@ -444,7 +472,9 @@
     setupBoatTabs(resultArea);
     cleanDetailedReasons(resultArea);
     decorateMissingOdds(prediction, resultArea);
-    fixManshuSection(prediction, resultArea);
+    const common=resultArea.querySelector("[data-reader-contract]");
+    if(!common)fixManshuSection(prediction, resultArea);
+    root.ChappyFinalDisplayUserContract?.apply();
     markVisibleSections(resultArea);
     if (root.CustomEvent) root.dispatchEvent(new root.CustomEvent("chappy:presentation-rendered", {detail: prediction}));
   }
@@ -453,10 +483,13 @@
     const fn = root.renderAll;
     if (typeof fn !== "function" || fn[HOOK_FLAG]) return false;
     function wrapped(prediction) {
-      const value = fn.apply(this, arguments);
+      const boundary=root.ChappyMainCoverDisplayBoundary;
+      const adapted=root.ChappyRenderAdapter?.applyAiCoreAdapter ? root.ChappyRenderAdapter.applyAiCoreAdapter(prediction) : prediction;
+      const prepared=boundary?.prepare ? boundary.prepare(adapted,root.ChappyPracticalSelection,root.ChappyForecastReaderContract) : adapted;
+      const value = fn.call(this, prepared, ...Array.prototype.slice.call(arguments,1));
       const generation = ++renderGeneration;
       const renderedRoot = root.document?.getElementById("resultArea")?.querySelector?.(".v3-root");
-      root.setTimeout(() => { if (generation === renderGeneration && renderedRoot && renderedRoot === root.document?.getElementById("resultArea")?.querySelector?.(".v3-root")) enhance(prediction); }, 0);
+      root.setTimeout(() => { if (generation === renderGeneration && renderedRoot && renderedRoot === root.document?.getElementById("resultArea")?.querySelector?.(".v3-root")) enhance(prepared); }, 0);
       return value;
     }
     wrapped[HOOK_FLAG] = true;

@@ -9,6 +9,7 @@
   const ODDS_PRIORITY_WAIT_MS = 2500;
   const PRELOAD_LOOKAHEAD = 2;
   const scripts = [
+    "js/forecast-reader-contract.js",
     "js/boat-identity.js",
     "js/theory.js",
     "js/history-insights-base.js",
@@ -46,13 +47,15 @@
     "js/manshu-display-reliability.js"
   ];
   const SCRIPT_VERSIONS = Object.freeze({
+    "js/forecast-reader-contract.js": "20261117-3",
+    "js/main-cover-display-boundary.js": "20261117-reader2",
     "js/formation-odds-display.js": "20261021-exact-formation1",
     "js/note-generator.js": "20260923-wall-purchase1",
     "js/practical-selection.js": "20261003-escape-partner-v13",
     "js/skip-ai-display.js": "20260923-wall-purchase1&bright=20261007-1",
     "js/ai-core.js": "20261006-adjacent-start-rank1",
     "js/render.js": "20260908-comment-dedup1&bright=20261007-1",
-    "js/manshu-display-reliability.js": "20260909-formation-preserve1",
+    "js/manshu-display-reliability.js": "20261117-root-boundary1",
     "js/history-insights-base.js": "20261027-official-stats1",
     "js/motor-maintenance-insights.js": "20261027-official-stats1"
   });

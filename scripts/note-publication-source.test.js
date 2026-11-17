@@ -46,21 +46,42 @@ async function main() {
   Date.now = () => clock;
   const freePayload = publicationPayload(sourcePath, root, clock);
   assert.equal(freePayload.canPublish, true);
-  assert.equal(freePayload.presentationVersion, 'readable-v9');
+  assert.equal(freePayload.presentationVersion, 'readable-v10');
+  const reader = require('../js/forecast-reader-contract');
+  const currentProof = parsePublishedDisplayProof(freePayload);
+  assert.deepEqual(currentProof.sections.map(section => [section.label, section.ticketCount]), [
+    [reader.MAIN, 1], [reader.ADDITIONAL, 3], [reader.HOLE, 1]
+  ]);
+  assert.equal(currentProof.publishedTicketCount, 5);
+  assert.deepEqual(currentProof.modelSubset, { version: 'note-korogashi-display-v1', label: reader.MAIN,
+    sourceSha256: hash, ticketCount: 1,
+    ticketsSha256: createHash('sha256').update(JSON.stringify(['1-2-3'])).digest('hex'),
+    includedInPublishedResult: true });
+  const currentShown = require('./note-readable-article').ticketsIn(freePayload.paidText);
+  assert.equal(currentShown.length, 5);
+  assert.equal(new Set(currentShown).size, 5, 'v10 displays every public ticket once');
+  assert.doesNotMatch(freePayload.paidText, /⭐ 中心の買い目|🛡️ 押さえ|🌊 流し/);
+  assert.equal(fs.readFileSync(path.join(root, sourcePath), 'utf8'), bytes, 'rendering keeps the immutable original');
+  assert.throws(() => parsePublishedDisplayProof({ ...freePayload, publishedDisplayProofJson: JSON.stringify({
+    ...currentProof, modelSubset: { ...currentProof.modelSubset, includedInPublishedResult: false } }) }), /proof_mismatch/);
+  // Historical v7/v8/v9 retain their frozen bytes/proofs by explicit version.
+  const v9Payload = publicationPayload(sourcePath, root, clock, { presentationVersion: 'readable-v9' });
+  assert.deepEqual(verifyPublicationSource(v9Payload, root, clock, { presentationVersion: 'readable-v9' }), v9Payload);
+  assert.throws(() => requirePublicationGate(v9Payload, root, clock), /handoff_mismatch/);
   // v8 only widens the ticket count: with 1-7 tickets every published byte is v7.
   const v8Payload = publicationPayload(sourcePath, root, clock, { presentationVersion: 'readable-v8' });
-  for (const field of ['title', 'freeText', 'paidText', 'body', 'price', 'practicalTicketCount']) assert.equal(freePayload[field], v8Payload[field], `v9 keeps the v8 ${field}`);
+  for (const field of ['title', 'freeText', 'paidText', 'body', 'price', 'practicalTicketCount']) assert.equal(v9Payload[field], v8Payload[field], `v9 keeps the v8 ${field}`);
   const v7Payload = publicationPayload(sourcePath, root, clock, { presentationVersion: 'readable-v7' });
-  for (const field of ['title', 'freeText', 'paidText', 'body', 'price', 'practicalTicketCount']) assert.equal(freePayload[field], v7Payload[field], `v8 keeps the v7 ${field}`);
-  assert.deepEqual({ ...JSON.parse(freePayload.publishedDisplayProofJson), presentationVersion: 'readable-v7' }, JSON.parse(v7Payload.publishedDisplayProofJson));
+  for (const field of ['title', 'freeText', 'paidText', 'body', 'price', 'practicalTicketCount']) assert.equal(v8Payload[field], v7Payload[field], `v8 keeps the v7 ${field}`);
+  assert.deepEqual({ ...JSON.parse(v9Payload.publishedDisplayProofJson), presentationVersion: 'readable-v7' }, JSON.parse(v7Payload.publishedDisplayProofJson));
   assert.doesNotMatch(freePayload.freeText, /保存済みの実戦厳選/);
-  assert.equal(require('./note-plain-presentation.cjs').fromModelText(publicationPayload(sourcePath, root, clock, { presentationVersion: 'readable-v6' }).paidText), freePayload.paidText, 'v7 keeps the v6 tickets; only the end heading and notice change');
+  assert.equal(require('./note-plain-presentation.cjs').fromModelText(publicationPayload(sourcePath, root, clock, { presentationVersion: 'readable-v6' }).paidText), v7Payload.paidText, 'v7 keeps the v6 tickets; only the end heading and notice change');
   assert.equal(freePayload.price, 0);
   assert.doesNotMatch(freePayload.freeText, /有料/);
   assert.ok(freePayload.freeText.includes(require('./note-readable-article').FREE_NOTICE));
   // The paid publication flow below stays covered with the claimed v5 era.
   const payload = publicationPayload(sourcePath, root, clock, { presentationVersion: 'readable-v5' });
-  assert.equal(payload.paidText, require('./note-plain-presentation.cjs').toModelText(freePayload.paidText), 'free v7 keeps the v5 tickets; only the end heading and notice change');
+  assert.equal(payload.paidText, require('./note-plain-presentation.cjs').toModelText(v7Payload.paidText), 'free v7 keeps the v5 tickets; only the end heading and notice change');
   assert.equal(payload.price, 200);
   assert.equal(payload.canPublish, true);
   assert.equal(payload.practicalTicketCount, 1);
@@ -135,12 +156,12 @@ async function main() {
     return { file, sizedBytes, sourceSha256: sha(sizedBytes), tickets: allTickets.slice(0, count) };
   };
   for (const count of [8, 10]) {
-    const wide = sized(count), widePayload = publicationPayload(wide.file, root, clock);
+    const wide = sized(count), widePayload = publicationPayload(wide.file, root, clock, { presentationVersion: 'readable-v9' });
     assert.equal(widePayload.presentationVersion, 'readable-v9');
     assert.equal(widePayload.practicalTicketCount, count);
     assert.equal(widePayload.price, 0);
-    assert.deepEqual(verifyPublicationSource(widePayload, root, clock), widePayload);
-    assert.deepEqual(requirePublicationGate(widePayload, root, clock), widePayload);
+    assert.deepEqual(verifyPublicationSource(widePayload, root, clock, { presentationVersion: 'readable-v9' }), widePayload);
+    assert.throws(() => requirePublicationGate(widePayload, root, clock), /handoff_mismatch/);
     const wideProof = parsePublishedDisplayProof(widePayload);
     assert.deepEqual(wideProof.modelSubset, { version: 'note-korogashi-display-v1', label: '⭐ 中心の買い目',
       sourceSha256: wide.sourceSha256, ticketCount: count, ticketsSha256: sha(JSON.stringify([...wide.tickets].sort())), includedInPublishedResult: false });
@@ -148,6 +169,18 @@ async function main() {
     assert.doesNotMatch(widePayload.body, /コロがし|実戦厳選|延べ|有料/);
     assert.deepEqual(require('./note-readable-article').ticketsIn(widePayload.freeText), []);
     assert.deepEqual([...require('./note-center-presentation.cjs').parsePaidText(widePayload.paidText).modelTickets].sort(), [...wide.tickets].sort());
+    const historicalV8 = publicationPayload(wide.file, root, clock, { presentationVersion: 'readable-v8' });
+    for (const field of ['freeText', 'paidText', 'body']) assert.equal(historicalV8[field], widePayload[field]);
+    assert.deepEqual({ ...wideProof, presentationVersion: 'readable-v8' }, parsePublishedDisplayProof(historicalV8));
+    const currentWide = publicationPayload(wide.file, root, clock);
+    assert.equal(currentWide.presentationVersion, 'readable-v10');
+    assert.deepEqual(requirePublicationGate(currentWide, root, clock), currentWide);
+    const currentWideProof = parsePublishedDisplayProof(currentWide);
+    assert.equal(currentWideProof.sections[0].label, reader.MAIN);
+    assert.equal(currentWideProof.sections[0].ticketCount, count);
+    assert.equal(currentWideProof.modelSubset.ticketCount, count);
+    assert.equal(currentWideProof.modelSubset.includedInPublishedResult, true);
+    assert.deepEqual([...require('./note-reader-presentation.cjs').parsePaidText(currentWide.paidText).modelTickets].sort(), [...wide.tickets].sort());
     // The frozen v7 code never widens: an 8-10 ticket original cannot become a v7 article.
     assert.throws(() => publicationPayload(wide.file, root, clock, { presentationVersion: 'readable-v7' }), /korogashi_model_ticket_count_invalid/);
     // After the deadline the published row verifies from the immutable original and its receipt proof.
@@ -184,11 +217,11 @@ async function main() {
       return { file, text, sourceSha256: sha(text), count: tickets.length };
     };
     const both = build([independent('5-1-3', '別頭の独立展開'), independent('5-1-4', '別頭の独立展開'), independent('1-6-2', '残し艇を使う押さえ展開')]);
-    const p9 = publicationPayload(both.file, root, clock);
+    const p9 = publicationPayload(both.file, root, clock, { presentationVersion: 'readable-v9' });
     assert.equal(p9.presentationVersion, 'readable-v9');
     assert.equal(p9.practicalTicketCount, 5);
-    assert.deepEqual(verifyPublicationSource(p9, root, clock), p9);
-    assert.deepEqual(requirePublicationGate(p9, root, clock), p9);
+    assert.deepEqual(verifyPublicationSource(p9, root, clock, { presentationVersion: 'readable-v9' }), p9);
+    assert.throws(() => requirePublicationGate(p9, root, clock), /handoff_mismatch/);
     assert.ok(p9.paidText.includes('\n\n🌀 波乱のシナリオ\n\n5 → 1 → 3・4\n2点\n\n😼 チャッピーの「もしかして」\n\n1 → 6 → 2\n1点\n\n'));
     assert.ok(p9.paidText.indexOf('💥 万舟狙い') < p9.paidText.indexOf('🌀 波乱のシナリオ') && p9.paidText.indexOf('😼') < p9.paidText.indexOf('📌 合計（重複なし）'));
     assert.ok(p9.freeText.includes('🌀 波乱のシナリオ：2点\n😼 チャッピーの「もしかして」：1点'));
@@ -201,6 +234,18 @@ async function main() {
     assert.equal(proof9.publishedTicketCount, 8);
     assert.equal(proof9.modelSubset.ticketCount, 5);
     assert.equal(JSON.stringify(proof9).includes('5-1-3'), false);
+    // The same independent-scenario original now enters v10 main once.
+    const p10 = publicationPayload(both.file, root, clock);
+    assert.equal(p10.presentationVersion, 'readable-v10');
+    assert.deepEqual(requirePublicationGate(p10, root, clock), p10);
+    const proof10 = parsePublishedDisplayProof(p10);
+    assert.equal(proof10.sections[0].label, reader.MAIN);
+    assert.equal(proof10.sections[0].ticketCount, both.count);
+    assert.equal(proof10.modelSubset.includedInPublishedResult, true);
+    assert.equal(proof10.publishedTicketCount, proof9.publishedTicketCount);
+    assert.doesNotMatch(p10.paidText, /⭐ 中心の買い目|🌀 波乱のシナリオ|😼 チャッピーの「もしかして」/);
+    const allShown = require('./note-readable-article').ticketsIn(p10.paidText);
+    assert.equal(allShown.length, new Set(allShown).size);
     // The frozen v8 and v7 code still refuse the same original.
     for (const presentationVersion of ['readable-v8', 'readable-v7']) {
       assert.throws(() => publicationPayload(both.file, root, clock, { presentationVersion }), /readable_category_membership_missing/);
@@ -227,10 +272,10 @@ async function main() {
       assert.equal(isPublishedSectionLabel('escape', label), false);
     }
     // Only one of the two sections appears when only that family was saved.
-    const one = publicationPayload(build([independent('1-6-2', '残し艇を使う押さえ展開')]).file, root, clock);
+    const one = publicationPayload(build([independent('1-6-2', '残し艇を使う押さえ展開')]).file, root, clock, { presentationVersion: 'readable-v9' });
     assert.ok(one.paidText.includes('😼 チャッピーの「もしかして」') && !one.paidText.includes('🌀'));
     // A ticket already in a saved pool stays in that pool even when its family is 独立展開.
-    const pooled = publicationPayload(build([independent('2-1-3', '別頭の独立展開')]).file, root, clock);
+    const pooled = publicationPayload(build([independent('2-1-3', '別頭の独立展開')]).file, root, clock, { presentationVersion: 'readable-v9' });
     assert.ok(!pooled.paidText.includes('🌀') && !pooled.paidText.includes('😼'));
     // Any other family, an unknown reason, or copies that disagree still stop the whole article.
     for (const extra of [
@@ -238,12 +283,12 @@ async function main() {
       [independent('5-1-3', '未知の展開')],
       [independent('5-1-3', '別頭の独立展開', { candidateKind: 'other' })],
       [independent('5-1-3', '別頭の独立展開', { displayCategory: '本線' })]
-    ]) assert.throws(() => publicationPayload(build(extra).file, root, clock), /readable_category_membership_missing/);
+    ]) assert.throws(() => publicationPayload(build(extra).file, root, clock, { presentationVersion: 'readable-v9' }), /readable_category_membership_missing/);
     const disagree = structuredClone(JSON.parse(both.text));
     disagree.record.prediction.practicalTickets[2].scenarioClassificationReason = '残し艇を使う押さえ展開';
     const disagreeText = JSON.stringify(disagree), disagreeFile = `data/note-drafts/20300914/20300914-23-10-${sha(disagreeText)}.json`;
     fs.writeFileSync(path.join(root, disagreeFile), disagreeText);
-    assert.throws(() => publicationPayload(disagreeFile, root, clock), /readable_category_membership_missing/);
+    assert.throws(() => publicationPayload(disagreeFile, root, clock, { presentationVersion: 'readable-v9' }), /readable_category_membership_missing/);
     // Parser rejects reordered, duplicated or pool-overlapping scenario sections.
     const base = scenario.parsePaidText(p9.paidText).basePaidText;
     assert.throws(() => scenario.category.parsePaidSections(base.replace('5 → 1 → 3・4\n2点', '5 → 1 → 3\n2点')), /count_mismatch/);

@@ -19,6 +19,9 @@ function isPublishedSectionLabel(articleSeries,label) {
   if(!Object.hasOwn(RESULT_SERIES_LABELS,articleSeries))return false;
   if(['中心の買い目','相手を広げるなら','別の展開を考えるなら','高配当を狙うなら'].includes(label))return true;
   const {NORMAL_LABELS,INDEPENDENT_LABELS}=require('./note-category-article');
+  // v10 normal primary labels are literal display names; references stay excluded.
+  const reader=require('../js/forecast-reader-contract');
+  if(articleSeries==='normal'&&[reader.MAIN,reader.ADDITIONAL,reader.HOLE].includes(label))return true;
   // readable-v9 (2026-11-16): the two independent-scenario sections of the normal series.
   if(articleSeries==='normal'&&require('./note-scenario-presentation.cjs').SCENARIO_LABELS.includes(label))return true;
   return articleSeries==='normal'?NORMAL_LABELS.includes(label):INDEPENDENT_LABELS[articleSeries]===label;

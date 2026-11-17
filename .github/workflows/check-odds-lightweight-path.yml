@@ -48,6 +48,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 1
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/data/
       - uses: actions/setup-node@v4
         with:
           node-version: "20"

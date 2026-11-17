@@ -23,12 +23,13 @@ const area = {
   querySelector(){return null;},
   querySelectorAll(selector){return selector === ".v3-missing-numbers .v3-formation-row" ? currentRows : [];}
 };
+let renderedRoot={};
 const window = {
   document: {
     documentElement: {},
     body:{classList:{add(){}}},
     getElementById(id){return id === "resultArea" ? area : null;},
-    querySelector(){return null;},
+    querySelector(selector){return selector === "#resultArea .v3-root" ? renderedRoot : null;},
     createElement(){return {dataset:{}};}
   },
   MutationObserver: function(callback){observerCallback=callback;this.observe=function(){};},
@@ -70,4 +71,17 @@ observerCallback([{addedNodes:[{nodeType:1,matches(){return false;},querySelecto
 assert.equal(frameQueue.length,0,"unrelated DOM updates must not schedule a refresh");
 assert.match(loader,/final-display-owner-v2\.js/);
 assert.doesNotMatch(loader,/js\/final-missing-odds-refresh\.js/);
-console.log("active owner async missing-number odds refresh: ok");
+
+delete window.ChappyFinalMobileUi;
+window.renderAll({odds:{"1-2-3":44.2}});
+observerCallback(mutation);
+renderedRoot={};
+currentRows=[missingRow("1-2-3")];
+window.renderAll({odds:{"1-2-3":66.4}});
+observerCallback(mutation);
+frameQueue.shift()();
+assert.equal(frameQueue.length,1,"a stale pending frame must hand off the refresh to the new race");
+frameQueue.shift()();
+assert.equal(currentRows[0].badges[0].textContent,"66.4倍","the new race is refreshed without another mutation");
+
+console.log("active owner async missing-number odds refresh and race handoff: ok");

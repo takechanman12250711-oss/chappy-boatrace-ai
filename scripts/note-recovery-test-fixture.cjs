@@ -4,6 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 const historical = require('./fixtures/note-recovery-code.json');
+const historicalV9 = require('./fixtures/note-recovery-v9-code.json');
+const compatibleV9 = require('./fixtures/note-recovery-v9-compatible-code.json');
 const root = path.join(__dirname, '..');
 const blobSha = bytes => createHash('sha1').update(`blob ${Buffer.byteLength(bytes)}\0`).update(bytes).digest('hex');
 function response(data, status = 200) { return { status, json: async () => data }; }
@@ -22,7 +24,7 @@ function requestFixture(identity, { version = 'readable-v7', rootDir = root, lar
       if (parsed.searchParams.get('ref') !== claimSha) throw Error('test_mutable_ref');
       const file = pathname.split('/contents/')[1];
       const bytes = file === identity.sourcePath ? fs.readFileSync(path.join(rootDir, file))
-        : Buffer.from(historical.versions[version]?.files[file] ?? fs.readFileSync(path.join(file === 'config/note-marketing.json' ? rootDir : root, file)));
+        : Buffer.from((version === 'compatible-v9-code' ? compatibleV9.files[file] ?? historicalV9.files[file] : version === 'readable-v9' ? historicalV9.files[file] : historical.versions[version]?.files[file]) ?? fs.readFileSync(path.join(file === 'config/note-marketing.json' ? rootDir : root, file)));
       const sha = blobSha(bytes); blobs.set(sha, bytes);
       result = response({ type: 'file', path: file, sha, encoding: largeSource && file === identity.sourcePath ? 'none' : 'base64',
         content: largeSource && file === identity.sourcePath ? '' : bytes.toString('base64') });

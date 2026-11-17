@@ -294,13 +294,21 @@ function readableArticleV9(article, bundle) {
       parsed.sections.some((section, index) => section.label !== sections[index].label || !sameSet(section.tickets, sections[index].tickets))) throw Error('readable_rendered_tickets_mismatch');
   return { ...base, presentationVersion: 'readable-v9' };
 }
-function readableArticle(article, bundle, { presentationVersion = 'readable-v9' } = {}) {
+// 2026-11-16 owner approval: the saved central selection is the new main,
+// shown once with the same groups as the app. Historical v9 uses its frozen copy.
+function readableArticleV10(article, bundle) {
+  return require('./note-reader-presentation.cjs').article(article, bundle, {
+    legacyReader: require('./note-recovery-readable-v9.cjs').readableArticle
+  });
+}
+function readableArticle(article, bundle, { presentationVersion = 'readable-v10' } = {}) {
+  if (presentationVersion === 'readable-v10') return readableArticleV10(article, bundle);
+  if (presentationVersion === 'readable-v9') return require('./note-recovery-readable-v9.cjs').readableArticle(article, bundle);
   if (presentationVersion === 'readable-v4') return readableArticleV4(article, bundle);
   if (presentationVersion === 'readable-v5') return readableArticleV5(article, bundle);
   if (presentationVersion === 'readable-v6') return readableArticleV6(article, bundle);
   if (presentationVersion === 'readable-v7') return readableArticleV7(article, bundle);
   if (presentationVersion === 'readable-v8') return readableArticleV8(article, bundle);
-  if (presentationVersion !== 'readable-v9') return readableArticleV3(article, bundle, { presentationVersion });
-  return readableArticleV9(article, bundle);
+  return readableArticleV3(article, bundle, { presentationVersion });
 }
 module.exports = { readableArticle, ticketsIn, FREE_NOTICE, FREE_WORDING, PLAIN_WORDING };

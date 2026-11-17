@@ -13,6 +13,11 @@ on:
       - "scripts/monitor-three-course-escape-rescue.js"
       - "scripts/test-escape-rescue-post-adoption-monitor-writer-contract.js"
       - "scripts/restore-daily-prediction-source.js"
+      - "scripts/strong-escape-monitor-sources.cjs"
+      - "scripts/daily-prediction-source-archive.js"
+      - "scripts/test-escape-rescue-canonical-sources.cjs"
+      - "scripts/fixtures/three-course-escape-rescue-before-source-streaming.js"
+      - "scripts/fixtures/four-kado-escape-rescue-before-source-streaming.js"
       - "data/predictions/*.json"
       - "data/predictions/*.json.gz"
       - ".github/workflows/check-three-course-escape-rescue-post-adoption-monitor.yml"
@@ -30,6 +35,11 @@ on:
       - "scripts/monitor-three-course-escape-rescue.js"
       - "scripts/test-escape-rescue-post-adoption-monitor-writer-contract.js"
       - "scripts/restore-daily-prediction-source.js"
+      - "scripts/strong-escape-monitor-sources.cjs"
+      - "scripts/daily-prediction-source-archive.js"
+      - "scripts/test-escape-rescue-canonical-sources.cjs"
+      - "scripts/fixtures/three-course-escape-rescue-before-source-streaming.js"
+      - "scripts/fixtures/four-kado-escape-rescue-before-source-streaming.js"
       - "data/predictions/*.json"
       - "data/predictions/*.json.gz"
       - ".github/workflows/check-three-course-escape-rescue-post-adoption-monitor.yml"
@@ -52,16 +62,40 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-          fetch-depth: 0
+          fetch-depth: 1
+          # Fetch every canonical input without duplicate archive-backed raw blobs.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/data/
+            /data/predictions/
+            !/data/predictions/20??????.json
+            /data/stats/three-course-escape-rescue-post-adoption-monitor.json
+      - name: Include every unarchived prediction source
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const { execFileSync } = require('node:child_process');
+          const base = 'data/predictions/';
+          const daily = execFileSync('git', ['ls-tree', '--name-only', 'HEAD:data/predictions'], { encoding: 'utf8' })
+            .trim().split('\n').filter(name => /^\d{8}\.json$/.test(name));
+          const unarchived = daily.filter(name => {
+            const date = name.slice(0, 8);
+            return !['.json.gz', '.meta.json'].every(suffix => fs.existsSync(base + 'source-archives/' + date + suffix));
+          }).map(name => '/' + base + name);
+          if (unarchived.length) execFileSync('git', ['sparse-checkout', 'add', '--stdin'], { input: unarchived.join('\n') + '\n', stdio: ['pipe', 'inherit', 'inherit'] });
+          console.log('Kept all archives and ' + unarchived.length + ' unarchived daily sources. Archive-backed raw JSON is restored with SHA checks by the existing test.');
+          NODE
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Restore canonical prediction sources
-        run: node scripts/restore-daily-prediction-source.js --all
+      - name: Verify canonical rescue source parity
+        run: node scripts/test-escape-rescue-canonical-sources.cjs
       - name: Build read-only real diagnostics
         run: |
           node --check scripts/monitor-three-course-escape-rescue.js
-          node scripts/monitor-three-course-escape-rescue.js
+          node scripts/monitor-three-course-escape-rescue.js --canonical-sources
           node scripts/test-escape-rescue-post-adoption-monitor-writer-contract.js
           node scripts/check-charter.js
           git diff --check

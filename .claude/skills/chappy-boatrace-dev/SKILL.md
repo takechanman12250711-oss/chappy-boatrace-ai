@@ -120,3 +120,10 @@ Workからの切り離しはGitHub側の稼働だけで完了とせず、既存C
 - 2026-10-27（#1385）より前の保存予想は、`motor2Rate`/`motor3Rate` が公式値ではなく内部点数（motor3 = motor2 + 15）。モーターの検証では `motorSource()` で分ける。
 - 買い目なしのデータ専門サイトは `chappy-boatdata-site`、PRのボタン承認と積み重ねPRは `chappy-pr-merge-chain` を使う。
 - GitHub Pages は数分おきのデータ保存で作り直しが止められ、反映が30〜40分遅れることがある。新しいデータをすぐ見せたい画面は raw から読む。
+
+
+## 表示用の公式入力projection
+
+- 展開説明に既存の公式入力projectorを使う場合、元入力で選定・購入判断を完了してから表示copyだけへ適用する。selectorやpurchaseDecisionへ表示用の追加fieldを渡さず、原本・lastPrediction・score・買い目を変えない。
+- 同じ元APIとnormalized側のrace/艇/公式course/明示値を照合し、矛盾・欠測・不正型を良い値へ補完しない。legacy captureの数値coercionをそのまま表示の根拠にせず、空白・bool等が0へ変わるのを防ぐ。
+- 歴史reviewの表示viewへcaptureのpre_deadline/timing/result claimを付けない。表示で使う公式boats事実と既に記録されたscenario値だけを投影し、Node/VM/browser一致・入力不変・旧版復旧を検査する。
