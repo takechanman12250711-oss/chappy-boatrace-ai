@@ -56,7 +56,7 @@ async function run(mode,file,{env=process.env,clock=Date.now,store=client(env),f
     // Claim this workflow's refresh budget before any official request, even
     // if a later save fails. The index step must not start another 12 fetches.
     if(env.GITHUB_OUTPUT)fs.appendFileSync(env.GITHUB_OUTPUT,'official-refresh-started=true\n');
-    const marketing=await store.settle(collected,marketingConfig,clock(),{refresh:true,clock});
+    const marketing=await store.settle(collected,marketingConfig,clock(),{refresh:true,clock,priorityRaceKeys:k.awaitingResultRaceKeys(before.state)});
     if(k.json(marketing)!==k.json(loaded.state))await store.save(marketing,loaded.head);
     const automatic=await autoStart.withAutoStart(config,before.state,{rows:marketing.rows,source:repo.source,now:clock()});
     const out=await k.prepare(before.state,automatic.config,{rows:marketing.rows,source:repo.source,result:repo.officialLoader(marketing),now:clock(),context:ctx});

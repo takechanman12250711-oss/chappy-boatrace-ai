@@ -61,6 +61,20 @@ test('official result must precede each next commitment; earliest same-series so
   assert.equal(k.project(confirmed.plans['test-100k']).legs.length,2);
   assert.deepEqual(confirmed.plans['test-100k'].events[0],state.plans['test-100k'].events[0]);
 });
+test('a later leg needs more than five minutes before its deadline; the first leg keeps 120 seconds',async()=>{
+  const first=fixture(), second=fixture(7,17);
+  const state=await registered(first), deadline=Date.parse(second.row.deadlineAt);
+  assert.equal(k.NEXT_LEG_MIN_MARGIN_MS,300000);
+  const tight=await k.prepare(state,config(),options([first,second],deadline-k.NEXT_LEG_MIN_MARGIN_MS));
+  assert.equal(tight.staged.length,0,'a race with only five minutes left leaves no time for the index check');
+  assert.equal(k.project(tight.state.plans['test-100k']).status,'waiting_next');
+  const enough=await k.prepare(state,config(),options([first,second],deadline-k.NEXT_LEG_MIN_MARGIN_MS-1000));
+  assert.equal(enough.staged[0].leg.raceKey,second.row.raceKey);
+  const late=fixture(6,16), start=await k.prepare(k.initialState(),config(),options([late],Date.parse(late.row.deadlineAt)-121000));
+  assert.equal(start.staged.length,1,'the first leg still only needs more than 120 seconds');
+  assert.deepEqual(k.awaitingResultRaceKeys(state),[first.row.raceKey]);
+  assert.deepEqual(k.awaitingResultRaceKeys(k.initialState()),[]);
+});
 test('target, loss, maximum and uncertain official results never open another leg',async()=>{
   for(const [mutate,expected] of [
     [f=>{f.result.trifecta.payout=10000;},'target_reached'],
