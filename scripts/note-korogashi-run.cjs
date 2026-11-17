@@ -26,12 +26,23 @@ function withDispatch(config,env,now) {
   }
   return {...config,requests:rows};
 }
-async function artifact(env,fetcher=fetch) {
+const ARTIFACT_LOOKUP_DELAYS_MS=[2000,4000,8000];
+async function artifact(env,fetcher=fetch,{sleep=ms=>new Promise(r=>setTimeout(r,ms))}={}) {
   context(env);
   if(!/^\d+$/.test(env.KOROGASHI_ARTIFACT_ID||''))throw Error('korogashi_artifact_id_invalid');
-  const response=await fetcher(`https://api.github.com/repos/${REPO}/actions/artifacts/${env.KOROGASHI_ARTIFACT_ID}`,{
-    redirect:'error',signal:AbortSignal.timeout(10000),headers:{Authorization:`Bearer ${env.NOTE_CLAIM_TOKEN}`,Accept:'application/vnd.github+json'}});
-  if(!response.ok)throw Error('korogashi_artifact_lookup_failed');
+  // A read-only lookup right after upload can fail transiently; retry the GET a
+  // few times. Identity, digest and the deadline check still apply afterwards.
+  let response,status='request';
+  for(let attempt=0;;attempt++) {
+    try {
+      response=await fetcher(`https://api.github.com/repos/${REPO}/actions/artifacts/${env.KOROGASHI_ARTIFACT_ID}`,{
+        redirect:'error',signal:AbortSignal.timeout(10000),headers:{Authorization:`Bearer ${env.NOTE_CLAIM_TOKEN}`,Accept:'application/vnd.github+json'}});
+      if(response.ok)break;
+      status=String(response.status).replace(/[^0-9]/g,'')||'unknown';
+    } catch {status='request';}
+    if(attempt>=ARTIFACT_LOOKUP_DELAYS_MS.length)throw Error(`korogashi_artifact_lookup_failed_${status}`);
+    await sleep(ARTIFACT_LOOKUP_DELAYS_MS[attempt]);
+  }
   const data=await response.json(), confirmed=Date.parse(response.headers.get('date'))+1000;
   const digest='sha256:'+String(env.KOROGASHI_ARTIFACT_DIGEST||'').replace(/^sha256:/,'');
   if(!Number.isFinite(confirmed)||data.expired||data.id!==Number(env.KOROGASHI_ARTIFACT_ID)||data.digest!==digest||
@@ -78,4 +89,4 @@ async function run(mode,file,{env=process.env,clock=Date.now,store=client(env),f
 }
 if(require.main===module)run(process.argv[2],process.argv[3]).then(r=>console.log('NOTE_KOROGASHI='+JSON.stringify(r)))
   .catch(e=>{console.error('NOTE_KOROGASHI_FAILED='+e.message);process.exitCode=1;});
-module.exports={context,withDispatch,artifact,run};
+module.exports={context,withDispatch,artifact,run,ARTIFACT_LOOKUP_DELAYS_MS};
