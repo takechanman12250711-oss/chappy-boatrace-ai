@@ -370,7 +370,10 @@ function archivePredictionSource({
   };
 }
 
-function restorePredictionSource({
+// Read and validate the canonical archive without changing a working source.
+// Consumers may project one parsed day immediately instead of writing and
+// parsing the same large source again.
+function readPredictionSourceArchive({
   rootDirectory = process.cwd(),
   date
 } = {}) {
@@ -443,25 +446,36 @@ function restorePredictionSource({
       `復元した日次予想原本のfingerprintが不一致です：${targetDate}`
     );
   }
-  parsePredictionJson(
+  const parsed = parsePredictionJson(
     raw,
     sourcePath
-  );
-  atomicWrite(
-    sourcePath,
-    raw
   );
 
   return {
     date: targetDate,
-    status: "restored",
+    status: "archive-read",
     sourcePath,
     archivePath,
     metadataPath,
     sourceBytes: raw.length,
     archiveBytes: archive.length,
-    metadata
+    metadata,
+    raw,
+    parsed
   };
+}
+
+function restorePredictionSource(options = {}) {
+  const {
+    raw,
+    parsed: _parsed,
+    ...result
+  } = readPredictionSourceArchive(options);
+  if (result.status === "archive-missing") {
+    return result;
+  }
+  atomicWrite(result.sourcePath, raw);
+  return { ...result, status: "restored" };
 }
 
 function predictionSourceDates(
@@ -515,6 +529,7 @@ module.exports = {
   metadataFor,
   validateMetadata,
   archivePredictionSource,
+  readPredictionSourceArchive,
   restorePredictionSource,
   predictionSourceDates,
   archivedSourceDates

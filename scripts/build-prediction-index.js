@@ -2,6 +2,8 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const assert = require("node:assert/strict");
+const archiveApi = require("./daily-prediction-source-archive");
 const boatIdentity = require(
   "../js/boat-identity"
 );
@@ -890,12 +892,19 @@ function compactShadowV2(record) {
   };
 }
 
-function buildPredictionIndex(directory) {
-  const files = fs.existsSync(directory)
-    ? fs.readdirSync(directory)
-        .filter(name => /^\d{8}\.json$/.test(name))
-        .sort()
-    : [];
+function buildPredictionIndex(directory, {
+  sourceDates,
+  readPredictionData = date => readJson(
+    path.join(directory, `${date}.json`)
+  )
+} = {}) {
+  const files = sourceDates === undefined
+    ? (fs.existsSync(directory)
+        ? fs.readdirSync(directory)
+            .filter(name => /^\d{8}\.json$/.test(name))
+            .sort()
+        : [])
+    : [...new Set(sourceDates)].sort().map(date => `${date}.json`);
 
   const runs = [];
   const predictions = [];
@@ -908,7 +917,7 @@ function buildPredictionIndex(directory) {
   };
 
   files.forEach(name => {
-    const data = readJson(path.join(directory, name));
+    const data = readPredictionData(name.slice(0, 8));
     const date = String(data?.date || name.slice(0, 8));
     const quarantined =
       quarantinedRaceKeys(data, date);
@@ -1039,6 +1048,40 @@ function buildPredictionIndex(directory) {
   };
 }
 
+// Validation reads canonical archives one day at a time without restoring the
+// large raw files. Keep normal buildPredictionIndex callers on their raw reader.
+function buildArchiveBackedPredictionIndex({
+  rootDirectory = path.resolve(__dirname, ".."),
+  readArchive = archiveApi.readPredictionSourceArchive
+} = {}) {
+  const archiveDates = archiveApi.archivedSourceDates(rootDirectory);
+  assert.ok(
+    archiveDates.length > 0,
+    "分割index照合にはarchive原本が必要"
+  );
+  const archived = new Set(archiveDates);
+  const sourceDates = [...new Set([
+    ...archiveApi.predictionSourceDates(rootDirectory),
+    ...archiveDates
+  ])].sort();
+
+  return buildPredictionIndex(archiveApi.predictionDirectory(rootDirectory), {
+    sourceDates,
+    readPredictionData: date => {
+      if (!archived.has(date)) {
+        return readJson(archiveApi.sourcePathFor(rootDirectory, date));
+      }
+      const source = readArchive({ rootDirectory, date });
+      assert.equal(
+        source.status,
+        "archive-read",
+        "archive済み日次予想原本をすべて検証する"
+      );
+      return source.parsed;
+    }
+  });
+}
+
 function writePredictionIndex(directory, outputPath) {
   const frozenLegacyPath = path.resolve(
     __dirname,
@@ -1085,6 +1128,7 @@ module.exports = {
   VERIFICATION_LIMIT,
   SHADOW_V2_LIMIT,
   buildPredictionIndex,
+  buildArchiveBackedPredictionIndex,
   raceKeyOf,
   quarantinedRaceKeys,
   compactCollectionTarget,
