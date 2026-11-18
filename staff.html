@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <meta name="theme-color" content="#f3f8ff"/>
-<meta name="description" content="チャッピーボートレースAIのキャラクター社員6人と、ホムラ班4人の紹介です。"/>
+<meta name="description" content="チャッピーボートレースAIのキャラクター社員6人と、ホムラ班4人、ツムギ班3人の紹介です。"/>
 <title>社員紹介｜チャッピーボートレースAI</title>
 <style>
 :root{--bg:#f3f8ff;--card:#fff;--ink:#14263d;--sub:#5a6b80;--line:#dbe5f1;--accent:#1c64c8}
@@ -30,6 +30,8 @@ h2{font-size:17px;margin:4px 4px 10px}
 .n1{background:#fff;color:#14263d}.n2{background:#1b1b1b;color:#fff;border-color:#1b1b1b}.n3{background:#d7262b;color:#fff;border-color:#d7262b}
 .n3s{background:#fff;color:#d7262b;border-color:#d7262b;font-size:12px}
 .n4{background:#1f5fc2;color:#fff;border-color:#1f5fc2}.n5{background:#f2c418;color:#14263d;border-color:#f2c418}.n6{background:#1f9a4a;color:#fff;border-color:#1f9a4a}
+.member.tall .zoom img{aspect-ratio:2/3;max-height:440px;object-fit:contain;object-position:center top}
+.n3t{background:#fff;color:#6b5aa6;border-color:#6b5aa6;font-size:11px}
 .note{color:var(--sub);font-size:12.5px;margin:18px 4px 0}
 .lb{position:fixed;inset:0;z-index:10;background:rgba(5,12,22,.9);display:flex;align-items:center;justify-content:center;padding:calc(48px + env(safe-area-inset-top,0px)) 8px calc(16px + env(safe-area-inset-bottom,0px));overflow:auto}
 .lb[hidden]{display:none}
@@ -42,7 +44,7 @@ a:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-off
 <header>
   <a href="./">← アプリに戻る</a>
   <h1>社員紹介</h1>
-  <p class="lead">チャッピーボートレースAIで働く、キャラクター社員6人と、3号艇ホムラの下で発信づくりを担当するホムラ班4人です。番号と色はボートの1〜6号艇にそろえています。</p>
+  <p class="lead">チャッピーボートレースAIで働く、キャラクター社員6人と、3号艇ホムラの下で発信づくりを担当するホムラ班4人、ツムギの下で検証を担当するツムギ班3人です。番号と色はボートの1〜6号艇にそろえています。</p>
 </header>
 <main>
   <section class="card" aria-labelledby="teamTitle">
@@ -74,6 +76,18 @@ a:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-off
       <article class="member"><div class="cap"><span class="num n3s">班</span><div><b>シズク</b><small>ホムラ班・note記事の見せ方係</small></div></div><button type="button" class="zoom" data-src="assets/staff/shizuku.jpg" aria-label="シズクの設定資料を大きく見る"><img src="assets/staff/shizuku.jpg" alt="シズクの設定資料" width="768" height="494" loading="lazy" decoding="async"/></button></article>
       <article class="member"><div class="cap"><span class="num n3s">班</span><div><b>ヒナタ</b><small>ホムラ班・発信カレンダー係</small></div></div><button type="button" class="zoom" data-src="assets/staff/hinata.jpg" aria-label="ヒナタの設定資料を大きく見る"><img src="assets/staff/hinata.jpg" alt="ヒナタの設定資料" width="768" height="461" loading="lazy" decoding="async"/></button></article>
       <article class="member"><div class="cap"><span class="num n3s">班</span><div><b>ツムギ</b><small>ホムラ班・改善案の検証係</small></div></div><button type="button" class="zoom" data-src="assets/staff/tsumugi.jpg" aria-label="ツムギの設定資料を大きく見る"><img src="assets/staff/tsumugi.jpg" alt="ツムギの設定資料" width="768" height="461" loading="lazy" decoding="async"/></button></article>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="tsumugiTitle" style="margin-top:22px">
+    <h2 id="tsumugiTitle">ホムラ班 › ツムギ班（検証の部署）</h2>
+    <p class="hint" style="margin-top:0">班長はツムギ。改善案を、比べ方を決める→データを確かめる→結果を評価する、の順で検証します。</p>
+  </section>
+  <section aria-label="ツムギ班をひとりずつ見る">
+    <div class="list">
+      <article class="member tall"><div class="cap"><span class="num n3t">ツ</span><div><b>シオン</b><small>ツムギ班・検証設計（比べ方と合格の基準を先に決める）</small></div></div><button type="button" class="zoom" data-src="assets/staff/tsumugi-team/shion.png" aria-label="シオンのイラストを大きく見る"><img src="assets/staff/tsumugi-team/shion.jpg" alt="シオンの全身イラスト" width="768" height="1152" loading="lazy" decoding="async"/></button></article>
+      <article class="member tall"><div class="cap"><span class="num n3t">ツ</span><div><b>ナギ</b><small>ツムギ班・データ品質（出典・時刻・欠け・重なりの確認）</small></div></div><button type="button" class="zoom" data-src="assets/staff/tsumugi-team/nagi.png" aria-label="ナギのイラストを大きく見る"><img src="assets/staff/tsumugi-team/nagi.jpg" alt="ナギの全身イラスト" width="768" height="1152" loading="lazy" decoding="async"/></button></article>
+      <article class="member tall"><div class="cap"><span class="num n3t">ツ</span><div><b>アカリ</b><small>ツムギ班・改善評価（変更前と後の成果と損失を比べる）</small></div></div><button type="button" class="zoom" data-src="assets/staff/tsumugi-team/akari.png" aria-label="アカリのイラストを大きく見る"><img src="assets/staff/tsumugi-team/akari.jpg" alt="アカリの全身イラスト" width="768" height="1152" loading="lazy" decoding="async"/></button></article>
     </div>
   </section>
 
