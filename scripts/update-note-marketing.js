@@ -10,6 +10,8 @@ const korogashi = require('./note-korogashi-lifecycle.cjs');
 const courseInsights = require('./note-korogashi-observability.cjs');
 const courseComparison = require('./note-korogashi-comparison.cjs');
 const BODY = '.note-common-styles__textnote-body';
+// About one minute in total; the job timeout and deadline checks still apply.
+const VERIFY_DELAYS_MS = [2000, 3000, 5000, 5000, 10000, 10000, 10000, 15000];
 async function readPublic(page, article) {
   const response = await page.goto(article.url, { waitUntil: 'domcontentloaded', timeout: 45000 });
   if (!response?.ok() || page.url() !== article.url) throw new Error('marketing_public_page_unavailable');
@@ -79,9 +81,21 @@ async function updateArticle(page, publicPage, article, desired, previousHash, p
   if (await submit.count() !== 1 || !await submit.isEnabled()) throw new Error('marketing_update_button_missing');
   console.log(`NOTE_MARKETING_UPDATE_ATTEMPT=${article.id}`);
   await submit.click(); // Exactly one submission; later runs recover by reading this same article.
-  for (let attempt=0; attempt<5; attempt++) {
-    try { await verifyPublic(publicPage, article, desired); return true; }
-    catch (error) { if (attempt===4) throw error; await page.waitForTimeout(1500); }
+  // note can take tens of seconds to show an update on the public page. The
+  // next run recovers the same target, but a failed run skips the course
+  // announcement and Buffer, so wait longer before giving up on this one.
+  for (let attempt=0; ; attempt++) {
+    let value;
+    try { value = await readPublic(publicPage, article); if (publicMatches(value, desired)) return true; }
+    catch (error) { if (attempt>=VERIFY_DELAYS_MS.length) throw error; }
+    if (attempt>=VERIFY_DELAYS_MS.length) {
+      const expected=urlsIn(desired);
+      console.error(`NOTE_MARKETING_VERIFY_MISMATCH=${JSON.stringify({articleId:article.id,reads:attempt+1,
+        textMatches:sameMarketingContent(value.text, desired),missingLinks:expected.filter(url=>!value.links.includes(url)).length,
+        extraArticleLinks:value.links.filter(url=>/^https:\/\/note\.com\/great_robin3243\/n\/n[a-f0-9]+(?:[?#].*)?$/.test(url)&&!expected.includes(url)).length})}`);
+      throw new Error('marketing_public_content_mismatch');
+    }
+    await page.waitForTimeout(VERIFY_DELAYS_MS[attempt]);
   }
 }
 function createUpdateJournal(store, loaded, config, clock = Date.now) {
@@ -197,4 +211,4 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
   }
 }
 if (require.main === module) run().catch(error=>{console.error(`NOTE_MARKETING_FAILED=${error.message}`);process.exitCode=1;});
-module.exports = { publicMatches, BODY, readPublic, verifyPublic, updateArticle, requireArticleEditable, previousArticleText, createUpdateJournal, courseIndexText, run };
+module.exports = { VERIFY_DELAYS_MS, publicMatches, BODY, readPublic, verifyPublic, updateArticle, requireArticleEditable, previousArticleText, createUpdateJournal, courseIndexText, run };

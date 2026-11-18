@@ -241,6 +241,35 @@ test('publication success followed by verification failure recovers exact pendin
   assert.equal(persisted.pendingUpdates.index.targetHash,c.hash(next));
   assert.equal(resumed.head,head);
 });
+test('a public page that lags behind the submission is waited for, and a lasting mismatch is diagnosed without page text',async()=>{
+  const {createUpdateJournal,updateArticle,VERIFY_DELAYS_MS}=require('./update-note-marketing');
+  const article=config.index, old='old verified content', desired='new generated content';
+  const run=async lagReads=>{
+    let persisted={...c.initialState(config),rows:[],articles:{guide:{hash:c.hash(config.guide.initialBody)},index:{hash:c.hash(old)}}},head='a'.repeat(40);
+    const store={save:async state=>{persisted=structuredClone(state);head='b'.repeat(40);return head;}};
+    const journal=createUpdateJournal(store,{state:persisted,head},config,()=>now);
+    const pages=fakeMarketingPages(article,old), waits=[];
+    let reads=0, submitted=false;
+    pages.page.waitForTimeout=async ms=>{if(submitted)waits.push(ms);};
+    const click=pages.page.getByRole;
+    pages.page.getByRole=(role,opts)=>{const b=click(role,opts);return role==='button'&&!String(opts.name).includes('公開に進む')?{...b,click:async()=>{await b.click();submitted=true;}}:b;};
+    const inner=pages.publicPage.locator;
+    pages.publicPage.locator=sel=>{const l=inner(sel);return {...l,innerText:async()=>{if(submitted)reads++;return submitted&&reads<=lagReads?old:await l.innerText();}};};
+    const errors=[],original=console.error;console.error=line=>errors.push(String(line));
+    try {return {result:await updateArticle(pages.page,pages.publicPage,article,desired,c.hash(old),old,journal.options('index',desired)).catch(e=>e),waits,errors};}
+    finally {console.error=original;}
+  };
+  const lagged=await run(5);
+  assert.equal(lagged.result,true,'content that appears after five stale reads is accepted');
+  assert.deepEqual(lagged.waits,VERIFY_DELAYS_MS.slice(0,5));
+  const stuck=await run(100);
+  assert.match(stuck.result.message,/marketing_public_content_mismatch/);
+  assert.deepEqual(stuck.waits,VERIFY_DELAYS_MS);
+  const diag=stuck.errors.find(line=>line.startsWith('NOTE_MARKETING_VERIFY_MISMATCH='));
+  assert(diag);assert.equal(JSON.parse(diag.split('=').slice(1).join('=')).textMatches,false);
+  assert(!diag.includes(old)&&!diag.includes(desired),'diagnostics never include page text');
+  assert(VERIFY_DELAYS_MS.reduce((a,b)=>a+b,0)<=90000,'the whole wait stays well inside the job timeout');
+});
 test('already desired published content is verified without another editor write or submission',async()=>{
   const {createUpdateJournal,updateArticle}=require('./update-note-marketing');
   const old='old',desired='published target',state=c.initialState(config);state.articles.index.hash=c.hash(old);
