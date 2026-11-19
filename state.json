@@ -8060,11 +8060,11 @@
       },
       "settlement": {
         "status": "pending",
-        "reason": "official_result_stale"
+        "reason": "official_result_pending"
       },
       "publishedSettlement": {
         "status": "pending",
-        "reason": "official_result_stale",
+        "reason": "official_result_pending",
         "method": "published-main-sections-v1",
         "publishedTicketCount": 36,
         "sectionsSha256": "4f5552608343fd679887790346309c9e2ab76284fd5b4724457235ac2f1a41ed",
@@ -16098,6 +16098,32 @@
         "payoutText": "¥1,350",
         "popularity": 4
       }
+    },
+    "20261119-01-7": {
+      "ok": true,
+      "source": "boatrace-official",
+      "date": "20261119",
+      "jcd": "01",
+      "raceNo": 7,
+      "checkedAt": "2026-11-19T09:05:47.455Z",
+      "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261119&jcd=01&rno=7",
+      "resultAvailable": false,
+      "status": "not_finished",
+      "void": false,
+      "finishers": [],
+      "starts": [],
+      "winningMethod": "",
+      "trifecta": {
+        "combination": "1-2-3",
+        "boats": [
+          1,
+          2,
+          3
+        ],
+        "payout": 870,
+        "payoutText": "¥870",
+        "popularity": 2
+      }
     }
   },
   "resultAttempts": {
@@ -16359,6 +16385,10 @@
     },
     "20261119-15-6": {
       "checkedAt": "2026-11-19T08:56:00.995Z",
+      "status": "pending"
+    },
+    "20261119-01-7": {
+      "checkedAt": "2026-11-19T09:05:02.170Z",
       "status": "pending"
     }
   },
@@ -18135,7 +18165,7 @@
       "payoutPer100Yen": 5040,
       "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261119&jcd=01&rno=6",
       "firstResultSeenAt": "2026-11-19T08:56:36.485Z",
-      "noteVerifiedAt": "2026-11-19T09:04:38.571Z",
+      "noteVerifiedAt": "2026-11-19T09:04:38.570Z",
       "evidenceId": "6adfdea0164fcc743172b02ac95b22f7d200d8d61b0fe1e4b689a5fe7cae88f5",
       "winningProvenance": [
         {
