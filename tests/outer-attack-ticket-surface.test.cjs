@@ -1,1 +1,0 @@
-'use strict';const assert=require('assert');const {build}=require('../scripts/analyze-outer-attack-ticket-surface.cjs');const r=build();assert.strictEqual(r.scope.holdoutUsed,false);assert.strictEqual(r.scope.productionChanged,false);assert.ok(r.signalRaceCount>=8);assert.strictEqual(r.rows.length,r.signalRaceCount);console.log('outer attack ticket surface tests passed');
