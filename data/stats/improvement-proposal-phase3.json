@@ -1,19 +1,19 @@
 {
-  "generatedAt": "2026-11-18T10:59:28.162Z",
+  "generatedAt": "2026-11-19T00:23:27.321Z",
   "source": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json",
   "analysisInputContract": "official-pre-deadline-cohort-v1",
   "deduplication": "predictions-preferred-over-verificationPredictions",
   "analysisInputDiagnostics": {
-    "canonicalPredictionCount": 5618,
-    "preDeadlinePredictionCount": 5600,
+    "canonicalPredictionCount": 5620,
+    "preDeadlinePredictionCount": 5602,
     "excludedPredictionCount": 18,
     "excludedReasons": {
       "captured-at-or-after-deadline": 6,
       "source-fetched-at-or-after-deadline": 5,
       "timestamp-missing": 7
     },
-    "officialResultCount": 5568,
-    "settledJoinCount": 5568,
+    "officialResultCount": 5570,
+    "settledJoinCount": 5570,
     "deduplication": "predictions-preferred-over-verificationPredictions",
     "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json"
   },
@@ -21,7 +21,7 @@
   "engineVersion": "improvement-proposal-phase3-20260818-root-cause-priority",
   "status": "proposal-candidates-ready",
   "minimumRaceCount": 100,
-  "settledRaceCount": 5568,
+  "settledRaceCount": 5570,
   "remainingRaceCount": 0,
   "proposals": [
     {
@@ -44,7 +44,7 @@
       "label": "展開読み違い",
       "theory": "展開理論",
       "sampleCount": 3171,
-      "occurrenceRate": 57,
+      "occurrenceRate": 56.9,
       "priority": "high",
       "improvementCandidate": "展開成立条件と崩れ条件の再検証",
       "expectedEffect": "展開一致率の改善余地を検証",
@@ -125,7 +125,7 @@
       "label": "買い目広げ過ぎ",
       "theory": "買い目構成",
       "sampleCount": 3294,
-      "occurrenceRate": 59.2,
+      "occurrenceRate": 59.1,
       "priority": "high",
       "improvementCandidate": "不的中時の点数拡張条件を再検証",
       "expectedEffect": "回収率の改善余地を検証",
