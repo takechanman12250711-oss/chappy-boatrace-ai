@@ -241,6 +241,50 @@ test('publication success followed by verification failure recovers exact pendin
   assert.equal(persisted.pendingUpdates.index.targetHash,c.hash(next));
   assert.equal(resumed.head,head);
 });
+test('a public page that lags behind the submission is waited for within a time budget, with one submit and no page text in diagnostics',async()=>{
+  const {createUpdateJournal,updateArticle,VERIFY_DELAYS_MS,VERIFY_BUDGET_MS}=require('./update-note-marketing');
+  const article=config.index, old='old verified content', desired='new generated content';
+  const run=async({lagReads=0,failReads=0,readMs=0}={})=>{
+    let persisted={...c.initialState(config),rows:[],articles:{guide:{hash:c.hash(config.guide.initialBody)},index:{hash:c.hash(old)}}},head='a'.repeat(40);
+    const store={save:async state=>{persisted=structuredClone(state);head='b'.repeat(40);return head;}};
+    const journal=createUpdateJournal(store,{state:persisted,head},config,()=>now);
+    const pages=fakeMarketingPages(article,old), waits=[];
+    let reads=0, submitted=false, time=0;
+    pages.page.waitForTimeout=async ms=>{if(submitted){waits.push(ms);time+=ms;}};
+    const click=pages.page.getByRole;
+    pages.page.getByRole=(role,opts)=>{const b=click(role,opts);return role==='button'&&!String(opts.name).includes('公開に進む')?{...b,click:async()=>{await b.click();submitted=true;}}:b;};
+    const goto=pages.publicPage.goto;
+    pages.publicPage.goto=async(...args)=>{if(submitted){reads++;time+=readMs;if(reads<=failReads)throw Error('net::ERR_TIMED_OUT');}return goto(...args);};
+    const inner=pages.publicPage.locator;
+    pages.publicPage.locator=sel=>{const l=inner(sel);return {...l,innerText:async()=>submitted&&reads<=lagReads?old:await l.innerText()};};
+    const errors=[],original=console.error;console.error=line=>errors.push(String(line));
+    const options={...journal.options('index',desired),clock:()=>time};
+    try {
+      const result=await updateArticle(pages.page,pages.publicPage,article,desired,c.hash(old),old,options).catch(e=>e);
+      return {result,waits,errors,reads,submits:pages.events.filter(x=>x==='submit').length};
+    } finally {console.error=original;}
+  };
+  const lagged=await run({lagReads:5});
+  assert.equal(lagged.result,true,'content that appears after five stale reads is accepted');
+  assert.deepEqual(lagged.waits,VERIFY_DELAYS_MS.slice(0,5));assert.equal(lagged.submits,1);
+  const lastRead=await run({lagReads:VERIFY_DELAYS_MS.length});
+  assert.equal(lastRead.result,true,'the final permitted read can still accept the update');
+  assert.equal(lastRead.reads,VERIFY_DELAYS_MS.length+1);assert.equal(lastRead.submits,1);
+  const flaky=await run({failReads:2});
+  assert.equal(flaky.result,true,'temporary page errors are retried');assert.equal(flaky.submits,1);
+  const stuck=await run({lagReads:100});
+  assert.match(stuck.result.message,/marketing_public_content_mismatch/);
+  assert.deepEqual(stuck.waits,VERIFY_DELAYS_MS);assert.equal(stuck.submits,1);
+  const diag=stuck.errors.find(line=>line.startsWith('NOTE_MARKETING_VERIFY_MISMATCH='));
+  assert(diag);assert.equal(JSON.parse(diag.split('=').slice(1).join('=')).textMatches,false);
+  assert(!diag.includes(old)&&!diag.includes(desired),'diagnostics never include page text');
+  const slow=await run({lagReads:100,readMs:40000});
+  assert.match(slow.result.message,/marketing_public_content_mismatch/);
+  assert(slow.reads<VERIFY_DELAYS_MS.length+1,'slow reads stop before every delay is used');
+  assert(slow.waits.reduce((a,b)=>a+b,0)+slow.reads*40000<=VERIFY_BUDGET_MS+40000,'no new wait starts after the budget');
+  const down=await run({failReads:100});
+  assert.match(down.result.message,/ERR_TIMED_OUT/,'a page that never loads reports the page error');assert.equal(down.submits,1);
+});
 test('already desired published content is verified without another editor write or submission',async()=>{
   const {createUpdateJournal,updateArticle}=require('./update-note-marketing');
   const old='old',desired='published target',state=c.initialState(config);state.articles.index.hash=c.hash(old);
