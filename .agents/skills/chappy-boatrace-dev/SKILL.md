@@ -38,7 +38,7 @@ description: チャッピーボートレースAIの開発継続、不具合修�
 
 1. 合意した変更と完了条件を短く示し、作業中の差分を保護してブランチ上で実装する。既存機能を再実装せず、未接続・不具合だけを直す。
 2. 保存・非同期操作・期限判定など、変更に伴う具体的な失敗リスクと必須CIを検証する。文章だけの小変更に実装をなぞるテストを増やさない。
-3. GitHubへの反映が会話で許可されている場合は、PR作成 → 必要なCI合格 → 意図したheadでマージ → main差分確認まで進める。Skill自体を外部変更の許可とは扱わない。認証がない手段を繰り返さず、利用可能な正規の接続を使う。
+3. 2026-11-19の本人指示に従い、本人依頼済み範囲はPR作成 → 必要な検証・独立レビュー・既存CIの成功 → 最新head/main照合 → sha固定squashマージ → main反映確認・報告まで個別許可待ちを挟まず進める。重複・依存変更があれば更新・再検査し、無関係の非重複変更は依存影響と理由を記録して続行する。詳しい条件は `docs/development-approval.md` を使う。Skill自体を未依頼行為の許可と扱わず、認証がない方式を繰り返さない。
 4. CI失敗は原因を絞って修正する。合格後に理由なく検査を広げたり繰り返したりしない。main反映済み、実行待ち、本番実行確認済みを分けて報告する。
 5. 何が使えるようになったか、検証と反映の状態、残る具体的な作業を簡潔に伝える。部分完了を全体完成と呼ばない。
 
@@ -116,9 +116,9 @@ Workからの切り離しはGitHub側の稼働だけで完了とせず、既存C
 ## 2026-11-06〜07 成績公開・研究レポート・データ帳
 
 - 全成績ページ `seiseki.html` は `data/stats/continuous-performance-ledger.json` をそのまま表示（外れ・回収率も公開する本人方針）。チャッピー画面の「成績」からのリンクは、Vercel停止でWebKitチェックが落ちるため一時的に外している。
-- 研究レポート `data/stats/race-insight-report.json`（`scripts/build-race-insight-report.cjs`、ledger の後に毎晩）：荒れ／堅め見立て（固定式 `config/race-roughness-v1.json`）、チルト、モーター、場、比較テスト `shadowAb`（`config/datazeme-shadow-ab-v1.json`、11/7以降が holdout）。すべて `usableForPrediction=false`。予想へ取り入れるのは holdout の回収率を見て本人の別承認を得てから。
+- 研究レポート `data/stats/race-insight-report.json`（`scripts/build-race-insight-report.cjs`、ledger の後に毎晩）：荒れ／堅め見立て（固定式 `config/race-roughness-v1.json`）、チルト、モーター、場、比較テスト `shadowAb`（`config/datazeme-shadow-ab-v1.json`、11/7以降が holdout）。すべて `usableForPrediction=false`。本番採用はholdoutの回収率と既存の採用gateを確認する別変更として扱う。研究保存だけの依頼から採用許可を推定せず、採用まで本人依頼済みなら必要な検証を満たして進め、再承認待ちに戻さない。
 - 2026-10-27（#1385）より前の保存予想は、`motor2Rate`/`motor3Rate` が公式値ではなく内部点数（motor3 = motor2 + 15）。モーターの検証では `motorSource()` で分ける。
-- 買い目なしのデータ専門サイトは `chappy-boatdata-site`、PRのボタン承認と積み重ねPRは `chappy-pr-merge-chain` を使う。
+- 買い目なしのデータ専門サイトは `chappy-boatdata-site`、検証後のPR反映と積み重ねPRは `chappy-pr-merge-chain` を使う。本人が特定PRの個別確認・保留を明示した場合だけ、その指定に従う。
 - GitHub Pages は数分おきのデータ保存で作り直しが止められ、反映が30〜40分遅れることがある。新しいデータをすぐ見せたい画面は raw から読む。
 
 
