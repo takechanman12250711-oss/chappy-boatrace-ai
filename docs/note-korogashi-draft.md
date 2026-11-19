@@ -124,3 +124,13 @@ node scripts/note-korogashi-comparison.cjs --input /path/to/state.json --max-leg
 ```
 
 これは開発・監査用。本人の日常確認は従来の無料一覧で完結し、PCや認証データ抽出を要求しない。検査は node --test scripts/note-korogashi*.test.cjs と、既存のnote公開・無料一覧検査を使う。main反映・無料一覧での実表示・次段の実運用成功は別々に報告する。
+
+
+## 2026-11-17 登録直後のartifact照会の一時失敗
+
+11/17の自動開始は唐津1R（締切08:47）を選び、08:37:40に登録用artifactを保存したが、直後の照会が `korogashi_artifact_lookup_failed` で失敗し登録できなかった。次の実行が未登録の保留を `registration_expired` で終了し、既定どおりその日のコースは開始されなかった。今週の登録3回のうち1回。
+
+- 照会は読み取りだけなので、失敗時に2秒・4秒・8秒の間隔で最大3回だけ再照会する。待機は合計14秒で、各照会の10秒の時間切れを含めると最大で約54秒かかる（実行環境の遅れは別）。失敗コードにHTTPステータスを付ける（例 `korogashi_artifact_lookup_failed_404`）。
+- 締切120秒超の判定は、artifact照会のサーバー時刻と実行環境の時計の遅い方で行う（以前はサーバー時刻だけで、実時計では120秒以下でも登録できる境界があった。Codexの独立レビューで確認）。
+- artifactのID・digest・run・head・名前の照合、1日1コースの扱いは変えない。照合に合わないartifactは再照会しない。
+- 未確認：一時失敗の実際の原因（反映後のログのステータスで判断する）。

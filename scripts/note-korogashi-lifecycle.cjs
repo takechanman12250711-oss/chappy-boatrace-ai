@@ -203,7 +203,9 @@ function confirm(state, snapshots, artifact, now) {
     check(s.runId===artifact.runId && s.headSha===artifact.headSha &&
       artifact.name===`note-korogashi-${s.runId}-${s.runAttempt}` &&
       ms(s.leg.plannedAt)<ms(artifact.createdAt)+1000, 'artifact_context_mismatch');
-    if(ms(s.leg.deadlineAt)-ms(artifact.confirmedAt)<=120000) append(p,'stopped',{reason:'registration_expired'},now);
+    // Judge the margin by the later of the server confirmation and the local
+    // clock, so a slow local clock cannot pass a registration the real time rejects.
+    if(ms(s.leg.deadlineAt)-Math.max(ms(artifact.confirmedAt),now)<=120000) append(p,'stopped',{reason:'registration_expired'},now);
     else append(p,'registered',{leg:s.leg,seal:{...artifact,snapshotHash:s.snapshotHash}},now);
     p.pending=null;
   }

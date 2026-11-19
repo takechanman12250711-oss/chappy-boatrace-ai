@@ -142,6 +142,25 @@ test('sealing checks external artifact identity, digest, workflow and server tim
   assert.equal((await artifact(env,fetcher(data))).confirmedAt,new Date(time(16)+1000).toISOString());
   for(const change of [{id:45},{expired:true},{digest:'bad'},{name:'another'},{workflow_run:{id:124,head_sha:ctx.headSha}}])
     await assert.rejects(artifact(env,fetcher({...data,...change})),/artifact_identity/);
+  // A transient lookup failure right after upload is retried; identity checks still apply.
+  let calls=0;const waits=[],sleep=async ms=>{waits.push(ms);};
+  const flaky=async()=>{calls++;if(calls===1)throw Error('network');if(calls===2)return {ok:false,status:404};return fetcher(data)();};
+  assert.equal((await artifact(env,flaky,{sleep})).id,44);assert.equal(calls,3);assert.deepEqual(waits,[2000,4000]);
+  calls=0;waits.length=0;
+  await assert.rejects(artifact(env,async()=>{calls++;return {ok:false,status:503};},{sleep}),/korogashi_artifact_lookup_failed_503/);
+  assert.equal(calls,4);assert.deepEqual(waits,[2000,4000,8000]);
+  calls=0;
+  await assert.rejects(artifact(env,async()=>{calls++;return fetcher({...data,digest:'bad'})();},{sleep}),/artifact_identity/);
+  assert.equal(calls,1,'a mismatched artifact is never retried into acceptance');
+});
+test('registration margin uses the later of server confirmation and the local clock',async()=>{
+  const f=fixture(),out=await k.prepare(k.initialState(),config(),options([f])),deadline=Date.parse(f.row.deadlineAt);
+  const art={...seal(out.staged,f.now),createdAt:new Date(deadline-200000).toISOString(),confirmedAt:new Date(deadline-121000).toISOString()};
+  const late=k.confirm(out.state,out.staged,art,deadline-120000);
+  assert.equal(late.plans['test-100k'].events.at(-1).type,'stopped','server says 121s but the real clock says 120s: not registered');
+  assert.equal(late.plans['test-100k'].events.at(-1).data.reason,'registration_expired');
+  const ok=k.confirm(out.state,out.staged,art,deadline-121000);
+  assert.equal(ok.plans['test-100k'].events.at(-1).type,'registered');
 });
 test('state writes are append-only compare-and-swap, never main or force push',async()=>{
   const {repository,BRANCH}=require('./note-korogashi-store.cjs'),calls=[];
