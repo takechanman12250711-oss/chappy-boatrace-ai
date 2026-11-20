@@ -1,33 +1,33 @@
 {
   "schemaVersion": 2,
   "version": "local-water-v2-post-adoption-monitor-v2",
-  "generatedAt": "2026-11-19T00:57:25.099Z",
+  "generatedAt": "2026-11-20T00:00:33.943Z",
   "adoptionPr": 614,
   "adoptionCommit": "b230d52969b3aa612498e4c994d840c9b7120abc",
   "startDate": "20260824",
-  "latestDate": "20261118",
+  "latestDate": "20261119",
   "method": "2026-08-24以降の確定レースだけを対象に、A=本番Local/Water V2 gap<=3タイブレーク、B=同じ未適用base coreの旧展開のまま、固定5点で比較。本番と同じrace trend ready条件を満たす公式入力だけをfingerprint世代別cacheで再利用し、評価レポートは全件揃った場合だけ保存。",
   "productionChanged": false,
   "automaticApplication": false,
   "sourceCompleteness": {
-    "expectedRaces": 3766,
-    "completedRaces": 3766,
-    "cachedRaces": 3764,
-    "fetchedRaces": 2,
+    "expectedRaces": 3797,
+    "completedRaces": 3797,
+    "cachedRaces": 3766,
+    "fetchedRaces": 31,
     "complete": true
   },
   "total": {
-    "sourceRaces": 3766,
-    "comparableRaces": 212,
-    "appliedRaces": 212,
+    "sourceRaces": 3797,
+    "comparableRaces": 213,
+    "appliedRaces": 213,
     "productionHits": 42,
-    "counterfactualHits": 45,
+    "counterfactualHits": 46,
     "gains": 27,
-    "losses": 30,
+    "losses": 31,
     "productionReturn": 83290,
-    "counterfactualReturn": 95990,
-    "hitDelta": -3,
-    "returnDelta": -12700
+    "counterfactualReturn": 96900,
+    "hitDelta": -4,
+    "returnDelta": -13610
   },
   "byDate": {
     "20260827": {
@@ -1108,6 +1108,19 @@
       "counterfactualReturn": 0,
       "hitDelta": 0,
       "returnDelta": 0
+    },
+    "20261119": {
+      "sourceRaces": 31,
+      "comparableRaces": 1,
+      "appliedRaces": 1,
+      "productionHits": 0,
+      "counterfactualHits": 1,
+      "gains": 0,
+      "losses": 1,
+      "productionReturn": 0,
+      "counterfactualReturn": 910,
+      "hitDelta": -1,
+      "returnDelta": -910
     }
   },
   "appliedSamples": [
@@ -6834,6 +6847,33 @@
       "productionHit": false,
       "counterfactualHit": false,
       "payoutPer100": 1880
+    },
+    {
+      "raceKey": "20261119-15-1",
+      "date": "20261119",
+      "jcd": "15",
+      "raceNo": 1,
+      "gap": 1.2000000000000028,
+      "previousHead": 3,
+      "selectedHead": 1,
+      "actual": "1-2-3",
+      "productionTickets": [
+        "1-2-5",
+        "1-5-2",
+        "1-3-2",
+        "2-1-5",
+        "2-1-4"
+      ],
+      "counterfactualTickets": [
+        "3-1-4",
+        "3-2-4",
+        "3-1-6",
+        "1-2-3",
+        "1-2-5"
+      ],
+      "productionHit": false,
+      "counterfactualHit": true,
+      "payoutPer100": 910
     }
   ],
   "apiFailures": 0,
