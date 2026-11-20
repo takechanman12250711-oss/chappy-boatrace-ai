@@ -126,7 +126,8 @@ test('no arbitrary reduction of saved picks to fit the budget or the ten-ticket 
     assert.equal(out.initialYen,n*1000);assert.equal(out.legs[0].allocations.length,n);
     assert(out.legs[0].allocations.every(a=>a.stakeYen===1000));
   }
-  assert.throws(()=>build(plan([fixture(1,[...ten,'1-5-2'])])));
+  // Eleven tickets are already refused when the published receipt row is read.
+  assert.throws(()=>build(plan([fixture(1,[...ten,'1-5-2'])])),/marketing_ticket_count_invalid/);
 });
 test('review label, full-risk notice and fees accompany amounts; it cannot claim publication or purchases', () => {
   const leg=fixture();delete leg.result;
