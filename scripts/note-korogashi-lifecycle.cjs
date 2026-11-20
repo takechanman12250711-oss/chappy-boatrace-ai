@@ -3,6 +3,7 @@ const { createHash } = require('node:crypto');
 const { readLeg, allocate, DISCLAIMER } = require('./note-korogashi-draft.cjs');
 const { jstDate, recentDates, validUrl } = require('./note-marketing-content');
 const { verifiedModelSubset } = require('./note-published-ticket-sections');
+const { MAX_PUBLICATION_TICKETS } = require('./note-ticket-limit.cjs');
 const VERSION = 'note-korogashi-state-v1';
 const POLICY = 'published-same-series-deadline-order-v1';
 // A later leg must leave time for its artifact registration and the anonymous
@@ -46,7 +47,7 @@ function project(plan) {
     if (body.type === 'registered') {
       check(['not_registered','waiting_next'].includes(state.status), 'registration_transition_invalid');
       const { leg, seal } = body.data;
-      check(Array.isArray(leg.allocations) && leg.allocations.length>=1 && leg.allocations.length<=7 &&
+      check(Array.isArray(leg.allocations) && leg.allocations.length>=1 && leg.allocations.length<=MAX_PUBLICATION_TICKETS &&
         leg.allocations.every(a=>/^[1-6]-[1-6]-[1-6]$/.test(a.ticket) && new Set(a.ticket.split('-')).size===3) &&
         new Set(leg.allocations.map(a=>a.ticket)).size===leg.allocations.length, 'registered_tickets_invalid');
       check(leg.number === state.legs.length + 1 && leg.number <= r.maxLegs &&

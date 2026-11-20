@@ -2,6 +2,7 @@
 // Retrospective accounting on the already observed course path only. This is
 // never a selector, a publication payload, or proof of an alternative wager.
 const fs = require('node:fs');
+const { MAX_PUBLICATION_TICKETS } = require('./note-ticket-limit.cjs');
 const k = require('./note-korogashi-lifecycle.cjs');
 const { allocate } = require('./note-korogashi-draft.cjs');
 const VERSION = 'note-korogashi-comparison-v1';
@@ -10,10 +11,10 @@ const amount = value => { check(Number.isSafeInteger(value) && value >= 0, 'amou
 function policy(options = {}) {
   check(options && typeof options === 'object' && !Array.isArray(options), 'options_invalid');
   check(Object.keys(options).every(key => ['reserveBps', 'maxLegs', 'maxInitialTickets'].includes(key)), 'option_unknown');
-  const { reserveBps = 0, maxLegs = 2, maxInitialTickets = 7 } = options;
+  const { reserveBps = 0, maxLegs = 2, maxInitialTickets = MAX_PUBLICATION_TICKETS } = options;
   check(Number.isInteger(reserveBps) && reserveBps >= 0 && reserveBps <= 10000, 'reserve_invalid');
   check([2, 3].includes(maxLegs), 'max_legs_invalid');
-  check(Number.isInteger(maxInitialTickets) && maxInitialTickets >= 1 && maxInitialTickets <= 7, 'initial_ticket_limit_invalid');
+  check(Number.isInteger(maxInitialTickets) && maxInitialTickets >= 1 && maxInitialTickets <= MAX_PUBLICATION_TICKETS, 'initial_ticket_limit_invalid');
   return { reserveBps, maxLegs, maxInitialTickets };
 }
 function replay(plan, settings) {
@@ -98,9 +99,9 @@ function compare(state, options = {}) {
 // no ticket instructions or publication payload and cannot change live policy.
 function overview(state) {
   const definitions = [
-    { id: 'baseline', label: '現行相当（最大3段・全額再投入）', options: { reserveBps: 0, maxLegs: 3, maxInitialTickets: 7 } },
-    { id: 'two_leg', label: '最大2段で終了（比較用）', options: { reserveBps: 0, maxLegs: 2, maxInitialTickets: 7 } },
-    { id: 'reserve_half', label: '次段前に50%確保（比較用の固定条件）', options: { reserveBps: 5000, maxLegs: 3, maxInitialTickets: 7 } },
+    { id: 'baseline', label: '現行相当（最大3段・全額再投入）', options: { reserveBps: 0, maxLegs: 3, maxInitialTickets: MAX_PUBLICATION_TICKETS } },
+    { id: 'two_leg', label: '最大2段で終了（比較用）', options: { reserveBps: 0, maxLegs: 2, maxInitialTickets: MAX_PUBLICATION_TICKETS } },
+    { id: 'reserve_half', label: '次段前に50%確保（比較用の固定条件）', options: { reserveBps: 5000, maxLegs: 3, maxInitialTickets: MAX_PUBLICATION_TICKETS } },
     { id: 'initial_four', label: '初回4点以下の既存コースだけ（比較用）', options: { reserveBps: 0, maxLegs: 3, maxInitialTickets: 4 } }
   ];
   const reports = definitions.map(definition => compare(state, definition.options));

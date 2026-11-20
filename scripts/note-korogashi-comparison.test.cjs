@@ -128,7 +128,7 @@ test('retention that cannot fund all tickets stops with funds conserved and no a
 test('invalid options and tampered lifecycle history fail closed', async () => {
   const state = await course();
   for (const settings of [{ reserveBps: -1 }, { reserveBps: 10001 }, { reserveBps: 0.5 }, { maxLegs: 1 },
-    { maxInitialTickets: 0 }, { maxInitialTickets: 8 }, { selectByOdds: true }]) assert.throws(() => compare(state, settings), /korogashi_comparison_/);
+    { maxInitialTickets: 0 }, { maxInitialTickets: 11 }, { selectByOdds: true }]) assert.throws(() => compare(state, settings), /korogashi_comparison_/);
   const changed = clone(state); changed.plans['comparison-course'].events[0].data.leg.allocations[0].stakeYen += 100;
   assert.throws(() => compare(changed), /korogashi_event_hash/);
   assert.equal(compare(k.initialState()).summary.completedReturnRatePct, null);

@@ -117,10 +117,17 @@ test('chronology, duplicate races, changed receipt, amount limits and deadline p
     assert.throws(()=>build(plan([fixture()],change)));
   }
 });
-test('no arbitrary reduction of saved picks to fit the budget or seven-ticket limit', () => {
+test('no arbitrary reduction of saved picks to fit the budget or the ten-ticket limit', () => {
   assert.throws(()=>build(plan([fixture(1,picks,10),fixture(2)])),/insufficient_funds/);
-  const eight=['1-2-3','1-2-4','1-2-5','1-2-6','1-3-2','1-3-4','1-3-5','1-3-6'];
-  assert.throws(()=>build(plan([fixture(1,eight)])),/ticket_count/);
+  // 2026-11-20 owner decision: 8-10 published center tickets are used whole.
+  const ten=['1-2-3','1-2-4','1-2-5','1-2-6','1-3-2','1-3-4','1-3-5','1-3-6','1-4-2','1-4-3'];
+  for (const n of [8,10]) {
+    const out=build(plan([fixture(1,ten.slice(0,n))]));
+    assert.equal(out.initialYen,n*1000);assert.equal(out.legs[0].allocations.length,n);
+    assert(out.legs[0].allocations.every(a=>a.stakeYen===1000));
+  }
+  // Eleven tickets are already refused when the published receipt row is read.
+  assert.throws(()=>build(plan([fixture(1,[...ten,'1-5-2'])])),/marketing_ticket_count_invalid/);
 });
 test('review label, full-risk notice and fees accompany amounts; it cannot claim publication or purchases', () => {
   const leg=fixture();delete leg.result;

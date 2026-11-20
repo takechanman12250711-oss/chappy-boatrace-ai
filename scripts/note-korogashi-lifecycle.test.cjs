@@ -369,6 +369,28 @@ test('settlement rejects a receipt whose subset proof changed after the saved re
   assert.equal(k.project(state.plans['test-100k']).status,'waiting_result');
 });
 
+test('a v10 normal article with 8-10 center tickets starts a course with every ticket at 1,000 yen',async()=>{
+ const ten=['1-2-3','1-2-4','1-2-5','1-2-6','1-3-2','1-3-4','1-3-5','1-3-6','1-4-2','1-4-3'];
+ for(const n of [8,10]){
+  const f=fixture(),tickets=ten.slice(0,n).map((ticket,i)=>({ticket,odds:10+i}));
+  f.b.version='note-draft-bundle-v1';delete f.b.monitor;delete f.b.record.source;f.b.baselinePracticalTickets=tickets;
+  Object.assign(f.b.record.prediction,{practicalTickets:tickets,date:f.b.record.date,confidence:84,
+   race:{date:f.b.record.date,stadiumName:f.b.record.place,raceNo:f.b.record.raceNo,raceInfo:{deadline:'16:10'}},
+   mainSheet:{honmei:{boatNo:1,name:'テスト選手',score:84},evaluations:[1,2,3,4,5,6].map(boatNo=>({boatNo,name:'テスト選手',score:84})),
+    tickets,coverTickets:[{ticket:'2-1-3'}],flowTickets:[{ticket:'2-3-1'}]},
+   manshuSheet:{tickets:[{ticket:'3-4-5'}]},raceFlow:{title:'イン逃げ本線',summary:'1号艇の逃げを中心に考える。'}});
+  f.b.article=require('../js/note-generator').generateArticle(f.b.record.prediction,{practicalTickets:tickets});
+  f.bytes=JSON.stringify(f.b);f.receipt.sourceSha256=k.hash(f.bytes);f.receipt.articleSeries='normal';f.receipt.presentationVersion='readable-v10';f.receipt.price=0;
+  f.receipt.publishedDisplayProof=require('./note-published-ticket-sections').sectionProof(require('./note-reader-presentation.cjs').paidTextFromSource(f.b,'normal'),'readable-v10',{sourceSha256:f.receipt.sourceSha256});
+  f.row=receiptRow(f.receipt,f.bytes,f.now);
+  const out=await k.prepare(k.initialState(),config({firstPublicationKey:f.row.raceKey+':normal'}),options([f]));
+  assert.equal(out.staged.length,1,JSON.stringify(out.skipped));
+  const state=k.confirm(out.state,out.staged,seal(out.staged,f.now),f.now+1000),view=k.project(state.plans['test-100k']);
+  assert.equal(view.initialYen,n*1000);assert.equal(view.legs[0].allocations.length,n);
+  assert.deepEqual(view.legs[0].allocations.map(a=>a.ticket).sort(),ten.slice(0,n).sort(),'no ticket is dropped');
+  assert(view.legs[0].allocations.every(a=>a.stakeYen===1000));
+ }
+});
 test('v10 normal main and independent center proofs keep series-specific labels and unchanged allocations',async()=>{
  for(const series of ['normal','escape']){
   const f=fixture();
