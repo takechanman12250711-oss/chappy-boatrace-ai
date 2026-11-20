@@ -90,9 +90,26 @@ function judgeRelay(label, runs, now, hours) {
   };
 }
 
+// note公開（NOTE_UI_TRANSPORT_FAILED=）と note記事の更新（NOTE_MARKETING_FAILED=）の
+// 両方のエラー名を拾う。複数あれば最後（いちばん新しい）ものを使う。
 function findNoteError(log) {
-  const m = String(log || '').match(/NOTE_UI_TRANSPORT_FAILED=([^\s"'`]+)/);
-  return m ? m[1] : '';
+  const all = [...String(log || '').matchAll(/NOTE_(?:UI_TRANSPORT|MARKETING)_FAILED=([^\s"'`]+)/g)];
+  return all.length ? all[all.length - 1][1] : '';
+}
+
+// よく出るエラー名に、本人向けのやさしい説明を添える（分かるものだけ。推測は推測と書く）。
+function explainNoteError(code) {
+  const c = String(code || '');
+  if (/^browser_use_create_failed_402/.test(c)) {
+    return 'ブラウザ操作サービス（Browser Use）の利用枠や残高が足りない可能性があります（推測）。サービスの管理画面で残りを確認してください';
+  }
+  if (/^browser_use_create_failed_(401|403)/.test(c)) {
+    return 'ブラウザ操作サービス（Browser Use）の鍵（APIキー）が使えなくなっている可能性があります（推測）';
+  }
+  if (/^browser_use_create_failed_429/.test(c)) {
+    return 'ブラウザ操作サービス（Browser Use）の回数制限にかかった可能性があります（推測）。時間をおけば戻ることがあります';
+  }
+  return '';
 }
 
 function buildReport(results, now) {
@@ -161,7 +178,10 @@ function collect(now) {
         if (failed) {
           try {
             const code = findNoteError(gh(['run', 'view', String(failed.id), '--repo', CHAPPY, '--log-failed']));
-            if (code) r.text += `（エラー名：${code}）`;
+            if (code) {
+              const hint = explainNoteError(code);
+              r.text += `（エラー名：${code}${hint ? `。${hint}` : ''}）`;
+            }
           } catch (_) { /* ログが読めなくても判定は続ける */ }
         }
       }
@@ -236,4 +256,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { judgeRegular, judgeManual, judgeRelay, findNoteError, buildReport, jstDate, raceDayJst, ISSUE_TITLE };
+module.exports = { judgeRegular, judgeManual, judgeRelay, findNoteError, explainNoteError, buildReport, jstDate, raceDayJst, ISSUE_TITLE };

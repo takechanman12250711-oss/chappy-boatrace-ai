@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
-const { judgeRegular, judgeManual, judgeRelay, findNoteError, buildReport, jstDate, raceDayJst } = require('./daily-health-check.cjs');
+const { judgeRegular, judgeManual, judgeRelay, findNoteError, explainNoteError, buildReport, jstDate, raceDayJst } = require('./daily-health-check.cjs');
 
 const now = new Date('2026-11-05T12:00:00Z');
 const ago = (h) => new Date(now.getTime() - h * 3600 * 1000).toISOString();
@@ -53,6 +53,19 @@ test('リレーは実行中か6時間以内なら正常、止まっていれば�
 test('noteのエラー名を拾う', () => {
   assert.equal(findNoteError('foo NOTE_UI_TRANSPORT_FAILED=login_timeout bar'), 'login_timeout');
   assert.equal(findNoteError('nothing'), '');
+});
+
+test('note記事の更新のエラー名も拾い、最後のものを使う', () => {
+  assert.equal(findNoteError('x NOTE_MARKETING_FAILED=browser_use_create_failed_402\n##[error]'), 'browser_use_create_failed_402');
+  assert.equal(findNoteError('NOTE_UI_TRANSPORT_FAILED=a\nNOTE_MARKETING_FAILED=b'), 'b');
+});
+
+test('分かるエラー名にだけ説明を添える', () => {
+  assert.match(explainNoteError('browser_use_create_failed_402_INSUFFICIENT_CREDITS'), /利用枠や残高/);
+  assert.match(explainNoteError('browser_use_create_failed_401'), /APIキー/);
+  assert.match(explainNoteError('browser_use_create_failed_429'), /回数制限/);
+  assert.equal(explainNoteError('login_timeout'), '');
+  assert.equal(explainNoteError(''), '');
 });
 
 test('報告文：異常なしと異常あり', () => {
