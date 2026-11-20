@@ -243,8 +243,10 @@ test('publication success followed by verification failure recovers exact pendin
 });
 test('a public page that lags behind the submission is waited for within a time budget, with one submit and no page text in diagnostics',async()=>{
   const {createUpdateJournal,updateArticle,VERIFY_DELAYS_MS,VERIFY_BUDGET_MS}=require('./update-note-marketing');
-  const article=config.index, old='old verified content', desired='new generated content';
-  const run=async({lagReads=0,failReads=0,readMs=0}={})=>{
+  const privateInput='private arbitrary input field';
+  const article={...config.index,privateInput}, old='old verified content\nhttps://note.com/great_robin3243/n/naaaaaa',
+    desired='new generated content\nnew generated summary';
+  const run=async({lagReads=0,failReads=0,readMs=0,previousText=old}={})=>{
     let persisted={...c.initialState(config),rows:[],articles:{guide:{hash:c.hash(config.guide.initialBody)},index:{hash:c.hash(old)}}},head='a'.repeat(40);
     const store={save:async state=>{persisted=structuredClone(state);head='b'.repeat(40);return head;}};
     const journal=createUpdateJournal(store,{state:persisted,head},config,()=>now);
@@ -258,9 +260,9 @@ test('a public page that lags behind the submission is waited for within a time 
     const inner=pages.publicPage.locator;
     pages.publicPage.locator=sel=>{const l=inner(sel);return {...l,innerText:async()=>submitted&&reads<=lagReads?old:await l.innerText()};};
     const errors=[],original=console.error;console.error=line=>errors.push(String(line));
-    const options={...journal.options('index',desired),clock:()=>time};
+    const options={...journal.options('index',desired),clock:()=>time,privateInput};
     try {
-      const result=await updateArticle(pages.page,pages.publicPage,article,desired,c.hash(old),old,options).catch(e=>e);
+      const result=await updateArticle(pages.page,pages.publicPage,article,desired,c.hash(old),previousText,options).catch(e=>e);
       return {result,waits,errors,reads,submits:pages.events.filter(x=>x==='submit').length};
     } finally {console.error=original;}
   };
@@ -276,8 +278,27 @@ test('a public page that lags behind the submission is waited for within a time 
   assert.match(stuck.result.message,/marketing_public_content_mismatch/);
   assert.deepEqual(stuck.waits,VERIFY_DELAYS_MS);assert.equal(stuck.submits,1);
   const diag=stuck.errors.find(line=>line.startsWith('NOTE_MARKETING_VERIFY_MISMATCH='));
-  assert(diag);assert.equal(JSON.parse(diag.split('=').slice(1).join('=')).textMatches,false);
-  assert(!diag.includes(old)&&!diag.includes(desired),'diagnostics never include page text');
+  assert(diag);
+  const report=JSON.parse(diag.slice('NOTE_MARKETING_VERIFY_MISMATCH='.length));
+  assert.deepEqual(Object.keys(report).sort(),['articleId','reads','elapsedMs','textMatches','missingLinks','extraArticleLinks',
+    'actualHash','previousHash','desiredHash','desiredComparison','previousComparison','whitespaceCandidates'].sort());
+  assert.equal(report.textMatches,false);assert.equal(report.reads,VERIFY_DELAYS_MS.length+1);
+  assert.equal(report.actualHash,c.hash(old));assert.equal(report.previousHash,c.hash(old));
+  assert.equal(report.desiredHash,c.hash(desired));assert.notEqual(report.actualHash,report.desiredHash);
+  assert.deepEqual(report.previousComparison,{actualLines:2,expectedLines:2,firstDifferentLine:null});
+  assert.deepEqual(report.desiredComparison,{actualLines:2,expectedLines:2,firstDifferentLine:1});
+  assert.deepEqual(report.whitespaceCandidates,{previous:[],desired:[]});
+  for(const value of [...old.split('\n'),...desired.split('\n'),privateInput,'privateInput']) {
+    assert(!diag.includes(value),'diagnostics never include page text, raw URLs or arbitrary input fields');
+  }
+  const unknownPrevious=await run({lagReads:100,previousText:null});
+  assert.match(unknownPrevious.result.message,/marketing_public_content_mismatch/);
+  assert.equal(unknownPrevious.submits,1);assert.deepEqual(unknownPrevious.waits,VERIFY_DELAYS_MS);
+  const unknownReport=JSON.parse(unknownPrevious.errors.find(line=>line.startsWith('NOTE_MARKETING_VERIFY_MISMATCH='))
+    .slice('NOTE_MARKETING_VERIFY_MISMATCH='.length));
+  assert.equal(unknownReport.previousComparison,null,'an unavailable previous body is not guessed from its hash');
+  assert.equal(unknownReport.actualHash,c.hash(old));assert.equal(unknownReport.previousHash,c.hash(old));
+  assert.equal(unknownReport.desiredHash,c.hash(desired));
   const slow=await run({lagReads:100,readMs:40000});
   assert.match(slow.result.message,/marketing_public_content_mismatch/);
   assert(slow.reads<VERIFY_DELAYS_MS.length+1,'slow reads stop before every delay is used');
