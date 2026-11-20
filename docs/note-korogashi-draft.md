@@ -147,3 +147,4 @@ readable-v8 以降、記事の中心の買い目は1〜10点まで公開でき�
 - 未確認：反映後の実レースで、8〜10点の記事からコースが始まること。
 - 比較研究（`note-korogashi-comparison.cjs`）の「現行相当」「最大2段」「50%確保」も、初回の上限を同じ10点にした。「初回4点以下」の群はそのまま。
 - 範囲外のメモ：初回レースのST研究（`scripts/build-korogashi-first-race-st.cjs`）は8点以上を `original-ticket-count-or-format-invalid` として除外したままで、8〜10点で始まったコースは集計に入らない。
+- `scripts/note-ticket-limit.cjs` は過去版（v8・v9）の復旧照合で内容のSHA256を固定しているため、1バイトも変えない。ファイル内のコメントに「コロがしは1〜7点」と残っているが、現在の規則は本節と AGENTS.md のとおり1〜10点。
