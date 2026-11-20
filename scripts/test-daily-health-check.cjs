@@ -12,11 +12,12 @@ test('成功があれば正常', () => {
   assert.equal(judgeRegular('x', [run(1, 'success'), run(2, 'failure')], now, 24, '').ok, true);
 });
 
-test('見張り役のIssue：定期報告（週次集計）と健康チェック自身は異常に数えない', () => {
+test('見張り役のIssue：定期報告（週次集計・万舟の前向き記録）と健康チェック自身は異常に数えない', () => {
   const { filterWatchIssues } = require('./daily-health-check.cjs');
   const bot = { login: 'github-actions[bot]' };
   const out = filterWatchIssues([
     { number: 1, title: '📊 週次集計（自動）', user: bot },
+    { number: 6, title: '💥 万舟狙いの前向き記録（自動）', user: bot },
     { number: 2, title: '🩺 毎日の健康チェック：異常あり', user: bot },
     { number: 3, title: '収集が止まっています', user: bot },
     { number: 4, title: '人が開いたIssue', user: { login: 'someone' } },

@@ -123,7 +123,8 @@ function runsOf(repo, workflowName, perPage = 100) {
 
 // いつも開いたままにしておく「定期報告」用の Issue（異常の知らせではない）。
 // 例：週次集計は「閉じないでください」と書いてあり、毎週コメントが足される。
-const STANDING_REPORT_TITLES = ['📊 週次集計（自動）'];
+// 万舟狙いの前向き記録も、毎週月曜に表を追記するための置き場（manshu-forward-weekly.yml）。
+const STANDING_REPORT_TITLES = ['📊 週次集計（自動）', '💥 万舟狙いの前向き記録（自動）'];
 
 // 自動で開かれた Issue のうち、異常の知らせとして数えるものだけを残す。
 function filterWatchIssues(issues) {
