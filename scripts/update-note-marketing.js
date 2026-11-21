@@ -87,16 +87,20 @@ async function updateArticle(page, publicPage, article, desired, previousHash, p
   // next run recovers the same target, but a failed run skips the course
   // announcement and Buffer, so wait longer before giving up on this one.
   const clock = options.clock || Date.now, started = clock();
+  const readStates = [];
   for (let attempt=0; ; attempt++) {
     let value, failure;
     try { value = await readPublic(publicPage, article); if (publicMatches(value, desired)) return true; }
     catch (error) { failure = error; }
+    // Text state only: desired text can still have missing or extra links.
+    readStates.push(failure ? 'read_error' : hash(value.text) === hash(desired) ? 'desired_text' :
+      hash(value.text) === previousHash ? 'previous_text' : 'other_text');
     // Stop when the delays are used up or the next wait would pass the budget.
     const finished = attempt>=VERIFY_DELAYS_MS.length || clock()-started+VERIFY_DELAYS_MS[attempt]>VERIFY_BUDGET_MS;
     if (finished && failure) throw failure;
     if (finished) {
       const expected=urlsIn(desired);
-      console.error(`NOTE_MARKETING_VERIFY_MISMATCH=${JSON.stringify({articleId:article.id,reads:attempt+1,elapsedMs:clock()-started,
+      console.error(`NOTE_MARKETING_VERIFY_MISMATCH=${JSON.stringify({articleId:article.id,reads:attempt+1,elapsedMs:clock()-started,readStates,
         textMatches:sameMarketingContent(value.text, desired),missingLinks:expected.filter(url=>!value.links.includes(url)).length,
         extraArticleLinks:value.links.filter(url=>/^https:\/\/note\.com\/great_robin3243\/n\/n[a-f0-9]+(?:[?#].*)?$/.test(url)&&!expected.includes(url)).length,
         ...editDiagnostics(value.text, previousHash, desired, previousText)})}`);
