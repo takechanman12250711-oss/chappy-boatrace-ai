@@ -17,6 +17,8 @@ const workflow = fs.readFileSync(
 );
 const prepareCommand =
   "node scripts/prepare-daily-prediction-git-save.js --all";
+const verifyCommand =
+  "node scripts/prepare-daily-prediction-git-save.js --verify-prepared";
 const restoreCommand =
   "node scripts/restore-daily-prediction-source.js --all";
 const performanceCommand =
@@ -35,8 +37,20 @@ const validationPerformanceIndex = workflow.indexOf(
   performanceCommand,
   validationStart
 );
+const validationArtifactIndex = workflow.indexOf(
+  "node scripts/test-practical-priority-shadow-artifact.js",
+  validationStart
+);
+const legacyIndexFreezeIndex = workflow.indexOf(
+  "git diff --exit-code -- data/predictions/index.json",
+  validationStart
+);
 const saveIndex = workflow.indexOf(
-  prepareCommand,
+  verifyCommand,
+  saveStepStart
+);
+const saveCommitIndex = workflow.indexOf(
+  'git commit -m "Collect automatic race prediction"',
   saveStepStart
 );
 const postSaveRestoreIndex =
@@ -54,11 +68,23 @@ assert.ok(
   "生成した最新原本をarchiveへ固定してから分割indexを検証する"
 );
 assert.ok(
-  saveStepStart >= 0 && saveIndex > saveStepStart,
-  "復元した全日次予想原本のGit保存準備が必要"
+  saveStepStart >= 0 && saveIndex > saveStepStart &&
+    saveCommitIndex > saveIndex,
+  "保存前に検証済みstageと作業ツリーの一致を読み取り専用で確認する"
+);
+assert.equal(
+  workflow.indexOf(prepareCommand, saveStepStart),
+  -1,
+  "検証後に全日次原本を再圧縮・再stageしない"
 );
 assert.ok(
-  postSaveRestoreIndex > saveIndex,
+  validationArtifactIndex > validationPerformanceIndex &&
+    legacyIndexFreezeIndex > validationArtifactIndex &&
+    legacyIndexFreezeIndex < saveStepStart,
+  "artifact検査とlegacy index凍結を保存前に維持する"
+);
+assert.ok(
+  postSaveRestoreIndex > saveCommitIndex,
   "圧縮保存後の回帰テスト前に全期間の正本を再復元する"
 );
 assert.ok(
