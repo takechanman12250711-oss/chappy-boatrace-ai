@@ -51,19 +51,27 @@ async function artifact(env,fetcher=fetch,{sleep=ms=>new Promise(r=>setTimeout(r
   return {id:data.id,name:data.name,digest:data.digest,createdAt:data.created_at,confirmedAt:new Date(confirmed).toISOString(),
     runId:String(env.GITHUB_RUN_ID),headSha:env.GITHUB_SHA};
 }
+async function prepareRead(stage,read) {
+  try {return await read();}
+  catch(error) {
+    if(error?.message==='marketing_github_GET_403')console.error('NOTE_KOROGASHI_PREPARE_READ_FAILED='+stage);
+    throw error;
+  }
+}
 async function run(mode,file,{env=process.env,clock=Date.now,store=client(env),fetcher=fetch,config}={}) {
-  const ctx=context(env), repo=repository(store), before=await repo.load();
+  const ctx=context(env), repo=repository(store);
+  const before=mode==='prepare'?await prepareRead('course_state_load',()=>repo.load()):await repo.load();
   if(mode==='prepare') {
     config=withDispatch(config||JSON.parse(fs.readFileSync('config/note-korogashi.json','utf8')),env,clock());
     if(!autoStart.enabled(config)&&!config.requests.length&&!Object.keys(before.state.plans).length) {
       if(env.GITHUB_OUTPUT)fs.appendFileSync(env.GITHUB_OUTPUT,'count=0\n');
       return {status:'no_requested_courses',count:0};
     }
-    const marketingConfig=loadConfig(), loaded=await store.load(marketingConfig);
+    const marketingConfig=loadConfig(), loaded=await prepareRead('marketing_state_load',()=>store.load(marketingConfig));
     // Refresh and persist official evidence before course evaluation. The later
     // index updater reuses this cache (including failed-attempt cooldowns), so
     // a result does not need a second workflow run to reach the course.
-    const collected=await store.collect(loaded.state,clock());
+    const collected=await prepareRead('published_receipt_collect',()=>store.collect(loaded.state,clock()));
     // Claim this workflow's refresh budget before any official request, even
     // if a later save fails. The index step must not start another 12 fetches.
     if(env.GITHUB_OUTPUT)fs.appendFileSync(env.GITHUB_OUTPUT,'official-refresh-started=true\n');

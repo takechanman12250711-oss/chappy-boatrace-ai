@@ -118,6 +118,62 @@ test('runner starts with empty requests and persists exactly one pending course,
   } finally {fs.rmSync(dir,{recursive:true,force:true});}
 });
 
+test('runner diagnoses only initial Prepare GET403 stages while preserving errors, ordering and private inputs',async()=>{
+  const {run}=require('./note-korogashi-run.cjs');
+  const stages=['course_state_load','marketing_state_load','published_receipt_collect'];
+  const prefix='NOTE_KOROGASHI_PREPARE_READ_FAILED=';
+  const dir=fs.mkdtempSync(require('node:path').join(require('node:os').tmpdir(),'korogashi-read-stage-'));
+  let serial=0;
+  async function observe({failAt,message='marketing_github_GET_403',mode='prepare'}={}) {
+    const error=Object.assign(new Error(message),{privateInput:'private fixture body and token',url:'https://example.invalid/private'});
+    const events=[],logs=[],output=dir+'/output-'+(++serial),state={rows:[]};let clockCalls=0;
+    const read=stage=>{events.push(stage);if(stage===failAt)throw error;};
+    const store={api:async(route,method)=>{
+      assert.equal(route,'/git/ref/heads/note-korogashi-state');assert.equal(method,'GET');
+      read(stages[0]);return null;
+    },load:async()=>{read(stages[1]);return {state,head:'a'.repeat(40)};},
+    collect:async value=>{assert.equal(value,state);read(stages[2]);return value;},
+    settle:async value=>{assert.equal(value,state);read('settle');return value;},
+    save:async()=>{events.push('save');throw Error('unexpected_save');}};
+    const env={GITHUB_REPOSITORY:'takechanman12250711-oss/chappy-boatrace-ai',GITHUB_REF:'refs/heads/main',
+      GITHUB_RUN_ID:ctx.runId,GITHUB_RUN_ATTEMPT:ctx.runAttempt,GITHUB_SHA:ctx.headSha,GITHUB_OUTPUT:output};
+    const original=console.error;console.error=line=>logs.push(String(line));
+    let result;
+    try {
+      const pending=run(mode,dir+'/unused.json',{env,store,config:config(),clock:()=>{clockCalls++;return now;}});
+      if(failAt)await assert.rejects(pending,value=>value===error,'the original error object must propagate');
+      else result=await pending;
+    } finally {console.error=original;}
+    assert.equal(fs.existsSync(dir+'/unused.json'),false,'no course snapshot or publication is created');
+    return {events,logs,clockCalls,result,output:fs.existsSync(output)?fs.readFileSync(output,'utf8'):null};
+  }
+  try {
+    for(const [index,failAt] of stages.entries()) {
+      const out=await observe({failAt});
+      assert.deepEqual(out.events,stages.slice(0,index+1),'no later read, refresh, save or registration follows a failure');
+      assert.deepEqual(out.logs,[prefix+failAt],'only the fixed stage enum is logged, without error properties or inputs');
+      assert.equal(out.clockCalls,index);assert.equal(out.output,null,'the refresh milestone is not written before collection completes');
+    }
+    for(const [failAt,message] of [[stages[0],'marketing_github_GET_403 '],[stages[1],'marketing_github_GET_404'],
+      [stages[2],'marketing_github_POST_403'],[stages[2],'private arbitrary error message']]) {
+      const out=await observe({failAt,message});assert.deepEqual(out.logs,[],'other errors keep their original failure without the diagnostic');
+      assert.equal(out.output,null);
+    }
+    const confirmed=await observe({failAt:stages[0],mode:'confirm'});
+    assert.deepEqual(confirmed.logs,[],'confirm does not use the Prepare diagnostic');
+    assert.deepEqual(confirmed.events,[stages[0]]);assert.equal(confirmed.clockCalls,0);assert.equal(confirmed.output,null);
+    const later=await observe({failAt:'settle'});
+    assert.deepEqual(later.logs,[],'a GET403 after collection is not mislabeled as an initial read failure');
+    assert.deepEqual(later.events,[...stages,'settle']);assert.equal(later.clockCalls,3);
+    assert.equal(later.output,'official-refresh-started=true\n','the existing milestone survives the later failure');
+    const success=await observe();
+    assert.deepEqual(success.logs,[],'successful Prepare adds no diagnostic');
+    assert.deepEqual(success.events,[...stages,'settle']);assert.equal(success.clockCalls,5);
+    assert.equal(success.result.status,'prepared');assert.equal(success.result.count,0);
+    assert.equal(success.output,'official-refresh-started=true\ncount=0\n');
+  } finally {fs.rmSync(dir,{recursive:true,force:true});}
+});
+
 test('runner refreshes and saves results before course settlement; retries reuse evidence without duplicate events or publication',async()=>{
   const {run}=require('./note-korogashi-run.cjs'),{client,REPO}=require('./note-marketing-store');
   const f=fixture(),at=now+1200000,c=config();
