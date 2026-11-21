@@ -4904,12 +4904,15 @@
       },
       "settlement": {
         "status": "pending",
-        "reason": "official_result_pending"
+        "reason": "official_result_stale"
       },
       "publishedSettlement": {
         "status": "pending",
-        "reason": "official_result_pending",
-        "method": "published-main-sections-v1"
+        "reason": "official_result_stale",
+        "method": "published-main-sections-v1",
+        "publishedTicketCount": 30,
+        "sectionsSha256": "9961a9f9c1ef7b72b17179020c51f1a70c76db9495ad331d6e4561b1866a97a8",
+        "referenceTicketCount": 4
       },
       "winningProvenance": null,
       "socialContext": {
@@ -4992,11 +4995,11 @@
       },
       "settlement": {
         "status": "pending",
-        "reason": "official_result_stale"
+        "reason": "official_result_pending"
       },
       "publishedSettlement": {
         "status": "pending",
-        "reason": "official_result_stale",
+        "reason": "official_result_pending",
         "method": "published-main-sections-v1",
         "publishedTicketCount": 38,
         "sectionsSha256": "b26aefbd092b7d383e1485bdd63a3eb05cf50ec012bc780d0d4e5b2d5b00d956",
@@ -5076,11 +5079,11 @@
       },
       "settlement": {
         "status": "pending",
-        "reason": "official_result_stale"
+        "reason": "official_result_pending"
       },
       "publishedSettlement": {
         "status": "pending",
-        "reason": "official_result_stale",
+        "reason": "official_result_pending",
         "method": "published-main-sections-v1",
         "publishedTicketCount": 28,
         "sectionsSha256": "0c4e7ddc45e31d8bf0ffc52453bc7d001a1663faebd6137259026c216545024a",
@@ -9795,6 +9798,58 @@
         "payoutText": "¥2,570",
         "popularity": 10
       }
+    },
+    "20261121-21-6": {
+      "ok": true,
+      "source": "boatrace-official",
+      "date": "20261121",
+      "jcd": "21",
+      "raceNo": 6,
+      "checkedAt": "2026-11-21T02:05:47.755Z",
+      "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261121&jcd=21&rno=6",
+      "resultAvailable": false,
+      "status": "not_finished",
+      "void": false,
+      "finishers": [],
+      "starts": [],
+      "winningMethod": "",
+      "trifecta": {
+        "combination": "3-4-6",
+        "boats": [
+          3,
+          4,
+          6
+        ],
+        "payout": 2800,
+        "payoutText": "¥2,800",
+        "popularity": 10
+      }
+    },
+    "20261121-13-2": {
+      "ok": true,
+      "source": "boatrace-official",
+      "date": "20261121",
+      "jcd": "13",
+      "raceNo": 2,
+      "checkedAt": "2026-11-21T02:05:48.500Z",
+      "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261121&jcd=13&rno=2",
+      "resultAvailable": false,
+      "status": "not_finished",
+      "void": false,
+      "finishers": [],
+      "starts": [],
+      "winningMethod": "",
+      "trifecta": {
+        "combination": "1-5-4",
+        "boats": [
+          1,
+          5,
+          4
+        ],
+        "payout": 29040,
+        "payoutText": "¥29,040",
+        "popularity": 59
+      }
     }
   },
   "resultAttempts": {
@@ -9945,6 +10000,14 @@
     "20261121-10-3": {
       "checkedAt": "2026-11-21T01:44:46.447Z",
       "status": "miss"
+    },
+    "20261121-21-6": {
+      "checkedAt": "2026-11-21T02:05:25.703Z",
+      "status": "pending"
+    },
+    "20261121-13-2": {
+      "checkedAt": "2026-11-21T02:05:25.703Z",
+      "status": "pending"
     }
   },
   "korogashiIndex": {
@@ -11357,7 +11420,7 @@
         "normal"
       ],
       "publishedArticles": 1,
-      "publishedTicketCount": null,
+      "publishedTicketCount": 30,
       "status": "pending",
       "matchedSections": [],
       "sources": [
@@ -11365,12 +11428,12 @@
           "publicationKey": "20261121-09-2:normal",
           "sourceSha256": "883b8180b86988b3f0965349e8c46ae9eff5ce345ee1002bfa5f18f819d328da",
           "publishedAt": "2026-11-21T10:56:14.000+09:00",
-          "sectionsSha256": null,
+          "sectionsSha256": "9961a9f9c1ef7b72b17179020c51f1a70c76db9495ad331d6e4561b1866a97a8",
           "status": "pending",
           "evidenceId": null
         }
       ],
-      "sourceSha256": "1e278fada567ca026c97b794d86a104fdb23e292a1ee2d31bb8deb34c450843e",
+      "sourceSha256": "c03a4eab872a5dee96f4e38a2edae3ab5c593e98d3df339b8e9b3c0c9e7e408f",
       "combination": null,
       "payoutPer100Yen": null,
       "resultUrl": "https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261121&jcd=09&rno=2",
