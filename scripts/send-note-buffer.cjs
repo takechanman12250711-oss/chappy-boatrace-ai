@@ -242,9 +242,13 @@ async function recoverRecap(state,config,marketing,log,delivery,clock) {
   return recapDay(state,config,marketing,log,delivery,clock,date,{late:true,supplement:true});
 }
 
-function requireVerifiedIndex(state,marketing,now) {
+function indexCheckFailed(stage,reason) {
+  console.error('NOTE_BUFFER_INDEX_CHECK_FAILED='+JSON.stringify({stage,reason}));
+  throw Error('buffer_public_index_not_verified');
+}
+function requireVerifiedIndex(state,marketing,now,stage) {
   if(state.date!==jstDate(now)||state.verifiedDate!==jstDate(now))throw Error('buffer_date_changed');
-  if(!indexSnapshotCurrent(state,marketing,now))throw Error('buffer_public_index_not_verified');
+  if(!indexSnapshotCurrent(state,marketing,now))indexCheckFailed(stage,'render_snapshot_mismatch');
 }
 function hitItems(state,config,marketing,now) {
   if(allPublished(config)) {
@@ -265,7 +269,7 @@ function hitItems(state,config,marketing,now) {
 function verifiedDelivery(delivery,store,loaded,state,config,marketing,clock) {
   // Bind the exact immutable state commit, source/evidence and generated hit text.
   // Even harmless new entries defer this run; a later run can load the new index.
-  requireVerifiedIndex(state,marketing,clock());
+  requireVerifiedIndex(state,marketing,clock(),'delivery_snapshot');
   const rawDigest=digest(canonical(loaded.state));
   const evidenceDigest=digest(canonical(state));
   const itemDigests=value=>digest(canonical(hitItems(value,config,marketing,clock())));
@@ -282,11 +286,11 @@ function verifiedDelivery(delivery,store,loaded,state,config,marketing,clock) {
     const latest=await current();let fresh;
     try{fresh=await store.settle(structuredClone(latest.state),marketing,clock());}
     catch{throw Error('buffer_marketing_evidence_unavailable');}
-    requireVerifiedIndex(fresh,marketing,clock());
+    requireVerifiedIndex(fresh,marketing,clock(),'fresh_evidence');
     if(digest(canonical(fresh))!==evidenceDigest||itemDigests(fresh)!==expectedItems)throw Error('buffer_marketing_evidence_changed');
     // Settlement reads can take time. Recheck the state head after those reads.
     await current();
-    requireVerifiedIndex(state,marketing,clock());
+    requireVerifiedIndex(state,marketing,clock(),'captured_snapshot');
   }
   const create=delivery.create.bind(delivery);let planned;
   const itemDigest=(text,channelId,assets=[])=>digest(canonical({text,channelId,assets}));
@@ -375,12 +379,14 @@ async function run({env=process.env,now=Date.now(),clock=Date.now,config=JSON.pa
   store ||= client(env);log ||= ledger(store);delivery ||= transport(env,config,log);claims ||= journal(store);
   const results=await reconcile(log,delivery,now);
   const loaded=await store.load(marketing),state=await store.settle(loaded.state,marketing,now);
-  if(loaded.state.verifiedDate!==jstDate(now)||loaded.state.articles.index.hash!==state.articles.index.hash||!indexSnapshotCurrent(state,marketing,now))throw Error('buffer_public_index_not_verified');
+  if(loaded.state.verifiedDate!==jstDate(now))indexCheckFailed('initial_snapshot','verified_date_mismatch');
+  if(loaded.state.articles.index.hash!==state.articles.index.hash)indexCheckFailed('initial_snapshot','stored_hash_changed');
+  if(!indexSnapshotCurrent(state,marketing,now))indexCheckFailed('initial_snapshot','render_snapshot_mismatch');
   // UI updates now run independently. A captured index is not current authority:
   // reload immutable state/evidence before each claim and again before sending.
   delivery=verifiedDelivery(delivery,store,loaded,state,config,marketing,clock);
   // Time-sensitive announcements use the existing shared API budget first.
-  requireVerifiedIndex(state,marketing,clock());
+  requireVerifiedIndex(state,marketing,clock(),'before_announcement');
   const announcement=await announce(state,config,marketing,log,delivery,clock);
   if(announcement.status==='review_required'||announcement.postId)results.push({kind:'announcement',...announcement});
   // Existing paired draft validator is retained only as an evidence validator;
@@ -416,7 +422,7 @@ async function run({env=process.env,now=Date.now(),clock=Date.now,config=JSON.pa
     // Rendering and anonymous media verification may cross midnight. Re-run
     // later with a newly verified index rather than publish a mislabeled card.
     if(jstDate(clock())!==state.date)throw Error('buffer_date_changed');
-    requireVerifiedIndex(state,marketing,clock());
+    requireVerifiedIndex(state,marketing,clock(),'before_hit');
     await delivery.beforeClaim(item.text,channelId,media?.assets||[]);
     await claims.reserve(pair);started++;
     let post;
@@ -434,10 +440,10 @@ async function run({env=process.env,now=Date.now(),clock=Date.now,config=JSON.pa
     results.push({postId:post.id,...result});
   }
   if(state.date!==jstDate(clock())||state.verifiedDate!==jstDate(clock()))throw Error('buffer_date_changed');
-  requireVerifiedIndex(state,marketing,clock());
+  requireVerifiedIndex(state,marketing,clock(),'before_recap');
   const review=await recap(state,config,marketing,log,delivery,clock);
   if(review.status==='review_required'||review.postId)results.push({kind:'recap',...review});
-  requireVerifiedIndex(state,marketing,clock());
+  requireVerifiedIndex(state,marketing,clock(),'before_previous_recap');
   const recovery=await recoverRecap(state,config,marketing,log,delivery,clock);
   if(recovery.status==='review_required'||recovery.postId)results.push({kind:'previous_day_recap',...recovery});
   let metrics;try{metrics=await collectMetrics(config,log,delivery,clock());}catch{metrics={status:'unavailable'};}
