@@ -246,43 +246,51 @@ test('a public page that lags behind the submission is waited for within a time 
   const privateInput='private arbitrary input field';
   const article={...config.index,privateInput}, old='old verified content\nhttps://note.com/great_robin3243/n/naaaaaa',
     desired='new generated content\nnew generated summary';
-  const run=async({lagReads=0,failReads=0,readMs=0,previousText=old}={})=>{
+  const run=async({lagReads=0,failReads=0,readMs=0,previousText=old,readTexts={},readLinks={}}={})=>{
     let persisted={...c.initialState(config),rows:[],articles:{guide:{hash:c.hash(config.guide.initialBody)},index:{hash:c.hash(old)}}},head='a'.repeat(40);
     const store={save:async state=>{persisted=structuredClone(state);head='b'.repeat(40);return head;}};
     const journal=createUpdateJournal(store,{state:persisted,head},config,()=>now);
     const pages=fakeMarketingPages(article,old), waits=[];
-    let reads=0, submitted=false, time=0;
+    let reads=0, submitted=false, time=0, clockCalls=0;
     pages.page.waitForTimeout=async ms=>{if(submitted){waits.push(ms);time+=ms;}};
     const click=pages.page.getByRole;
     pages.page.getByRole=(role,opts)=>{const b=click(role,opts);return role==='button'&&!String(opts.name).includes('公開に進む')?{...b,click:async()=>{await b.click();submitted=true;}}:b;};
     const goto=pages.publicPage.goto;
     pages.publicPage.goto=async(...args)=>{if(submitted){reads++;time+=readMs;if(reads<=failReads)throw Error('net::ERR_TIMED_OUT');}return goto(...args);};
     const inner=pages.publicPage.locator;
-    pages.publicPage.locator=sel=>{const l=inner(sel);return {...l,innerText:async()=>submitted&&reads<=lagReads?old:await l.innerText()};};
+    pages.publicPage.locator=sel=>{const l=inner(sel);return {...l,
+      innerText:async()=>submitted&&Object.hasOwn(readTexts,reads)?readTexts[reads]:submitted&&reads<=lagReads?old:await l.innerText(),
+      locator:selector=>{const links=l.locator(selector);return {...links,
+        evaluateAll:async fn=>submitted&&Object.hasOwn(readLinks,reads)?readLinks[reads]:await links.evaluateAll(fn)};}};};
     const errors=[],original=console.error;console.error=line=>errors.push(String(line));
-    const options={...journal.options('index',desired),clock:()=>time,privateInput};
+    const options={...journal.options('index',desired),clock:()=>{clockCalls++;return time;},privateInput};
     try {
       const result=await updateArticle(pages.page,pages.publicPage,article,desired,c.hash(old),previousText,options).catch(e=>e);
-      return {result,waits,errors,reads,submits:pages.events.filter(x=>x==='submit').length};
+      return {result,waits,errors,reads,clockCalls,submits:pages.events.filter(x=>x==='submit').length};
     } finally {console.error=original;}
   };
   const lagged=await run({lagReads:5});
   assert.equal(lagged.result,true,'content that appears after five stale reads is accepted');
   assert.deepEqual(lagged.waits,VERIFY_DELAYS_MS.slice(0,5));assert.equal(lagged.submits,1);
+  assert.equal(lagged.clockCalls,6);assert.deepEqual(lagged.errors,[],'successful verification emits no mismatch diagnostics');
   const lastRead=await run({lagReads:VERIFY_DELAYS_MS.length});
   assert.equal(lastRead.result,true,'the final permitted read can still accept the update');
   assert.equal(lastRead.reads,VERIFY_DELAYS_MS.length+1);assert.equal(lastRead.submits,1);
+  assert.equal(lastRead.clockCalls,VERIFY_DELAYS_MS.length+1);assert.deepEqual(lastRead.errors,[]);
   const flaky=await run({failReads:2});
   assert.equal(flaky.result,true,'temporary page errors are retried');assert.equal(flaky.submits,1);
+  assert.equal(flaky.clockCalls,3);assert.deepEqual(flaky.errors,[]);
   const stuck=await run({lagReads:100});
   assert.match(stuck.result.message,/marketing_public_content_mismatch/);
   assert.deepEqual(stuck.waits,VERIFY_DELAYS_MS);assert.equal(stuck.submits,1);
   const diag=stuck.errors.find(line=>line.startsWith('NOTE_MARKETING_VERIFY_MISMATCH='));
   assert(diag);
   const report=JSON.parse(diag.slice('NOTE_MARKETING_VERIFY_MISMATCH='.length));
-  assert.deepEqual(Object.keys(report).sort(),['articleId','reads','elapsedMs','textMatches','missingLinks','extraArticleLinks',
+  assert.deepEqual(Object.keys(report).sort(),['articleId','reads','elapsedMs','readStates','textMatches','missingLinks','extraArticleLinks',
     'actualHash','previousHash','desiredHash','desiredComparison','previousComparison','whitespaceCandidates'].sort());
   assert.equal(report.textMatches,false);assert.equal(report.reads,VERIFY_DELAYS_MS.length+1);
+  assert.deepEqual(report.readStates,Array(report.reads).fill('previous_text'));
+  assert.equal(stuck.clockCalls,report.reads+1,'diagnostics do not add clock calls');
   assert.equal(report.actualHash,c.hash(old));assert.equal(report.previousHash,c.hash(old));
   assert.equal(report.desiredHash,c.hash(desired));assert.notEqual(report.actualHash,report.desiredHash);
   assert.deepEqual(report.previousComparison,{actualLines:2,expectedLines:2,firstDifferentLine:null});
@@ -299,12 +307,44 @@ test('a public page that lags behind the submission is waited for within a time 
   assert.equal(unknownReport.previousComparison,null,'an unavailable previous body is not guessed from its hash');
   assert.equal(unknownReport.actualHash,c.hash(old));assert.equal(unknownReport.previousHash,c.hash(old));
   assert.equal(unknownReport.desiredHash,c.hash(desired));
+  assert.deepEqual(unknownReport.readStates,Array(unknownReport.reads).fill('previous_text'),'previous hash classifies text without a reconstruction');
+  const other='private other text\nhttps://note.com/great_robin3243/n/nbbbbbb';
+  const extraLink='https://note.com/great_robin3243/n/naaaaaa';
+  const mixed=await run({lagReads:100,failReads:2,readTexts:{3:other,4:desired},readLinks:{4:[extraLink]}});
+  assert.match(mixed.result.message,/marketing_public_content_mismatch/);
+  assert.equal(mixed.submits,1);assert.deepEqual(mixed.waits,VERIFY_DELAYS_MS);
+  const mixedDiag=mixed.errors.find(line=>line.startsWith('NOTE_MARKETING_VERIFY_MISMATCH='));
+  const mixedReport=JSON.parse(mixedDiag.slice('NOTE_MARKETING_VERIFY_MISMATCH='.length));
+  assert.deepEqual(mixedReport.readStates,['read_error','read_error','other_text','desired_text',...Array(5).fill('previous_text')],
+    'the ordered trace includes read errors; desired text alone cannot satisfy the link gate');
+  assert.equal(mixed.clockCalls,mixedReport.reads+1);
+  for(const value of [other,...other.split('\n'),...desired.split('\n'),extraLink,'ERR_TIMED_OUT',privateInput,'privateInput']) {
+    assert(!mixedDiag.includes(value),'read history contains only fixed enums, without text, URLs or error messages');
+  }
+  const sameHash=fakeMarketingPages(article,desired), sameHashErrors=[], sameHashOriginal=console.error;
+  const sameHashLocator=sameHash.publicPage.locator;
+  sameHash.publicPage.locator=selector=>({...sameHashLocator(selector),locator:()=>({evaluateAll:async()=>[extraLink]})});
+  console.error=line=>sameHashErrors.push(String(line));
+  try {
+    await assert.rejects(updateArticle(sameHash.page,sameHash.publicPage,article,desired,c.hash(desired),desired,
+      {beforeWrite:async()=>{},clock:()=>0}),/marketing_public_content_mismatch/);
+  } finally {console.error=sameHashOriginal;}
+  const sameHashReport=JSON.parse(sameHashErrors.find(line=>line.startsWith('NOTE_MARKETING_VERIFY_MISMATCH='))
+    .slice('NOTE_MARKETING_VERIFY_MISMATCH='.length));
+  assert.deepEqual(sameHashReport.readStates,Array(9).fill('desired_text'),'desired text takes priority when both hashes match');
+  assert.equal(sameHash.events.filter(event=>event==='submit').length,1);
   const slow=await run({lagReads:100,readMs:40000});
   assert.match(slow.result.message,/marketing_public_content_mismatch/);
   assert(slow.reads<VERIFY_DELAYS_MS.length+1,'slow reads stop before every delay is used');
   assert(slow.waits.reduce((a,b)=>a+b,0)+slow.reads*40000<=VERIFY_BUDGET_MS+40000,'no new wait starts after the budget');
+  const slowReport=JSON.parse(slow.errors.find(line=>line.startsWith('NOTE_MARKETING_VERIFY_MISMATCH='))
+    .slice('NOTE_MARKETING_VERIFY_MISMATCH='.length));
+  assert.equal(slowReport.readStates.length,slow.reads);assert(slowReport.readStates.length<=9);
+  assert.equal(slow.clockCalls,slow.reads+2,'the existing budget-stop and elapsed-time clock calls are unchanged');
   const down=await run({failReads:100});
   assert.match(down.result.message,/ERR_TIMED_OUT/,'a page that never loads reports the page error');assert.equal(down.submits,1);
+  assert.deepEqual(down.errors,[],'a final read error keeps the original throw without mismatch diagnostics');
+  assert.deepEqual(down.waits,VERIFY_DELAYS_MS);assert.equal(down.clockCalls,down.reads);
 });
 test('already desired published content is verified without another editor write or submission',async()=>{
   const {createUpdateJournal,updateArticle}=require('./update-note-marketing');
