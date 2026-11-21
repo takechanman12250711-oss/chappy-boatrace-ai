@@ -7,6 +7,7 @@ const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { receiptRow, jstDate } = require('./note-marketing-content');
 const { settlePublished } = require('./note-marketing-reports');
+const { MAX_PUBLICATION_TICKETS } = require('./note-ticket-limit.cjs');
 
 const VERSION = 'note-korogashi-draft-v1';
 const TARGETS = [100000, 200000, 300000];
@@ -51,6 +52,9 @@ function readLeg(input, bytes, now) {
   requireValue(time(bundle.record.selectedAt) <= time(row.publishedAt), 'selection_after_publication');
   require('./note-exhibition').requireExhibition(bundle.record);
   const tickets = bundle.baselinePracticalTickets.map(t => typeof t === 'string' ? t : t.ticket);
+  // 2026-11-20 (owner decision): a leg uses every published center ticket,
+  // the same 1-10 limit as the article. Tickets are never cut down.
+  requireValue(tickets.length >= 1 && tickets.length <= MAX_PUBLICATION_TICKETS, 'korogashi_ticket_count_invalid');
   const settlement = settlePublished(row, bytes, input.result || null, now);
   return { row, tickets, settlement, planned, resultCheckedAt: input.result?.checkedAt || null,
     sourcePath: input.sourcePath, plannedAt: input.plannedAt,

@@ -97,6 +97,7 @@ const normalManshuDocument = {
     if (id !== "resultArea") return null;
     return {
       querySelector(selector) {
+        if (selector === ":scope > .v3-root") return this;
         return selector === ".v3-manshu-newspaper"
           ? normalManshuSection
           : null;
@@ -126,6 +127,7 @@ for (const renderedSelector of [
       if (id !== "resultArea") return null;
       return {
         querySelector(selector) {
+          if (selector === ":scope > .v3-root") return this;
           return selector === ".v3-manshu-newspaper"
             ? integratedSection
             : null;
@@ -197,6 +199,7 @@ const fallbackDocument = {
     if (id !== "resultArea") return null;
     return {
       querySelector(selector) {
+        if (selector === ":scope > .v3-root") return this;
         return selector === ".v3-manshu-newspaper"
           ? fallbackSection
           : null;
@@ -257,6 +260,7 @@ assert.equal(fallbackWrites, 2);
   };
   const observerResultArea = {
     querySelector(selector) {
+      if (selector === ":scope > .v3-root") return this;
       return selector === ".v3-manshu-newspaper"
         ? observerSection
         : null;
@@ -290,6 +294,95 @@ assert.equal(fallbackWrites, 2);
     1,
     "MutationObserverが自分の書換えを検知してもmicrotask連鎖を終了する"
   );
+
+  // Control queued work independently of the production guard. Each render
+  // owns a different root, as the real renderer does via resultArea.innerHTML.
+  const queue = [];
+  let notify, current = null, unexpectedCreation = 0;
+  const layouts = [];
+  function layout() {
+    const node = { writes: 0, dataset: {}, html: "", visible: false };
+    const body = { set innerHTML(value) { node.html = value; node.writes++; node.visible = true; } };
+    const section = { dataset: {}, querySelector(selector) {
+      if (selector.includes(":not(")) return null;
+      if (selector === ".v3-section-body") return body;
+      if (selector === "[data-manshu-display-fallback='true']") return node.visible ? {} : null;
+      return null;
+    }};
+    node.querySelector = selector => selector === ".v3-manshu-newspaper" ? section : null;
+    layouts.push(node);
+    return node;
+  }
+  const area = { dataset: {}, querySelector(selector) {
+    if (selector === ":scope > .v3-root") return current;
+    return current?.querySelector(selector) || null;
+  }, appendChild() { unexpectedCreation++; } };
+  const documentFixture = { getElementById: id => id === "resultArea" ? area : null,
+    createElement() { unexpectedCreation++; throw Error("fallback created outside current root"); } };
+  const rootFixture = { document: documentFixture,
+    renderAll(p) { current = p ? layout() : null; return "rendered"; },
+    renderPrediction(p) { current = p ? layout() : null; return "alias"; },
+    queueMicrotask: fn => queue.push(fn), addEventListener() {},
+    MutationObserver: class { constructor(callback) { notify = callback; } observe() {} }
+  };
+  function flush() {
+    let count = 0;
+    while (queue.length) { assert(++count < 50, "queued callbacks settle"); queue.shift()(); }
+  }
+  const before = JSON.stringify(prediction);
+  assert.equal(moduleApi.install(rootFixture), true);
+  assert.equal(rootFixture.renderAll(prediction), "rendered");
+  const cancelled = current;
+  current = null;
+  flush(); notify([]); flush();
+  assert.equal(cancelled.writes, 0, "reset before render callback cancels that old prediction");
+  assert.equal(moduleApi.apply(prediction, documentFixture), false, "status-only area has no prediction root");
+  assert.equal(unexpectedCreation, 0, "reset never creates a detached legacy section");
+
+  rootFixture.renderAll(prediction);
+  const a = current;
+  const nextPrediction = { ticketSheets: { hole: [{ ticket: "6-2-1", odds: 221 }] }, practicalSelection: {status:"selected"} };
+  assert.equal(rootFixture.renderPrediction(nextPrediction), "alias");
+  const b = current;
+  flush();
+  assert.equal(a.writes, 0, "queued A cannot write into a later B root");
+  assert.equal(b.writes, 1, "discarding A does not suppress the new root's own fallback");
+  assert.match(b.html, /221倍/);
+  notify([]); flush();
+  assert.equal(b.writes, 1, "current observer is idempotent");
+
+  // A queued observer runs only for the still-current render, including when
+  // render B overtakes it before its callback is drained.
+  notify([]);
+  rootFixture.renderAll(prediction);
+  const c = current;
+  flush();
+  assert.equal(c.writes, 1, "an old observer reservation does not strand a new render");
+  notify([]); current = null; flush();
+  current = layout(); notify([]); flush();
+  assert.equal(current.writes, 0, "unrendered replacement root cannot inherit the last race");
+
+  rootFixture.renderAll(prediction); flush();
+  const removed = current;
+  removed.visible = false;
+  notify([{removedNodes:[removed]}]); flush();
+  assert.equal(removed.writes, 1, "remove-and-reattach of the same root still expires that render");
+  notify([]); flush();
+  assert.equal(removed.writes, 1, "expired root stays expired after another mutation");
+  rootFixture.renderAll(prediction); flush();
+  const recover = current;
+  recover.visible = false; notify([]); flush();
+  assert.equal(recover.writes, 2, "normal empty legacy UI in the current root still recovers");
+
+  rootFixture.renderAll(prediction);
+  const loading = current;
+  area.dataset.raceLoading = "true";
+  flush(); delete area.dataset.raceLoading; notify([]); flush();
+  assert.equal(loading.writes, 0, "a superseding loading phase expires pending fallback");
+  rootFixture.renderAll(prediction); rootFixture.renderAll(null); flush();
+  assert.equal(current, null, "empty render invalidates earlier queued work");
+  assert.equal(JSON.stringify(prediction), before, "root lifecycle repair does not mutate tickets or prediction");
+  assert.equal(unexpectedCreation, 0);
 
   console.log("万舟表示フォールバック回帰テスト: 合格");
 })().catch(error => {

@@ -20,7 +20,7 @@ const proxy = {...selector, select(prediction, options) {
   const before = JSON.stringify(prediction);
   const actual = selector.select(prediction, options);
   const expected = original.select(plain(prediction), options);
-  const {candidateValidationEvidence:evidence, ...unchanged} = actual;
+  const {candidateValidationEvidence:evidence, candidatePromotionExecution, ...unchanged} = actual;
   assert.deepEqual(plain(unchanged), plain(expected), 'entire original selection, not just ticket count, must be unchanged');
   assert.equal(JSON.stringify(prediction), before);
   assert.equal(evidence.status, 'captured');

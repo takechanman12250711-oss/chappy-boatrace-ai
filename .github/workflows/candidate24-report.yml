@@ -2,9 +2,9 @@ name: Build candidate24 performance
 on:
   push:
     branches: [main]
-    paths: ['scripts/build-candidate24-report.js', 'scripts/build-race-review-progress.js', 'scripts/refresh-race-review-results.js', 'scripts/race-review-evidence.js', 'scripts/test-race-review-progress.js', 'scripts/test-review-report-save.js', '.github/workflows/candidate24-report.yml']
+    paths: ['scripts/build-candidate24-report.js', 'scripts/build-race-review-progress.js', 'scripts/refresh-race-review-results.js', 'scripts/race-review-evidence.js', 'scripts/test-race-review-progress.js', 'scripts/test-race-review-progress-memory.js', 'scripts/test-review-report-save.js', '.github/workflows/candidate24-report.yml']
   pull_request:
-    paths: ['scripts/build-candidate24-report.js', 'scripts/build-race-review-progress.js', 'scripts/refresh-race-review-results.js', 'scripts/race-review-evidence.js', 'scripts/test-race-review-progress.js', 'scripts/test-review-report-save.js', 'scripts/test-exhibition-candidate24.js', '.github/workflows/candidate24-report.yml']
+    paths: ['scripts/build-candidate24-report.js', 'scripts/build-race-review-progress.js', 'scripts/refresh-race-review-results.js', 'scripts/race-review-evidence.js', 'scripts/test-race-review-progress.js', 'scripts/test-race-review-progress-memory.js', 'scripts/test-review-report-save.js', 'scripts/test-exhibition-candidate24.js', '.github/workflows/candidate24-report.yml']
   workflow_run:
     workflows: ['Collect official race results', 'Collect live note independently']
     types: [completed]
@@ -32,6 +32,7 @@ jobs:
             js
             config
             data/predictions
+            ${{ github.event_name == 'pull_request' && '!/data/predictions/20??????.json' || '' }}
             data/results
             data/note-drafts
             data/outer-attack-sources
@@ -39,11 +40,29 @@ jobs:
             data/stats/race-review-progress.json
             data/stats/race-review-results.json
           sparse-checkout-cone-mode: false
+      - name: Include every unarchived prediction source
+        if: github.event_name == 'pull_request'
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const { execFileSync } = require('node:child_process');
+          const base = 'data/predictions/';
+          const daily = execFileSync('git', ['ls-tree', '--name-only', 'HEAD:data/predictions'], { encoding: 'utf8' })
+            .trim().split('\n').filter(name => /^\d{8}\.json$/.test(name));
+          const unarchived = daily.filter(name => {
+            const date = name.slice(0, 8);
+            return !['.json.gz', '.meta.json'].every(suffix => fs.existsSync(base + 'source-archives/' + date + suffix));
+          }).map(name => '/' + base + name);
+          if (unarchived.length) execFileSync('git', ['sparse-checkout', 'add', '--stdin'], { input: unarchived.join('\n') + '\n', stdio: ['pipe', 'inherit', 'inherit'] });
+          console.log('Kept all archives and ' + unarchived.length + ' unarchived daily sources. Archive-backed raw JSON is restored with SHA checks by the existing test.');
+          NODE
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
       - run: node scripts/test-exhibition-candidate24.js
       - run: node scripts/test-race-review-progress.js
+      - run: node scripts/test-race-review-progress-memory.js
       - run: node scripts/test-review-report-save.js
       - run: node scripts/restore-daily-prediction-source.js --all
       - run: node scripts/build-candidate24-report.js

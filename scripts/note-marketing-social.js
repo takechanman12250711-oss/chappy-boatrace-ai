@@ -25,7 +25,7 @@ function sourceContext(row,bytes) {
   const tickets=(b.baselinePracticalTickets||[]).map(t=>typeof t==='string'?t:t.ticket);
   const saved=(r?.prediction?.practicalTickets||[]).map(t=>typeof t==='string'?t:t.ticket);
   if(r?.raceKey!==row.raceKey||r.deadlineAt!==row.deadlineAt||!Number.isFinite(captured)||captured>published||
-    !(published<Date.parse(row.deadlineAt))||!tickets.length||tickets.length>7||
+    !(published<Date.parse(row.deadlineAt))||!tickets.length||tickets.length>require('./note-ticket-limit.cjs').MAX_PUBLICATION_TICKETS||
     tickets.some(t=>!/^([1-6])-([1-6])-([1-6])$/.test(t)||new Set(t.split('-')).size!==3)||
     JSON.stringify([...tickets].sort())!==JSON.stringify([...saved].sort()))return null;
   const explanation=String(b.article?.paidText||'').split(/^買い目\s*$/m)[0];

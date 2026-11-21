@@ -28,6 +28,7 @@ on:
       - 'scripts/send-note-buffer*'
       - 'scripts/note-social-notice*'
       - 'scripts/note-marketing-*.js'
+      - 'scripts/note-marketing-index-snapshot.cjs'
       - 'scripts/note-result-card*'
       - 'scripts/note-public-results*'
       - 'scripts/note-published-ticket-sections*'
@@ -53,7 +54,9 @@ jobs:
        (github.event.workflow_run.conclusion == 'success' &&
         github.event.workflow_run.head_repository.full_name == github.repository &&
         github.event.workflow_run.head_branch == 'main'))
-    runs-on: ubuntu-latest
+    # Playwright 1.55.0 cannot install its browser on Ubuntu 26.04, which
+    # ubuntu-latest is moving to. Same pin as Note GitHub UI Transport.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     # Hold the shared editor lock only through registration and public verification.
     concurrency:
@@ -87,7 +90,7 @@ jobs:
           echo "NOTE_CLAIM_SHA=$revision" >> "$GITHUB_ENV"
           echo "sha=$revision" >> "$GITHUB_OUTPUT"
       - name: Verify marketing safeguards
-        run: node --test scripts/note-public-results.test.js scripts/note-published-ticket-sections.test.js scripts/note-marketing-expiry.test.js scripts/note-marketing.test.js scripts/note-marketing-reports.test.js scripts/note-marketing-measurement.test.js scripts/send-note-social.test.cjs scripts/send-note-buffer.test.cjs scripts/note-social-notice.test.cjs scripts/note-korogashi*.test.cjs
+        run: node --test scripts/note-public-results.test.js scripts/note-published-ticket-sections.test.js scripts/note-marketing-expiry.test.js scripts/note-marketing-index-snapshot.test.cjs scripts/note-marketing.test.js scripts/note-marketing-reports.test.js scripts/note-marketing-measurement.test.js scripts/send-note-social.test.cjs scripts/send-note-buffer.test.cjs scripts/note-social-notice.test.cjs scripts/note-korogashi*.test.cjs
       - name: Prepare requested korogashi courses and settle saved legs
         id: korogashi-prepare
         continue-on-error: true
@@ -118,14 +121,33 @@ jobs:
           KOROGASHI_ARTIFACT_DIGEST: ${{ steps.korogashi-artifact.outputs.artifact-digest }}
         run: node scripts/note-korogashi-run.cjs confirm /tmp/note-korogashi-stage.json
       - run: npm install --no-save playwright@1.55.0
+      # NOTE_UI_ROUTE=saved-state uses the runner's own browser with the saved
+      # sign-in state, so the browser must be installed here. Unset keeps the
+      # remote Browser Use browser and installs nothing.
+      - name: Restore cached Playwright browser
+        if: vars.NOTE_UI_ROUTE == 'saved-state'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-1.55.0-${{ runner.os }}
+      - name: Install local browser for the saved sign-in state
+        if: vars.NOTE_UI_ROUTE == 'saved-state'
+        run: npx playwright install --with-deps chromium
       - name: Update and verify free guide and daily index
         id: index
         env:
           NOTE_OFFICIAL_REFRESH_STARTED: ${{ steps.korogashi-prepare.outputs.official-refresh-started }}
+          NOTE_UI_ROUTE: ${{ vars.NOTE_UI_ROUTE || 'browser-use' }}
           BROWSER_USE_API_KEY: ${{ secrets.BROWSER_USE_API_KEY }}
           BROWSER_USE_PROFILE_ID: ${{ secrets.BROWSER_USE_PROFILE_ID }}
+          NOTE_STATE_JSON_BASE64: ${{ vars.NOTE_UI_ROUTE == 'saved-state' && secrets.NOTE_STATE_JSON_BASE64 || '' }}
           NOTE_CLAIM_TOKEN: ${{ github.token }}
-        run: node scripts/update-note-marketing.js
+        run: |
+          if [ "$NOTE_UI_ROUTE" = "saved-state" ]; then
+            xvfb-run -a node scripts/update-note-marketing.js
+          else
+            node scripts/update-note-marketing.js
+          fi
       - name: Surface course registration failures after normal updates
         if: always() && (steps.korogashi-prepare.outcome == 'failure' || steps.korogashi-artifact.outcome == 'failure' || steps.korogashi-confirm.outcome == 'failure')
         run: exit 1
@@ -174,7 +196,9 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends fonts-noto-cjk
       - name: Verify Buffer connection without posting
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        # Publication-triggered bot dispatches skip this check: each spends one
+        # request of the shared 80/24h Buffer budget without posting anything.
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.actor != 'github-actions[bot]')
         env:
           NOTE_CLAIM_TOKEN: ${{ github.token }}
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}

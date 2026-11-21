@@ -9,6 +9,13 @@ on:
       - 'scripts/test-escape-partner-structured-forward.cjs'
       - 'config/escape-partner-structured-forward.json'
       - 'scripts/partner-forward.cjs'
+      - 'scripts/promotion-head-priority-comparison.cjs'
+      - 'scripts/promotion-head-priority-forward.cjs'
+      - 'scripts/promotion-role-priority-diagnostic.cjs'
+      - 'scripts/candidate-promotion-execution-evidence.cjs'
+      - 'tests/promotion-head-priority-comparison.test.cjs'
+      - 'tests/promotion-head-priority-forward.test.cjs'
+      - 'config/promotion-head-priority-forward-v1.json'
       - 'scripts/test-partner-forward.cjs'
       - 'scripts/independent-head-forward-v2.cjs'
       - 'scripts/test-independent-head-forward-v2.cjs'
@@ -66,6 +73,13 @@ on:
       - 'scripts/test-escape-partner-structured-forward.cjs'
       - 'config/escape-partner-structured-forward.json'
       - 'scripts/partner-forward.cjs'
+      - 'scripts/promotion-head-priority-comparison.cjs'
+      - 'scripts/promotion-head-priority-forward.cjs'
+      - 'scripts/promotion-role-priority-diagnostic.cjs'
+      - 'scripts/candidate-promotion-execution-evidence.cjs'
+      - 'tests/promotion-head-priority-comparison.test.cjs'
+      - 'tests/promotion-head-priority-forward.test.cjs'
+      - 'config/promotion-head-priority-forward-v1.json'
       - 'scripts/test-partner-forward.cjs'
       - 'scripts/independent-head-forward-v2.cjs'
       - 'scripts/test-independent-head-forward-v2.cjs'
@@ -139,6 +153,7 @@ jobs:
           node --test scripts/test-escape-partner-history.cjs
           node --test scripts/test-escape-partner-structured-forward.cjs
           node --test scripts/test-partner-forward.cjs scripts/independent-role-selector.test.cjs scripts/independent-rule-forward.test.cjs scripts/independent-autonomous.test.cjs
+          node --test tests/promotion-head-priority-comparison.test.cjs tests/promotion-head-priority-forward.test.cjs
           node --test scripts/test-independent-head-forward-v2.cjs scripts/test-head-forward-contract.cjs scripts/test-head-forward-artifact.cjs scripts/test-head-forward-capture.cjs scripts/test-head-forward-report.cjs
           node --test scripts/independent-flow-roles.test.cjs scripts/independent-partner-selector.test.cjs scripts/independent-route-water.test.cjs scripts/independent-pair-route.test.cjs scripts/independent-weather.test.cjs scripts/independent-weather-v2.test.cjs
           node scripts/test-note-draft-bundle.js
@@ -158,6 +173,11 @@ jobs:
           node scripts/independent-weather-history-v1.cjs
           node scripts/independent-weather-history-v2.cjs
           node scripts/independent-autonomous-forward.cjs report
+      - name: Report preregistered head-priority comparison
+        id: promotion_head_report
+        continue-on-error: true
+        run: node scripts/promotion-head-priority-forward.cjs report
+
       # The registered head-forward v2 study fails closed when its frozen source
       # manifest drifts. Keep that failure visible (final step) without blocking
       # the other derived reports from being saved. Its report is not rewritten
@@ -179,6 +199,7 @@ jobs:
             data/stats/escape-partner-history-research.json
             data/stats/escape-partner-structured-forward.json
             data/stats/partner-forward-report.json
+            data/stats/promotion-head-priority-report.json
             data/stats/independent-rule-report.json
             data/stats/independent-autonomous-report.json
             data/stats/independent-weather-history.json
@@ -193,6 +214,9 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/stats/independent-weather-history.json data/stats/independent-weather-history-v2.json data/stats/independent-autonomous-report.json data/stats/escape-main-audit.json data/stats/escape-partner-history-research.json data/stats/escape-partner-structured-forward.json data/stats/partner-forward-report.json data/stats/independent-rule-report.json data/stats/independent-head-forward-v2-report.json
+          if [ -f data/stats/promotion-head-priority-report.json ]; then
+            git add -- data/stats/promotion-head-priority-report.json
+          fi
           if git diff --cached --quiet; then exit 0; fi
           git commit -m 'Update all-venue escape main audit'
           for attempt in 1 2 3; do
@@ -210,3 +234,7 @@ jobs:
         run: |
           echo '::error::head-forward v2 report failed (fail-closed); other derived reports were saved'
           exit 1
+
+      - name: Report head-priority failure after preserving other derived reports
+        if: always() && steps.promotion_head_report.outcome == 'failure'
+        run: exit 1

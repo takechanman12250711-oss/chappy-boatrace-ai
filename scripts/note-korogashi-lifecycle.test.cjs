@@ -61,6 +61,20 @@ test('official result must precede each next commitment; earliest same-series so
   assert.equal(k.project(confirmed.plans['test-100k']).legs.length,2);
   assert.deepEqual(confirmed.plans['test-100k'].events[0],state.plans['test-100k'].events[0]);
 });
+test('a later leg needs more than five minutes before its deadline; the first leg keeps 120 seconds',async()=>{
+  const first=fixture(), second=fixture(7,17);
+  const state=await registered(first), deadline=Date.parse(second.row.deadlineAt);
+  assert.equal(k.NEXT_LEG_MIN_MARGIN_MS,300000);
+  const tight=await k.prepare(state,config(),options([first,second],deadline-k.NEXT_LEG_MIN_MARGIN_MS));
+  assert.equal(tight.staged.length,0,'a race with only five minutes left leaves no time for the index check');
+  assert.equal(k.project(tight.state.plans['test-100k']).status,'waiting_next');
+  const enough=await k.prepare(state,config(),options([first,second],deadline-k.NEXT_LEG_MIN_MARGIN_MS-1000));
+  assert.equal(enough.staged[0].leg.raceKey,second.row.raceKey);
+  const late=fixture(6,16), start=await k.prepare(k.initialState(),config(),options([late],Date.parse(late.row.deadlineAt)-121000));
+  assert.equal(start.staged.length,1,'the first leg still only needs more than 120 seconds');
+  assert.deepEqual(k.awaitingResultRaceKeys(state),[first.row.raceKey]);
+  assert.deepEqual(k.awaitingResultRaceKeys(k.initialState()),[]);
+});
 test('target, loss, maximum and uncertain official results never open another leg',async()=>{
   for(const [mutate,expected] of [
     [f=>{f.result.trifecta.payout=10000;},'target_reached'],
@@ -128,6 +142,25 @@ test('sealing checks external artifact identity, digest, workflow and server tim
   assert.equal((await artifact(env,fetcher(data))).confirmedAt,new Date(time(16)+1000).toISOString());
   for(const change of [{id:45},{expired:true},{digest:'bad'},{name:'another'},{workflow_run:{id:124,head_sha:ctx.headSha}}])
     await assert.rejects(artifact(env,fetcher({...data,...change})),/artifact_identity/);
+  // A transient lookup failure right after upload is retried; identity checks still apply.
+  let calls=0;const waits=[],sleep=async ms=>{waits.push(ms);};
+  const flaky=async()=>{calls++;if(calls===1)throw Error('network');if(calls===2)return {ok:false,status:404};return fetcher(data)();};
+  assert.equal((await artifact(env,flaky,{sleep})).id,44);assert.equal(calls,3);assert.deepEqual(waits,[2000,4000]);
+  calls=0;waits.length=0;
+  await assert.rejects(artifact(env,async()=>{calls++;return {ok:false,status:503};},{sleep}),/korogashi_artifact_lookup_failed_503/);
+  assert.equal(calls,4);assert.deepEqual(waits,[2000,4000,8000]);
+  calls=0;
+  await assert.rejects(artifact(env,async()=>{calls++;return fetcher({...data,digest:'bad'})();},{sleep}),/artifact_identity/);
+  assert.equal(calls,1,'a mismatched artifact is never retried into acceptance');
+});
+test('registration margin uses the later of server confirmation and the local clock',async()=>{
+  const f=fixture(),out=await k.prepare(k.initialState(),config(),options([f])),deadline=Date.parse(f.row.deadlineAt);
+  const art={...seal(out.staged,f.now),createdAt:new Date(deadline-200000).toISOString(),confirmedAt:new Date(deadline-121000).toISOString()};
+  const late=k.confirm(out.state,out.staged,art,deadline-120000);
+  assert.equal(late.plans['test-100k'].events.at(-1).type,'stopped','server says 121s but the real clock says 120s: not registered');
+  assert.equal(late.plans['test-100k'].events.at(-1).data.reason,'registration_expired');
+  const ok=k.confirm(out.state,out.staged,art,deadline-121000);
+  assert.equal(ok.plans['test-100k'].events.at(-1).type,'registered');
 });
 test('state writes are append-only compare-and-swap, never main or force push',async()=>{
   const {repository,BRANCH}=require('./note-korogashi-store.cjs'),calls=[];
@@ -211,7 +244,8 @@ test('Buffer waits for successful index verification and fails closed on depende
   for(const testFile of ['note-result-card.test.cjs','note-marketing-image.test.js'])assert(buffer.includes(`scripts/${testFile}`));
   assert.doesNotMatch(buffer,/continue-on-error|always\(\)|\|\| true/);
   assert.equal((buffer.match(/        if:/g)||[]).length,1);
-  assert(buffer.includes("if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'"));
+  assert(buffer.includes("if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.actor != 'github-actions[bot]')"),
+    'publication-triggered bot dispatches must not spend the shared Buffer budget on a connection check');
 });
 test('registration alone cannot settle or continue; missing or late public verification never earns a payout',async()=>{
   const f=fixture(),out=await k.prepare(k.initialState(),config(),options([f]));
@@ -333,4 +367,58 @@ test('settlement rejects a receipt whose subset proof changed after the saved re
   first.receipt.publishedDisplayProof.modelSubset.ticketsSha256='e'.repeat(64);
   await assert.rejects(k.prepare(state,config(),options([first],time(17))),/published_display_proof_mismatch/);
   assert.equal(k.project(state.plans['test-100k']).status,'waiting_result');
+});
+
+test('a v10 normal article with 8-10 center tickets starts a course with every ticket at 1,000 yen',async()=>{
+ const ten=['1-2-3','1-2-4','1-2-5','1-2-6','1-3-2','1-3-4','1-3-5','1-3-6','1-4-2','1-4-3'];
+ for(const n of [8,10]){
+  const f=fixture(),tickets=ten.slice(0,n).map((ticket,i)=>({ticket,odds:10+i}));
+  f.b.version='note-draft-bundle-v1';delete f.b.monitor;delete f.b.record.source;f.b.baselinePracticalTickets=tickets;
+  Object.assign(f.b.record.prediction,{practicalTickets:tickets,date:f.b.record.date,confidence:84,
+   race:{date:f.b.record.date,stadiumName:f.b.record.place,raceNo:f.b.record.raceNo,raceInfo:{deadline:'16:10'}},
+   mainSheet:{honmei:{boatNo:1,name:'テスト選手',score:84},evaluations:[1,2,3,4,5,6].map(boatNo=>({boatNo,name:'テスト選手',score:84})),
+    tickets,coverTickets:[{ticket:'2-1-3'}],flowTickets:[{ticket:'2-3-1'}]},
+   manshuSheet:{tickets:[{ticket:'3-4-5'}]},raceFlow:{title:'イン逃げ本線',summary:'1号艇の逃げを中心に考える。'}});
+  f.b.article=require('../js/note-generator').generateArticle(f.b.record.prediction,{practicalTickets:tickets});
+  f.bytes=JSON.stringify(f.b);f.receipt.sourceSha256=k.hash(f.bytes);f.receipt.articleSeries='normal';f.receipt.presentationVersion='readable-v10';f.receipt.price=0;
+  f.receipt.publishedDisplayProof=require('./note-published-ticket-sections').sectionProof(require('./note-reader-presentation.cjs').paidTextFromSource(f.b,'normal'),'readable-v10',{sourceSha256:f.receipt.sourceSha256});
+  f.row=receiptRow(f.receipt,f.bytes,f.now);
+  const out=await k.prepare(k.initialState(),config({firstPublicationKey:f.row.raceKey+':normal'}),options([f]));
+  assert.equal(out.staged.length,1,JSON.stringify(out.skipped));
+  const state=k.confirm(out.state,out.staged,seal(out.staged,f.now),f.now+1000),view=k.project(state.plans['test-100k']);
+  assert.equal(view.initialYen,n*1000);assert.equal(view.legs[0].allocations.length,n);
+  assert.deepEqual(view.legs[0].allocations.map(a=>a.ticket).sort(),ten.slice(0,n).sort(),'no ticket is dropped');
+  assert(view.legs[0].allocations.every(a=>a.stakeYen===1000));
+ }
+});
+test('v10 normal main and independent center proofs keep series-specific labels and unchanged allocations',async()=>{
+ for(const series of ['normal','escape']){
+  const f=fixture();
+  if(series==='normal'){
+   f.b.version='note-draft-bundle-v1';delete f.b.monitor;delete f.b.record.source;
+   Object.assign(f.b.record.prediction,{date:f.b.record.date,confidence:84,
+    race:{date:f.b.record.date,stadiumName:f.b.record.place,raceNo:f.b.record.raceNo,raceInfo:{deadline:'16:10'}},
+    mainSheet:{honmei:{boatNo:1,name:'テスト選手',score:84},evaluations:[1,2,3,4,5,6].map(boatNo=>({boatNo,name:'テスト選手',score:84})),
+     tickets:f.b.baselinePracticalTickets,coverTickets:[{ticket:'1-3-2'}],flowTickets:[{ticket:'2-1-3'}]},
+    manshuSheet:{tickets:[{ticket:'3-4-5'}]},raceFlow:{title:'イン逃げ本線',summary:'1号艇の逃げを中心に考える。'}});
+   f.b.article=require('../js/note-generator').generateArticle(f.b.record.prediction,{practicalTickets:f.b.baselinePracticalTickets});
+  }
+  f.bytes=JSON.stringify(f.b);f.receipt.sourceSha256=k.hash(f.bytes);f.receipt.articleSeries=series;f.receipt.presentationVersion='readable-v10';f.receipt.price=0;
+  const adapter=require('./note-reader-presentation.cjs');
+  f.receipt.publishedDisplayProof=require('./note-published-ticket-sections').sectionProof(adapter.paidTextFromSource(f.b,series),'readable-v10',{sourceSha256:f.receipt.sourceSha256});
+  f.row=receiptRow(f.receipt,f.bytes,f.now);
+  const before=f.bytes,c=config({firstPublicationKey:f.row.raceKey+':'+series});
+  const out=await k.prepare(k.initialState(),c,options([f]));
+  assert.equal(out.staged.length,1,JSON.stringify(out.skipped));
+  const state=k.confirm(out.state,out.staged,seal(out.staged,f.now),f.now+1000),view=k.project(state.plans['test-100k']);
+  assert.deepEqual(view.legs[0].allocations.map(a=>a.ticket).sort(),f.b.baselinePracticalTickets.map(a=>typeof a==='string'?a:a.ticket).sort());
+  assert.equal(view.legs[0].modelSelectionEvidence.label,series==='normal'?'🎯 本命':'⭐ 中心の買い目');
+  assert.equal(view.legs[0].modelSelectionEvidence.presentationVersion,'readable-v10');
+  assert.equal(JSON.stringify(f.b),before);
+  const changed=clone(state),plan=changed.plans['test-100k'],event=plan.events[0];
+  event.data.leg.modelSelectionEvidence.label=series==='normal'?'⭐ 中心の買い目':'🎯 本命';
+  event.data.seal.snapshotHash=k.hash({request:plan.request,previous:event.previous,leg:event.data.leg});
+  const {hash,...body}=event;event.hash=k.hash(body);
+  assert.throws(()=>k.validateState(changed),/registered_selection_unverified/);
+ }
 });

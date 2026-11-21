@@ -39,6 +39,11 @@
     const area=root.document.getElementById("resultArea");
     if(!area)return;
     const previous=area.querySelector?.(".chappy-practical-visible-panel");
+    if(area.querySelector?.("[data-reader-contract]")){
+      previous?.remove();
+      area.querySelectorAll?.(".chappy-final-buy-group.is-practical-fallback").forEach(node=>node.remove());
+      return;
+    }
     const decision=pred.practicalSelection?.purchaseDecision||root.ChappyPracticalSelection?.purchaseDecision?.(pred);
     if(decision?.status==="skip"){
       previous?.remove();

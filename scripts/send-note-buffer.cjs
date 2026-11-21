@@ -2,7 +2,8 @@
 const fs=require('node:fs');
 const {createHash,randomUUID}=require('node:crypto');
 const {client,REPO}=require('./note-marketing-store');
-const {loadConfig,jstDate,hash,publishedIndexBody,validUrl,recentDates}=require('./note-marketing-content');
+const {loadConfig,jstDate,validUrl,recentDates}=require('./note-marketing-content');
+const {indexSnapshotCurrent}=require('./note-marketing-index-snapshot.cjs');
 const {journal,pairedItems}=require('./send-note-social.cjs');
 const {distributionDrafts}=require('./note-marketing-reports');
 const {hitText,publicRecapCopy,VERSION:PUBLIC_VERSION}=require('./note-public-results');
@@ -243,7 +244,7 @@ async function recoverRecap(state,config,marketing,log,delivery,clock) {
 
 function requireVerifiedIndex(state,marketing,now) {
   if(state.date!==jstDate(now)||state.verifiedDate!==jstDate(now))throw Error('buffer_date_changed');
-  if(state.articles.index.hash!==hash(publishedIndexBody(state,marketing,now)))throw Error('buffer_public_index_not_verified');
+  if(!indexSnapshotCurrent(state,marketing,now))throw Error('buffer_public_index_not_verified');
 }
 function hitItems(state,config,marketing,now) {
   if(allPublished(config)) {
@@ -374,7 +375,7 @@ async function run({env=process.env,now=Date.now(),clock=Date.now,config=JSON.pa
   store ||= client(env);log ||= ledger(store);delivery ||= transport(env,config,log);claims ||= journal(store);
   const results=await reconcile(log,delivery,now);
   const loaded=await store.load(marketing),state=await store.settle(loaded.state,marketing,now);
-  if(loaded.state.verifiedDate!==jstDate(now)||loaded.state.articles.index.hash!==hash(publishedIndexBody(state,marketing,now)))throw Error('buffer_public_index_not_verified');
+  if(loaded.state.verifiedDate!==jstDate(now)||loaded.state.articles.index.hash!==state.articles.index.hash||!indexSnapshotCurrent(state,marketing,now))throw Error('buffer_public_index_not_verified');
   // UI updates now run independently. A captured index is not current authority:
   // reload immutable state/evidence before each claim and again before sending.
   delivery=verifiedDelivery(delivery,store,loaded,state,config,marketing,clock);

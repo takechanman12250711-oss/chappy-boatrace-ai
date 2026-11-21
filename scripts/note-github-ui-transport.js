@@ -89,6 +89,54 @@ async function stopBrowserUseSession(config, sessionId, request = fetch) {
   return { ok: response.ok, status: response.status };
 }
 
+// Where the signed-in browser comes from. 'browser-use' is the rented remote
+// browser with its saved profile. 'saved-state' is the runner's own browser
+// with the owner's saved sign-in state (secret NOTE_STATE_JSON_BASE64); it
+// was confirmed for the read-only editor check in run 43792690334.
+const NOTE_UI_ROUTES = Object.freeze(['browser-use', 'saved-state']);
+function noteUiRoute(env = process.env) {
+  const route = String(env.NOTE_UI_ROUTE || '').trim() || 'browser-use';
+  if (!NOTE_UI_ROUTES.includes(route)) throw new Error('unsupported_note_ui_route');
+  return route;
+}
+
+// Missing or invalid credentials stop here, before any browser or claim.
+// open() returns a browser whose first context is the signed-in one, exactly
+// as a Browser Use profile session provides it. stop() releases anything
+// started outside the browser itself and never throws for an unopened route.
+function prepareNoteBrowser(env = process.env, { createSession = createBrowserUseSession, stopSession = stopBrowserUseSession } = {}) {
+  if (noteUiRoute(env) === 'saved-state') {
+    const storageState = loadStorageState(env);
+    return {
+      route: 'saved-state',
+      async open(chromium) {
+        let browser;
+        try {
+          // A normal window: the editor shows no fields in a headless browser.
+          browser = await chromium.launch({ ...require('./note-saved-state-auth').LAUNCH_OPTIONS });
+          await browser.newContext({ storageState, locale: 'ja-JP', timezoneId: 'Asia/Tokyo' });
+          return browser;
+        } catch {
+          // Browser errors may quote the state; keep only a fixed code.
+          if (browser) await browser.close().catch(() => {});
+          throw new Error('note_state_browser_start_failed');
+        }
+      },
+      async stop() { return { ok: true }; }
+    };
+  }
+  const config = loadBrowserUseConfig(env);
+  let session;
+  return {
+    route: 'browser-use',
+    async open(chromium) {
+      session = await createSession(config);
+      return chromium.connectOverCDP(session.cdpUrl);
+    },
+    async stop() { return session ? stopSession(config, session.id) : { ok: true }; }
+  };
+}
+
 function firstPaidParagraph(paidText) {
   return String(paidText || '')
     .split(/\r?\n/)
@@ -126,8 +174,9 @@ function validateDraftGate(payload, now = Date.now()) {
   // source gate; a historical recovery payload keeps its 200-yen claim price.
   if (Number(payload.price) !== priceForPresentation(payload.presentationVersion)) return { ok: false, reason: 'price_mismatch' };
   if (payload.practicalTicketCount != null &&
-      (!Number.isInteger(payload.practicalTicketCount) || payload.practicalTicketCount < 1 || payload.practicalTicketCount > 7)) {
-    return { ok: false, reason: 'ticket_count_exceeds_7' };
+      (!Number.isInteger(payload.practicalTicketCount) || payload.practicalTicketCount < 1 ||
+       payload.practicalTicketCount > require('./note-ticket-limit.cjs').MAX_PUBLICATION_TICKETS)) {
+    return { ok: false, reason: 'ticket_count_exceeds_limit' };
   }
   return { ok: true };
 }
@@ -797,7 +846,7 @@ function recoveryBodyDiagnostic(actualBody, payload) {
   while (firstMismatch < Math.max(actualLines.length, expectedLines.length) &&
     actualLines[firstMismatch] === expectedLines[firstMismatch]) firstMismatch++;
   return { version: 'note-recovery-body-diagnostic-v1',
-    presentationVersion: ['readable-v1', 'readable-v2', 'readable-v3', 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7'].includes(payload.presentationVersion)
+    presentationVersion: ['readable-v1', 'readable-v2', 'readable-v3', 'readable-v4', 'readable-v5', 'readable-v6', 'readable-v7', 'readable-v8', 'readable-v9', 'readable-v10'].includes(payload.presentationVersion)
       ? payload.presentationVersion : 'unknown',
     actualLength: actual.length, expectedLength: expected.length,
     actualLines: actualLines.length, expectedLines: expectedLines.length,
@@ -1015,7 +1064,7 @@ async function run({ env = process.env } = {}) {
   }
 
   // Invalid/missing credentials and stale handoffs must stop before browser setup.
-  const browserUse = loadBrowserUseConfig(env);
+  const noteBrowser = prepareNoteBrowser(env);
   const draft = mode !== 'auth' ? loadHandoff(env.NOTE_IPHONE_HANDOFF || DEFAULT_HANDOFF) : null;
   if (draft && !recoveryOnly) requireDraftGate(draft.payload);
   if (mode === 'publish' && !recoveryOnly) requirePublicationGate(draft.payload);
@@ -1049,11 +1098,10 @@ async function run({ env = process.env } = {}) {
   // the remote browser cannot be started or reached (e.g. Browser Use 402).
   // Neither step touches note, so no article can exist yet; the permanent
   // claim is still taken before the editor is opened or anything is written.
-  const session = await createBrowserUseSession(browserUse);
   let browser;
   let failure;
   try {
-    browser = await chromium.connectOverCDP(session.cdpUrl);
+    browser = await noteBrowser.open(chromium);
     if (draft && !recoveryOnly) await claimDraft(draft.payload, env);
     if (recoveryOnly) {
       const context = browser.contexts()[0];
@@ -1110,7 +1158,7 @@ async function run({ env = process.env } = {}) {
   } finally {
     let closed = true;
     if (browser) await browser.close().catch(() => { closed = false; });
-    const stopped = await stopBrowserUseSession(browserUse, session.id).catch(() => ({ ok: false }));
+    const stopped = await noteBrowser.stop().catch(() => ({ ok: false }));
     if (!stopped.ok) console.error('NOTE_UI_BROWSER_STOP_FAILED=true');
     if (failure && preClickDeadlineErrors.has(failure)) {
       if (!closed || !stopped.ok) throw new Error('expired_publication_cleanup_unverified');
@@ -1138,6 +1186,9 @@ module.exports = {
   loadHandoff,
   loadStorageState,
   loadBrowserUseConfig,
+  NOTE_UI_ROUTES,
+  noteUiRoute,
+  prepareNoteBrowser,
   createBrowserUseSession,
   stopBrowserUseSession,
   firstPaidParagraph,

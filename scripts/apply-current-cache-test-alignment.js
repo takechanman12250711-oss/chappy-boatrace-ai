@@ -80,6 +80,30 @@ function generationBlock(
 );`;
 }
 
+function parsedGenerationBlock(
+  version,
+  hiyoriVersion = CURRENT_HIYORI_VERSION
+) {
+  return generationBlock(version, hiyoriVersion).replace(
+    `    html.includes(
+      "js/prediction-runtime-loader.js?v=${version}"
+    )`,
+    `    scriptVersion("js/prediction-runtime-loader.js") === "${version}"`
+  );
+}
+
+const SCRIPT_VERSION_HELPER = "function scriptVersion(file) {\n  const src=[...html.matchAll(/<script\\s+[^>]*src=\"([^\"]+)\"/g)].map(m=>m[1]).find(src=>src.split(\"?\")[0]===file);\n  return src?new URL(src,\"https://fixture.invalid/\").searchParams.get(\"v\"):null;\n}";
+
+function ensureScriptVersionHelper(text) {
+  const count = text.split("function scriptVersion(").length - 1;
+  if (count === 1 && text.includes(SCRIPT_VERSION_HELPER)) return text;
+  if (count === 0) {
+    return replaceOne(text, 'const html = read("index.html");',
+      'const html = read("index.html");\n' + SCRIPT_VERSION_HELPER, "script version helper");
+  }
+  throw new Error("script version helper: expected absent or one supported definition");
+}
+
 function previousGenerationBlock(version) {
   return generationBlock(
     version,
@@ -109,10 +133,12 @@ function patchLoad(text) {
     "app runtime internal version"
   );
 
-  const desiredGeneration = generationBlock(
+  const desiredGeneration = parsedGenerationBlock(
     "20260828-ui-audit-display1"
   );
   const supportedGenerations = [
+    generationBlock("20260828-ui-audit-display1"),
+    parsedGenerationBlock("20260828-ui-audit-display1", PREVIOUS_HIYORI_VERSION),
     generationBlock("20260828-ui-audit-display1", "20260829-effective-score-contract1"),
     previousGenerationBlock(
       "20260828-ui-audit-display1"
@@ -150,12 +176,19 @@ function patchLoad(text) {
 );`
   ];
 
+  const generationCount = [desiredGeneration, ...supportedGenerations].reduce(
+    (count, block) => count + out.split(block).length - 1, 0
+  );
+  if (generationCount !== 1) {
+    throw new Error("runtime generation block: expected exactly one supported old marker or current marker, got matches=" + generationCount);
+  }
   out = replaceOneOf(
     out,
     supportedGenerations,
     desiredGeneration,
     "runtime generation block"
   );
+  out = ensureScriptVersionHelper(out);
 
   out = replaceOneOf(
     out,
@@ -249,5 +282,6 @@ if (require.main === module) {
 module.exports = {
   patchLoad,
   patchStats,
-  generationBlock
+  generationBlock,
+  parsedGenerationBlock
 };

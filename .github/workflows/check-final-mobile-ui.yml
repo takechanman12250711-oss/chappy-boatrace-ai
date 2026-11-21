@@ -4,6 +4,17 @@ on:
   pull_request:
     paths:
       - "index.html"
+      - "js/forecast-reader-contract.js"
+      - "js/main-cover-display-boundary.js"
+      - "js/prediction-runtime-loader.js"
+      - "js/final-display-owner-v2.js"
+      - "js/final-display-user-contract.js"
+      - "js/final-practical-visible-panel.js"
+      - "tests/forecast-reader-contract.test.cjs"
+      - "tests/reader-presentation.test.cjs"
+      - "scripts/fixtures/reader-presentation.json"
+      - "scripts/test-reader-presentation-browser.cjs"
+      - "scripts/note-reader-preview.cjs"
       - "js/final-mobile-ui.js"
       - "js/bright-mobile-layout.js"
       - "css/bright-mobile-layout.css"
@@ -28,6 +39,17 @@ on:
       - main
     paths:
       - "index.html"
+      - "js/forecast-reader-contract.js"
+      - "js/main-cover-display-boundary.js"
+      - "js/prediction-runtime-loader.js"
+      - "js/final-display-owner-v2.js"
+      - "js/final-display-user-contract.js"
+      - "js/final-practical-visible-panel.js"
+      - "tests/forecast-reader-contract.test.cjs"
+      - "tests/reader-presentation.test.cjs"
+      - "scripts/fixtures/reader-presentation.json"
+      - "scripts/test-reader-presentation-browser.cjs"
+      - "scripts/note-reader-preview.cjs"
       - "js/final-mobile-ui.js"
       - "js/bright-mobile-layout.js"
       - "css/bright-mobile-layout.css"
@@ -53,7 +75,8 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Playwright 1.55 WebKit declares Ubuntu 24.04 support; latest moved to 26.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - name: Checkout repository
@@ -68,6 +91,7 @@ jobs:
             /js/
             /css/
             /config/
+            /tests/
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -106,3 +130,11 @@ jobs:
       - name: Check missing-number odds refresh
         run: node scripts/test-final-missing-odds-refresh.js
 
+
+      - name: Check shared article and app presentation
+        run: node --test tests/forecast-reader-contract.test.cjs tests/reader-presentation.test.cjs
+      - name: Check mobile reader ownership in WebKit
+        run: |
+          npm install --prefix "$RUNNER_TEMP/chappy-reader-browser" --no-audit --no-fund --ignore-scripts playwright@1.55.0
+          NODE_PATH="$RUNNER_TEMP/chappy-reader-browser/node_modules" node "$RUNNER_TEMP/chappy-reader-browser/node_modules/playwright/cli.js" install --with-deps webkit
+          NODE_PATH="$RUNNER_TEMP/chappy-reader-browser/node_modules" CHAPPY_BROWSER=webkit node scripts/test-reader-presentation-browser.cjs

@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { LAUNCH_OPTIONS, safeError, runSavedStateAuth } = require('./note-saved-state-auth');
-const { loadStorageState, run } = require('./note-github-ui-transport');
+const { loadStorageState, run, NOTE_UI_ROUTES, noteUiRoute, prepareNoteBrowser } = require('./note-github-ui-transport');
 
 const SECRET = 'cookie-value-must-never-be-logged';
 const encode = state => Buffer.from(JSON.stringify(state)).toString('base64');
@@ -75,7 +75,65 @@ test('the check opens a normal window and the workflow gives it a virtual displa
   assert.deepEqual({ ...LAUNCH_OPTIONS }, { headless: false });
   assert.ok(Object.isFrozen(LAUNCH_OPTIONS));
   const workflow = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', '.github', 'workflows', 'note-github-ui-transport.yml'), 'utf8');
-  assert.match(workflow, /"\$NOTE_UI_BROWSER" = "github-state" \]; then\r?\n\s+xvfb-run -a node scripts\/note-github-ui-transport\.js/);
+  assert.match(workflow, /"\$NOTE_UI_BROWSER" = "github-state" \] \|\| \[ "\$NOTE_UI_ROUTE" = "saved-state" \]; then\r?\n\s+display="xvfb-run -a"/);
+  assert.match(workflow, /\$display node scripts\/publish-note-queue\.js/);
+  assert.match(workflow, /\$display node scripts\/note-github-ui-transport\.js/);
+  assert.match(workflow, /NOTE_UI_ROUTE: \$\{\{ vars\.NOTE_UI_ROUTE \|\| 'browser-use' \}\}/);
+});
+
+test('the route defaults to Browser Use and rejects unknown names', () => {
+  assert.deepEqual([...NOTE_UI_ROUTES], ['browser-use', 'saved-state']);
+  assert.equal(noteUiRoute({}), 'browser-use');
+  assert.equal(noteUiRoute({ NOTE_UI_ROUTE: ' saved-state ' }), 'saved-state');
+  assert.throws(() => noteUiRoute({ NOTE_UI_ROUTE: 'other' }), /^Error: unsupported_note_ui_route$/);
+  assert.throws(() => prepareNoteBrowser({}), /browser_use_api_key_missing/);
+  assert.throws(() => prepareNoteBrowser({ NOTE_UI_ROUTE: 'saved-state' }), /note_state_missing/);
+  assert.throws(() => prepareNoteBrowser({ NOTE_UI_ROUTE: 'saved-state', BROWSER_USE_API_KEY: 'k', BROWSER_USE_PROFILE_ID: 'p' }), /note_state_missing/);
+});
+
+test('the saved-state route opens a normal window whose first context is signed in, with no Browser Use call', async () => {
+  const calls = [];
+  const signedIn = { id: 'signed-in' };
+  const chromium = {
+    launch: async options => { calls.push(['launch', options]); return {
+      newContext: async options => { calls.push(['newContext', options]); return signedIn; },
+      contexts: () => [signedIn], close: async () => { calls.push(['close']); } }; },
+    connectOverCDP: async () => { throw new Error('must_not_connect'); }
+  };
+  const never = async () => { throw new Error('must_not_call_browser_use'); };
+  const route = prepareNoteBrowser({ ...validEnv(), NOTE_UI_ROUTE: 'saved-state' }, { createSession: never, stopSession: never });
+  assert.equal(route.route, 'saved-state');
+  const browser = await route.open(chromium);
+  assert.equal(browser.contexts()[0], signedIn);
+  assert.deepEqual(calls[0], ['launch', { headless: false }]);
+  assert.equal(calls[1][1].storageState.cookies[0].value, SECRET);
+  assert.equal(calls[1][1].locale, 'ja-JP');
+  assert.deepEqual(await route.stop(), { ok: true });
+});
+
+test('a saved-state browser failure closes the browser and keeps only a fixed code', async () => {
+  let closed = 0;
+  const chromium = { launch: async () => ({ newContext: async () => { throw new Error(`bad cookie ${SECRET}`); }, close: async () => { closed++; } }) };
+  const route = prepareNoteBrowser({ ...validEnv(), NOTE_UI_ROUTE: 'saved-state' });
+  await assert.rejects(route.open(chromium), error => error.message === 'note_state_browser_start_failed' && !String(error.stack).includes(SECRET));
+  assert.equal(closed, 1);
+  await assert.rejects(route.open({ launch: async () => { throw new Error(SECRET); } }), error => error.message === 'note_state_browser_start_failed');
+});
+
+test('the Browser Use route still creates, connects and stops its session', async () => {
+  const calls = [];
+  const route = prepareNoteBrowser({ BROWSER_USE_API_KEY: 'key', BROWSER_USE_PROFILE_ID: 'profile' }, {
+    createSession: async config => { calls.push(['create', config]); return { id: 'session-1', cdpUrl: 'wss://example.invalid/cdp' }; },
+    stopSession: async (config, id) => { calls.push(['stop', id]); return { ok: true, status: 200 }; }
+  });
+  assert.equal(route.route, 'browser-use');
+  assert.deepEqual(await route.stop(), { ok: true });
+  assert.equal(calls.length, 0, 'nothing to stop before a session exists');
+  const browser = await route.open({ connectOverCDP: async url => { calls.push(['connect', url]); return { id: 'remote' }; },
+    launch: async () => { throw new Error('must_not_launch'); } });
+  assert.equal(browser.id, 'remote');
+  assert.deepEqual(await route.stop(), { ok: true, status: 200 });
+  assert.deepEqual(calls, [['create', { apiKey: 'key', profileId: 'profile' }], ['connect', 'wss://example.invalid/cdp'], ['stop', 'session-1']]);
 });
 
 test('the transport uses the saved state only in auth mode', async () => {

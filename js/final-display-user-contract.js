@@ -26,7 +26,15 @@
     // rows and was the source of the large white/empty formation panel on iPhone.
     // Keep the source accordion visible when the compact card could not be built;
     // otherwise all main/cover/flow tickets disappear while only manshu remains.
-    const compactTickets=area.querySelector?.(".chappy-final-buy-summary .chappy-final-buy-line");
+    const common=area.querySelector?.("[data-reader-contract]");
+    // State cards also own skipped/empty/unavailable views (zero purchases).
+    const compactTickets=common||area.querySelector?.(".chappy-final-buy-summary .chappy-final-buy-line");
+    area.querySelectorAll?.(".v3-manshu-newspaper,.chappy-practical-visible-panel").forEach(section=>{
+      if(common){section.hidden=true;section.setAttribute("aria-hidden","true");section.dataset.readerContractHidden="1";}
+      else if(section.dataset.readerContractHidden==="1"){
+        section.hidden=false;section.removeAttribute?.("aria-hidden");delete section.dataset.readerContractHidden;
+      }
+    });
     area.querySelectorAll?.(".v3-main-newspaper").forEach(section=>{
       section.hidden=Boolean(compactTickets);
       if(compactTickets){
@@ -53,6 +61,7 @@
     style.id="chappy-final-display-user-contract-style";
     style.textContent=`
       .chappy-final-mobile-ui #resultArea .v3-main-newspaper[data-user-contract-hidden="1"]{display:none!important;}
+      #resultArea [data-reader-contract-hidden="1"]{display:none!important;}
       .chappy-final-mobile-ui #resultArea .chappy-final-buy-group.is-flow>summary::before{background:#9c72ff!important;}
     `;
     root.document.head.appendChild(style);

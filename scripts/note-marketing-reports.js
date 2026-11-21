@@ -24,7 +24,7 @@ function settlePublished(row, bytes, result, now = Date.now()) {
       !Number.isFinite(deadline) || !Number.isFinite(published) || !Number.isFinite(captured) || captured > published ||
       published >= deadline || published > now) return review('source_identity_mismatch');
   const tickets = ticketsOf(bundle.baselinePracticalTickets), saved = ticketsOf(r.prediction?.practicalTickets);
-  if (!tickets?.length || tickets.length > 7 || tickets.length !== row.ticketCount || tickets.some(t => !validTicket(t)) ||
+  if (!tickets?.length || tickets.length > require('./note-ticket-limit.cjs').MAX_PUBLICATION_TICKETS || tickets.length !== row.ticketCount || tickets.some(t => !validTicket(t)) ||
       new Set(tickets).size !== tickets.length || !sameTickets(tickets, saved)) return review('published_tickets_unverified');
   if (series !== 'normal' && (!sameTickets(tickets, ticketsOf(bundle.monitor?.tickets)) ||
       !sameTickets(tickets, ticketsOf(bundle.article?.practicalTickets)))) return review('monitor_tickets_mismatch');

@@ -233,9 +233,12 @@
     if (!documentObject) return false;
 
     const resultArea = documentObject.getElementById?.("resultArea");
-    if (!resultArea) return false;
+    if (!resultArea || resultArea.dataset?.raceLoading === "true") return false;
 
-    let section = resultArea.querySelector?.(".v3-manshu-newspaper") || null;
+    const predictionRoot = resultArea.querySelector?.(":scope > .v3-root");
+    if (!predictionRoot) return false;
+
+    let section = predictionRoot.querySelector?.(".v3-manshu-newspaper") || null;
     if (hasRenderedManshuContent(section)) return false;
 
     const candidate = normalizeCandidate(firstFallbackTicket(prediction));
@@ -249,13 +252,13 @@
     if (!section) {
       section = createSection(documentObject);
       const anchor =
-        resultArea.querySelector?.(".v3-missing-numbers") ||
-        resultArea.querySelector?.(".v3-practical-selection") ||
+        predictionRoot.querySelector?.(".v3-missing-numbers") ||
+        predictionRoot.querySelector?.(".v3-practical-selection") ||
         null;
       if (anchor?.parentNode) {
         anchor.parentNode.insertBefore(section, anchor);
       } else {
-        resultArea.appendChild(section);
+        predictionRoot.appendChild(section);
       }
     }
 
@@ -283,17 +286,40 @@
     if (!root || root[INSTALLED_FLAG]) return false;
     root[INSTALLED_FLAG] = true;
 
-    let lastPrediction = null;
+    const documentObject = root.document || (typeof document !== "undefined" ? document : null);
+    let renderGeneration = 0;
+    let activeRender = null;
+    const enqueue = run => {
+      if (typeof root.queueMicrotask === "function") root.queueMicrotask(run);
+      else Promise.resolve().then(run);
+    };
+    const applyCurrent = frame => {
+      if (!frame || activeRender !== frame) return;
+      if (frame.generation !== renderGeneration || frame.area.dataset?.raceLoading === "true" ||
+          documentObject?.getElementById?.("resultArea") !== frame.area ||
+          frame.area.querySelector?.(":scope > .v3-root") !== frame.layout) {
+        activeRender = null;
+        return;
+      }
+      apply(frame.prediction, documentObject);
+    };
     const wrap = name => {
       const original = root[name];
       if (typeof original !== "function" || original[WRAPPED_FLAG]) return false;
 
       const wrapped = function (prediction, ...args) {
-        lastPrediction = prediction;
+        const generation = ++renderGeneration;
+        activeRender = null;
         const result = original.call(this, prediction, ...args);
-        const run = () => apply(prediction, root.document || (typeof document !== "undefined" ? document : null));
-        if (typeof root.queueMicrotask === "function") root.queueMicrotask(run);
-        else Promise.resolve().then(run);
+        const area = documentObject?.getElementById?.("resultArea");
+        const layout = area?.querySelector?.(":scope > .v3-root");
+        // Capture the root created by this synchronous render. A reset, a later
+        // render, or a queued callback cannot lend it another race's prediction.
+        if (generation === renderGeneration && layout && prediction && typeof prediction === "object") {
+          const frame = { generation, area, layout, prediction };
+          activeRender = frame;
+          enqueue(() => applyCurrent(frame));
+        }
         return result;
       };
       wrapped[WRAPPED_FLAG] = true;
@@ -309,19 +335,24 @@
     wrapAll();
     root.addEventListener?.("chappy:prediction-runtime-ready", wrapAll);
 
-    const documentObject = root.document || (typeof document !== "undefined" ? document : null);
     const resultArea = documentObject?.getElementById?.("resultArea");
     if (resultArea && typeof root.MutationObserver === "function") {
       let applyScheduled = false;
-      const observer = new root.MutationObserver(() => {
-        if (!lastPrediction || applyScheduled) return;
+      const observer = new root.MutationObserver(records => {
+        const frame = activeRender;
+        if (!frame) return;
+        if (frame.area.querySelector?.(":scope > .v3-root") !== frame.layout ||
+            records.some(record => Array.from(record.removedNodes || []).some(node =>
+              node === frame.layout || node.contains?.(frame.layout)))) {
+          activeRender = null;
+          return;
+        }
+        if (applyScheduled) return;
         applyScheduled = true;
-        const run = () => {
+        enqueue(() => {
           applyScheduled = false;
-          apply(lastPrediction, documentObject);
-        };
-        if (typeof root.queueMicrotask === "function") root.queueMicrotask(run);
-        else Promise.resolve().then(run);
+          applyCurrent(activeRender);
+        });
       });
       observer.observe(resultArea, { childList: true, subtree: true });
     }

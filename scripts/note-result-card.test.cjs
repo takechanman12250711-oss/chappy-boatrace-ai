@@ -182,7 +182,7 @@ test('malformed source identity, note links, timestamps and counts fail closed',
     { sourceSha256: null }, { sourceSha256: 'x'.repeat(64) }, { publicationKey: '20261006-09-11:manshu' },
     { articleSeries: 'candidate24' }, { place: '個人情報' }, { place: '津<script>' }, { place: '尼崎' },
     { raceNo: '11' }, { raceNo: 12 }, { raceKey: '20261006-25-11' },
-    { ticketCount: 0 }, { ticketCount: 8 }, { ticketCount: 24 }, { ticketCount: '5' },
+    { ticketCount: 0 }, { ticketCount: 11 }, { ticketCount: 24 }, { ticketCount: '5' },
     { url: 'https://note.com/another/n/nabcdef' }, { url: 'https://note.com/great_robin3243/n/nabc?token=secret' },
     { url: 'https://note.com/great_robin3243/n/nabc#private' }, { url: 'file:///private' },
     { publishedAt: '2026-10-06T15:30:00+09:00' }, { publishedAt: '2026-10-06T16:30:00+09:00' },
@@ -292,4 +292,42 @@ test('v2 category names cannot be rebound to a different article family even wit
     const report=aggregateFixture();report.matchedSections=[{articleSeries,label}];report.evidenceId=aggregateDigest(report);
     assert.equal(publicContent(report,{now:NOW}).matchedSections[0].label,label);
   }
+});
+
+test('readable-v9 scenario sections are literal normal-series headings and fit beside the other four', async () => {
+  const labels = [...require('./note-category-article').NORMAL_LABELS, ...require('./note-scenario-presentation.cjs').SCENARIO_LABELS];
+  const report = aggregateFixture();
+  report.articleSeries = ['normal'];
+  report.matchedSections = labels.map(label => ({ articleSeries: 'normal', label }));
+  report.evidenceId = aggregateDigest(report);
+  const content = publicContent(report, { now: NOW });
+  assert.equal(content.matchedSections.length, 6);
+  const alt = altText(content);
+  assert(alt.includes('AI展開予想・🌀 波乱のシナリオ') && alt.includes('AI展開予想・😼 チャッピーの「もしかして」'));
+  for (const label of labels.slice(4)) {
+    const other = { ...report, articleSeries: ['escape'], matchedSections: [{ articleSeries: 'escape', label }] };
+    other.evidenceId = aggregateDigest(other);
+    assert.throws(() => publicContent(other, { now: NOW }), /matched_sections_invalid/);
+  }
+  const card = await renderCard(report, { now: NOW });
+  assert.equal(card.width, 1200);
+  const single = { ...report, matchedSections: [{ articleSeries: 'normal', label: labels[5] }] };
+  single.evidenceId = aggregateDigest(single);
+  assert.notEqual((await renderCard(single, { now: NOW })).sha256, card.sha256);
+});
+
+test('v10 result cards accept the exact normal primary labels and reject reference or cross-family attribution',()=>{
+ const reader=require('../js/forecast-reader-contract');
+ const report=aggregateFixture();report.articleSeries=['normal'];
+ report.matchedSections=[reader.MAIN,reader.ADDITIONAL,reader.HOLE].map(label=>({articleSeries:'normal',label}));
+ report.evidenceId=aggregateDigest(report);const before=JSON.stringify(report);
+ const content=publicContent(report,{now:NOW});
+ assert.deepEqual(content.matchedSections,report.matchedSections);
+ for(const label of [reader.MAIN,reader.ADDITIONAL,reader.HOLE])assert(altText(content).includes('AI展開予想・'+label));
+ assert.equal(JSON.stringify(report),before);
+ for(const [articleSeries,label] of [['normal',reader.REFERENCE],...['escape','manshu'].flatMap(series=>[reader.ADDITIONAL,reader.HOLE].map(label=>[series,label]))]){
+  const changed={...report,articleSeries:[articleSeries],matchedSections:[{articleSeries,label}]};
+  changed.evidenceId=aggregateDigest(changed);
+  assert.throws(()=>publicContent(changed,{now:NOW}),/matched_sections_invalid/);
+ }
 });

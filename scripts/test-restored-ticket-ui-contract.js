@@ -5,6 +5,11 @@ const vm=require("node:vm");
 const source=fs.readFileSync("js/final-display-user-contract.js","utf8");
 const loader=fs.readFileSync("js/result-void-compat.js","utf8");
 const index=fs.readFileSync("index.html","utf8");
+function scriptVersion(file){
+  const src=[...index.matchAll(/<script\s+[^>]*src="([^"]+)"/g)].map(m=>m[1]);
+  const url=src.map(src=>new URL(src,"https://fixture.invalid/")).find(url=>url.pathname==="/"+file);
+  return url?url.searchParams.get("v"):null;
+}
 
 assert.match(source,/textContent="流し（フォーメーション）"/,"approved label must be 流し（フォーメーション）");
 assert.match(source,/textContent="万舟"/,"approved label must be 万舟");
@@ -12,7 +17,7 @@ assert.match(source,/\.v3-main-newspaper/,"duplicate legacy ticket section must 
 assert.match(source,/compactTickets/,"legacy ticket visibility must depend on a rendered compact ticket row");
 assert.doesNotMatch(source,/実戦厳選.*amount|amount.*実戦厳選/i,"UI contract must not add money display");
 assert.match(loader,/final-display-user-contract\.js/);
-assert.match(index,/result-void-compat\.js\?v=20260909-main-card-restore1/);
+assert.equal(scriptVersion("js/result-void-compat.js"),"20260909-main-card-restore1");
 
 function node(label=""){
   return {textContent:label,hidden:false,dataset:{},attrs:{},setAttribute(k,v){this.attrs[k]=v;},removeAttribute(k){delete this.attrs[k];},querySelectorAll(){return[];}};

@@ -5,9 +5,15 @@ const { client } = require('./note-marketing-store');
 const { markResultsVerified } = require('./note-marketing-reports');
 const { readEditorContent } = require('./note-editor-content');
 const { fillDraft, waitForVisibleAcrossFrames } = require('./note-browserbase-draft-save');
-const { loadBrowserUseConfig, createBrowserUseSession, stopBrowserUseSession } = require('./note-github-ui-transport');
+const { prepareNoteBrowser } = require('./note-github-ui-transport');
 const korogashi = require('./note-korogashi-lifecycle.cjs');
+const courseInsights = require('./note-korogashi-observability.cjs');
+const courseComparison = require('./note-korogashi-comparison.cjs');
 const BODY = '.note-common-styles__textnote-body';
+// About one minute of waiting. Each read can also take up to its own page
+// timeouts, so stop scheduling another read once 90 seconds have passed.
+const VERIFY_DELAYS_MS = [2000, 3000, 5000, 5000, 10000, 10000, 10000, 15000];
+const VERIFY_BUDGET_MS = 90000;
 async function readPublic(page, article) {
   const response = await page.goto(article.url, { waitUntil: 'domcontentloaded', timeout: 45000 });
   if (!response?.ok() || page.url() !== article.url) throw new Error('marketing_public_page_unavailable');
@@ -77,9 +83,26 @@ async function updateArticle(page, publicPage, article, desired, previousHash, p
   if (await submit.count() !== 1 || !await submit.isEnabled()) throw new Error('marketing_update_button_missing');
   console.log(`NOTE_MARKETING_UPDATE_ATTEMPT=${article.id}`);
   await submit.click(); // Exactly one submission; later runs recover by reading this same article.
-  for (let attempt=0; attempt<5; attempt++) {
-    try { await verifyPublic(publicPage, article, desired); return true; }
-    catch (error) { if (attempt===4) throw error; await page.waitForTimeout(1500); }
+  // note can take tens of seconds to show an update on the public page. The
+  // next run recovers the same target, but a failed run skips the course
+  // announcement and Buffer, so wait longer before giving up on this one.
+  const clock = options.clock || Date.now, started = clock();
+  for (let attempt=0; ; attempt++) {
+    let value, failure;
+    try { value = await readPublic(publicPage, article); if (publicMatches(value, desired)) return true; }
+    catch (error) { failure = error; }
+    // Stop when the delays are used up or the next wait would pass the budget.
+    const finished = attempt>=VERIFY_DELAYS_MS.length || clock()-started+VERIFY_DELAYS_MS[attempt]>VERIFY_BUDGET_MS;
+    if (finished && failure) throw failure;
+    if (finished) {
+      const expected=urlsIn(desired);
+      console.error(`NOTE_MARKETING_VERIFY_MISMATCH=${JSON.stringify({articleId:article.id,reads:attempt+1,elapsedMs:clock()-started,
+        textMatches:sameMarketingContent(value.text, desired),missingLinks:expected.filter(url=>!value.links.includes(url)).length,
+        extraArticleLinks:value.links.filter(url=>/^https:\/\/note\.com\/great_robin3243\/n\/n[a-f0-9]+(?:[?#].*)?$/.test(url)&&!expected.includes(url)).length,
+        ...editDiagnostics(value.text, previousHash, desired, previousText)})}`);
+      throw new Error('marketing_public_content_mismatch');
+    }
+    await page.waitForTimeout(VERIFY_DELAYS_MS[attempt]);
   }
 }
 function createUpdateJournal(store, loaded, config, clock = Date.now) {
@@ -106,6 +129,17 @@ function createUpdateJournal(store, loaded, config, clock = Date.now) {
     get head() { return head; }
   };
 }
+// Generate one stored snapshot; the publisher must verify these exact bytes.
+// Never add candidate lookups between registration and anonymous confirmation.
+async function courseIndexText(courseState, rows, source, now, clock = Date.now) {
+  const parts = [korogashi.publicText(courseState, now), courseInsights.renderSummary(courseInsights.summarize(courseState)),
+    courseComparison.renderOverview(courseComparison.overview(courseState))];
+  if (!korogashi.needsPublication(courseState)) {
+    try { parts.push(courseInsights.renderPreview(await courseInsights.preview(courseState, {rows, source, now, clock}))); }
+    catch { parts.push('次段候補：確認できませんでした。登録済みの段の記録を優先します。'); }
+  }
+  return parts.filter(Boolean).join('\n\n');
+}
 async function run({ env = process.env, now = Date.now(), clock = Date.now, store = client(env), update = updateArticle } = {}) {
   const config = loadConfig();
   if (!config) throw new Error('marketing_config_missing');
@@ -114,7 +148,7 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
     { refresh: env.NOTE_OFFICIAL_REFRESH_STARTED !== 'true', clock });
   const courseRepo = require('./note-korogashi-store.cjs').repository(store);
   const courses = await courseRepo.load();
-  const courseText = korogashi.publicText(courses.state, now);
+  const courseText = await courseIndexText(courses.state, state.rows, courseRepo.source, clock(), clock);
   state.korogashiIndex = {version:'note-korogashi-index-v1',text:courseText};
   const desired = { guide: config.guide.initialBody, index: publishedIndexBody(state, config, now) };
   const changed = ['guide','index'].filter(k=>state.articles[k]?.hash !== hash(desired[k]));
@@ -131,12 +165,11 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
   const observed = JSON.stringify(state) === JSON.stringify(loaded.state) ? loaded :
     {state,head:await store.save(state,loaded.head)};
   const journal = createUpdateJournal(store, observed, config, clock);
-  const connection = loadBrowserUseConfig(env);
-  const session = await createBrowserUseSession(connection);
+  const noteBrowser = prepareNoteBrowser(env);
   let browser, publicContext;
   const updates = [];
   try {
-    browser = await require('playwright').chromium.connectOverCDP(session.cdpUrl);
+    browser = await noteBrowser.open(require('playwright').chromium);
     const context = browser.contexts()[0];
     if (!context) throw new Error('marketing_saved_profile_missing');
     const page = await context.newPage();
@@ -157,7 +190,7 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
         const expired = Object.entries(next.plans).some(([id,p])=>korogashi.project(p).status==='stopped_publication_late' &&
           korogashi.project(courses.state.plans[id]).status==='waiting_publication');
         if (expired) {
-          const text = korogashi.publicText(next, clock());
+          const text = await courseIndexText(next, state.rows, courseRepo.source, clock(), clock);
           state.korogashiIndex = {version:'note-korogashi-index-v1',text};
           desired.index = publishedIndexBody(state, config, now);
           if (await update(page, publicPage, config.index, desired.index, state.articles.index.hash, null, journal.options('index', desired.index))) updates.push('index');
@@ -180,9 +213,9 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
   } finally {
     if (publicContext) await publicContext.close().catch(()=>{});
     if (browser) await browser.close().catch(()=>{});
-    const stopped = await stopBrowserUseSession(connection, session.id).catch(()=>({ok:false}));
+    const stopped = await noteBrowser.stop().catch(()=>({ok:false}));
     if (!stopped.ok) console.error('NOTE_MARKETING_BROWSER_STOP_FAILED=true');
   }
 }
 if (require.main === module) run().catch(error=>{console.error(`NOTE_MARKETING_FAILED=${error.message}`);process.exitCode=1;});
-module.exports = { publicMatches, BODY, readPublic, verifyPublic, updateArticle, requireArticleEditable, previousArticleText, createUpdateJournal, run };
+module.exports = { VERIFY_DELAYS_MS, VERIFY_BUDGET_MS, publicMatches, BODY, readPublic, verifyPublic, updateArticle, requireArticleEditable, previousArticleText, createUpdateJournal, courseIndexText, run };

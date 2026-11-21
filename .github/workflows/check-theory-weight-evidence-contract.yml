@@ -55,6 +55,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Preserve source contracts and the saved data read by this check.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/data/
+            /data/predictions/20260807.json
+            /data/predictions/20260808.json
+            /data/predictions/20260809.json
+            /data/predictions/20260810.json
+            /data/stats/racer-skill-patterns.json
       - uses: actions/setup-node@v4
         with:
           node-version: 20

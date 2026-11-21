@@ -6,6 +6,7 @@ const { contentLines, compareEditorContent } = require('./note-editor-content');
 const { SERIES, seriesOfBundle, publicationKey } = require('./note-article-series');
 const { dailySummary,publishedOutcomeLine,dailyPublishedSummary } = require('./note-marketing-reports');
 const { isRecordedPrice, isFreePrice, FREE_PRESENTATION_VERSIONS } = require('./note-pricing');
+const { MAX_PUBLICATION_TICKETS } = require('./note-ticket-limit.cjs');
 const { NOTICE: EXPIRY_NOTICE, purchaseLinkText, indexPurchaseLinks } = require('./note-marketing-expiry');
 const ACCOUNT = 'great_robin3243';
 const PROFILE = `https://note.com/${ACCOUNT}`;
@@ -79,7 +80,7 @@ function receiptRow(receipt, bytes, now = Date.now()) {
   const tickets = ticketStrings(bundle.baselinePracticalTickets), saved = ticketStrings(r.prediction?.practicalTickets);
   let ticketCount = null;
   if (tickets || saved) {
-    if (!tickets || !saved || !tickets.length || tickets.length > 7 || new Set(tickets).size !== tickets.length ||
+    if (!tickets || !saved || !tickets.length || tickets.length > MAX_PUBLICATION_TICKETS || new Set(tickets).size !== tickets.length ||
         tickets.some(t=>typeof t !== 'string' || !/^[1-6]-[1-6]-[1-6]$/.test(t) || new Set(t.split('-')).size !== 3) ||
         JSON.stringify([...tickets].sort()) !== JSON.stringify([...saved].sort())) throw new Error('marketing_ticket_count_invalid');
     ticketCount = tickets.length;

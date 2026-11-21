@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const Module = require("node:module");
+const {readMonitorSources} = require("./strong-escape-monitor-sources.cjs");
 
 global.window = global;
 require("../js/boat-identity");
@@ -13,7 +14,6 @@ const productionSelector = require("../js/practical-selection");
 const START_DATE = "20260813";
 const ADOPTION_PRS = [320, 322];
 const ADOPTION_MERGED_AT = "2026-08-12T04:43:06Z";
-const predictionDirectory = path.join(process.cwd(), "data", "predictions");
 const outputPath = path.join(process.cwd(), "data", "stats", "strong-escape-post-adoption-monitor.json");
 
 function loadSelectorBeforeStrongEscapeTrim() {
@@ -141,26 +141,49 @@ function finalize(stats) {
   };
 }
 
-function build() {
-  const total = emptyStats();
-  const byDate = {};
+function evaluateComparison({input, actual, raceKey, payout}) {
+  const production = productionSelector.select(global.createPrediction(input));
+  const counterfactual = selectorBeforeStrongEscapeTrim.select(global.createPrediction(input));
+  const productionTickets = (production.tickets || []).map(ticketOf).filter(Boolean);
+  const counterfactualTickets = (counterfactual.tickets || []).map(ticketOf).filter(Boolean);
+  const productionSet = new Set(productionTickets);
+  const counterfactualSet = new Set(counterfactualTickets);
+  const changed =
+    [...productionSet].some(ticket => !counterfactualSet.has(ticket)) ||
+    [...counterfactualSet].some(ticket => !productionSet.has(ticket));
+  const trim = production?.expansionSummary?.strongEscapeTrim || null;
+  const trimApplied = trim?.applied === true;
+  const veryStrongTrim = trimApplied && Number(trim.maximumAlternateHeadCount) === 0;
+
+  if (changed && !trimApplied) {
+    throw new Error(`${raceKey}: selection changed without strongEscapeTrim audit evidence`);
+  }
+
+  const sample = {
+    settledPostAdoptionRaces: 1,
+    comparable: true,
+    changed,
+    trimApplied,
+    veryStrongTrim,
+    productionHit: productionSet.has(actual),
+    counterfactualHit: counterfactualSet.has(actual),
+    productionStake: productionTickets.length * 100,
+    counterfactualStake: counterfactualTickets.length * 100,
+    productionTicketCount: productionTickets.length,
+    counterfactualTicketCount: counterfactualTickets.length,
+    payout
+  };
+  return sample;
+}
+
+function* comparisonEvents() {
   const seen = new Set();
-  let latestDate = null;
 
-  const files = fs.readdirSync(predictionDirectory)
-    .filter(name => /^\d{8}\.json$/.test(name))
-    .sort();
-
-  for (const filename of files) {
-    const date = filename.slice(0, 8);
-    if (date < START_DATE) continue;
-    latestDate = date;
-    byDate[date] ||= emptyStats();
-    const data = JSON.parse(fs.readFileSync(path.join(predictionDirectory, filename), "utf8"));
+  for (const {date, data} of readMonitorSources({startDate: START_DATE})) {
+    yield {type: "date", date};
 
     for (const row of rowsOf(data)) {
-      add(total, { observedRows: 1, comparable: false });
-      add(byDate[date], { observedRows: 1, comparable: false });
+      yield {type: "sample", date, sample: {observedRows: 1, comparable: false}};
       if (row?.result?.settled !== true) continue;
 
       const raceKey = row.raceKey || `${date}-${row.jcd}-${row.raceNo}`;
@@ -170,48 +193,18 @@ function build() {
       const actual = ticketOf(row?.result?.resultTicket || row?.result?.review?.resultTicket);
       const input = predictionInput(row);
       if (!actual || !input) {
-        add(total, { settledPostAdoptionRaces: 1, comparable: false });
-        add(byDate[date], { settledPostAdoptionRaces: 1, comparable: false });
+        yield {type: "sample", date, sample: {settledPostAdoptionRaces: 1, comparable: false}};
         continue;
       }
 
-      const production = productionSelector.select(global.createPrediction(input));
-      const counterfactual = selectorBeforeStrongEscapeTrim.select(global.createPrediction(input));
-      const productionTickets = (production.tickets || []).map(ticketOf).filter(Boolean);
-      const counterfactualTickets = (counterfactual.tickets || []).map(ticketOf).filter(Boolean);
-      const productionSet = new Set(productionTickets);
-      const counterfactualSet = new Set(counterfactualTickets);
-      const changed =
-        [...productionSet].some(ticket => !counterfactualSet.has(ticket)) ||
-        [...counterfactualSet].some(ticket => !productionSet.has(ticket));
-      const trim = production?.expansionSummary?.strongEscapeTrim || null;
-      const trimApplied = trim?.applied === true;
-      const veryStrongTrim = trimApplied && Number(trim.maximumAlternateHeadCount) === 0;
-
-      if (changed && !trimApplied) {
-        throw new Error(`${raceKey}: selection changed without strongEscapeTrim audit evidence`);
-      }
-
-      const payout = Number(row?.result?.payoutPer100 || row?.result?.review?.payoutPer100 || 0);
-      const sample = {
-        settledPostAdoptionRaces: 1,
-        comparable: true,
-        changed,
-        trimApplied,
-        veryStrongTrim,
-        productionHit: productionSet.has(actual),
-        counterfactualHit: counterfactualSet.has(actual),
-        productionStake: productionTickets.length * 100,
-        counterfactualStake: counterfactualTickets.length * 100,
-        productionTicketCount: productionTickets.length,
-        counterfactualTicketCount: counterfactualTickets.length,
-        payout
-      };
-      add(total, sample);
-      add(byDate[date], sample);
+      yield {type: "comparison", date, input, actual, raceKey,
+        payout: Number(row?.result?.payoutPer100 || row?.result?.review?.payoutPer100 || 0)};
     }
   }
 
+}
+
+function saveReport({total, byDate, latestDate}) {
   const report = {
     schemaVersion: 1,
     version: "strong-escape-post-adoption-monitor-v2",
@@ -233,8 +226,28 @@ function build() {
   return report;
 }
 
-if (require.main === module) {
-  console.log(JSON.stringify(build(), null, 2));
+function createAccumulator() {
+  return {total: emptyStats(), byDate: {}, latestDate: null};
+}
+
+function applyEvent(state, event) {
+  if (event.type === "date") {
+    state.latestDate = event.date;
+    state.byDate[event.date] ||= emptyStats();
+    return;
+  }
+  add(state.total, event.sample);
+  add(state.byDate[event.date], event.sample);
+}
+
+function build() {
+  const state = createAccumulator();
+  for (const event of comparisonEvents()) {
+    applyEvent(state, event.type === "comparison"
+      ? {type: "sample", date: event.date, sample: evaluateComparison(event)}
+      : event);
+  }
+  return saveReport(state);
 }
 
 module.exports = {
@@ -242,5 +255,20 @@ module.exports = {
   ADOPTION_MERGED_AT,
   build,
   finalize,
-  loadSelectorBeforeStrongEscapeTrim
+  loadSelectorBeforeStrongEscapeTrim,
+  comparisonEvents,
+  evaluateComparison,
+  createAccumulator,
+  applyEvent,
+  saveReport
 };
+
+if (require.main === module) {
+  if (process.argv.includes("--parallel")) {
+    require("./strong-escape-monitor-parallel.cjs").buildParallel()
+      .then(report => console.log(JSON.stringify(report, null, 2)))
+      .catch(error => { console.error(error); process.exitCode = 1; });
+  } else {
+    console.log(JSON.stringify(build(), null, 2));
+  }
+}
