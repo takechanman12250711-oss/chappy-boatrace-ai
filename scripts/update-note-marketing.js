@@ -98,7 +98,8 @@ async function updateArticle(page, publicPage, article, desired, previousHash, p
       const expected=urlsIn(desired);
       console.error(`NOTE_MARKETING_VERIFY_MISMATCH=${JSON.stringify({articleId:article.id,reads:attempt+1,elapsedMs:clock()-started,
         textMatches:sameMarketingContent(value.text, desired),missingLinks:expected.filter(url=>!value.links.includes(url)).length,
-        extraArticleLinks:value.links.filter(url=>/^https:\/\/note\.com\/great_robin3243\/n\/n[a-f0-9]+(?:[?#].*)?$/.test(url)&&!expected.includes(url)).length})}`);
+        extraArticleLinks:value.links.filter(url=>/^https:\/\/note\.com\/great_robin3243\/n\/n[a-f0-9]+(?:[?#].*)?$/.test(url)&&!expected.includes(url)).length,
+        ...editDiagnostics(value.text, previousHash, desired, previousText)})}`);
       throw new Error('marketing_public_content_mismatch');
     }
     await page.waitForTimeout(VERIFY_DELAYS_MS[attempt]);
