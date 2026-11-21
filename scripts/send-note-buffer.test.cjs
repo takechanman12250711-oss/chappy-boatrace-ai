@@ -26,6 +26,73 @@ function sourceFixture() {
 
 function fixture(){const f=sourceFixture(),saved=new Map();f.claims=f.receipts;f.log={put:async(k,v)=>saved.set(k,v),get:async k=>saved.get(k)||null,refs:async p=>[...saved.keys()].filter(k=>k.startsWith(p)).map(k=>({ref:'refs/tags/'+k})),budget:async()=>{}};
 f.delivery={channel:async()=>{f.events.push('channel');return 'channel';},create:async text=>{f.events.push('create');return {id:'post',channelId:'channel',text,status:'scheduled'};},post:async()=>{throw Error('not yet');}};f.saved=saved;return f;}
+async function captureIndexChecks(action) {
+ const logs=[],original=console.error;console.error=(...values)=>logs.push(values.map(String).join(' '));
+ let value,error;
+ try{value=await action();}catch(failure){error=failure;}finally{console.error=original;}
+ return {logs,value,error};
+}
+const indexCheck=(stage,reason)=>'NOTE_BUFFER_INDEX_CHECK_FAILED='+JSON.stringify({stage,reason});
+test('index diagnostics retain the initial short circuit and expose only fixed stage and reason enums',async()=>{
+ for(const reason of ['verified_date_mismatch','stored_hash_changed','render_snapshot_mismatch']){
+  const f=fixture();let clocks=0;f.clock=()=>{clocks++;return now;};
+  f.state.privateInput='private body https://example.invalid/private token';
+  if(reason==='verified_date_mismatch'){
+   const state={verifiedDate:'yesterday',get articles(){throw Error('hash must not be read');}};
+   f.store={load:async()=>({state,head:'d'.repeat(40)}),settle:async value=>value};
+  }else if(reason==='stored_hash_changed'){
+   f.store.settle=async state=>({...state,articles:{index:{hash:'private changed hash'}},
+    get rows(){throw Error('render must not be called');}});
+  }else f.state.articles.index.hash='private stale hash';
+  const out=await captureIndexChecks(()=>run(f));
+  assert.equal(out.error?.message,'buffer_public_index_not_verified');assert(out.error instanceof Error);
+  assert.deepEqual(out.logs,[indexCheck('initial_snapshot',reason)],'no body, URL, hash or arbitrary input is logged');
+  assert.equal(clocks,0);assert.deepEqual(f.events,[]);assert.equal(f.records.length,0);
+ }
+});
+test('fresh-evidence diagnostics preserve claim-before-send boundaries and permanent claims',async()=>{
+ for(const phase of ['before_claim','before_send']){
+  const f=fixture();let reserved=false,settlements=0,clocks=0;
+  f.clock=()=>{clocks++;return now;};
+  f.store.settle=async state=>{
+   const fresh=structuredClone(state);settlements++;
+   if(phase==='before_claim'?settlements===2:reserved)fresh.rows[0].settlement.status='miss';
+   return fresh;
+  };
+  const reserve=f.claims.reserve;f.claims.reserve=async pair=>{await reserve(pair);reserved=true;};
+  const out=await captureIndexChecks(()=>run(f));
+  assert.deepEqual(out.logs,[indexCheck('fresh_evidence','render_snapshot_mismatch')]);
+  assert(!f.events.includes('create'));
+  if(phase==='before_claim'){
+   assert.equal(out.error?.message,'buffer_public_index_not_verified');assert(!f.events.includes('claim'));
+   assert.equal(f.records.length,0);assert.equal(clocks,9);
+  }else{
+   assert.equal(out.error,undefined);assert.equal(out.value.status,'review_required');
+   assert.equal(out.value.reason,'buffer_pre_send_validation_failed_claim_retained');
+   assert.equal(f.events.filter(event=>event==='claim').length,1);assert.equal(clocks,13);
+   assert(await f.claims.exists({publicationKey:f.state.rows[0].publicationKey}));
+   reserved=false;const retry=await captureIndexChecks(()=>run(f));
+   assert.deepEqual(retry.logs,[]);assert.equal(retry.value.started,0);assert(!f.events.includes('create'));
+  }
+ }
+});
+test('index diagnostics retain paid-deadline stops and stay silent on success or other errors',async()=>{
+ const paid=fixture();paid.state.rows[0].price=200;paid.state.rows[0].deadlineAt=new Date(now+1000).toISOString();
+ paid.state.articles.index.hash=hash(indexBody(paid.state.rows,marketing,now));paid.clock=()=>now+2000;
+ const expired=await captureIndexChecks(()=>run(paid));
+ assert.equal(expired.error?.message,'buffer_public_index_not_verified');
+ assert.deepEqual(expired.logs,[indexCheck('delivery_snapshot','render_snapshot_mismatch')]);assert.deepEqual(paid.events,[]);
+ const good=fixture();let clocks=0;good.clock=()=>{clocks++;return now;};
+ const success=await captureIndexChecks(()=>run(good));
+ assert.equal(success.error,undefined);assert.equal(success.value.results[0].status,'accepted_pending');
+ assert.deepEqual(success.logs,[]);assert.equal(clocks,22);
+ const other=fixture();other.env={...other.env,GITHUB_REF:'refs/heads/other'};
+ const blocked=await captureIndexChecks(()=>run(other));
+ assert.equal(blocked.error?.message,'buffer_main_only');assert.deepEqual(blocked.logs,[]);assert.deepEqual(other.events,[]);
+ const midnight=fixture();midnight.clock=()=>now+86400000;
+ const date=await captureIndexChecks(()=>run(midnight));
+ assert.equal(date.error?.message,'buffer_date_changed');assert.deepEqual(date.logs,[]);assert.deepEqual(midnight.events,[]);
+});
 test('disabled or missing Buffer key has zero calls; default is disconnected',async()=>{
  for(const c of [{...config,enabled:false},{...config,activatedAt:null}]){const f=fixture();f.config=c;assert.equal((await run(f)).status,'awaiting_buffer_connection');assert.deepEqual(f.events,[]);}
  const f=fixture();f.env={...env,BUFFER_API_KEY:''};assert.equal((await run(f)).status,'awaiting_buffer_connection');
