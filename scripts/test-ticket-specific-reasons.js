@@ -81,10 +81,11 @@ assert.doesNotMatch(loader,/js\/final-ticket-reason-fix\.js/);
 // of the different installation timers used by the base and final owner.
 {
   let tick,received,paintQueries=0;
+  const renderedRoot={};
   const queued=[];
   const original=()=>"unwrapped";
   const paintWindow={
-    document:{documentElement:{},querySelector(){paintQueries++;return null;},getElementById(){return null;}},
+    document:{documentElement:{},querySelector(selector){if(selector==="#resultArea .v3-root")return renderedRoot;paintQueries++;return null;},getElementById(){return null;}},
     ChappyFinalMobileUi:{},renderAll:original,
     setInterval(callback){tick=callback;return 1;},clearInterval(){},
     setTimeout(callback){queued.push(callback);return queued.length;}

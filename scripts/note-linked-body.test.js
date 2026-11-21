@@ -32,7 +32,22 @@ const { readEditorContent, compareEditorContent } = require('./note-editor-conte
     await fillLinkedBody(page,input,resultBody);
     assert(compareEditorContent(await readEditorContent(input),resultBody).equal);
     assert.equal(await input.locator('a').getAttribute('href'),resultUrl,'query parameters survive HTML paste');
+    // An editor that keeps the old body after fill('') must not get the new
+    // body appended. Once: select-all + delete empties it, then paste replaces.
+    const sticky=times=>page.evaluate(times=>{
+      const el=document.querySelector('.ProseMirror');let left=times;
+      el.innerHTML='<p>前の本文</p><p>前の本文2</p>';
+      el.oninput=()=>{if(left>0&&!el.innerText.trim()){left--;el.innerHTML='<p>前の本文</p><p>前の本文2</p>';}};
+    },times);
+    await sticky(1);
+    await fillLinkedBody(page,input,body);
+    assert(compareEditorContent(await readEditorContent(input),body).equal,'old body is not kept before the new body');
+    // An editor that cannot be emptied stops before any paste.
+    await sticky(99);
+    await assert.rejects(fillLinkedBody(page,input,body),/note_body_clear_failed/);
+    assert(!(await readEditorContent(input)).includes('無料案内'),'nothing pasted after a failed clear');
+    await page.evaluate(()=>{document.querySelector('.ProseMirror').oninput=null;});
     await readerContext.close();
-    console.log('Linked note body paste: full replacement, spacing, reader context and clickable URL verified');
+    console.log('Linked note body paste: full replacement, sticky old body, spacing, reader context and clickable URL verified');
   } finally { await browser.close(); await new Promise(resolve=>server.close(resolve)); }
 })().catch(e=>{console.error(e.message);process.exitCode=1;});

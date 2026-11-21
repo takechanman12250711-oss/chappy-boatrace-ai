@@ -221,7 +221,7 @@ function createRuntime({
   );
   assert.ok(
     failedOptional.appended.includes(
-      "js/manshu-display-reliability.js?v=20260909-formation-preserve1"
+      "js/manshu-display-reliability.js?v=20261117-root-boundary1"
     ),
     "万舟フォーメーション保持修正を専用キャッシュ世代で読み込む"
   );

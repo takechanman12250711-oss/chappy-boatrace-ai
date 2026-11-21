@@ -16,12 +16,17 @@
     const race = pred.race || pred.raceInfo || {};
     const conditions = pred.preRaceConditions || pred.conditions || pred.predictionConditions || {};
     const flow = pred.raceFlow || {};
+    const reader = root.ChappyForecastReaderContract;
+    // Shared cards and their intro use the same saved, verified explanation.
+    const flowText = typeof reader?.explanation === 'function'
+      ? reader.explanation(pred)?.text || '展開の根拠は確認中です。'
+      : flow.comment || flow.summary || flow.text || pred.finalAi?.flow || flow.title;
     return {
       title: [text(race.place || race.stadiumName || pred.venueName || pred.venue?.name), text(race.raceNo || race.rno || pred.raceNo).replace(/R$/,'')].filter(Boolean).join(' ') + (race.raceNo || race.rno || pred.raceNo ? 'R' : ''),
       date: text(race.date || pred.date).replace(/^(\d{4})(\d{2})(\d{2})$/, '$1/$2/$3'),
       deadline: time(race.deadlineAt || race.deadline || race.raceInfo?.deadline || pred.deadlineAt),
       fetched: time(conditions.sourceFetchedAt || pred.sourceFetchedAt || pred.fetchedAt || race.raw?.fetchedAt),
-      flow: short(flow.comment || flow.summary || flow.text || pred.finalAi?.flow || flow.title),
+      flow: short(flowText),
       warning: short(pred.finalAi?.risk || pred.finalAi?.warning || pred.finalAi?.caution),
       availability: conditions.dataAvailability || null
     };
@@ -67,7 +72,9 @@
     }
     if (summary && summary.parentNode !== layout) layout.insertBefore(summary, evidence);
     const manshu = area.querySelector('.v3-manshu-newspaper');
-    if (summary) {
+    const sharedReader = summary.hasAttribute('data-reader-contract');
+    // The shared contract owns categories, zero states, counts and disclosures.
+    if (summary && !sharedReader) {
       for (const [key, label] of [['main','本命'],['cover','押さえ'],['flow','流し（フォーメーション）']]) {
         if (!summary.querySelector(`.is-${key}`)) {
           const empty = root.document.createElement('details');
@@ -78,7 +85,7 @@
         }
       }
     }
-    if (summary && manshu) {
+    if (summary && manshu && !sharedReader) {
       let group = summary.querySelector('.chappy-bright-manshu');
       if (!group) {
         group = root.document.createElement('details');
@@ -89,7 +96,7 @@
       const body = group.querySelector('.chappy-manshu-content');
       if (manshu.parentNode !== body) body.appendChild(manshu);
     }
-    if (summary && root.ChappyTicketOddsVisibility?.expandNotation) {
+    if (summary && !sharedReader && root.ChappyTicketOddsVisibility?.expandNotation) {
       const exacts = group => new Set([...group.querySelectorAll('.chappy-final-buy-formation,.chappy-true-manshu-line strong')].flatMap(node => root.ChappyTicketOddsVisibility.expandNotation(node.textContent)));
       const allTickets = new Set();
       summary.querySelectorAll(':scope > .chappy-final-buy-group:not(.is-practical-fallback)').forEach(group => {

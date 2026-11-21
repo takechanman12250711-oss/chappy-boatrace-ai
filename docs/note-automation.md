@@ -449,3 +449,101 @@ Browser Useの残高不足（`browser_use_create_failed_402`）で、接続前�
 - 公開設定画面でタグ欄を読むだけの観測（`scripts/note-hashtag-observation.js`）を、価格設定の後・公開クリックの前に追加した。入力・クリック・フォーカスはせず、最大3秒、失敗しても公開を止めない。ログ `NOTE_UI_HASHTAG_FIELD=` に、タグ欄の個数・要素の種類・フォーム内かどうか・フォームの送信ボタン数だけを出す（画面の文言は出さない）。タグ入力はまだ接続していない。次に公開が成功した実行のログで、Enterが投稿を確定させ得る構造かを判断する。
 - Browser Useのセッション作成が拒否された場合、エラーに応答の短い理由コードだけを付ける（例 `browser_use_create_failed_402_<code>`）。残高や上限の金額、メッセージ本文はログに出さない。2026-11-11は公開11回に加え、無料一覧の更新（Update note marketing）も同じ402で失敗している。理由コードが取れるのはこの変更のmain反映後の実行から。
 - 検証: `node --test scripts/note-hashtag-observation.test.js` と `node scripts/note-github-ui-transport.test.js`。
+
+## 2026-11-13 GitHubのブラウザで直接ログインする確認（authのみ・本人の疑問「Browser Useに課金しないと自動投稿できないのか」）
+
+自動投稿に必要なのは「noteにログインしたブラウザを機械が操作できること」で、Browser Useはその置き場所の1つである。課金なしの候補として、GitHub Actionsの中のブラウザがメールアドレス（またはnote ID）とパスワードで直接ログインする経路の確認を追加した。以前不採用にしたのはXアカウント経由のログインで、この方式は未試行。
+
+- `scripts/note-direct-login.js`。`Note GitHub UI Transport` の手動実行で `mode=auth`・`browser=github` を選んだときだけ動く。ログイン画面を開き、1回だけログインを試し、編集画面のタイトル欄・本文欄が使えることを確認して終了する。記事の入力・予約・公開はしない。draft／publish／recover では使えない（`direct_login_auth_mode_only`）。
+- 必要なSecretは `NOTE_LOGIN_ID` と `NOTE_LOGIN_PASSWORD`（本人がiPhoneで登録）。値とページ本文はログに出さず、固定の結果コードだけを出す。失敗しても自動で再試行しない（連続失敗によるアカウント制限を避ける）。
+- 確認済み：ログイン画面に「メールアドレス または note ID」「パスワード」の欄と「ログイン」ボタンが各1つあること（ログインなしで画面を読んだだけ）。未確認：GitHubのサーバーからのログインをnoteが受け付けるか、機械よけや本人確認が出ないか。実アカウントでの手動実行1回で判断する。
+- この確認が通っても、公開処理はまだBrowser Use経由のままである。公開をこの経路へ切り替えるのは、確認結果を見てからの別の変更とする。「既存アカウントの認証方式変更を前提にしない」という取り決めとの関係（パスワードの利用）は本人の判断による。
+- 検証: `node --test scripts/note-direct-login.test.js`、`node scripts/note-github-ui-transport.test.js`。
+- 2026-11-13 事前調査：2025年6月の個人開発記録に、GitHub Actionsからnoteへメール・パスワードでログインする自動投稿がreCAPTCHAで止まった例がある（`g-recaptcha-response`）。同じ筆者は別の記録で、ログイン済みブラウザのセッションCookieを再利用する方式へ切り替えている。いずれも第三者の過去の記録で、現在のnoteと本アカウントでの結果は未確認。2026-11-15の診断修正後は、ログイン画面に残った場合に既存の確認用部品を観測し、可視の部品があれば `note_login_verification_component_visible`、部品はあるがすべて不可視なら `note_login_verification_component_detected`、部品がなければ `note_login_not_accepted` と報告する。可視のバッジやチェック欄を含め、部品の存在・可視性だけで機械よけによる拒否、明示的なチャレンジ、ID・パスワードの誤りとは断定しない。件数・可視性の取得失敗や不正値、観測上限64件超は `note_login_verification_observation_failed` とし、部品なしや不受理へ読み替えない。旧版runの `note_login_bot_check` からも、可視のチャレンジがあったか、資格情報が正しかったか、停止原因は遡って判断できない。ログイン送信は従来どおり1回だけで、自動再試行しない。
+- 2026-11-14 レビュー指摘への対応（PR #1469）：ブラウザのライブラリは、入力に失敗したときのエラー文に入力値そのものを載せる（Playwright 1.55.0 の Call log に `fill("入力値")`）。そのままだとIDやパスワードが `NOTE_UI_TRANSPORT_FAILED=` の出力に混ざるため、この確認処理が外へ出すエラーは、あらかじめ決めたコードだけに限定した。画面を開く・欄を探す・入力・送信・結果確認・編集画面確認・ブラウザ起動のどこで失敗しても、元のエラー文・原因・スタックは引き継がず、段階ごとの固定コード（例 `note_login_input_failed`）に置き換える。実ブラウザで、無効化したパスワード欄への入力失敗を再現し、修正前は出力にダミーのパスワードが含まれ、修正後は固定コードだけになることを確認した。実アカウントでの実行と、GitHubのSecretマスク後の表示は未確認。
+
+## 2026-11-16 保存したログイン状態でGitHubのブラウザが編集画面へ届くかの確認（authのみ）
+
+Browser Useの残高0（402）で公開が止まっているため、課金なしの候補として、本人のパソコンでログインした状態（Playwright `storageState`）をGitHub Actionsのブラウザで再利用する経路を確認する。本人がパソコンの利用を選んだため、iPhoneだけで完結する要件より、この節の手順を優先する（Issue #1460 の引き継ぎ）。
+
+- 本人のWindowsパソコンで、専用プロファイルのChromeを開き、本人がnoteへログインした。同じブラウザで `https://note.com/notes/new` から編集画面のタイトル欄・本文欄の表示を確認した（入力なし）。note.com のCookieだけを取り出し、base64にしてSecret `NOTE_STATE_JSON_BASE64` へ登録した（2026-11-15 21:13 UTC）。一時ファイルは登録後に削除した。Cookie・stateは会話、リポジトリ、ログに出していない。
+- `scripts/note-saved-state-auth.js`。`Note GitHub UI Transport` の手動実行で `mode=auth`・`browser=github-state` を選んだときだけ動く。Secretのstateを読み込んだブラウザで編集画面を1回開き、タイトル欄・本文欄が使えることを確認して終了する。ログイン操作・記事の入力・予約・公開はしない。draft／publish／recover では使えない（`saved_state_auth_mode_only`）。
+- ログへ出すのは固定の結果コードだけ。ブラウザの例外文・Cookie・ページ本文は出さない。失敗しても自動で再試行しない。
+- 未確認：noteが、GitHubのランナーからのセッション再利用を受け付けるか。セッションの有効期間。main反映後の手動実行1回で判断する。
+- この確認が通っても、公開処理はまだBrowser Use経由のままである。公開をこの経路へ切り替えるのは、確認結果を見てからの別の変更とする。
+- 検証: `node --test scripts/note-saved-state-auth.test.js`、`node scripts/note-github-ui-transport.test.js`。
+
+## 2026-11-16 保存した状態の確認は「画面あり」のブラウザで行う
+
+PR #1474 のmain反映後、手動実行 run 43788103199（`mode=auth`・`browser=github-state`）は `note_editor_fields_not_ready` で停止した。`NOTE_UI_STATE_LOADED=true`、最終的な場所は `editor_https`（ログイン画面へは戻されていない）、タイトル欄・本文欄は未検出、frame 1件。
+
+- 本人のパソコンで同じ保存状態を使って切り分けた。画面なし（headless）のChromeでは同じ `note_editor_fields_not_ready`（場所 `editor_https`・欄なし）。画面あり（通常のウィンドウ）のChromeでは編集画面のタイトル欄・本文欄が使えた。入力はしていない。
+- したがって、この停止は保存状態やGitHubの場所より先に、画面なしのブラウザで編集画面の欄が出ないことで説明できる。Playwright同梱Chromiumでの画面あり確認は、パソコンへの取得が通信で完了せず未実施。
+- 確認処理は通常のウィンドウで開く（`LAUNCH_OPTIONS = { headless: false }`）。workflowは `browser=github-state` のときだけ `xvfb-run -a` で仮想の画面を与える。ブラウザの名乗りや指紋の変更、機械よけの解決手段は使わない。
+- 未確認：GitHubのランナーで画面ありにすれば欄が出るか。main反映後の手動実行1回で判断する。通らなければ、パソコンに投稿させる案（Issue #1460 のB）を検討する。
+- 公開処理はBrowser Use経由のまま変更していない。
+
+## 2026-11-16 公開処理を「保存したログイン状態」の経路へ切り替えられるようにする
+
+PR #1476 のmain反映後、手動実行 run 43792690334（`mode=auth`・`browser=github-state`）は成功した（`NOTE_UI_STATE_LOADED=true`・`NOTE_UI_EDITOR_READY=true`、入力・公開なし）。GitHubのランナーの通常ウィンドウのブラウザが、本人の保存したログイン状態でnote編集画面のタイトル欄・本文欄まで届いた。これを受け、auth／draft／publish／recover と無料一覧の更新（Update note marketing）が、ログイン済みブラウザの出どころを選べるようにした。
+
+- 切り替えはリポジトリ変数 `NOTE_UI_ROUTE`。`saved-state` のとき、ランナー自身のブラウザ（通常ウィンドウ・`xvfb-run`）へSecret `NOTE_STATE_JSON_BASE64` の状態を読み込む。未設定のときは従来どおりBrowser Use。mainへの反映だけでは経路は変わらない。変数を消せば元へ戻る。
+- `scripts/note-github-ui-transport.js` の `prepareNoteBrowser` が経路を1か所で決める。どちらの経路も「最初のcontextがログイン済み」のブラウザを返すため、予約・本文入力・表紙・公開設定・公開クリック1回・ログインなしの公開確認・receiptの処理は同じコードのまま。公開の条件（保存原本のSHA一致、展示後、中心1〜7点、締切120秒超、readable-v7・0円、原子的予約、結果不明なら再投稿しない）は変更していない。
+- 順序も同じ：資格情報の確認 → 表紙生成 → ブラウザを開く → 原子的予約 → 編集画面。`saved-state` で状態が無い・壊れている・空の場合と、ブラウザを開けない場合（`note_state_browser_start_failed`）は予約を作らずに止まる。ブラウザの例外文は状態を含み得るため固定コードへ置き換える。
+- Browser Useの経路はそのまま残す。`saved-state` ではBrowser UseのAPIを呼ばないので、402は発生しない。
+- 未確認：`saved-state` での本文入力・表紙のアップロード・公開設定・公開クリック・公開確認（authで確かめたのは編集画面の欄まで）。Browser Useは日本のプロキシ経由だったが、ランナーは海外にあり、noteの表示や受け付けが同じかは実記事で確かめる。ログイン状態の有効期間と、利用のたびにCookieが更新される場合に保存した状態が古くなるかも未確認。切れた場合は `note_editor_session_not_ready_<host>` で予約後に止まり得るため、本人のパソコンでログインし直してSecretを更新する。
+- 開始の証拠は、変数を設定した後の最初の公開receiptとログインなし画面での確認であり、main反映や変数の設定だけでは再開済みとしない。
+- 検証: `node --test scripts/note-saved-state-auth.test.js`、`node scripts/note-github-ui-transport.test.js`、`node --test scripts/note-queue-expiry.test.cjs`、`node --test scripts/note-marketing.test.js scripts/note-marketing-reports.test.js`。
+
+## 2026-11-16 公開できる買い目を10点までに（readable-v8、本人指示）
+
+本人の指示で、記事を公開できる「中心の買い目」（保存済みの実戦厳選）の点数を1〜7点から1〜10点へ広げた。予想そのものは以前から成立展開時に最大10点（docs/CHAPPY_CHARTER.md）で、8〜10点のレースは公開ゲートで `publication_ticket_count_exceeds_7` として見送られていた。予想・買い目の作り方・オッズ・順序は変えていない。
+
+- 上限の正本は `scripts/note-ticket-limit.cjs` の `MAX_PUBLICATION_TICKETS = 10`。公開ゲート（`note-publication-source.js`・`note-github-ui-transport.js`）、無料一覧（`note-marketing-content.js`）、結果判定（`note-marketing-reports.js`・`note-published-ticket-sections.js`）、X告知（`note-marketing-social.js`）、結果カード（`note-result-card.cjs`）が同じ値を読む。見送りの固定コードは `publication_ticket_count_exceeds_limit`／`ticket_count_exceeds_limit` に改名した。
+- 新規公開は readable-v8。v8 は v7 の本文をそのまま使い、記事末尾の「⭐ 中心の買い目」欄だけが1〜10点を受け付ける。1〜7点のときは title・無料部分・買い目欄・全文が v7 と同じバイト（テストで照合）。価格は0円のまま。
+- v3 の欄（`note-korogashi-presentation.cjs`、1〜7点）と v7 の言い回し（`note-plain-presentation.cjs`）は復旧照合のため1バイトも変えていない。v8 用の欄は `scripts/note-center-presentation.cjs` が同じ規則を点数だけ広げて持つ。
+- v7 は `scripts/note-recovery-readable-v7.cjs`（変更前の renderer と同一バイト）と `note-recovery-presentation.cjs` の HISTORICAL（指紋12個）に固定した。変更前の claim は v7 として復旧照合し、v7 のコードは8点以上を受け付けない。公開済み記事の本文・買い目・receipt は変更しない。
+- 11点以上は保存原本の監査（`STORED_TICKETS_INVALID`）で止まる。独立監視の原本（`note-independent-monitor-source.js`）とコロがしの1レース（`note-korogashi-draft.cjs`・`note-korogashi-lifecycle.cjs`）は1〜7点のまま。8〜10点の記事はコロがしの対象にならず、切り詰めもしない。
+- 変えていないこと：保存原本のSHA一致、展示後、締切120秒超、0円、同じレース・種類は1回、本文入力前の原子的予約、「投稿する」1回、結果不明なら再投稿しない、ログインなし画面での全文一致確認とreceipt。
+- 未確認：8〜10点の実記事の公開（main反映後の最初の該当レースで確認）、結果カードの画像に8〜10点の記事が載ったときの実表示。
+- 検証: `node scripts/note-publication-source.test.js`（8点・10点の公開payload、証明、締切後の照合、v7では拒否、11点は監査で停止）、`node --test scripts/note-free-explanation.test.cjs`（v8＝v7のバイト、固定v7）、`node --test scripts/note-recovery-presentation.test.cjs`（v7 claimの復旧）、`node scripts/note-github-ui-transport.test.js`、`node --test scripts/note-korogashi-draft.test.cjs`。
+
+## 2026-11-16 独立展開の買い目を2つの区分に載せる（readable-v9、本人決定）
+
+10点までへの変更後、当日の保存原本 129件のうち 61件（最新の原本で数えると53レース中22レース）が `readable_category_membership_missing` で見送りになった。保存済みの実戦厳選に、4つの保存プール（`mainSheet.tickets`・`coverTickets`・`flowTickets`・`manshuSheet.tickets`）のどれにも入っていない「独立展開」の買い目があり、記事に載せる区分が無かったためである。本人の決定で、区分を2つ足した。
+
+| 区分名（本人決定） | 保存原本の `scenarioClassificationReason` | 意味 |
+|---|---|---|
+| 🌀 波乱のシナリオ | 別頭の独立展開 | 本命とは別の艇が1着になる展開 |
+| 😼 チャッピーの「もしかして」 | 残し艇を使う押さえ展開 | 1着の流れは同じで、別の艇が2・3着に残る展開 |
+
+- 区分名は Claude と ChatGPT（チャッピー）で共通。記事・報告・会話でこの表記をそのまま使う。
+- 載せる条件：通常AI記事で、`baselinePracticalTickets` の行が `category: 独立展開`・`candidateKind: independent-scenario`・上表の理由を持ち、`record.prediction.practicalTickets` の同じ券も同じ分類であること。4つのプールに入っている券は、分類が独立展開でもそのプールの区分のまま。
+- 振り分けは保存された分類だけで決める。オッズ・順位・結果では決めない。上表以外の分類（例：検証済み救済）や分類が食い違う券がプール外にあれば、従来どおり記事全体を見送る。
+- 並びは 本命 → 押さえ → 流し → 万舟狙い → 🌀 → 😼 → 参考予想 → 合計 → ⭐ 中心の買い目。該当券があるときだけ区分を出す。該当券が無い記事は readable-v8 と title・無料部分・買い目欄・全文が同じバイト（テストと実データで照合）。
+- 2つの区分は公開予想（的中判定の対象）に含む。無料部分の点数の内訳にも区分名と点数が出る（券そのものは出ない）。的中時の掲載欄名もこの区分名になる（`note-result-presentation.js`、結果カード `note-result-card.cjs`）。元区分の表示（本命・押さえ・流し・万舟狙い）は従来の4プールだけで、この2区分に当たった場合は掲載欄名で伝える。
+- 正本は `scripts/note-scenario-presentation.cjs`。`note-category-article.js`・`note-korogashi-presentation.cjs`・`note-plain-presentation.cjs`・`note-center-presentation.cjs`・`note-ticket-limit.cjs` は1バイトも変えていない。v8 は `scripts/note-recovery-readable-v8.cjs` と HISTORICAL（指紋14個）に固定し、変更前の claim は v8 として復旧照合する。公開済み記事は変更しない。
+- 変えていないこと：予想・買い目・点数・順序、1〜10点、展示後、締切120秒超、0円、同じレース・種類は1回、原子的予約、「投稿する」1回、結果不明なら再投稿しない、ログインなし画面での全文一致確認とreceipt。独立監視の記事には区分を足さない。
+- 実データ（2026-11-16 の保存原本 129件、読むだけ）：68件は v8 と同じバイト、58件が新しく公開可能、3件は「検証済み救済」の券がプール外のため見送りのまま。最新の原本で数えると 53レース中 52レースが公開可能。
+- 未確認：この2区分を含む実記事の公開と、note の本文での絵文字・かぎかっこの表示（ログインなし画面での全文一致確認で確かめる）、的中時の結果カードの実表示。
+- 検証: `node scripts/note-publication-source.test.js`、`node --test scripts/note-free-explanation.test.cjs scripts/note-recovery-presentation.test.cjs scripts/note-result-card.test.cjs`。
+
+
+## 2026-11-16 本人承認：本命の見直しと記事・アプリの共通表示
+
+本人が「本命は変えていい！」と明示承認。新規公開は readable-v10・0円とし、通常AI記事の「🎯 本命」は保存済みの実戦厳選を最初に一度だけ表示する。残りは「追加候補」「穴候補（配当未確認）」「参考予想（別集計）」へ重複なしで分け、アプリも同じ `js/forecast-reader-contract.js` を使う。旧本命プールの成績を新本命へ読み替えず、元券・元順序・区分別の元台帳・公開済み記事は保持する。独立記事の本文はv9と同じで、系列も混合しない。
+
+正本は `scripts/note-reader-presentation.cjs`。新規publisher/source/receiptはv10の本文・本命subset証明・元原稿SHAを照合する。v1〜v9のclaimは各凍結版で復元し、v9を新しい本命の意味へ読み替えない。展示後・締切余裕・購入見送り・原子的予約・結果不明時の再投稿停止・匿名全文確認は維持する。
+
+この表示変更自体は予想精度改善の実証ではない。本命や将来の選定ロジックの改善は、展開→コース→ST/スリット→展示/足→残し/拾いの保存根拠を使い、同点数比較と未使用期間の検証を行う。過去原本への結果に合わせた後付けや、1号艇以外へ件数を合わせる変更は行わない。Claude Codeにも同じPR・固定head・共通contractを共有し、別実装を作らない。
+
+
+## 2026-11-18 無料一覧の更新確認は反映の遅れを待つ
+
+11/18は Update note marketing の無料一覧の更新が `marketing_public_content_mismatch` で9回失敗した。どの回も「更新する」を押した約10秒後に失敗しており、次の実行ではその回の更新内容が公開画面に出ていたことを照合して受け入れている（手動変更の警告は出ていない）。公開画面への反映が、確認の待ち時間（1.5秒×4回）より遅れていた可能性が高い（反映時刻は直接測っていない）。同日17:20以降の6回は、変更前のコードのままで成功しており、遅れは時間帯によって出たり出なかったりする。失敗した実行では、一覧に依存するコロがしの掲載確認とBufferジョブが行われない。
+
+- 更新後の公開画面の確認を、2・3・5・5・10・10・10・15秒の間隔で最大9回（待機の合計は約1分）に延ばす。「更新する」を押すのは従来どおり1回だけ。
+- 各読み取りにはページ表示の時間切れ（最大約60秒）があるため、確認開始から90秒を過ぎる待機は始めない。最後の読み取りが時間切れになった場合を含め、確認全体はおおむね150秒以内。update ジョブの10分の制限内に収まる見込みだが、編集画面の操作や guide の更新はこの外側で、全体の所要時間は保証しない（ツムギ班のレビューで指摘）。
+- 最後まで一致しない場合は `NOTE_MARKETING_VERIFY_MISMATCH=` に、本文が一致したか、足りないリンク数、余分な記事リンク数、読んだ回数、経過時間だけを出す。本文やリンクの中身は出さない。
+- 本文・リンクの照合条件、無料設定の確認、更新前の意図記録（CAS）、手動変更の検出は変えない。
+- この環境からは note.com に接続できないため、実際の反映時間は測っていない。反映後のログで確認する。

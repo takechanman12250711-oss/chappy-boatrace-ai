@@ -45,6 +45,10 @@ const KEEP_NEWER = new Set([
   'data/stats/practical-priority-shadow-report.json',
   'data/analysis/reference-tag-effectiveness.json',
 ]);
+// The standalone PR handoff CLI is not a report-builder dependency. Its exact
+// path is the sole exception; the independence contract is checked by the
+// checkpoint test, including tracked inputs omitted from sparse checkouts.
+const INDEPENDENT_HANDOFF = 'scripts/ai-staff-handoff.cjs';
 const CODE_PATHS = ['scripts', 'js', 'api', 'config', '.github/workflows/collect-results.yml'];
 const sha256 = value => createHash('sha256').update(value).digest('hex');
 const git = (cwd, args) => execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 128 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] }).trimEnd();
@@ -138,7 +142,9 @@ function validate(bundle, { stage, baseSha }) {
 function apply({ root, bundle, stage, baseSha }) {
   validate(bundle, { stage, baseSha });
   if (git(root, ['status', '--porcelain'])) throw new Error('Publication checkout must be clean');
-  if (git(root, ['diff', '--name-only', baseSha, 'HEAD', '--', ...codePaths(stage)]))
+  const changedCode = git(root, ['diff', '--name-only', '-z', baseSha, 'HEAD', '--', ...codePaths(stage)])
+    .split('\0').filter(file => file && file !== INDEPENDENT_HANDOFF);
+  if (changedCode.length)
     throw new Error('Builder code changed after source checkpoint; rebuild from current main');
   const receiptFile = receiptPath(stage);
   if (FIXED_STAGES.has(stage)) {

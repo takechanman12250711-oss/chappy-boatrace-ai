@@ -69,26 +69,30 @@ function compactPredictionRow(row) {
 
 function predictionRows({
   predictionDirectory = PREDICTION_DIRECTORY,
-  resultDirectory = RESULT_DIRECTORY
+  resultDirectory = RESULT_DIRECTORY,
+  sourceDates,
+  readPredictionData = date => JSON.parse(
+    fs.readFileSync(
+      path.join(predictionDirectory, `${date}.json`),
+      "utf8"
+    )
+  )
 } = {}) {
   const rows = [];
-  fs.readdirSync(predictionDirectory)
-    .filter(name => /^\d{8}\.json$/.test(name))
-    .filter(name =>
-      name.slice(0, 8) >=
-      reportApi.CONTRACT_START_DATE
-    )
+  const dates = sourceDates === undefined
+    ? fs.readdirSync(predictionDirectory)
+        .filter(name => /^\d{8}\.json$/.test(name))
+        .map(name => name.slice(0, 8))
+    : sourceDates;
+  [...new Set(dates)]
+    .filter(date => /^\d{8}$/.test(date))
+    .filter(date => date >= reportApi.CONTRACT_START_DATE)
     .sort()
-    .forEach(name => {
-      const data = JSON.parse(
-        fs.readFileSync(
-          path.join(predictionDirectory, name),
-          "utf8"
-        )
-      );
+    .forEach(date => {
+      const data = readPredictionData(date);
       const resultPath = path.join(
         resultDirectory,
-        name
+        `${date}.json`
       );
       const resultData = fs.existsSync(resultPath)
         ? JSON.parse(
@@ -251,11 +255,12 @@ function rowsFromPredictionData(
 }
 
 function buildReport(
-  generatedAt = new Date().toISOString()
+  generatedAt = new Date().toISOString(),
+  sourceOptions = {}
 ) {
   return {
     generatedAt,
-    ...reportApi.build(predictionRows())
+    ...reportApi.build(predictionRows(sourceOptions))
   };
 }
 

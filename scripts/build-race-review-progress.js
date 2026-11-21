@@ -119,15 +119,29 @@ function assess(bundle) {
       practicalSelectionEvidence: selectionEvidence(r, practical),
       prediction: { practicalTickets: practical, candidate24Tickets: pool, officialResultUsedForPrediction: false } } };
 }
-function buildProgress(bundles, results, { generatedAt = new Date().toISOString(), activeMethod = '' } = {}) {
-  const excluded = {}, selected = new Map();
-  for (const bundle of bundles) {
-    const item = assess(bundle);
-    if (item.reason) { excluded[item.reason] = (excluded[item.reason] || 0) + 1; continue; }
-    // A race is counted once, using its latest valid pre-deadline snapshot.
-    const previous = selected.get(item.row.raceKey);
-    if (!previous || item.saved > previous.saved || (item.saved === previous.saved && item.method < previous.method)) selected.set(item.row.raceKey, item);
+// Keep only the already assessed, report-sized latest row per race. The source
+// bundle (including its unused prediction tree and article) is never retained.
+function addPrepared(prepared, bundle) {
+  const item = assess(bundle);
+  if (item.reason) {
+    prepared.excluded[item.reason] = (prepared.excluded[item.reason] || 0) + 1;
+    return;
   }
+  const previous = prepared.selected.get(item.row.raceKey);
+  if (!previous || item.saved > previous.saved ||
+      (item.saved === previous.saved && item.method < previous.method)) {
+    prepared.selected.set(item.row.raceKey, item);
+  }
+}
+function prepareBundles(bundles) {
+  const prepared = { excluded: {}, selected: new Map() };
+  for (const bundle of bundles) addPrepared(prepared, bundle);
+  return prepared;
+}
+function buildProgress(bundles, results, { generatedAt = new Date().toISOString(), activeMethod = '' } = {}) {
+  return buildPrepared(prepareBundles(bundles), results, { generatedAt, activeMethod });
+}
+function buildPrepared({ excluded, selected }, results, { generatedAt = new Date().toISOString(), activeMethod = '' } = {}) {
   const groups = new Map();
   for (const item of selected.values()) {
     if (!groups.has(item.method)) groups.set(item.method, []);
@@ -164,18 +178,15 @@ function buildProgress(bundles, results, { generatedAt = new Date().toISOString(
     pending: cohorts.reduce((sum, g) => sum + g.pending, 0), excluded, cohorts };
 }
 function main(root = process.cwd()) {
-  const bundles = [], results = [];
+  const prepared = { excluded: {}, selected: new Map() }, results = [];
   const read = file => JSON.parse(fs.readFileSync(file, 'utf8'));
   const draftDir = path.join(root, 'data/note-drafts');
   for (const date of fs.existsSync(draftDir) ? fs.readdirSync(draftDir).filter(d => /^\d{8}$/.test(d)).sort() : []) {
     for (const file of fs.readdirSync(path.join(draftDir, date)).filter(f => f.endsWith('.json')).sort()) {
-      const b = read(path.join(draftDir, date, file));
-      // Discard article bodies after loading; the immutable source remains on disk.
-      bundles.push({ version: b.version, sourceCommit: b.sourceCommit, record: b.record,
-        generationAudit: b.generationAudit, baselinePracticalTickets: b.baselinePracticalTickets });
+      addPrepared(prepared, read(path.join(draftDir, date, file)));
     }
   }
-  const dates = new Set(bundles.filter(b => !assess(b).reason).map(b => b.record.date));
+  const dates = new Set([...prepared.selected.values()].map(item => item.row.date));
   const resultDir = path.join(root, 'data/results');
   for (const file of fs.existsSync(resultDir) ? fs.readdirSync(resultDir).filter(f => /^\d{8}\.json$/.test(f) && dates.has(f.slice(0, 8))).sort() : []) {
     for (const r of read(path.join(resultDir, file)).races || []) results.push({ date: r.date, jcd: r.jcd, raceNo: r.raceNo,
@@ -191,7 +202,7 @@ function main(root = process.cwd()) {
       if (!existing?.resultAvailable) results.push(result);
     }
   }
-  const report = buildProgress(bundles, results, { activeMethod: methodFingerprint() });
+  const report = buildPrepared(prepared, results, { activeMethod: methodFingerprint() });
   report.resultFetchRetries = fs.existsSync(ledgerFile) ? Object.values(read(ledgerFile).attempts || {}).filter(a => a.status === 'retry').length : 0;
   const output = path.join(root, 'data/stats/race-review-progress.json');
   if (fs.existsSync(output)) {
@@ -205,5 +216,5 @@ function main(root = process.cwd()) {
   return report;
 }
 if (require.main === module) main();
-module.exports = { assess, buildProgress, classify, summarizeLosses, main,
+module.exports = { assess, buildProgress, prepareBundles, buildPrepared, classify, summarizeLosses, main,
   selectionEvidence, actualSelectionDiagnostic };

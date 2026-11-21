@@ -7,6 +7,17 @@ on:
       - "scripts/save-independent-monitor-note.js"
       - "scripts/note-independent-monitor-fixture.js"
       - "js/note-generator.js"
+      - "js/forecast-reader-contract.js"
+      - "scripts/note-reader-presentation.cjs"
+      - "tests/note-reader-presentation.test.cjs"
+      - "tests/note-reader-default.test.cjs"
+      - "tests/note-reader-publication-proof.test.cjs"
+      - "scripts/race-review-evidence.js"
+      - "tests/race-review-fingerprint.test.cjs"
+      - "scripts/note-reader-preview.cjs"
+      - "scripts/build-fixed-head-baseline.cjs"
+      - "tests/prediction-quality-review.test.cjs"
+      - "tests/forecast-reader-contract.test.cjs"
       - "js/saved-note-draft.js"
       - "js/script.js"
       - "js/app-runtime-loader.js"
@@ -22,12 +33,18 @@ on:
       - "scripts/test-note-draft-bundle.js"
       - "scripts/check-note-skills.js"
       - "scripts/note-github-ui-transport.js"
+      - "scripts/note-saved-state-auth*"
       - "scripts/note-pricing*"
       - "scripts/note-readable-article*"
       - "scripts/note-korogashi-presentation*"
       - "scripts/note-plain-presentation*"
+      - "scripts/note-center-presentation*"
+      - "scripts/note-ticket-limit*"
+      - "scripts/note-scenario-presentation*"
       - "scripts/note-recovery*"
       - "scripts/fixtures/note-recovery-code.json"
+      - "scripts/fixtures/note-recovery-v9-code.json"
+      - "scripts/fixtures/note-recovery-v9-compatible-code.json"
       - "scripts/note-published-ticket-sections*"
       - "scripts/note-result-provenance*"
       - "scripts/note-cover*"
@@ -47,6 +64,13 @@ on:
       - "scripts/publish-note-queue.js"
       - "scripts/test-all-race-notes.js"
       - "scripts/practical-selection-evidence.js"
+      - "scripts/promotion-role-priority-diagnostic.cjs"
+      - "scripts/promotion-head-priority-comparison.cjs"
+      - "tests/promotion-head-priority-comparison.test.cjs"
+      - "scripts/candidate-promotion-execution-evidence.cjs"
+      - "tests/candidate-promotion-execution.test.cjs"
+      - "tests/promotion-role-priority-diagnostic.test.cjs"
+      - "tests/practical-promotion-capture.test.cjs"
       - "scripts/test-practical-selection-evidence.js"
       - "scripts/test-candidate-validation-evidence.cjs"
       - "js/practical-selection.js"
@@ -72,6 +96,17 @@ on:
       - main
     paths:
       - "js/note-generator.js"
+      - "js/forecast-reader-contract.js"
+      - "scripts/note-reader-presentation.cjs"
+      - "tests/note-reader-presentation.test.cjs"
+      - "tests/note-reader-default.test.cjs"
+      - "tests/note-reader-publication-proof.test.cjs"
+      - "scripts/race-review-evidence.js"
+      - "tests/race-review-fingerprint.test.cjs"
+      - "scripts/note-reader-preview.cjs"
+      - "scripts/build-fixed-head-baseline.cjs"
+      - "tests/prediction-quality-review.test.cjs"
+      - "tests/forecast-reader-contract.test.cjs"
       - "js/saved-note-draft.js"
       - "js/script.js"
       - "js/app-runtime-loader.js"
@@ -87,12 +122,18 @@ on:
       - "scripts/test-note-draft-bundle.js"
       - "scripts/check-note-skills.js"
       - "scripts/note-github-ui-transport.js"
+      - "scripts/note-saved-state-auth*"
       - "scripts/note-pricing*"
       - "scripts/note-readable-article*"
       - "scripts/note-korogashi-presentation*"
       - "scripts/note-plain-presentation*"
+      - "scripts/note-center-presentation*"
+      - "scripts/note-ticket-limit*"
+      - "scripts/note-scenario-presentation*"
       - "scripts/note-recovery*"
       - "scripts/fixtures/note-recovery-code.json"
+      - "scripts/fixtures/note-recovery-v9-code.json"
+      - "scripts/fixtures/note-recovery-v9-compatible-code.json"
       - "scripts/note-published-ticket-sections*"
       - "scripts/note-result-provenance*"
       - "scripts/note-cover*"
@@ -112,6 +153,13 @@ on:
       - "scripts/publish-note-queue.js"
       - "scripts/test-all-race-notes.js"
       - "scripts/practical-selection-evidence.js"
+      - "scripts/promotion-role-priority-diagnostic.cjs"
+      - "scripts/promotion-head-priority-comparison.cjs"
+      - "tests/promotion-head-priority-comparison.test.cjs"
+      - "scripts/candidate-promotion-execution-evidence.cjs"
+      - "tests/candidate-promotion-execution.test.cjs"
+      - "tests/promotion-role-priority-diagnostic.test.cjs"
+      - "tests/practical-promotion-capture.test.cjs"
       - "scripts/test-practical-selection-evidence.js"
       - "scripts/test-candidate-validation-evidence.cjs"
       - "js/practical-selection.js"
@@ -154,6 +202,7 @@ jobs:
             .github/workflows
             .agents/skills
             .claude/skills
+            tests
             assets/note
 
       - uses: actions/setup-node@v4
@@ -167,6 +216,7 @@ jobs:
 
       - name: Check note generator and regression
         run: |
+          node --test tests/forecast-reader-contract.test.cjs tests/prediction-quality-review.test.cjs tests/note-reader-presentation.test.cjs tests/note-reader-default.test.cjs tests/race-review-fingerprint.test.cjs tests/note-reader-publication-proof.test.cjs tests/promotion-role-priority-diagnostic.test.cjs tests/practical-promotion-capture.test.cjs tests/candidate-promotion-execution.test.cjs tests/promotion-head-priority-comparison.test.cjs
           node --check js/note-generator.js
           node --check scripts/test-note-copy-cleanup.js
           node --check scripts/test-note-karatsu-regression.js
@@ -184,6 +234,7 @@ jobs:
           node scripts/test-prediction-summaries.js
           node scripts/check-note-skills.js
           node scripts/note-github-ui-transport.test.js
+          node --test scripts/note-saved-state-auth.test.js
           node --test scripts/note-pricing.test.js scripts/note-readable-article.test.js scripts/note-korogashi-presentation.test.cjs
           node --test scripts/note-published-ticket-sections.test.js scripts/note-result-provenance.test.js scripts/note-korogashi-lifecycle.test.cjs
           node scripts/note-cover.test.js

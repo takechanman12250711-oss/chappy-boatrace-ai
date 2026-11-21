@@ -10,6 +10,11 @@ on:
       - "js/practical-selection.js"
       - "scripts/restore-daily-prediction-source.js"
       - "scripts/build-strong-escape-post-adoption-monitor.js"
+      - "scripts/strong-escape-monitor-sources.cjs"
+      - "scripts/strong-escape-monitor-parallel.cjs"
+      - "scripts/test-strong-escape-monitor-sources.cjs"
+      - "scripts/fixtures/strong-escape-monitor-before-source-streaming.js"
+      - "scripts/daily-prediction-source-archive.js"
       - "data/predictions/*.json"
       - "data/predictions/*.json.gz"
       - ".github/workflows/check-strong-escape-post-adoption-monitor.yml"
@@ -25,12 +30,36 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 1
+          # Fetch every canonical input without duplicate archive-backed raw blobs.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/data/
+            /data/predictions/
+            !/data/predictions/20??????.json
+      - name: Include every unarchived prediction source
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const { execFileSync } = require('node:child_process');
+          const base = 'data/predictions/';
+          const daily = execFileSync('git', ['ls-tree', '--name-only', 'HEAD:data/predictions'], { encoding: 'utf8' })
+            .trim().split('\n').filter(name => /^\d{8}\.json$/.test(name));
+          const unarchived = daily.filter(name => {
+            const date = name.slice(0, 8);
+            return !['.json.gz', '.meta.json'].every(suffix => fs.existsSync(base + 'source-archives/' + date + suffix));
+          }).map(name => '/' + base + name);
+          if (unarchived.length) execFileSync('git', ['sparse-checkout', 'add', '--stdin'], { input: unarchived.join('\n') + '\n', stdio: ['pipe', 'inherit', 'inherit'] });
+          console.log('Kept all archives and ' + unarchived.length + ' unarchived daily sources. Archive-backed raw JSON is restored with SHA checks by the existing test.');
+          NODE
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Restore canonical prediction sources
-        run: node scripts/restore-daily-prediction-source.js --all
+      - name: Verify canonical monitor source parity and corruption guards
+        run: node scripts/test-strong-escape-monitor-sources.cjs
       - name: Check syntax
         run: node --check scripts/build-strong-escape-post-adoption-monitor.js
       - name: Build exact post-adoption comparison
-        run: node scripts/build-strong-escape-post-adoption-monitor.js
+        run: node scripts/build-strong-escape-post-adoption-monitor.js --parallel

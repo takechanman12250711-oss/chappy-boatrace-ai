@@ -20,10 +20,24 @@ jobs:
     timeout-minutes: 20
 
     steps:
+      - name: Determine saved result dates
+        id: saved-results-dates
+        run: |
+          result_date=$(TZ=Asia/Tokyo date +%F)
+          echo "today=$(date -d "$result_date" +%Y%m%d)" >> "$GITHUB_OUTPUT"
+          echo "tomorrow=$(date -d "$result_date +1 day" +%Y%m%d)" >> "$GITHUB_OUTPUT"
       - name: Checkout branch
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          # Preserve source contracts and the saved data read by this check.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/data/
+            /data/predictions/summaries/
+            /data/results/${{ steps.saved-results-dates.outputs.today }}.json
+            /data/results/${{ steps.saved-results-dates.outputs.tomorrow }}.json
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

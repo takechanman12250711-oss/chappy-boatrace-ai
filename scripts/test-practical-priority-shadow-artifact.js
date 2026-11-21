@@ -3,125 +3,70 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
-const archiveApi = require(
-  "./daily-prediction-source-archive"
-);
-const restoreApi = require(
-  "./restore-daily-prediction-source"
-);
-const reportBuilder = require(
-  "./build-practical-priority-shadow-report"
-);
+const archiveApi = require("./daily-prediction-source-archive");
+const reportBuilder = require("./build-practical-priority-shadow-report");
+const reportApi = require("../js/practical-priority-shadow-report");
 
 const ROOT = path.resolve(__dirname, "..");
 
-function preservePredictionSources(
-  rootDirectory = ROOT
-) {
-  const predictionDirectory =
-    archiveApi.predictionDirectory(
-      rootDirectory
-    );
-  const backupDirectory = fs.mkdtempSync(
-    path.join(
-      predictionDirectory,
-      ".priority-shadow-artifact-"
-    )
-  );
-  const snapshots =
-    archiveApi
-      .archivedSourceDates(rootDirectory)
-      .map(date => {
-        const sourcePath =
-          archiveApi.sourcePathFor(
-            rootDirectory,
-            date
-          );
-        const backupPath = path.join(
-          backupDirectory,
-          `${date}.json`
-        );
-        const existed = fs.existsSync(
-          sourcePath
-        );
-
-        if (existed) {
-          try {
-            fs.linkSync(
-              sourcePath,
-              backupPath
-            );
-          } catch {
-            fs.copyFileSync(
-              sourcePath,
-              backupPath
-            );
-          }
-        }
-
-        return {
-          sourcePath,
-          backupPath,
-          existed
-        };
-      });
-
-  return {
-    snapshots,
-    restore() {
-      snapshots.forEach(snapshot => {
-        fs.rmSync(
-          snapshot.sourcePath,
-          { force: true }
-        );
-
-        if (snapshot.existed) {
-          fs.renameSync(
-            snapshot.backupPath,
-            snapshot.sourcePath
-          );
-        }
-      });
-      fs.rmSync(
-        backupDirectory,
-        {
-          recursive: true,
-          force: true
-        }
-      );
-    }
-  };
-}
-
-const preserved = preservePredictionSources();
-
-try {
-  const restored =
-    restoreApi.restorePredictionSources({
-      rootDirectory: ROOT,
-      all: true
-    });
-
+function buildArchiveBackedReport({
+  rootDirectory = ROOT,
+  generatedAt,
+  readArchive = archiveApi.readPredictionSourceArchive
+} = {}) {
+  const archiveDates = archiveApi.archivedSourceDates(rootDirectory);
   assert.ok(
-    restored.length > 0,
+    archiveDates.length > 0,
     "順位候補シャドー正本照合にはarchive原本が必要"
   );
-  assert.ok(
-    restored.every(
-      result => result.status === "restored"
-    ),
-    "archive済み日次予想原本をすべて復元する"
-  );
+  const archived = new Set(archiveDates);
+  const sourceDates = [...new Set([
+    ...archiveApi.predictionSourceDates(rootDirectory),
+    ...archiveDates
+  ])].sort();
+  const readArchived = date => {
+    const source = readArchive({ rootDirectory, date });
+    assert.equal(
+      source.status,
+      "archive-read",
+      "archive済み日次予想原本をすべて検証する"
+    );
+    return source.parsed;
+  };
 
-  const committed = JSON.parse(
-    fs.readFileSync(
-      reportBuilder.OUTPUT,
-      "utf8"
-    )
-  );
-  const rebuilt = reportBuilder.buildReport(
-    committed.generatedAt
-  );
+  // The report filters older dates, but the previous restore-all gate also
+  // validated these archives. Keep that gate without retaining their payloads.
+  for (const date of archiveDates) {
+    if (date < reportApi.CONTRACT_START_DATE) readArchived(date);
+  }
+
+  return reportBuilder.buildReport(generatedAt, {
+    predictionDirectory: archiveApi.predictionDirectory(rootDirectory),
+    resultDirectory: path.join(rootDirectory, "data", "results"),
+    sourceDates,
+    // Consume and compact one validated day at a time. An archive always wins
+    // over an expanded raw, and any archive error stops the gate without fallback.
+    readPredictionData: date => archived.has(date)
+      ? readArchived(date)
+      : JSON.parse(fs.readFileSync(
+          archiveApi.sourcePathFor(rootDirectory, date), "utf8"
+        ))
+  });
+}
+
+function verifyArtifact({
+  rootDirectory = ROOT,
+  readArchive = archiveApi.readPredictionSourceArchive
+} = {}) {
+  const committed = JSON.parse(fs.readFileSync(
+    path.join(rootDirectory, "data", "stats", "practical-priority-shadow-report.json"),
+    "utf8"
+  ));
+  const rebuilt = buildArchiveBackedReport({
+    rootDirectory,
+    generatedAt: committed.generatedAt,
+    readArchive
+  });
 
   assert.deepEqual(
     committed,
@@ -136,10 +81,18 @@ try {
     committed.generatedAt,
     "集計内容が同じなら生成時刻だけを更新しない"
   );
-
-  console.log(
-    "practical priority prospective shadow artifact: OK"
-  );
-} finally {
-  preserved.restore();
+  return rebuilt;
 }
+
+function main() {
+  verifyArtifact();
+  console.log("practical priority prospective shadow artifact: OK");
+}
+
+if (require.main === module) main();
+
+module.exports = {
+  buildArchiveBackedReport,
+  verifyArtifact,
+  main
+};

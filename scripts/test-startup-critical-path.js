@@ -53,7 +53,11 @@ assert.equal(
 
 const directOddsIndex = html.indexOf('src="js/odds-fetch-cache.js');
 const directApiIndex = html.indexOf('src="js/api.js');
-const predictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260828-ui-audit-display1');
+const predictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?');
+const readerIndex = html.indexOf('src="js/forecast-reader-contract.js?');
+const finalUiLoaderIndex = html.indexOf('src="js/result-void-compat.js?');
+assert.ok(readerIndex >= 0 && readerIndex < finalUiLoaderIndex && readerIndex < predictionLoaderIndex, "共通表示モデルを利用者より前に読み込む");
+assert.equal(directScripts.filter(src => src === "js/forecast-reader-contract.js").length, 1, "共通表示モデルの初期重複読込を防ぐ");
 const hiyoriLoaderIndex = html.indexOf('src="js/hiyori-runtime-loader.js?v=20261006-adjacent-start-rank1"');
 const appIndex = html.indexOf('src="js/app-runtime-loader.js');
 const homeIndex = html.indexOf('src="js/home-dashboard-v2.js');

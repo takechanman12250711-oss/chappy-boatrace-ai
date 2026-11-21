@@ -98,7 +98,10 @@ function client(env = process.env, request = fetch) {
     if (result.object?.sha !== commit.sha) throw new Error('marketing_state_save_unverified');
     return commit.sha;
   }
-  async function settle(state, config, now = Date.now(), { refresh = false, fetchResult, clock = Date.now } = {}) {
+  async function settle(state, config, now = Date.now(), { refresh = false, fetchResult, clock = Date.now, priorityRaceKeys = [] } = {}) {
+    // A korogashi course waiting on a race may retry that race sooner; every
+    // other published race keeps the approved 20-minute spacing.
+    const priority = new Set(priorityRaceKeys);
     const dates = [...new Set(state.rows.map(r => r.raceKey.slice(0,8)))];
     const daily = new Map();
     for (const date of dates) {
@@ -140,8 +143,8 @@ function client(env = process.env, request = fetch) {
       // Only verified published originals that are still waiting need a fetch.
       // Reuse api/result's official parser; no new scraper or research writer.
       if (refresh && settlement.status === 'pending' && now >= Date.parse(row.deadlineAt) + 5 * 60000 &&
-          attempted.size < 12 && !attempted.has(row.raceKey) &&
-          now - (Date.parse(resultAttempts[row.raceKey]?.checkedAt) || 0) >= 20 * 60000) {
+          (attempted.size < 12 || priority.has(row.raceKey)) && !attempted.has(row.raceKey) &&
+          now - (Date.parse(resultAttempts[row.raceKey]?.checkedAt) || 0) >= (priority.has(row.raceKey) ? 5 : 20) * 60000) {
         attempted.add(row.raceKey);
         resultAttempts[row.raceKey] = { checkedAt: new Date(now).toISOString(), status: 'retry' };
         try {

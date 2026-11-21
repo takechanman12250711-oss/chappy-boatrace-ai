@@ -57,8 +57,10 @@ assert.deepEqual(gate({ ...valid, title: '' }), { ok: false, reason: 'title_miss
 assert.deepEqual(gate({ ...valid, freeText: '' }), { ok: false, reason: 'free_text_missing' });
 assert.deepEqual(gate({ ...valid, paidText: '' }), { ok: false, reason: 'paid_text_missing' });
 assert.deepEqual(gate({ ...valid, price: 500 }), { ok: false, reason: 'price_mismatch' });
-assert.deepEqual(gate({ ...valid, practicalTicketCount: 8 }), { ok: false, reason: 'ticket_count_exceeds_7' });
-assert.deepEqual(gate({ ...valid, practicalTicketCount: 0 }), { ok: false, reason: 'ticket_count_exceeds_7' });
+// 2026-11-16 owner decision: 1-10 tickets may be published (was 1-7).
+for (const practicalTicketCount of [8, 10]) assert.deepEqual(gate({ ...valid, practicalTicketCount }), { ok: true });
+assert.deepEqual(gate({ ...valid, practicalTicketCount: 11 }), { ok: false, reason: 'ticket_count_exceeds_limit' });
+assert.deepEqual(gate({ ...valid, practicalTicketCount: 0 }), { ok: false, reason: 'ticket_count_exceeds_limit' });
 assert.deepEqual(gate({ ...valid, deadlineAt: '' }), { ok: false, reason: 'deadline_unavailable' });
 assert.deepEqual(gate({ ...valid, deadlineAt: '2026-09-13T12:00:00' }), { ok: false, reason: 'deadline_unavailable' });
 assert.deepEqual(gate({ ...valid, raceKey: '20260912-10-7' }), { ok: false, reason: 'race_day_mismatch' });
@@ -321,6 +323,11 @@ async function checkAsyncGuards() {
       return { status: 201, json: async () => ({ ref: draftClaimRef(eligible), object: { sha: claimEnv.GITHUB_SHA } }) };
     }), /deadline_passed/);
   } finally { Date.now = realNow; }
+  // The runner-browser login check is limited to the read-only auth mode.
+  for (const NOTE_UI_MODE of ['draft', 'publish']) {
+    await assert.rejects(run({ env: { NOTE_UI_MODE, NOTE_UI_BROWSER: 'github' } }), /direct_login_auth_mode_only/);
+  }
+  await assert.rejects(run({ env: { NOTE_UI_MODE: 'auth', NOTE_UI_BROWSER: 'github' } }), /note_login_id_missing/);
   await assert.rejects(run({ env: {} }), /browser_use_api_key_missing/);
   await assert.rejects(run({ env: { BROWSER_USE_API_KEY: 'key' } }), /browser_use_profile_id_missing/);
   assert.deepEqual(loadBrowserUseConfig({ BROWSER_USE_API_KEY: ' key ', BROWSER_USE_PROFILE_ID: ' profile ' }), {

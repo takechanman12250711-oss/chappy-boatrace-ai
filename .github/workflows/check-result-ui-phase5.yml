@@ -54,6 +54,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Include results for the saved browser fixture date
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const {execFileSync} = require('node:child_process');
+          const resultDates = new Set(execFileSync('git', ['ls-tree', '-r', '--name-only', 'HEAD', '--', 'data/results'], {encoding:'utf8'})
+            .split('\n').map(file => /^data\/results\/(\d{8})\.json$/.exec(file)?.[1]).filter(Boolean));
+          const date = fs.readdirSync('data/predictions/summaries')
+            .map(file => /^(\d{8})\.json$/.exec(file)?.[1]).filter(date => date && resultDates.has(date)).sort().at(-1);
+          if (!date) throw Error('saved_stats_fixture_date_unavailable');
+          execFileSync('git', ['sparse-checkout', 'add', '/data/results/' + date + '.json'], {stdio:'inherit'});
+          console.log('Saved mobile stats fixture date: ' + date);
+          NODE
       - name: Verify result UI phase5
         run: |
           node --check js/result-ui-phase5.js

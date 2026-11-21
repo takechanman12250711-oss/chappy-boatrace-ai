@@ -1,6 +1,8 @@
 "use strict";
 const { createHash } = require("node:crypto");
 const ISSUE_TITLE = "[自動監視] 結果収集workflow異常";
+const FAILURE_HEADING = "🚨 結果収集の監視で異常を検知しました。";
+const RECOVERY_HEADING = "✅ 結果保存・校正・派生データ保存の正常完了を確認しました。";
 const HOUR = 3600000;
 const COLLECTOR_PATH = ".github/workflows/collect-results.yml";
 const newestFirst = (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || b.id - a.id;
@@ -200,7 +202,7 @@ function evaluate({ now = new Date(), run, jobs = [], results }) {
 }
 function render(report) {
   return [
-    report.healthy ? "✅ 結果保存・校正・派生データ保存の正常完了を確認しました。" : "🚨 結果収集の監視で異常を検知しました。",
+    report.healthy ? RECOVERY_HEADING : FAILURE_HEADING,
     "", `<!-- chappy-result-watchdog:${report.fingerprint} -->`, "",
     `- Run: ${report.run?.html_url || "未起動"}`,
     `- 結果保存: ${report.stages.resultSave}`,
@@ -210,6 +212,37 @@ function render(report) {
     ...(report.problems.length ? ["", "検知内容:", ...report.problems.map(x => `- ${x}`)] : []),
     "", "GitHub Actionsで監視しています。同じ状態の通知は繰り返さず、正常復帰時に自動で閉じます。"
   ].join("\n");
+}
+function notificationFingerprint(message) {
+  if (message?.user?.login !== "github-actions[bot]" || typeof message.body !== "string") return null;
+  for (const heading of [FAILURE_HEADING, RECOVERY_HEADING]) {
+    const prefix = `${heading}\n\n`;
+    if (message.body.startsWith(prefix)) {
+      return /^<!-- chappy-result-watchdog:([a-f0-9]{64}) -->\n/.exec(message.body.slice(prefix.length))?.[1] || null;
+    }
+  }
+  return null;
+}
+async function latestNotificationFingerprint({ github, owner, repo, issue }) {
+  if (!Number.isSafeInteger(issue.comments) || issue.comments < 0)
+    throw new Error("Issue comment count is invalid");
+  // Comments arrive oldest first. Work records can fill the latest page, so
+  // read backwards until the most recent actual watchdog notification appears.
+  // Do not search for ANY matching marker: A -> B -> A must notify again.
+  let pagesRead = 0;
+  for (let page = Math.ceil(issue.comments / 100); page > 0; page--) {
+    if (++pagesRead > 100) throw new Error("Issue comment history exceeds lookup limit");
+    const { data } = await github.rest.issues.listComments({ owner, repo,
+      issue_number: issue.number, per_page: 100, page });
+    if (!Array.isArray(data) || data.length > 100 ||
+        data.some(comment => !comment || typeof comment.body !== "string"))
+      throw new Error("Issue comment page is invalid");
+    for (const comment of data.slice().reverse()) {
+      const fingerprint = notificationFingerprint(comment);
+      if (fingerprint) return fingerprint;
+    }
+  }
+  return notificationFingerprint(issue);
 }
 async function syncIssue({ github, owner, repo, report }) {
   const open = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: "open", per_page: 100 });
@@ -226,14 +259,7 @@ async function syncIssue({ github, owner, repo, report }) {
     await github.rest.issues.create({ owner, repo, title: ISSUE_TITLE, body });
     return "created";
   }
-  const marker = `<!-- chappy-result-watchdog:${report.fingerprint} -->`;
-  let previous = issue.body || "";
-  if (issue.comments) {
-    const { data: comments } = await github.rest.issues.listComments({ owner, repo,
-      issue_number: issue.number, per_page: 100, page: Math.ceil(issue.comments / 100) });
-    previous = comments.at(-1)?.body || previous;
-  }
-  if (previous.includes(marker)) return "unchanged";
+  if (await latestNotificationFingerprint({ github, owner, repo, issue }) === report.fingerprint) return "unchanged";
   await github.rest.issues.createComment({ owner, repo, issue_number: issue.number, body });
   return "commented";
 }

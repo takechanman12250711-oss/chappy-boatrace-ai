@@ -3,8 +3,12 @@ const { createHash } = require('node:crypto');
 const { readLeg, allocate, DISCLAIMER } = require('./note-korogashi-draft.cjs');
 const { jstDate, recentDates, validUrl } = require('./note-marketing-content');
 const { verifiedModelSubset } = require('./note-published-ticket-sections');
+const { MAX_PUBLICATION_TICKETS } = require('./note-ticket-limit.cjs');
 const VERSION = 'note-korogashi-state-v1';
 const POLICY = 'published-same-series-deadline-order-v1';
+// A later leg must leave time for its artifact registration and the anonymous
+// index check (each needs more than 120 seconds before the deadline).
+const NEXT_LEG_MIN_MARGIN_MS = 5 * 60000;
 const json = x => JSON.stringify(x);
 const hash = x => createHash('sha256').update(typeof x === 'string' ? x : json(x)).digest('hex');
 const copy = x => JSON.parse(json(x));
@@ -43,7 +47,7 @@ function project(plan) {
     if (body.type === 'registered') {
       check(['not_registered','waiting_next'].includes(state.status), 'registration_transition_invalid');
       const { leg, seal } = body.data;
-      check(Array.isArray(leg.allocations) && leg.allocations.length>=1 && leg.allocations.length<=7 &&
+      check(Array.isArray(leg.allocations) && leg.allocations.length>=1 && leg.allocations.length<=MAX_PUBLICATION_TICKETS &&
         leg.allocations.every(a=>/^[1-6]-[1-6]-[1-6]$/.test(a.ticket) && new Set(a.ticket.split('-')).size===3) &&
         new Set(leg.allocations.map(a=>a.ticket)).size===leg.allocations.length, 'registered_tickets_invalid');
       check(leg.number === state.legs.length + 1 && leg.number <= r.maxLegs &&
@@ -56,11 +60,11 @@ function project(plan) {
       check(seal.snapshotHash === hash({ request: r, previous, leg }), 'snapshot_mismatch');
       const selection = leg.modelSelectionEvidence;
       check(selection?.version === 'note-korogashi-selection-evidence-v1' &&
-        ['readable-v1','readable-v3','readable-v4','readable-v5','readable-v6','readable-v7'].includes(selection.presentationVersion) &&
+        ['readable-v1','readable-v3','readable-v4','readable-v5','readable-v6','readable-v7','readable-v8','readable-v9','readable-v10'].includes(selection.presentationVersion) &&
         selection.sourceSha256 === leg.sourceSha256 && /^[a-f0-9]{64}$/.test(selection.paidTextSha256 || '') &&
         selection.ticketCount === leg.allocations.length &&
         selection.ticketsSha256 === hash(leg.allocations.map(a=>a.ticket).sort()) &&
-        selection.label === (selection.presentationVersion === 'readable-v7' ? '⭐ 中心の買い目' : ['readable-v3','readable-v4','readable-v5','readable-v6'].includes(selection.presentationVersion) ? '🔄 コロがし検証対象' : '中心の買い目'), 'registered_selection_unverified');
+        selection.label === (selection.presentationVersion === 'readable-v10' ? (leg.articleSeries === 'normal' ? '🎯 本命' : '⭐ 中心の買い目') : ['readable-v7','readable-v8','readable-v9'].includes(selection.presentationVersion) ? '⭐ 中心の買い目' : ['readable-v3','readable-v4','readable-v5','readable-v6'].includes(selection.presentationVersion) ? '🔄 コロがし検証対象' : '中心の買い目'), 'registered_selection_unverified');
       const opening = state.balanceYen ?? leg.allocations.length * 1000;
       check(json(allocate(opening,leg.allocations.map(a=>a.ticket))) === json({ allocations:leg.allocations,stakeYen:leg.stakeYen,remainderYen:leg.remainderYen }), 'funding_mismatch');
       check(leg.openingYen === opening && (!state.lastAt || ms(leg.plannedAt) >= ms(state.lastAt)), 'registration_timing_invalid');
@@ -178,7 +182,7 @@ async function prepare(state, config, { rows, source, result, now, context }) {
     if(p.request.date!==day) {append(p,'stopped',{reason:'day_ended'},now);continue;}
     const series=p.request.firstPublicationKey.split(':')[1];
     const candidates=rows.filter(r=>r.raceKey.startsWith(day+'-') && r.articleSeries===series &&
-      !view.legs.some(l=>l.raceKey===r.raceKey) && ms(r.deadlineAt)-now>120000 &&
+      !view.legs.some(l=>l.raceKey===r.raceKey) && ms(r.deadlineAt)-now>(view.legs.length ? NEXT_LEG_MIN_MARGIN_MS : 120000) &&
       (view.legs.length || r.publicationKey===p.request.firstPublicationKey))
       .sort((a,b)=>ms(a.deadlineAt)-ms(b.deadlineAt)||a.publicationKey.localeCompare(b.publicationKey));
     for(const row of candidates) {
@@ -200,11 +204,16 @@ function confirm(state, snapshots, artifact, now) {
     check(s.runId===artifact.runId && s.headSha===artifact.headSha &&
       artifact.name===`note-korogashi-${s.runId}-${s.runAttempt}` &&
       ms(s.leg.plannedAt)<ms(artifact.createdAt)+1000, 'artifact_context_mismatch');
-    if(ms(s.leg.deadlineAt)-ms(artifact.confirmedAt)<=120000) append(p,'stopped',{reason:'registration_expired'},now);
+    // Judge the margin by the later of the server confirmation and the local
+    // clock, so a slow local clock cannot pass a registration the real time rejects.
+    if(ms(s.leg.deadlineAt)-Math.max(ms(artifact.confirmedAt),now)<=120000) append(p,'stopped',{reason:'registration_expired'},now);
     else append(p,'registered',{leg:s.leg,seal:{...artifact,snapshotHash:s.snapshotHash}},now);
     p.pending=null;
   }
   assertAppendOnly(state,next);return next;
+}
+function awaitingResultRaceKeys(state) {
+  return Object.values(validateState(state).plans).map(project).filter(v=>v.status==='waiting_result').map(v=>v.legs.at(-1).raceKey);
 }
 function needsPublication(state) {
   return Object.values(validateState(state).plans).some(p=>project(p).status==='waiting_publication');
@@ -245,4 +254,4 @@ function publicText(state, now) {
         l.sourceArticleUrl].join('\n')),
       `モデル保有額 ${amount(v.balanceYen)}｜開始資金差引 ${amount(v.netBeforeFeesYen)}（記事代別）`].join('\n\n');})].join('\n\n');
 }
-module.exports={VERSION,POLICY,hash,json,request,requests,initialState,project,validateState,assertAppendOnly,makeLeg,prepare,confirm,needsPublication,announce,publicText};
+module.exports={VERSION,POLICY,NEXT_LEG_MIN_MARGIN_MS,awaitingResultRaceKeys,hash,json,request,requests,initialState,project,validateState,assertAppendOnly,makeLeg,prepare,confirm,needsPublication,announce,publicText};

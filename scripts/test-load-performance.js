@@ -15,7 +15,7 @@ const {
   "./build-prediction-index-shards"
 );
 const {
-  buildPredictionIndex
+  buildArchiveBackedPredictionIndex
 } = require(
   "./build-prediction-index"
 );
@@ -24,99 +24,21 @@ const {
 } = require(
   "./compact-prediction-index"
 );
-const archiveApi = require(
-  "./daily-prediction-source-archive"
-);
-const restoreApi = require(
-  "./restore-daily-prediction-source"
-);
-
 const root = path.resolve(__dirname, "..");
 const read = file =>
   fs.readFileSync(path.join(root, file), "utf8");
 
 function buildArchiveBackedCurrentIndex() {
-  const predictionDirectory =
-    archiveApi.predictionDirectory(root);
-  const backupDirectory = fs.mkdtempSync(
-    path.join(
-      predictionDirectory,
-      ".load-performance-source-"
-    )
-  );
-  const snapshots =
-    archiveApi
-      .archivedSourceDates(root)
-      .map(date => {
-        const sourcePath =
-          archiveApi.sourcePathFor(root, date);
-        const backupPath = path.join(
-          backupDirectory,
-          date + ".json"
-        );
-        const existed = fs.existsSync(sourcePath);
-
-        if (existed) {
-          try {
-            fs.linkSync(sourcePath, backupPath);
-          } catch {
-            fs.copyFileSync(sourcePath, backupPath);
-          }
-        }
-
-        return {
-          sourcePath,
-          backupPath,
-          existed
-        };
-      });
-
-  try {
-    const restored =
-      restoreApi.restorePredictionSources({
-        rootDirectory: root,
-        all: true
-      });
-
-    assert.ok(
-      restored.length > 0,
-      "分割index照合にはarchive原本が必要"
-    );
-    assert.ok(
-      restored.every(
-        result => result.status === "restored"
-      ),
-      "archive済み日次予想原本をすべて復元する"
-    );
-
-    return compactIndex(
-      buildPredictionIndex(predictionDirectory)
-    );
-  } finally {
-    snapshots.forEach(snapshot => {
-      fs.rmSync(
-        snapshot.sourcePath,
-        { force: true }
-      );
-
-      if (snapshot.existed) {
-        fs.renameSync(
-          snapshot.backupPath,
-          snapshot.sourcePath
-        );
-      }
-    });
-    fs.rmSync(
-      backupDirectory,
-      {
-        recursive: true,
-        force: true
-      }
-    );
-  }
+  return compactIndex(buildArchiveBackedPredictionIndex({
+    rootDirectory: root
+  }));
 }
 
 const html = read("index.html");
+function scriptVersion(file) {
+  const src=[...html.matchAll(/<script\s+[^>]*src="([^"]+)"/g)].map(m=>m[1]).find(src=>src.split("?")[0]===file);
+  return src?new URL(src,"https://fixture.invalid/").searchParams.get("v"):null;
+}
 const script = read("js/script.js");
 const appRuntime = read("js/app-runtime-loader.js");
 const stats = read("js/stats.js");
@@ -413,9 +335,7 @@ assert.equal(
   html.includes(
     "js/app-runtime-loader.js?v=20260816-static-race1"
   ) &&
-    html.includes(
-      "js/prediction-runtime-loader.js?v=20260828-ui-audit-display1"
-    ) &&
+    scriptVersion("js/prediction-runtime-loader.js") === "20260828-ui-audit-display1" &&
     html.includes(
       "js/hiyori-runtime-loader.js?v=20261006-adjacent-start-rank1"
     ) &&

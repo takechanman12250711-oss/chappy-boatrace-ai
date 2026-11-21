@@ -103,6 +103,78 @@ function mismatchDiagnostic(validation, selection, selected) {
   } catch { return null; }
 }
 
+let promotionDiagnosticCodeSha256;
+function promotionDiagnostic(record, expected, selection, validationSnapshot) {
+  try {
+    const diagnostic = require('./promotion-role-priority-diagnostic.cjs');
+    if (!promotionDiagnosticCodeSha256) {
+      const fs = require('node:fs'), {createHash} = require('node:crypto');
+      const hash = createHash('sha256');
+      for (const [name, file] of [
+        ['scripts/practical-selection-evidence.js', __filename],
+        ['scripts/promotion-role-priority-diagnostic.cjs', require.resolve('./promotion-role-priority-diagnostic.cjs')]
+      ]) hash.update(name + '\0').update(fs.readFileSync(file)).update('\0');
+      promotionDiagnosticCodeSha256 = hash.digest('hex');
+    }
+    const result = diagnostic.diagnosePromotionRolePriorities({
+      identity: {raceKey:record.raceKey, selectedAt:record.selectedAt, deadlineAt:record.deadlineAt,
+        method:record.reviewEvidence?.method, predictionMode:record.reviewEvidence?.predictionMode,
+        officialResultUsedForPrediction:record.reviewEvidence?.officialResultUsedForPrediction},
+      finalTickets:expected, selectionTickets:selection.tickets.map(value), selectionStatus:selection.status,
+      promotedRows:list(selection.tickets).filter(row=>row?.candidatePromotion===true).map(row=>pick(row,[
+        'ticket','candidatePromotion','selectionTier','sourceCategory','evidenceQualified','branchIds',
+        'validBranchIds','validPurchaseBranchIds','validIndependentBranchIds','validScenarioIds',
+        'priorityScore','coverage','physicalCoverage','purchaseEligible','expansionEligible'
+      ])), validationSnapshot
+    });
+    if (!result || result.purpose !== 'diagnostic-only' || result.action !== 'KEEP_A' ||
+        result.alternativeTickets !== null || result.rankingProposed !== false ||
+        result.resultUsedForGeneration !== false || result.usableForPrediction !== false ||
+        result.automaticApplication !== false) throw Error('diagnostic_contract_invalid');
+    return JSON.parse(JSON.stringify({...result, diagnosticCodeSha256:promotionDiagnosticCodeSha256}));
+  } catch (_) {
+    // Diagnostics cannot block or change an otherwise valid stored A.
+    return {version:'promotion-role-priority-diagnostic-v1', purpose:'diagnostic-only',
+      status:'capture-error', reasonCode:'DIAGNOSTIC_UNAVAILABLE', action:'KEEP_A',
+      alternativeTickets:null, rankingProposed:false, resultUsedForGeneration:false,
+      usableForPrediction:false, automaticApplication:false, rows:[]};
+  }
+}
+
+let executionCodeSha256;
+function capturePromotionExecution(selection,finalTickets,baselineTickets,validation,diagnostic) {
+  try {
+    if (!executionCodeSha256) {
+      const fs=require('node:fs'), {createHash}=require('node:crypto'), hash=createHash('sha256');
+      for (const name of ['js/practical-selection.js','scripts/practical-selection-evidence.js','scripts/candidate-promotion-execution-evidence.cjs'])
+        hash.update(name+'\0').update(fs.readFileSync(require('node:path').join(__dirname,'..',name))).update('\0');
+      executionCodeSha256=hash.digest('hex');
+    }
+    const result=JSON.parse(JSON.stringify(require('./candidate-promotion-execution-evidence.cjs').capturePromotionExecution({
+      snapshot:selection.candidatePromotionExecution,
+      validation:diagnostic?.originalGeneratorSnapshot || validation,
+      finalTickets,baselineTickets,diagnostic,expansionSummary:selection.expansionSummary,
+      candidateDecisions:selection.candidateDecisions})));
+    if (!result || typeof result !== 'object' || Array.isArray(result) ||
+        result.version !== 'candidate-promotion-execution-v1' || result.purpose !== 'diagnostic-only' ||
+        result.action !== 'KEEP_A' || result.alternativeTickets !== null || result.rankingProposed !== false ||
+        result.resultUsedForGeneration !== false || result.usableForPrediction !== false || result.automaticApplication !== false ||
+        !['captured','unknown'].includes(result.status) ||
+        (result.status === 'unknown' && (typeof result.reasonCode !== 'string' || !result.reasonCode)) ||
+        (result.status === 'captured' && (result.maximumCount !== 10 || !Number.isInteger(result.candidateCount) ||
+          !Array.isArray(result.before?.selectedTickets) || !Array.isArray(result.before?.usedTickets) ||
+          !Number.isInteger(result.before?.remainingSlots) || !Array.isArray(result.queue) ||
+          !Array.isArray(result.afterPromotionTickets) || !Array.isArray(result.selectorFinalTickets) ||
+          !Array.isArray(result.transitions) || !Array.isArray(result.postSelectorTransformations) ||
+          !Array.isArray(result.observedFinalTickets)))) throw Error('execution_contract_invalid');
+    return {...result,executionCodeSha256};
+  } catch (_) {
+    return {version:'candidate-promotion-execution-v1',purpose:'diagnostic-only',status:'unknown',
+      reasonCode:'EXECUTION_CAPTURE_UNAVAILABLE',action:'KEEP_A',alternativeTickets:null,rankingProposed:false,
+      resultUsedForGeneration:false,usableForPrediction:false,automaticApplication:false};
+  }
+}
+
 function capture(record, baseline, selection) {
   const evidence = { version:'practical-selection-evidence-v1', raceKey:record.raceKey,
     selectedAt:record.selectedAt, deadlineAt:record.deadlineAt,
@@ -123,6 +195,10 @@ function capture(record, baseline, selection) {
   const candidateValidationEvidence = matches ? projectValidation(validation)
     : validation ? {version:'candidate-validation-evidence-v1', status:'invalid-or-unavailable',
       ...(diagnostic ? {diagnostic} : {})} : undefined;
+  // Preserve guard-only presence before the legacy projection drops it.
+  // A diagnostic-marked generator snapshot is never final-A evidence.
+  const promotionValidationSnapshot = validation && Object.hasOwn(validation, 'diagnostic')
+    ? {...candidateValidationEvidence, diagnostic:null} : candidateValidationEvidence;
   const excludedCandidates = list(selection.excludedCandidates).map(row => pick(row, decisionKeys));
   const targetDecisions = list(selection.targetDecisions).map(row => ({
     ...pick(row,['evaluationId','boatNo','selected','selectedTickets','adoptionSupported','supportedSelectedTickets',
@@ -132,6 +208,9 @@ function capture(record, baseline, selection) {
   }));
   return finish({status:'captured',selectionStatus:selection.status,selectionReason:selection.reason,
     practicalTickets:expected,candidateDecisions,excludedCandidates,targetDecisions,
+    promotionRolePriorityDiagnostic:promotionDiagnostic(record,expected,selection,promotionValidationSnapshot),
+    ...(Object.hasOwn(selection,'candidatePromotionExecution') ? {candidatePromotionExecutionEvidence:
+      capturePromotionExecution(selection,selected,expected,candidateValidationEvidence,diagnostic)} : {}),
     ...(candidateValidationEvidence ? {candidateValidationEvidence} : {}),
     generation:selection.verificationEvidence?.generation || null,
     decisionCount:candidateDecisions.length + excludedCandidates.length + targetDecisions.reduce((n,r)=>n+r.candidateDecisions.length,0)});
